@@ -135,8 +135,9 @@ def plot_lines_with_ranges(data={}, figsize=(9, 5), markup_func=lambda ax: None,
         ax = axes[i]
         plt.sca(ax)
         plot_line_with_ranges(X, key.title(), ax=ax, **kwargs)
-        markup_func(ax)
 
+    markup_func(axes)
+    plt.tight_layout()
     return fig
 
 if __name__ == '__main__':
@@ -149,7 +150,14 @@ if __name__ == '__main__':
             'geometric': geometric_random_walk(n_timesteps, observations_per_timestep, mu=mu)
            }
 
-    markup_func = lambda ax: ax.set_ylim(mu * 0.95, mu * 1.1)
-    plot_lines_with_ranges(data, markup_func=markup_func, number_of_stds=1.5)
+    # markup_func = lambda ax: ax.set_ylim(mu * 0.95, mu * 1.1)
+    def markup_func(axes):
+        for ax in axes: 
+            ax.set_ylim(mu * 0.95, mu * 1.1)
+
+        axes[0].legend()
+
+    plot_lines_with_ranges(data, figsize=(9,3), markup_func=markup_func, 
+                          number_of_stds=1.5, plot_legends=False)
     fn = save_fig('img/random_walks')
     print(f'saved to {fn}')
