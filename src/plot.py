@@ -4,8 +4,7 @@ import matplotlib.ticker as tck
 COLORS = plt.rcParams['axes.prop_cycle'].by_key()['color']
 
 def grid(discrete_x=False, ax=None):
-    if ax is None:
-        ax = plt.gca()
+    ax = plt.gca()
     ax.grid(which='major', linewidth=0.8, axis='y' if discrete_x else 'both')
     ax.grid(which='minor', linewidth=0.1, axis='y' if discrete_x else 'both', alpha=0.5)
 

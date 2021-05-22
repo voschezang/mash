@@ -99,6 +99,7 @@ def plot_line_with_ranges(X=[], title='',
 
     # markup
     plot.grid(ax=ax)
+    plot.locator()
     ax.set_title(title)
     if plot_legends:
         ax.legend()

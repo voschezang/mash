@@ -96,10 +96,10 @@ if __name__ == '__main__':
         y_max = 1.05 * max( max(y for x_, y in zip(x, row) if x_ < x_max)  for row in data.values() )
         
         for j, (k,v) in enumerate(data.items()):
-            plt.plot(x, v, label=k.title(), color=COLORS[j])
+            plt.plot(x, v, label=k.title(), alpha=0.3, color=COLORS[j], lw=3)
             if k in fitted:
                 y, lb, ub = fitted[k]
-                plt.plot(x, y, '--', label=f'{k.title()} (fit)', alpha=0.5, color=COLORS[j])
+                plt.plot(x, y, label=f'{k.title()} (fit)', color=COLORS[j], lw=1)
                 # plt.fill_between(x, lb, ub, alpha=0.1, color=COLORS[j])
             
             plt.xlim(1, x_max)
