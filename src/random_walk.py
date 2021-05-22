@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import plot
 
 def random_walk(n_timesteps=100, observations_per_timestep=10, eta=None, mu=0, std=0.01):
-    """ Generate multiple uncorrelated random walks.
+    r""" Generate multiple uncorrelated random walks.
     ```X_t = X_{t-1} + \eta_t```
     where `X_0 = \mu`
     
@@ -33,7 +33,7 @@ def random_walk(n_timesteps=100, observations_per_timestep=10, eta=None, mu=0, s
 
 
 def geometric_random_walk(n_timesteps=100, observations_per_timestep=10, eta=None, mu=1, alpha=0.01):
-    """ Generate multiple uncorrelated, geometric random walks.
+    r""" Generate multiple uncorrelated, geometric random walks.
     ```X_t = X_{t-1} + \eta_t```
     where `X_0 = \mu` and `eta_t \sim \mathcal{U}(\pm \alpha X_{t-1})`
     
