@@ -1,6 +1,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
+import plot
+
 def random_walk(n_timesteps=100, observations_per_timestep=10, eta=None, mu=0, std=0.01):
     """ Generate multiple uncorrelated random walks.
     ```X_t = X_{t-1} + \eta_t```
@@ -59,23 +61,6 @@ def geometric_random_walk(n_timesteps=100, observations_per_timestep=10, eta=Non
     return X
 
 
-def grid(discrete_x=False, ax=None):
-    # TODO mv
-    if ax is None:
-        ax = plt.gca()
-    ax.grid(which='major', linewidth=0.8, axis='y' if discrete_x else 'both')
-    ax.grid(which='minor', linewidth=0.1, axis='y' if discrete_x else 'both', alpha=0.5)
-
-
-def save_fig(filename, ext='png', dpi='figure',
-             transparent=True, bbox_inches='tight',
-             **kwargs):
-    # TODO mv
-    fn = f'{filename}.{ext}'
-    plt.savefig(fn, dpi=dpi,transparent=transparent,
-                bbox_inches=bbox_inches, **kwargs)
-    plt.show()
-    return fn
 def plot_line_with_ranges(X=[], title='',
                           plot_range=True,
                           number_of_stds=1.,
@@ -113,7 +98,7 @@ def plot_line_with_ranges(X=[], title='',
         ax.fill_between(T, mu - std, mu + std, alpha=0.3, label=label_std)
 
     # markup
-    grid(ax=ax)
+    plot.grid(ax=ax)
     ax.set_title(title)
     if plot_legends:
         ax.legend()
@@ -135,14 +120,15 @@ def plot_lines_with_ranges(data={}, figsize=(9, 5), markup_func=lambda ax: None,
         ax = axes[i]
         plt.sca(ax)
         plot_line_with_ranges(X, key.title(), ax=ax, **kwargs)
+        markup_func(ax)
 
-    markup_func(axes)
     plt.tight_layout()
     return fig
 
 if __name__ == '__main__':
     plt.style.use('./sci.mplstyle')
     np.random.seed(113)
+
     n_timesteps = 16
     observations_per_timestep = 100
     mu = 10
@@ -150,14 +136,10 @@ if __name__ == '__main__':
             'geometric': geometric_random_walk(n_timesteps, observations_per_timestep, mu=mu)
            }
 
-    # markup_func = lambda ax: ax.set_ylim(mu * 0.95, mu * 1.1)
-    def markup_func(axes):
-        for ax in axes: 
-            ax.set_ylim(mu * 0.95, mu * 1.1)
-
-        axes[0].legend()
-
+    markup_func = lambda ax: ax.set_ylim(mu * 0.95, mu * 1.1)
     plot_lines_with_ranges(data, figsize=(9,3), markup_func=markup_func, 
                           number_of_stds=1.5, plot_legends=False)
-    fn = save_fig('img/random_walks')
+    plt.legend(bbox_to_anchor=(1,1), loc="upper left")
+
+    fn = plot.save_fig('img/random_walks')
     print(f'saved to {fn}')
