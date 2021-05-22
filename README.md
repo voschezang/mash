@@ -2,13 +2,13 @@
 
 ## Random walk
 
-[Random walk](random_walk.py)
+[Random walk](src/random_walk.py)
 
 <img src="img/random_walks.png" style="max-width: 10%" alt="Plot of Random Walks">
 
 ## Linear fit
 
-[Linear fit](linear_fit.py)
+[Linear fit](src/linear_fit.py)
 
 <img src="img/linear_fits.png" style="max-width: 10%" alt="Plot of Linear fits">
 
