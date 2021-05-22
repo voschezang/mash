@@ -1,9 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
-plt.style.use('./sci.mplstyle')
-np.random.seed(123)
 
-def random_walk(n_timesteps=100, observations_per_timestep=10, eta=None, mu=100):
+def random_walk(n_timesteps=100, observations_per_timestep=10, eta=None, mu=0, std=0.01):
     """ Generate multiple uncorrelated random walks.
     ```X_t = X_{t-1} + \eta_t```
     where `X_0 = \mu`
@@ -15,12 +13,13 @@ def random_walk(n_timesteps=100, observations_per_timestep=10, eta=None, mu=100)
         eta : a matrix of shape (n_timesteps, observations_per_timestep)
             This representing the deviations per timestep.
             Optional: override this to use a custom random distribution. 
-            Otherwise the default _uniform_ distribution is used.
+            Otherwise the default _normal_ distribution is used.
         mu : initial mean            
+        std : standard deviation of the normal distribution used for eta
     """
     if eta is None:
         # draw from normal distribution
-        eta = np.random.normal(0, scale=0.01, 
+        eta = np.random.normal(0, scale=std, 
                 size=(n_timesteps, observations_per_timestep))
         
     # transform to random walk
@@ -31,7 +30,7 @@ def random_walk(n_timesteps=100, observations_per_timestep=10, eta=None, mu=100)
     return X
 
 
-def geometric_random_walk(n_timesteps=100, observations_per_timestep=10, eta=None, mu=100, alpha=0.01):
+def geometric_random_walk(n_timesteps=100, observations_per_timestep=10, eta=None, mu=1, alpha=0.01):
     """ Generate multiple uncorrelated, geometric random walks.
     ```X_t = X_{t-1} + \eta_t```
     where `X_0 = \mu` and `eta_t \sim \mathcal{U}(\pm \alpha X_{t-1})`
@@ -141,6 +140,8 @@ def plot_lines_with_ranges(data={}, figsize=(9, 5), markup_func=lambda ax: None,
     return fig
 
 if __name__ == '__main__':
+    plt.style.use('./sci.mplstyle')
+    np.random.seed(113)
     n_timesteps = 16
     observations_per_timestep = 100
     mu = 10
