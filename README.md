@@ -1,6 +1,8 @@
 # data-science-templates
 Template for Data Science
 
+<img src="img/random_walks.png" style="max-width: 10%" alt="Plot of Random Walks">
+
 # Setup
 ```
 pip3 install -r requirements.txt
