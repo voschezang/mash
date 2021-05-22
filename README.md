@@ -17,4 +17,5 @@ pytest
 # Run
 ```
 python3 src/random_walk.py
+python3 src/linear_fit.py
 ```
