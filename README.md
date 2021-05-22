@@ -1,7 +1,16 @@
-# data-science-templates
-Template for Data Science
+# Template for Data Science
+
+## Random walk
+
+[Random walk](random_walk.py)
 
 <img src="img/random_walks.png" style="max-width: 10%" alt="Plot of Random Walks">
+
+## Linear fit
+
+[Linear fit](linear_fit.py)
+
+<img src="img/linear_fits.png" style="max-width: 10%" alt="Plot of Linear fits">
 
 # Setup
 ```
