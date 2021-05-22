@@ -17,7 +17,7 @@ def save_fig(filename, ext='png', dpi='figure',
              transparent=True, bbox_inches='tight',
              **kwargs):
     fn = f'{filename}.{ext}'
-    plt.savefig(fn, dpi=dpi,transparent=transparent,
+    plt.savefig(fn, dpi=dpi, transparent=transparent,
                 bbox_inches=bbox_inches, **kwargs)
     plt.show()
     return fn
@@ -26,7 +26,8 @@ def save_fig(filename, ext='png', dpi='figure',
 def grid(discrete_x=False, ax=None):
     ax = plt.gca()
     ax.grid(which='major', linewidth=0.8, axis='y' if discrete_x else 'both')
-    ax.grid(which='minor', linewidth=0.1, axis='y' if discrete_x else 'both', alpha=0.5)
+    ax.grid(which='minor', linewidth=0.1,
+            axis='y' if discrete_x else 'both', alpha=0.5)
 
 
 def locator(x=True, y=True, z=False):
@@ -43,7 +44,7 @@ def locator(x=True, y=True, z=False):
 
 
 def formatter(unit=None, decimals=1, eng=True,
-             x=True, y=True, z=False):
+              x=True, y=True, z=False):
     """ Major formatter.
     Use unit (e.g. `m`) for Engineering notation, unit_non_eng (e.g. `$`) otherwise.
     """

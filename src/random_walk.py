@@ -3,32 +3,33 @@ import matplotlib.pyplot as plt
 
 import plot
 
+
 def random_walk(n_timesteps=100, observations_per_timestep=10, eta=None, mu=0, std=0.01):
     r""" Generate multiple uncorrelated random walks.
     ```X_t = X_{t-1} + \eta_t```
     where `X_0 = \mu`
-    
+
     Parameters
     ----------
         n_timesteps : length of each random walk
         observations_per_timestep : number of uncorrelated walkers
         eta : a matrix of shape (n_timesteps, observations_per_timestep)
             This representing the deviations per timestep.
-            Optional: override this to use a custom random distribution. 
+            Optional: override this to use a custom random distribution.
             Otherwise the default _normal_ distribution is used.
-        mu : initial mean            
+        mu : initial mean
         std : standard deviation of the normal distribution used for eta
     """
     if eta is None:
         # draw from normal distribution
-        eta = np.random.normal(0, scale=std, 
-                size=(n_timesteps, observations_per_timestep))
-        
+        eta = np.random.normal(0, scale=std,
+                               size=(n_timesteps, observations_per_timestep))
+
     # transform to random walk
     X = np.empty_like(eta)
-    X[0, :] = mu    
+    X[0, :] = mu
     for i in range(1, eta.shape[0]):
-        X[i] = X[i-1] + eta[i]
+        X[i] = X[i - 1] + eta[i]
     return X
 
 
@@ -36,28 +37,28 @@ def geometric_random_walk(n_timesteps=100, observations_per_timestep=10, eta=Non
     r""" Generate multiple uncorrelated, geometric random walks.
     ```X_t = X_{t-1} + \eta_t```
     where `X_0 = \mu` and `eta_t \sim \mathcal{U}(\pm \alpha X_{t-1})`
-    
+
     Parameters
     ----------
         n_timesteps : length of each random walk
         observations_per_timestep : number of uncorrelated walkers
         eta : a matrix of shape (n_timesteps, observations_per_timestep)
             This representing the deviations per timestep.
-            Optional: override this to use a custom random distribution. 
+            Optional: override this to use a custom random distribution.
             Otherwise the default _uniform_ distribution is used.
         mu : initial mean
         alpha : max absolute relative deviation per timestep per walker
     """
     if eta is None:
         # draw from normal distribution
-        eta = np.random.uniform(-alpha, alpha, 
-                size=(n_timesteps, observations_per_timestep))
-        
+        eta = np.random.uniform(-alpha, alpha,
+                                size=(n_timesteps, observations_per_timestep))
+
     # transform to random walk
     X = np.empty_like(eta)
     X[0, :] = mu
     for i in range(1, eta.shape[0]):
-        X[i] = X[i-1] + X[i-1] * eta[i]
+        X[i] = X[i - 1] + X[i - 1] * eta[i]
     return X
 
 
@@ -126,6 +127,7 @@ def plot_lines_with_ranges(data={}, figsize=(9, 5), markup_func=lambda ax: None,
     plt.tight_layout()
     return fig
 
+
 if __name__ == '__main__':
     plt.style.use('./sci.mplstyle')
     np.random.seed(113)
@@ -135,12 +137,12 @@ if __name__ == '__main__':
     mu = 10
     data = {'linear': random_walk(n_timesteps, observations_per_timestep, mu=mu),
             'geometric': geometric_random_walk(n_timesteps, observations_per_timestep, mu=mu)
-           }
+            }
 
-    markup_func = lambda ax: ax.set_ylim(mu * 0.95, mu * 1.1)
-    plot_lines_with_ranges(data, figsize=(9,3), markup_func=markup_func, 
-                          number_of_stds=1.5, plot_legends=False)
-    plt.legend(bbox_to_anchor=(1,1), loc="upper left")
+    def markup_func(ax): return ax.set_ylim(mu * 0.95, mu * 1.1)
+    plot_lines_with_ranges(data, figsize=(9, 3), markup_func=markup_func,
+                           number_of_stds=1.5, plot_legends=False)
+    plt.legend(bbox_to_anchor=(1, 1), loc="upper left")
 
     fn = plot.save_fig('img/random_walks')
     print(f'saved to {fn}')
