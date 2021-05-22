@@ -77,27 +77,78 @@ def save_fig(filename, ext='png', dpi='figure',
                 bbox_inches=bbox_inches, **kwargs)
     plt.show()
     return fn
+def plot_line_with_ranges(X=[], title='',
+                          plot_range=True,
+                          number_of_stds=1.,
+                          label_mean=r'$\mu$',
+                          label_range='Range',
+                          label_std=None,
+                          plot_legends=True,
+                          ax=None):
+    """ Plotting template for a single data-series
+
+    Parameters
+    ----------
+        X : array or matrix containing the x-data (optional) and y-data
+        plot_range : bool, whether to plot the range
+        number_of_stds : number of standard deviations to consider
+            If < 1 then no std is plotted
+        label_* : the labels of the plotted objects
+    """
+    if ax is None:
+        ax = plt.gca()
+
+    if label_std is None:
+        label_std = r'$\mu \pm ' + str(number_of_stds) + r'\sigma$'
+
+    # cache
+    mu = X.mean(axis=1)
+    std = X.std(axis=1) * number_of_stds
+    T = np.arange(X.shape[0])
+
+    # plot
+    plt.plot(mu, label=label_mean)
+    ax.fill_between(T, X.min(axis=1), X.max(axis=1),
+                    alpha=0.1, label=label_range)
+    if number_of_stds > 0:
+        ax.fill_between(T, mu - std, mu + std, alpha=0.3, label=label_std)
+
+    # markup
+    grid(ax=ax)
+    ax.set_title(title)
+    if plot_legends:
+        ax.legend()
+
+
+def plot_lines_with_ranges(data={}, figsize=(9, 5), markup_func=lambda ax: None, **kwargs):
+    """ Plotting template for multiple data-series
+
+    Parameters
+    ----------
+            data : dict of format `{key: matrix }`
+                Where `matrix` contains the observations per timesteps.
+            figsize : matplotlib.pyplot figsize
+            markup_func : function to add custom markup per subplot
+                It's input must be `plt.AxesSubplot`
+    """
+    fig, axes = plt.subplots(1, len(data.keys()), figsize=figsize)
+    for i, (key, X) in enumerate(data.items()):
+        ax = axes[i]
+        plt.sca(ax)
+        plot_line_with_ranges(X, key.title(), ax=ax, **kwargs)
+        markup_func(ax)
+
+    return fig
 
 if __name__ == '__main__':
     n_timesteps = 16
     observations_per_timestep = 100
     mu = 10
-    data = {'harmonic': random_walk(n_timesteps, observations_per_timestep, mu=mu),
+    data = {'linear': random_walk(n_timesteps, observations_per_timestep, mu=mu),
             'geometric': geometric_random_walk(n_timesteps, observations_per_timestep, mu=mu)
            }
 
-    fix, axes = plt.subplots(1, len(data.keys()), figsize=(9, 5))
-    for i, (k, X) in enumerate(data.items()):
-        ax = axes[i]
-        X_mean = X.mean(axis=1)
-        X_std = X.std(axis=1)
-        T = np.arange(X.shape[0])
-        ax.plot(X_mean, label=r'$\mu$')
-        ax.fill_between(T, X.min(axis=1), X.max(axis=1), alpha=0.1, label='range')
-        ax.fill_between(T, X_mean - X_std, X_mean + X_std, alpha=0.3, label=r'$\mu \pm \sigma$')
-        grid(ax=ax)
-        ax.set_title(k.title())
-        ax.set_ylim(mu * 0.95, mu * 1.1)
-    plt.legend() # show only in last plot
+    markup_func = lambda ax: ax.set_ylim(mu * 0.95, mu * 1.1)
+    plot_lines_with_ranges(data, markup_func=markup_func, number_of_stds=1.5)
     fn = save_fig('img/random_walks')
     print(f'saved to {fn}')
