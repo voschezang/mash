@@ -19,6 +19,11 @@ Note that the fit for noisy exponential signal on the right-most plot is poor.
 
 <img src="img/polynomial_fits.png" style="max-width: 10%" alt="Plot of polynomial regression fits">
 
+3. Bayesian ridge regression, with polynomial and sinoid basis functions.
+Note that this model estimates both a mean and an uncertainty about that mean (i.e. a standard deviation).
+
+<img src="img/bayesian_fits.png" style="max-width: 10%" alt="Plot of bayesian regression fits">
+
 
 # Setup
 ```
