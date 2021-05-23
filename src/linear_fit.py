@@ -11,7 +11,18 @@ from plot import COLORS
 from random_walk import random_walk, random_linspace, smooth_noise
 
 
-def fit_linear_models_with_normalization(data={}, x=None, x_out=None) -> dict:
+def fit_transform_dataset(data, x_in, x_out, fit_transform_func, *args, **kwds) -> dict:
+    fitted = {}
+    for k, v in data.items():
+        y = v.copy()
+        prediction, significant = fit_transform_func(x_in, v.copy(), x_out, key=k, *args, **kwds)
+        if significant:
+            fitted[k] = prediction
+
+    # discard parameter values as we're just interested in a pretty graph
+    return fitted
+
+def fit_linear_models_with_normalization(x, y, x_out=None, key='') -> dict:
     """ Linear regression after normalization the input.
     Supported functions that can normalized:
     - linear: `y = a x + b`
@@ -22,73 +33,72 @@ def fit_linear_models_with_normalization(data={}, x=None, x_out=None) -> dict:
 
     Parameters
     ----------
-        data : dict of format {name: series}
-        x : the input data for the 
+        x,y : arrays containing input data 
+        x_out : (optional) array containing the x-data for the prediction
+            Defaults to x.
+        key : string used to select the normalization function
+
+    Returns
+    -------
+        prediction : array
+        significant : bool
     """
-    fitted = {}
-    if x is None:
-        x = np.linspace(0, 1, 100)
-    if x_out is None:
-        x_out = x
+    bias = y.min()
+    if 'quadratic' in key:
+        y = np.sqrt(y - bias + 1e-9)
+    elif 'exponential' in key:
+        # add offset s.t. f(0) = 1
+        y = np.log2(y - bias + 1)
 
-    for k, v in data.items():
-        y = v.copy()
-        bias = y.min()
-        if 'quadratic' in k:
-            y = np.sqrt(v - bias + 1e-9)
-        elif 'exponential' in k:
-            # add offset s.t. f(0) = 1
-            y = np.log2(v - bias + 1)
+    a, b, _, p_value, eta = scipy.stats.linregress(x, y)
+    signficiant = p_value < 0.001
 
-        a, b, _, p_value, eta = scipy.stats.linregress(x, y)
-        signficiant = p_value < 0.001
-        if signficiant:
-            y = a * x_out + b
-            if 'quadratic' in k:
-                y = y ** 2 + bias
-            elif 'exponential' in k:
-                y = 2 ** y + bias
+    y = a * x_out + b
+    if 'quadratic' in key:
+        y = y ** 2 + bias
+    elif 'exponential' in key:
+        y = 2 ** y + bias
 
-            fitted[k] = y
-
-    # discard parameter values as we're just interested in a pretty graph
-    return fitted
+    return y, signficiant
 
 
-def polynomial_fit(data={}, x=None, x_out=None, M=8, regularize=False) -> dict:
+def polynomial_fit(x, y, x_out=None, M=8, regularize=False, **kwds) -> dict:
     """ Polynomial regression.
     Similar to Least-squares, using an analytical solution, but not really linear anymore.
     The solution is the maximum-likelihood solution of an N-th order polynomial.
 
     Parameters
     ----------
+        x,y : arrays containing input data 
+        x_out : (optional) array containing the x-data for the prediction
+            Defaults to x.
         M : order of the polynomial
+
+    Returns
+    -------
+        prediction : array
+        significant : bool
     """
-    fitted = {}
-    if x is None:
-        x = np.linspace(0, 1, 100)
     if x_out is None:
         x_out = x
 
-    for k, y in data.items():
-        # Vandermonde matrix: https://en.wikipedia.org/wiki/Vandermonde_matrix
-        Phi = np.vander(x, M + 1)
+    # Vandermonde matrix: https://en.wikipedia.org/wiki/Vandermonde_matrix
+    Phi = np.vander(x, M + 1)
 
-        # fit
-        # compute ```(Phi^T Phi)^{-1} Phi^T \vec{y}```
-        weights = np.matmul(np.linalg.inv(np.matmul(Phi.T, Phi)), np.matmul(Phi.T, y))
+    # fit
+    # compute ```(Phi^T Phi)^{-1} Phi^T \vec{y}```
+    weights = np.matmul(np.linalg.inv(np.matmul(Phi.T, Phi)), np.matmul(Phi.T, y))
 
-        # validate model on original input
-        y_prediction = np.matmul(np.vander(x, M + 1), weights)
-        # compute relative root mean squared error
-        rel_rmse = np.sqrt(mse(y, y_prediction)) / y.mean()
-        if rel_rmse <  0.1:
-            # make fine-grained prediction
-            y_prediction = np.matmul(np.vander(x_out, M + 1), weights)
-            fitted[k] = y_prediction
+    # validate model on original input
+    y_prediction = np.matmul(np.vander(x, M + 1), weights)
+    # compute relative root mean squared error
+    rel_rmse = np.sqrt(mse(y, y_prediction)) / y.mean()
+    significant = rel_rmse <  0.1
 
-    # discard parameter values as we're just interested in a pretty graph
-    return fitted
+    # make fine-grained prediction
+    prediction = np.matmul(np.vander(x_out, M + 1), weights)
+    return prediction, significant
+
 
 
 def plot_prediction(original=[], prediction=[]):
@@ -160,16 +170,18 @@ if __name__ == '__main__':
 
     # linear regression
     plot_prediction([dataset_1, dataset_2], [
-        fit_linear_models_with_normalization(dataset_1, x, x_out=x_linear),
-        fit_linear_models_with_normalization(dataset_2, x, x_out=x_linear)])
+        # fit_linear_models_with_normalization(dataset_1, x, x_out=x_linear),
+        fit_transform_dataset(dataset_1, x, x_linear, fit_linear_models_with_normalization),
+        fit_transform_dataset(dataset_2, x, x_linear, fit_linear_models_with_normalization)])
+        # fit_linear_models_with_normalization(dataset_2, x, x_out=x_linear)])
 
     plt.title('Linear Regression')
     plot.save_fig('img/linear_fits')
 
     # polynomial regression
     plot_prediction([dataset_1, dataset_2], [
-        polynomial_fit(dataset_1, x, x_out=x_linear),
-        polynomial_fit(dataset_2, x, x_out=x_linear)])
+        fit_transform_dataset(dataset_1, x, x_linear, polynomial_fit),
+        fit_transform_dataset(dataset_2, x, x_linear, polynomial_fit)])
 
     plt.title('Polynomial Regression')
     plot.save_fig('img/polynomial_fits')
