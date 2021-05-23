@@ -6,6 +6,7 @@ import scipy.stats
 import scipy.linalg
 from  sklearn.linear_model import BayesianRidge
 from sklearn.metrics import mean_squared_error as mse
+from scipy.fft import fft, fftfreq
 
 import plot
 from plot import COLORS
@@ -73,7 +74,7 @@ def fit_polynomial(x, y, x_out=None, M=9, regularize=0, **kwds) -> dict:
         x,y : arrays containing input data 
         x_out : (optional) array containing the x-data for the prediction
             Defaults to x.
-        M : order of the polynomial
+        M : order or degree of the polynomial
         regularize : non-negative float, this factor determines the amount of regularization
 
     Returns
@@ -92,13 +93,6 @@ def fit_polynomial(x, y, x_out=None, M=9, regularize=0, **kwds) -> dict:
     # regularized solution: ```(aI + Phi^T Phi)^{-1} Phi^T \vec{y}``` where a is the regularization factor
     weights = np.matmul(np.linalg.inv(regularize * np.eye(M+1) + np.matmul(Phi.T, Phi)), np.matmul(Phi.T, y))
 
-#     if regularize > 0:
-#         # add
-#         factor = regularize * np.eye(M+1)
-#         weights = np.matmul(np.linalg.inv(regularize * np.eye(M+1) + np.matmul(Phi.T, Phi)), np.matmul(Phi.T, y))
-#     else:
-#         weights = np.matmul(np.linalg.inv(np.matmul(Phi.T, Phi)), np.matmul(Phi.T, y))
-
     # validate model on original input
     y_prediction = np.matmul(np.vander(x, M + 1), weights)
     # compute relative root mean squared error
@@ -109,7 +103,21 @@ def fit_polynomial(x, y, x_out=None, M=9, regularize=0, **kwds) -> dict:
     prediction = np.matmul(np.vander(x_out, M + 1), weights)
     return prediction, significant
 
-# def fit_bayesian(x, y, x_out=None, regularize=False, **kwds) -> dict:
+
+def fit_bayesian(x, y, x_out=None, M=9, frequencies=[], **kwds) -> dict:
+    X = feature_matrix(x, M, frequencies)
+    # X = np.vander(x, M + 1)
+    model = BayesianRidge()
+    model.fit(X, y)
+    # prediction, std = model.predict(np.vander(x_out, M + 1), return_std=True)
+    prediction, std = model.predict(feature_matrix(x_out, M, frequencies), return_std=True)
+    return prediction, std
+
+def feature_matrix(x, degree=3, frequencies=[1,2,3]):
+    # TODO find frequencies using a fourier tranform
+    polynomial = np.vander(x, degree + 1)
+    harmonic = np.sin(np.outer(x, frequencies))
+    return np.hstack([polynomial, harmonic])
 
 
 def plot_prediction(original=[], prediction=[]):
@@ -143,6 +151,10 @@ def plot_prediction(original=[], prediction=[]):
     plt.legend(bbox_to_anchor=(1, 1), loc="upper left")
 
 
+def noise(n, std): 
+    return random_walk(n, 1, mu=0, std=std)[:, 0]
+
+
 if __name__ == '__main__':
     # init
     plt.style.use('./sci.mplstyle')
@@ -160,11 +172,10 @@ if __name__ == '__main__':
 
     # generate random data
     alpha = 0.8
-    def noise(): return random_walk(n, 1, mu=0, std=alpha)[:, 0]
     dataset_1 = {
-        'linear': linear + noise(),
-        'quadratic': quadratic + noise(),
-        'exponential': exponential + noise(),
+        'linear': linear + noise(n, alpha),
+        'quadratic': quadratic + noise(n, alpha),
+        'exponential': exponential + noise(n, alpha),
     }
 
     alpha = 4
@@ -194,3 +205,63 @@ if __name__ == '__main__':
 
     plt.title('Polynomial Regression')
     plot.save_fig('img/polynomial_fits')
+
+
+
+    # generate data and apply fft to find frequencies
+    def signal(x): 
+        return np.sin(x * 3.234) + np.sin(x * 0.8) + 1.213 * x ** 2 - x + 3 + np.random.normal(0, scale=0, size=x.size)
+
+    n = 100
+    x_max = 5
+
+    dx = 0.0124
+    n_sample_points = 10
+    x = np.arange(0, x_max, dx)
+    sample_indices = np.random.choice(np.arange(x.size), n_sample_points, replace=False)
+    padded_signal = np.zeros(x.size)
+    padded_signal[sample_indices] = signal(x[sample_indices])
+    z = fft(padded_signal)[:n//2]
+    print(n, z.size, x.size)
+    n_frequencies = 3
+    peaks = sorted( zip( np.abs(z), fftfreq(z.size, dx)), reverse=True )
+    frequencies = sorted([f for _, f in peaks if f >= 1e-6][:n_frequencies])
+    print(frequencies)
+
+
+    # bayesian regression
+    x_linear = np.linspace(0, x_max * 1.25, n)
+    x_random = random_linspace(0, x_max, n)
+    y = signal(x_random)
+
+    fig, axes = plt.subplots(1, 2, figsize=(9, 3))
+    for i, ax in enumerate(axes):
+        plt.sca(ax)
+        # y = [y1, y2][i]
+
+        if i == 0:
+            mu, std = fit_bayesian(x_random, y, x_linear, M=9)
+        else:
+            mu, std = fit_bayesian(x_random, y, x_linear, M=5, frequencies=frequencies)
+
+        plt.plot(x_linear, mu, label=r'$\mu$', color='tab:orange')
+        plt.fill_between(x_linear, mu - std, mu + std, label=r'$\sigma$', alpha=0.2, color='tab:orange')
+
+        # plot original input over prediction
+        plt.scatter(x_random, y, label='Original signal', s=12, alpha=0.9, color='tab:blue')
+
+        if i == 1:
+            # plot fft sample points
+            plt.scatter(x[sample_indices], padded_signal[sample_indices], s=10, alpha=0.8, marker='x', color='0')
+            plt.vlines(x[sample_indices], 0, padded_signal[sample_indices], linestyles='-', alpha=0.1, color='0')
+
+        if i == 0:
+            plt.ylim(0, 50)
+
+        plot.grid()
+        plot.locator()
+
+    plt.legend(bbox_to_anchor=(1, 1), loc="upper left")
+    plt.title('Bayesian Linear Regression')
+    plot.save_fig('img/bayesian_fits')
+
