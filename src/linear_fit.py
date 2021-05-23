@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import matplotlib.ticker as tck
 import scipy.stats
 import scipy.linalg
+from  sklearn.linear_model import BayesianRidge
 from sklearn.metrics import mean_squared_error as mse
 
 import plot
@@ -22,7 +23,7 @@ def fit_transform_dataset(data, x_in, x_out, fit_transform_func, *args, **kwds) 
     # discard parameter values as we're just interested in a pretty graph
     return fitted
 
-def fit_linear_models_with_normalization(x, y, x_out=None, key='') -> dict:
+def fit_linear_model_with_normalization(x, y, x_out=None, key='') -> dict:
     """ Linear regression after normalization the input.
     Supported functions that can normalized:
     - linear: `y = a x + b`
@@ -62,7 +63,7 @@ def fit_linear_models_with_normalization(x, y, x_out=None, key='') -> dict:
     return y, signficiant
 
 
-def polynomial_fit(x, y, x_out=None, M=8, regularize=False, **kwds) -> dict:
+def fit_polynomial(x, y, x_out=None, M=9, regularize=0, **kwds) -> dict:
     """ Polynomial regression.
     Similar to Least-squares, using an analytical solution, but not really linear anymore.
     The solution is the maximum-likelihood solution of an N-th order polynomial.
@@ -73,6 +74,7 @@ def polynomial_fit(x, y, x_out=None, M=8, regularize=False, **kwds) -> dict:
         x_out : (optional) array containing the x-data for the prediction
             Defaults to x.
         M : order of the polynomial
+        regularize : non-negative float, this factor determines the amount of regularization
 
     Returns
     -------
@@ -86,8 +88,16 @@ def polynomial_fit(x, y, x_out=None, M=8, regularize=False, **kwds) -> dict:
     Phi = np.vander(x, M + 1)
 
     # fit
-    # compute ```(Phi^T Phi)^{-1} Phi^T \vec{y}```
-    weights = np.matmul(np.linalg.inv(np.matmul(Phi.T, Phi)), np.matmul(Phi.T, y))
+    # non-regularized solution: ```(Phi^T Phi)^{-1} Phi^T \vec{y}```
+    # regularized solution: ```(aI + Phi^T Phi)^{-1} Phi^T \vec{y}``` where a is the regularization factor
+    weights = np.matmul(np.linalg.inv(regularize * np.eye(M+1) + np.matmul(Phi.T, Phi)), np.matmul(Phi.T, y))
+
+#     if regularize > 0:
+#         # add
+#         factor = regularize * np.eye(M+1)
+#         weights = np.matmul(np.linalg.inv(regularize * np.eye(M+1) + np.matmul(Phi.T, Phi)), np.matmul(Phi.T, y))
+#     else:
+#         weights = np.matmul(np.linalg.inv(np.matmul(Phi.T, Phi)), np.matmul(Phi.T, y))
 
     # validate model on original input
     y_prediction = np.matmul(np.vander(x, M + 1), weights)
@@ -99,6 +109,7 @@ def polynomial_fit(x, y, x_out=None, M=8, regularize=False, **kwds) -> dict:
     prediction = np.matmul(np.vander(x_out, M + 1), weights)
     return prediction, significant
 
+# def fit_bayesian(x, y, x_out=None, regularize=False, **kwds) -> dict:
 
 
 def plot_prediction(original=[], prediction=[]):
@@ -170,18 +181,16 @@ if __name__ == '__main__':
 
     # linear regression
     plot_prediction([dataset_1, dataset_2], [
-        # fit_linear_models_with_normalization(dataset_1, x, x_out=x_linear),
-        fit_transform_dataset(dataset_1, x, x_linear, fit_linear_models_with_normalization),
-        fit_transform_dataset(dataset_2, x, x_linear, fit_linear_models_with_normalization)])
-        # fit_linear_models_with_normalization(dataset_2, x, x_out=x_linear)])
+        fit_transform_dataset(dataset_1, x, x_linear, fit_linear_model_with_normalization),
+        fit_transform_dataset(dataset_2, x, x_linear, fit_linear_model_with_normalization)])
 
     plt.title('Linear Regression')
     plot.save_fig('img/linear_fits')
 
-    # polynomial regression
+    # polynomial regression (regularized)
     plot_prediction([dataset_1, dataset_2], [
-        fit_transform_dataset(dataset_1, x, x_linear, polynomial_fit),
-        fit_transform_dataset(dataset_2, x, x_linear, polynomial_fit)])
+        fit_transform_dataset(dataset_1, x, x_linear, fit_polynomial, regularize=.1),
+        fit_transform_dataset(dataset_2, x, x_linear, fit_polynomial, regularize=.1)])
 
     plt.title('Polynomial Regression')
     plot.save_fig('img/polynomial_fits')
