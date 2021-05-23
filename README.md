@@ -2,13 +2,13 @@
 
 ## Random walk
 
-[Random walk](src/random_walk.py)
+[Random walk](src/random_walk.py) generates datasets that behave like random walks.
 
 <img src="img/random_walks.png" style="max-width: 10%" alt="Plot of Random Walks">
 
 ## Linear fit
 
-[Linear fit](src/linear_fit.py)
+[Linear fit](src/linear_fit.py) is an experiment that fits linear models to normalized input data, while assuming a specific function (e.g. quadratic or exponential).
 
 <img src="img/linear_fits.png" style="max-width: 10%" alt="Plot of Linear fits">
 
