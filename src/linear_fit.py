@@ -1,7 +1,9 @@
 import numpy as np
+import numpy.linalg
 import matplotlib.pyplot as plt
 import matplotlib.ticker as tck
 import scipy.stats
+import scipy.linalg
 from random_walk import random_walk
 
 import plot
@@ -19,7 +21,7 @@ def smooth_noise(n=100, width=30, noise=None):
     return convolution[:n]
 
 
-def fit_linear_models_with_normalization(data={}):
+def fit_linear_models_with_normalization(data={}, x=None, x_out=None) -> dict:
     """ Linear regression after normalization the input.
     Supported functions that can normalized:
     - linear: `y = a x + b`
@@ -31,11 +33,16 @@ def fit_linear_models_with_normalization(data={}):
     Parameters
     ----------
         data : dict of format {name: series}
+        x : the input data for the 
     """
     fitted = {}
+    if x is None:
+        x = np.linspace(0, 1, 100)
+    if x_out is None:
+        x_out = x
     for k, v in data.items():
         y = v.copy()
-        bias = v.min()
+        bias = y.min()
         if 'quadratic' in k:
             y = np.sqrt(v - bias + 1e-9)
         elif 'exponential' in k:
@@ -45,14 +52,22 @@ def fit_linear_models_with_normalization(data={}):
         a, b, _, p_value, eta = scipy.stats.linregress(x, y)
         signficiant = p_value < 0.001
         if signficiant:
-            y = a * x + b
+            y = a * x_out + b
             if 'quadratic' in k:
                 y = y ** 2 + bias
             elif 'exponential' in k:
                 y = 2 ** y + bias
 
             fitted[k] = y
+
+    # discard parameter values as we're just interested in a pretty graph
     return fitted
+
+
+def random_linspace(start, stop, num):
+    x = np.random.uniform(start, stop, num)
+    x.sort()
+    return x
 
 
 if __name__ == '__main__':
@@ -60,9 +75,11 @@ if __name__ == '__main__':
     plt.style.use('./sci.mplstyle')
     np.random.seed(113)
 
-    # params
+    # generate data, add input and output noise (i.e. randomize x, y)
     n = 100
-    x = np.linspace(0, 15, n)
+    x_linear = np.linspace(0, 15, n)
+    x = random_linspace(0, 15, n)
+    x[0] = 0
     bias = 5.12
     linear = 3.14 * x + bias
     quadratic = 0.81 * x ** 2 + bias
@@ -90,8 +107,8 @@ if __name__ == '__main__':
             np.clip(v, 1e-9, None, out=v)
 
     # fit linear models
-    prediction_1 = fit_linear_models_with_normalization(dataset_1)
-    prediction_2 = fit_linear_models_with_normalization(dataset_2)
+    prediction_1 = fit_linear_models_with_normalization(dataset_1, x, x_out=x_linear)
+    prediction_2 = fit_linear_models_with_normalization(dataset_2, x, x_out=x_linear)
 
     # plot
     fig, axes = plt.subplots(1, 2, figsize=(9, 3))
@@ -108,7 +125,7 @@ if __name__ == '__main__':
         for j, (k, v) in enumerate(data.items()):
             plt.plot(x, v, label=k.title(), alpha=0.3, color=COLORS[j], lw=3)
             if k in fitted:
-                plt.plot(x, fitted[k], label=f'{k.title()} (fit)',
+                plt.plot(x_linear, fitted[k], label=f'{k.title()} (fit)',
                          color=COLORS[j], lw=1)
                 # plt.fill_between(x, lb, ub, alpha=0.1, color=COLORS[j])
 
