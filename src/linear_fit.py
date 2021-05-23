@@ -4,21 +4,11 @@ import matplotlib.pyplot as plt
 import matplotlib.ticker as tck
 import scipy.stats
 import scipy.linalg
-from random_walk import random_walk
+from sklearn.metrics import mean_squared_error as mse
 
 import plot
 from plot import COLORS
-
-
-def smooth_noise(n=100, width=30, noise=None):
-    width = np.round(width)
-    if noise is None:
-        noise = np.random.random(n + width)
-    else:
-        n = noise.shape[0]
-    assert width < n, f'incompatible width ({width}) for n: {n}'
-    convolution = np.convolve(noise, np.ones(width), 'valid') / width
-    return convolution[:n]
+from random_walk import random_walk, random_linspace, smooth_noise
 
 
 def fit_linear_models_with_normalization(data={}, x=None, x_out=None) -> dict:
@@ -40,6 +30,7 @@ def fit_linear_models_with_normalization(data={}, x=None, x_out=None) -> dict:
         x = np.linspace(0, 1, 100)
     if x_out is None:
         x_out = x
+
     for k, v in data.items():
         y = v.copy()
         bias = y.min()
@@ -64,10 +55,71 @@ def fit_linear_models_with_normalization(data={}, x=None, x_out=None) -> dict:
     return fitted
 
 
-def random_linspace(start, stop, num):
-    x = np.random.uniform(start, stop, num)
-    x.sort()
-    return x
+def polynomial_fit(data={}, x=None, x_out=None, M=8, regularize=False) -> dict:
+    """ Polynomial regression.
+    Similar to Least-squares, using an analytical solution, but not really linear anymore.
+    The solution is the maximum-likelihood solution of an N-th order polynomial.
+
+    Parameters
+    ----------
+        M : order of the polynomial
+    """
+    fitted = {}
+    if x is None:
+        x = np.linspace(0, 1, 100)
+    if x_out is None:
+        x_out = x
+
+    for k, y in data.items():
+        # Vandermonde matrix: https://en.wikipedia.org/wiki/Vandermonde_matrix
+        Phi = np.vander(x, M + 1)
+
+        # fit
+        # compute ```(Phi^T Phi)^{-1} Phi^T \vec{y}```
+        weights = np.matmul(np.linalg.inv(np.matmul(Phi.T, Phi)), np.matmul(Phi.T, y))
+
+        # validate model on original input
+        y_prediction = np.matmul(np.vander(x, M + 1), weights)
+        # compute relative root mean squared error
+        rel_rmse = np.sqrt(mse(y, y_prediction)) / y.mean()
+        if rel_rmse <  0.1:
+            # make fine-grained prediction
+            y_prediction = np.matmul(np.vander(x_out, M + 1), weights)
+            fitted[k] = y_prediction
+
+    # discard parameter values as we're just interested in a pretty graph
+    return fitted
+
+
+def plot_prediction(original=[], prediction=[]):
+    """
+    Parameters
+    ----------
+        original, prediction : list of dicts, with format:  [{name, series}]
+    """
+    fig, axes = plt.subplots(1, 2, figsize=(9, 3), gridspec_kw={'width_ratios': [2, 3]} )
+    for i, ax in enumerate(axes):
+        plt.sca(ax)
+        data = original[i]
+
+        # compute maxima of all series
+        x_max = 7
+        y_max = 1.05 * max(max(y for x_, y in zip(x, row) if x_ < x_max)
+                           for row in data.values())
+
+        for j, (k, v) in enumerate(data.items()):
+            plt.plot(x, v, label=k.title(), alpha=0.3, color=COLORS[j], lw=3)
+            if k in prediction[i]:
+                plt.plot(x_linear, prediction[i][k], label=f'{k.title()} (fit)',
+                         color=COLORS[j], lw=1)
+                # plt.fill_between(x, lb, ub, alpha=0.1, color=COLORS[j])
+
+            plt.xlim(1, x_max)
+            plt.ylim(0, y_max)
+            plot.grid()
+            plot.locator()
+
+    plt.legend(bbox_to_anchor=(1, 1), loc="upper left")
 
 
 if __name__ == '__main__':
@@ -81,8 +133,8 @@ if __name__ == '__main__':
     x = random_linspace(0, 15, n)
     x[0] = 0
     bias = 5.12
-    linear = 3.14 * x + bias
-    quadratic = 0.81 * x ** 2 + bias
+    linear = 3.14 * x + 60
+    quadratic = 0.81 * x ** 2 + 21
     exponential = 0.91 * 2 ** x + bias
 
     # generate random data
@@ -106,32 +158,18 @@ if __name__ == '__main__':
         for v in dataset.values():
             np.clip(v, 1e-9, None, out=v)
 
-    # fit linear models
-    prediction_1 = fit_linear_models_with_normalization(dataset_1, x, x_out=x_linear)
-    prediction_2 = fit_linear_models_with_normalization(dataset_2, x, x_out=x_linear)
+    # linear regression
+    plot_prediction([dataset_1, dataset_2], [
+        fit_linear_models_with_normalization(dataset_1, x, x_out=x_linear),
+        fit_linear_models_with_normalization(dataset_2, x, x_out=x_linear)])
 
-    # plot
-    fig, axes = plt.subplots(1, 2, figsize=(9, 3))
-    for i, ax in enumerate(axes):
-        plt.sca(ax)
-        data = [dataset_1, dataset_2][i]
-        fitted = [prediction_1, prediction_2][i]
-
-        # compute maxima of all series
-        x_max = 7
-        y_max = 1.05 * max(max(y for x_, y in zip(x, row) if x_ < x_max)
-                           for row in data.values())
-
-        for j, (k, v) in enumerate(data.items()):
-            plt.plot(x, v, label=k.title(), alpha=0.3, color=COLORS[j], lw=3)
-            if k in fitted:
-                plt.plot(x_linear, fitted[k], label=f'{k.title()} (fit)',
-                         color=COLORS[j], lw=1)
-                # plt.fill_between(x, lb, ub, alpha=0.1, color=COLORS[j])
-
-            plt.xlim(1, x_max)
-            plt.ylim(0, y_max)
-            plot.grid()
-            plot.locator()
-    plt.legend(bbox_to_anchor=(1, 1), loc="upper left")
+    plt.title('Linear Regression')
     plot.save_fig('img/linear_fits')
+
+    # polynomial regression
+    plot_prediction([dataset_1, dataset_2], [
+        polynomial_fit(dataset_1, x, x_out=x_linear),
+        polynomial_fit(dataset_2, x, x_out=x_linear)])
+
+    plt.title('Polynomial Regression')
+    plot.save_fig('img/polynomial_fits')

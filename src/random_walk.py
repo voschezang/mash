@@ -128,6 +128,27 @@ def plot_lines_with_ranges(data={}, figsize=(9, 5), markup_func=lambda ax: None,
     return fig
 
 
+def smooth_noise(n=100, width=30, noise=None):
+    """ Smoothen a noise signal by applying a moving average.
+    """
+    width = np.round(width)
+    if noise is None:
+        noise = np.random.random(n + width)
+    else:
+        n = noise.shape[0]
+    assert width < n, f'incompatible width ({width}) for n: {n}'
+    convolution = np.convolve(noise, np.ones(width), 'valid') / width
+    return convolution[:n]
+
+
+def random_linspace(start, stop, num):
+    """ Returns a ascending uniform-random series between `start` and `stop`.
+    """
+    x = np.random.uniform(start, stop, num)
+    x.sort()
+    return x
+
+
 if __name__ == '__main__':
     plt.style.use('./sci.mplstyle')
     np.random.seed(113)
