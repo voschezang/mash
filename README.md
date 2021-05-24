@@ -19,7 +19,7 @@ Below are examples of various models, ranging from simple linear models with ana
 <img src="img/linear_fits.png" style="max-width: 10%" alt="Plot of Linear fits">
 
 2. Polynomial regression. A linear model (w.r.t. the parameters) that uses non-linear basis functions.
-Note that the fit for noisy exponential signal on the right-most plot is poor.
+Note that the fit for the exponential signal on the right-most plot is poor.
 
 <img src="img/polynomial_fits.png" style="max-width: 10%" alt="Plot of polynomial regression fits">
 
