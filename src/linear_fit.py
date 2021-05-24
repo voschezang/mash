@@ -1,19 +1,17 @@
 import numpy as np
 import numpy.linalg
 import matplotlib.pyplot as plt
-import matplotlib.ticker as tck
 import scipy.stats
-import scipy.linalg
-from  sklearn.linear_model import BayesianRidge
 from sklearn.metrics import mean_squared_error as mse
-from scipy.fft import fft, fftfreq
 
 import plot
 from plot import COLORS
-from random_walk import random_walk, random_linspace, smooth_noise
+from random_walk import random_linspace, smooth_noise, noise
 
 
 def fit_transform_dataset(data, x_in, x_out, fit_transform_func, *args, **kwds) -> dict:
+    """ Helper function to fit multiple data series.
+    """
     fitted = {}
     for k, v in data.items():
         y = v.copy()
@@ -23,6 +21,7 @@ def fit_transform_dataset(data, x_in, x_out, fit_transform_func, *args, **kwds) 
 
     # discard parameter values as we're just interested in a pretty graph
     return fitted
+
 
 def fit_linear_model_with_normalization(x, y, x_out=None, key='') -> dict:
     """ Linear regression after normalization the input.
@@ -105,22 +104,6 @@ def fit_polynomial(x, y, x_out=None, M=9, regularize=0, **kwds) -> dict:
     return prediction, significant
 
 
-def fit_bayesian(x, y, x_out=None, M=9, frequencies=[], **kwds) -> dict:
-    X = feature_matrix(x, M, frequencies)
-    # X = np.vander(x, M + 1)
-    model = BayesianRidge()
-    model.fit(X, y)
-    # prediction, std = model.predict(np.vander(x_out, M + 1), return_std=True)
-    prediction, std = model.predict(feature_matrix(x_out, M, frequencies), return_std=True)
-    return prediction, std
-
-def feature_matrix(x, degree=3, frequencies=[1,2,3]):
-    # TODO find frequencies using a fourier tranform
-    polynomial = np.vander(x, degree + 1)
-    harmonic = np.sin(np.outer(x, frequencies))
-    return np.hstack([polynomial, harmonic])
-
-
 def plot_prediction(original=[], prediction=[]):
     """
     Parameters
@@ -151,9 +134,6 @@ def plot_prediction(original=[], prediction=[]):
 
     plt.legend(bbox_to_anchor=(1, 1), loc="upper left")
 
-
-def noise(n, std): 
-    return random_walk(n, 1, mu=0, std=std)[:, 0]
 
 
 if __name__ == '__main__':
@@ -195,7 +175,7 @@ if __name__ == '__main__':
         fit_transform_dataset(dataset_1, x, x_linear, fit_linear_model_with_normalization),
         fit_transform_dataset(dataset_2, x, x_linear, fit_linear_model_with_normalization)])
 
-    plt.title('Linear Regression')
+    plt.suptitle('Linear Regression')
     plot.save_fig('img/linear_fits')
 
     # polynomial regression (regularized)
@@ -203,41 +183,6 @@ if __name__ == '__main__':
         fit_transform_dataset(dataset_1, x, x_linear, fit_polynomial, regularize=.1),
         fit_transform_dataset(dataset_2, x, x_linear, fit_polynomial, regularize=.1)])
 
-    plt.title('Polynomial Regression')
+    plt.suptitle('Polynomial Regression')
     plot.save_fig('img/polynomial_fits')
-
-
-    # generate arbitrary data
-    def signal(x): 
-        harmonics = 0.05 * np.sin(x * 6.4) + 0.1 * np.sin(x * 2.234 + 1) + 0.2 * np.sin(x * 0.8)
-        polynomial = 0.0213 * x ** 2 - 0.2 * x + 2
-        noise = np.random.normal(0, scale=0.1, size=x.size)
-        return 0.2 * harmonics + polynomial + noise 
-
-    # bayesian regression
-    n = 50
-    x_random = 0.5 + np.hstack([np.random.gamma(2, size=n//2), 8 + np.random.gamma(3, size=n//2)])
-    x_random.sort()
-    x_max = x_random.max() * 1.03 + 0.5
-    x_linear = np.linspace(0, x_max, 1000)
-    y = signal(x_random)
-
-    fig = plt.figure(figsize=(9,3))
-    ax = plt.gca()
-    plt.sca(ax)
-
-    mu, std = fit_bayesian(x_random, y, x_linear, M=9)
-
-    plt.plot(x_linear, mu, label=r'$\mu$', color='tab:orange')
-    plt.fill_between(x_linear, mu - std, mu + std, label=r'$\sigma$', alpha=0.2, color='tab:orange')
-
-    # plot original input over prediction
-    plt.scatter(x_random, y, label='Original signal', s=9, alpha=0.8, color='tab:blue')
-
-    plot.grid()
-    plot.locator()
-    plt.legend(bbox_to_anchor=(1, 1), loc="upper left")
-    plt.title('Bayesian Regression')
-    plt.tight_layout()
-    plot.save_fig('img/bayesian_fits')
 

@@ -141,6 +141,10 @@ def smooth_noise(n=100, width=30, noise=None):
     return convolution[:n]
 
 
+def noise(n, std): 
+    return random_walk(n, 1, mu=0, std=std)[:, 0]
+
+
 def random_linspace(start, stop, num):
     """ Returns a ascending uniform-random series between `start` and `stop`.
     """
