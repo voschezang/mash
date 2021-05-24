@@ -1,6 +1,8 @@
 # Template for Data Science
 
-This document contains examples of a number of models, ranging from simple linear models with analytical solutions to more complex models with numerical solutions..
+# Examples
+
+Below are examples of various models, ranging from simple linear models with analytical solutions to more complex models with numerical solutions.
 
 ## Random walk
 
@@ -32,13 +34,13 @@ Note that this model estimates both a mean and an uncertainty about that mean (i
 pip3 install -r requirements.txt
 ```
 
-# Test
+## Test
 Pytest will automatically find the relevant test modules.
 ```
 pytest
 ```
 
-# Run
+## Run
 ```
 python3 src/random_walk.py
 python3 src/linear_fit.py
