@@ -66,8 +66,9 @@ def fit_linear_model_with_normalization(x, y, x_out=None, key='') -> dict:
 
 def fit_polynomial(x, y, x_out=None, M=9, regularize=0, **kwds) -> dict:
     """ Polynomial regression.
-    Similar to Least-squares, using an analytical solution, but not really linear anymore.
-    The solution is the maximum-likelihood solution of an N-th order polynomial.
+    Similar to least-squares, using an analytical solution, but using non-linear (polynomial) basis functions.
+    The solution is the maximum-likelihood solution, obtained by equating the derivative of the log-likelihood to zero.
+    It assumes that datapoints are independent w.r.t. the model.
 
     Parameters
     ----------
@@ -165,10 +166,9 @@ if __name__ == '__main__':
     x_linear = np.linspace(0, 15, n)
     x = random_linspace(0, 15, n)
     x[0] = 0
-    bias = 5.12
-    linear = 3.14 * x + 60
-    quadratic = 0.81 * x ** 2 + 21
-    exponential = 0.91 * 2 ** x + bias
+    linear = 3.14 * x + 0.1
+    quadratic = 0.81 * x ** 2 + 20
+    exponential = 0.91 * 2 ** x + 50
 
     # generate random data
     alpha = 0.8
@@ -207,61 +207,37 @@ if __name__ == '__main__':
     plot.save_fig('img/polynomial_fits')
 
 
-
-    # generate data and apply fft to find frequencies
+    # generate arbitrary data
     def signal(x): 
-        return np.sin(x * 3.234) + np.sin(x * 0.8) + 1.213 * x ** 2 - x + 3 + np.random.normal(0, scale=0, size=x.size)
-
-    n = 100
-    x_max = 5
-
-    dx = 0.0124
-    n_sample_points = 10
-    x = np.arange(0, x_max, dx)
-    sample_indices = np.random.choice(np.arange(x.size), n_sample_points, replace=False)
-    padded_signal = np.zeros(x.size)
-    padded_signal[sample_indices] = signal(x[sample_indices])
-    z = fft(padded_signal)[:n//2]
-    print(n, z.size, x.size)
-    n_frequencies = 3
-    peaks = sorted( zip( np.abs(z), fftfreq(z.size, dx)), reverse=True )
-    frequencies = sorted([f for _, f in peaks if f >= 1e-6][:n_frequencies])
-    print(frequencies)
-
+        harmonics = 0.05 * np.sin(x * 6.4) + 0.1 * np.sin(x * 2.234 + 1) + 0.2 * np.sin(x * 0.8)
+        polynomial = 0.0213 * x ** 2 - 0.2 * x + 2
+        noise = np.random.normal(0, scale=0.1, size=x.size)
+        return 0.2 * harmonics + polynomial + noise 
 
     # bayesian regression
-    x_linear = np.linspace(0, x_max * 1.25, n)
-    x_random = random_linspace(0, x_max, n)
+    n = 50
+    x_random = 0.5 + np.hstack([np.random.gamma(2, size=n//2), 8 + np.random.gamma(3, size=n//2)])
+    x_random.sort()
+    x_max = x_random.max() * 1.03 + 0.5
+    x_linear = np.linspace(0, x_max, 1000)
     y = signal(x_random)
 
-    fig, axes = plt.subplots(1, 2, figsize=(9, 3))
-    for i, ax in enumerate(axes):
-        plt.sca(ax)
-        # y = [y1, y2][i]
+    fig = plt.figure(figsize=(9,3))
+    ax = plt.gca()
+    plt.sca(ax)
 
-        if i == 0:
-            mu, std = fit_bayesian(x_random, y, x_linear, M=9)
-        else:
-            mu, std = fit_bayesian(x_random, y, x_linear, M=5, frequencies=frequencies)
+    mu, std = fit_bayesian(x_random, y, x_linear, M=9)
 
-        plt.plot(x_linear, mu, label=r'$\mu$', color='tab:orange')
-        plt.fill_between(x_linear, mu - std, mu + std, label=r'$\sigma$', alpha=0.2, color='tab:orange')
+    plt.plot(x_linear, mu, label=r'$\mu$', color='tab:orange')
+    plt.fill_between(x_linear, mu - std, mu + std, label=r'$\sigma$', alpha=0.2, color='tab:orange')
 
-        # plot original input over prediction
-        plt.scatter(x_random, y, label='Original signal', s=12, alpha=0.9, color='tab:blue')
+    # plot original input over prediction
+    plt.scatter(x_random, y, label='Original signal', s=9, alpha=0.8, color='tab:blue')
 
-        if i == 1:
-            # plot fft sample points
-            plt.scatter(x[sample_indices], padded_signal[sample_indices], s=10, alpha=0.8, marker='x', color='0')
-            plt.vlines(x[sample_indices], 0, padded_signal[sample_indices], linestyles='-', alpha=0.1, color='0')
-
-        if i == 0:
-            plt.ylim(0, 50)
-
-        plot.grid()
-        plot.locator()
-
+    plot.grid()
+    plot.locator()
     plt.legend(bbox_to_anchor=(1, 1), loc="upper left")
-    plt.title('Bayesian Linear Regression')
+    plt.title('Bayesian Regression')
+    plt.tight_layout()
     plot.save_fig('img/bayesian_fits')
 

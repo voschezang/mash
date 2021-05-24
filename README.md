@@ -1,5 +1,7 @@
 # Template for Data Science
 
+This document contains examples of a number of models, ranging from simple linear models with analytical solutions to more complex models with numerical solutions..
+
 ## Random walk
 
 [src/random_walk.py](src/random_walk.py) generates datasets that behave like random walks.
