@@ -1,5 +1,7 @@
 # Template for Data Science
 
+This repository contains a number of computational models which can be used for data science.
+
 # Examples
 
 Below are examples of various models, ranging from simple linear models with analytical solutions to more complex models with numerical solutions.
