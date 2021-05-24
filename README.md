@@ -10,7 +10,7 @@ Below are examples of various models, ranging from simple linear models with ana
 
 <img src="img/random_walks.png" style="max-width: 10%" alt="Plot of Random Walks">
 
-## Linear fit
+## Linear Models
 
 [src/linear_fit.py](src/linear_fit.py) fits linear models. The simplicity of the models reduces overfitting, but this is not explicitly tested.
 
@@ -23,8 +23,14 @@ Note that the fit for noisy exponential signal on the right-most plot is poor.
 
 <img src="img/polynomial_fits.png" style="max-width: 10%" alt="Plot of polynomial regression fits">
 
-3. Bayesian ridge regression, with polynomial and sinoid basis functions.
-Note that this model estimates both a mean and an uncertainty about that mean (i.e. a standard deviation).
+## Semi-linear Models
+
+[src/semilinear_fit.py](src/semilinear_fit.py) fits various non-linear models.
+
+1. Bayesian ridge regression, with polynomial and sinoid basis functions.
+2. A Gaussian Process. 
+
+Note that these models estimate both a mean and a standard deviation, which can be used to define a confidence interval (C.I.).
 
 <img src="img/bayesian_fits.png" style="max-width: 10%" alt="Plot of bayesian regression fits">
 
