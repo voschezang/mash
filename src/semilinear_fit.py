@@ -66,13 +66,13 @@ if __name__ == '__main__':
     # generate arbitrary data
     def signal(x): 
         harmonics = 0.05 * np.sin(x * 6.4) + 0.3 * np.sin(x * 2.234 + 1) + 0.2 * np.sin(x * 0.8)
-        polynomial = 0.0193 * x ** 2 - 0.2 * x + 3
+        polynomial = 0.0193 * x ** 2 - 0.2 * x + 1
         # add peridoic noise 
-        noise = np.random.normal(0, scale=0.2, size=x.size) * np.sin(x * 1.47) * 0.5
+        noise = np.random.normal(0, scale=0.2, size=x.size) * np.sin(x * 1.47) * 0.25
         return 0.5 * harmonics + polynomial + noise 
 
     # bayesian regression
-    n = 50
+    n = 25
     offset = 0.3
     x_random = offset + np.hstack([np.random.gamma(2, size=n//2), 7 + np.random.gamma(3, size=n//2)])
     x_random.sort()
@@ -105,12 +105,15 @@ if __name__ == '__main__':
 
             plt.title('Gaussian Process')
 
+        factor = 1.645 # corresponding to C.I. of 90%
+        std *= factor
         plt.plot(x_linear, mu, label=r'$\mu$', color='tab:orange')
-        plt.fill_between(x_linear, mu - std, mu + std, label=r'$\sigma$', alpha=0.2, color='tab:orange')
+        plt.fill_between(x_linear, mu - std, mu + std, label='90% C.I.', alpha=0.2, color='tab:orange')
 
         # plot original input over prediction
         plt.scatter(x_random, y, label='Original signal', s=9, alpha=0.8, color='tab:blue')
 
+        plt.ylim(0, 2.3)
         plot.grid()
         plot.locator()
 
