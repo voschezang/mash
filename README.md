@@ -34,7 +34,10 @@ Note that the fit for the exponential signal on the right-most plot is poor.
 
 Note that these models estimate both a mean and a standard deviation, which can be used to define a confidence interval (C.I.).
 
-<img src="img/bayesian_fits.png" style="max-width: 10%" alt="Plot of bayesian regression fits">
+The accuracy is derived using relative mean absolute error.
+It is an overestimation because the test-data overlaps with the training-data.
+
+<img src="img/bayesian_fits.png" style="max-width: 10%" alt="Plot of Bayesian regression and Gaussian Processes">
 
 
 # Setup
