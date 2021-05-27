@@ -55,4 +55,5 @@ pytest
 ```
 python3 src/random_walk.py
 python3 src/linear_fit.py
+python3 src/semilinear_fit.py
 ```
