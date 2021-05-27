@@ -39,6 +39,10 @@ It is an overestimation because the test-data overlaps with the training-data.
 
 <img src="img/bayesian_fits.png" style="max-width: 10%" alt="Plot of Bayesian regression and Gaussian Processes">
 
+Sampling from the Gaussian Process produces a collection of possible futures.
+
+<img src="img/bayesian_fits_future.png" style="max-width: 10%" alt="Plot of Predicted Future Possibilities">
+
 
 # Setup
 ```

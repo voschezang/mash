@@ -125,14 +125,23 @@ if __name__ == '__main__':
         plot.grid()
         plot.locator()
 
+    # change label ordering in legend to: observed, predictions, CI
     handles, labels = ax.get_legend_handles_labels()
-    print(labels)
     first_handle = handles.pop(-1)
     first_label = labels.pop(-1)
-    print([first_label] + extra_labels + labels)
     plt.legend([first_handle] + extra_handles + handles,
                [first_label] + extra_labels + labels,
                bbox_to_anchor=(1, 1), loc="upper left")
+
     plt.tight_layout()
     plot.save_fig('img/bayesian_fits')
+
+    # plot possible futures by sampling from the gaussian process itself
+    plt.figure(figsize=(7,2))
+    plt.title('Possible Futures')
+    x = np.linspace(0, x_max * 2, 1000)
+    n_samples = 10
+    plt.plot(x, model.sample_y(x.reshape(-1,1), n_samples), alpha=0.2, label='sampled')
+    plt.tight_layout()
+    plot.save_fig('img/bayesian_fits_future')
 
