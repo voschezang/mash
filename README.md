@@ -45,14 +45,11 @@ Sampling from the Gaussian Process produces a collection of possible futures.
 
 
 # Setup
-```
-pip3 install -r requirements.txt
-```
 
-## Test
-Pytest will automatically find the relevant test modules.
+Using a `Makefile` for convenience.
 ```
-pytest
+make install
+make test
 ```
 
 ## Run
