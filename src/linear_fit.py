@@ -14,7 +14,6 @@ def fit_transform_dataset(data, x_in, x_out, fit_transform_func, *args, **kwds) 
     """
     fitted = {}
     for k, v in data.items():
-        y = v.copy()
         prediction, significant = fit_transform_func(x_in, v.copy(), x_out, key=k, *args, **kwds)
         if significant:
             fitted[k] = prediction

@@ -8,7 +8,6 @@ from sklearn.metrics import mean_squared_error as mse
 
 import plot
 from plot import COLORS
-from random_walk import random_linspace, smooth_noise, noise
 
 
 def fit_bayesian(x, y, x_out=None, M=9, frequencies=[], **kwds) -> dict:

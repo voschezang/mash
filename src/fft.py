@@ -1,16 +1,9 @@
 import numpy as np
-import numpy.linalg
 import matplotlib.pyplot as plt
-import matplotlib.ticker as tck
-import scipy.stats
-import scipy.linalg
-from  sklearn.linear_model import BayesianRidge
-from sklearn.metrics import mean_squared_error as mse
 from scipy.fft import fft, fftfreq, ifft
 
 import plot
 from plot import COLORS
-from random_walk import random_walk, random_linspace, smooth_noise
 
 TWO_PI = 2 * np.pi
 
