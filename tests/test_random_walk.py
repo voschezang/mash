@@ -10,9 +10,9 @@ absolute_tolerance = 1e-8
 def test_random_walk():
     np.random.seed(123)
     actual = random_walk(5, 2, mu=0, std=0.01)
-    desired = np.array([[0.,  0.],
+    desired = np.array([[0., 0.],
                         [0.00282978, -0.01506295],
-                        [-0.00295622,  0.00145142],
+                        [-0.00295622, 0.00145142],
                         [-0.02722301, -0.00283771],
                         [-0.01456365, -0.01150511]])
     assert_func(actual, desired, rtol=relative_tolerance,
@@ -22,9 +22,9 @@ def test_random_walk():
 def test_random_walk_default_args():
     np.random.seed(123)
     actual = random_walk(5, 2)
-    desired = np.array([[0.,  0.],
+    desired = np.array([[0., 0.],
                         [0.00282978, -0.01506295],
-                        [-0.00295622,  0.00145142],
+                        [-0.00295622, 0.00145142],
                         [-0.02722301, -0.00283771],
                         [-0.01456365, -0.01150511]])
     assert_func(actual, desired, rtol=relative_tolerance,

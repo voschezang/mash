@@ -3,15 +3,14 @@ import matplotlib.pyplot as plt
 from scipy.fft import fft, fftfreq, ifft
 
 import plot
-from plot import COLORS
 
 TWO_PI = 2 * np.pi
 
 
 if __name__ == '__main__':
     # generate arbitrary data and apply fft to find frequencies
-    def signal(x): 
-        return np.sin(x * 2.234) 
+    def signal(x):
+        return np.sin(x * 2.234)
 
     x_max = 20
     dx = 0.123
@@ -23,15 +22,19 @@ if __name__ == '__main__':
     # full fft
     z = fft(y)
     frequencies = fftfreq(z.size, dx)
-    full_reconstruction = np.mean([np.abs(z[i]) * np.cos(x * TWO_PI * frequencies[i] + np.angle(z[i]) )
-        for i in range((z.size // 2)) ], axis=0)
+    full_reconstruction = np.mean([np.abs(z[i]) * np.cos(x * TWO_PI * frequencies[i] + np.angle(z[i]))
+                                   for i in range((z.size // 2))], axis=0)
     full_reconstruction = ifft(z).real
 
-    # fft with aperiodic sampling 
+    # fft with aperiodic sampling
     n_sample_points = 50
     n_frequencies = n // 2
 
-    sample_indices = np.random.choice(np.arange(x.size), n_sample_points, replace=False)
+    sample_indices = np.random.choice(
+        np.arange(
+            x.size),
+        n_sample_points,
+        replace=False)
     padded_signal = np.zeros(x.size)
     padded_signal[sample_indices] = y[sample_indices]
 
@@ -51,12 +54,16 @@ if __name__ == '__main__':
     if n_frequencies < 5:
         print('top frequencies', frequencies[indices])
 
+    plt.plot(x, y, label='Original', alpha=0.2, lw=5, color='0')
+    plt.plot(x, full_reconstruction, '--', label='Full Reconstruction')
+    plt.plot(x, reconstruction, '--', label='Reconstruction')
+    plt.scatter(
+        x[sample_indices],
+        padded_signal[sample_indices],
+        s=12,
+        alpha=0.9,
+        color='0')
 
-    plt.plot(x, y,  label='Original', alpha=0.2, lw=5, color='0')
-    plt.plot(x, full_reconstruction,'--', label='Full Reconstruction')
-    plt.plot(x, reconstruction,'--', label='Reconstruction')
-    plt.scatter(x[sample_indices], padded_signal[sample_indices], s=12, alpha=0.9, color='0')
- 
     plot.grid()
     plot.locator()
     plt.xlim(0, 6)

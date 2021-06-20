@@ -4,7 +4,8 @@ import matplotlib.pyplot as plt
 import plot
 
 
-def random_walk(n_timesteps=100, observations_per_timestep=10, eta=None, mu=0, std=0.01):
+def random_walk(n_timesteps=100, observations_per_timestep=10,
+                eta=None, mu=0, std=0.01):
     r""" Generate multiple uncorrelated random walks.
     ```X_t = X_{t-1} + \eta_t```
     where `X_0 = \mu`
@@ -33,7 +34,8 @@ def random_walk(n_timesteps=100, observations_per_timestep=10, eta=None, mu=0, s
     return X
 
 
-def geometric_random_walk(n_timesteps=100, observations_per_timestep=10, eta=None, mu=1, alpha=0.01):
+def geometric_random_walk(
+        n_timesteps=100, observations_per_timestep=10, eta=None, mu=1, alpha=0.01):
     r""" Generate multiple uncorrelated, geometric random walks.
     ```X_t = X_{t-1} + \eta_t```
     where `X_0 = \mu` and `eta_t \sim \mathcal{U}(\pm \alpha X_{t-1})`
@@ -106,7 +108,8 @@ def plot_line_with_ranges(X=[], title='',
         ax.legend()
 
 
-def plot_lines_with_ranges(data={}, figsize=(9, 5), markup_func=lambda ax: None, **kwargs):
+def plot_lines_with_ranges(data={}, figsize=(
+        9, 5), markup_func=lambda ax: None, **kwargs):
     """ Plotting template for multiple data-series
 
     Parameters
@@ -141,15 +144,14 @@ def smooth_noise(n=100, width=30, noise=None):
     return convolution[:n]
 
 
-def noise(n, std): 
+def noise(n, std):
     return random_walk(n, 1, mu=0, std=std)[:, 0]
 
 
 def random_linspace(start, stop, num):
     """ Returns a ascending uniform-random series between `start` and `stop`.
     """
-    x = np.random.uniform(start, stop, num)
-    x.sort()
+    x = sorted(np.random.uniform(start, stop, num))
     return x
 
 

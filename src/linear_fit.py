@@ -9,12 +9,14 @@ from plot import COLORS
 from random_walk import random_linspace, smooth_noise, noise
 
 
-def fit_transform_dataset(data, x_in, x_out, fit_transform_func, *args, **kwds) -> dict:
+def fit_transform_dataset(
+        data, x_in, x_out, fit_transform_func, *args, **kwds) -> dict:
     """ Helper function to fit multiple data series.
     """
     fitted = {}
     for k, v in data.items():
-        prediction, significant = fit_transform_func(x_in, v.copy(), x_out, key=k, *args, **kwds)
+        prediction, significant = fit_transform_func(
+            x_in, v.copy(), x_out, key=k, *args, **kwds)
         if significant:
             fitted[k] = prediction
 
@@ -28,12 +30,12 @@ def fit_linear_model_with_normalization(x, y, x_out=None, key='') -> dict:
     - linear: `y = a x + b`
     - quadratic: `y = a x^2 + b`
     - exponential `y = a 2^x + b`
-    
-    A positive codomain is assumed. 
+
+    A positive codomain is assumed.
 
     Parameters
     ----------
-        x,y : arrays containing input data 
+        x,y : arrays containing input data
         x_out : (optional) array containing the x-data for the prediction
             Defaults to x.
         key : string used to select the normalization function
@@ -70,7 +72,7 @@ def fit_polynomial(x, y, x_out=None, M=9, regularize=0, **kwds) -> dict:
 
     Parameters
     ----------
-        x,y : arrays containing input data 
+        x,y : arrays containing input data
         x_out : (optional) array containing the x-data for the prediction
             Defaults to x.
         M : order or degree of the polynomial
@@ -89,14 +91,26 @@ def fit_polynomial(x, y, x_out=None, M=9, regularize=0, **kwds) -> dict:
 
     # fit
     # non-regularized solution: ```(Phi^T Phi)^{-1} Phi^T \vec{y}```
-    # regularized solution: ```(aI + Phi^T Phi)^{-1} Phi^T \vec{y}``` where a is the regularization factor
-    weights = np.matmul(np.linalg.inv(regularize * np.eye(M+1) + np.matmul(Phi.T, Phi)), np.matmul(Phi.T, y))
+    # regularized solution: ```(aI + Phi^T Phi)^{-1} Phi^T \vec{y}``` where a
+    # is the regularization factor
+    weights = np.matmul(
+        np.linalg.inv(
+            regularize *
+            np.eye(
+                M +
+                1) +
+            np.matmul(
+                Phi.T,
+                Phi)),
+        np.matmul(
+            Phi.T,
+            y))
 
     # validate model on original input
     y_prediction = np.matmul(np.vander(x, M + 1), weights)
     # compute relative root mean squared error
     rel_rmse = np.sqrt(mse(y, y_prediction)) / y.mean()
-    significant = rel_rmse <  0.1
+    significant = rel_rmse < 0.1
 
     # make fine-grained prediction
     prediction = np.matmul(np.vander(x_out, M + 1), weights)
@@ -109,7 +123,11 @@ def plot_prediction(original=[], prediction=[]):
     ----------
         original, prediction : list of dicts, with format:  [{name, series}]
     """
-    fig, axes = plt.subplots(1, 2, figsize=(9, 3), gridspec_kw={'width_ratios': [2, 3]} )
+    fig, axes = plt.subplots(
+        1, 2, figsize=(
+            9, 3), gridspec_kw={
+            'width_ratios': [
+                2, 3]})
     for i, ax in enumerate(axes):
         plt.sca(ax)
         data = original[i]
@@ -132,7 +150,6 @@ def plot_prediction(original=[], prediction=[]):
             plot.locator()
 
     plt.legend(bbox_to_anchor=(1, 1), loc="upper left")
-
 
 
 if __name__ == '__main__':
@@ -171,7 +188,11 @@ if __name__ == '__main__':
 
     # linear regression
     plot_prediction([dataset_1, dataset_2], [
-        fit_transform_dataset(dataset_1, x, x_linear, fit_linear_model_with_normalization),
+        fit_transform_dataset(
+            dataset_1,
+            x,
+            x_linear,
+            fit_linear_model_with_normalization),
         fit_transform_dataset(dataset_2, x, x_linear, fit_linear_model_with_normalization)])
 
     plt.suptitle('Linear Regression')
@@ -179,9 +200,13 @@ if __name__ == '__main__':
 
     # polynomial regression (regularized)
     plot_prediction([dataset_1, dataset_2], [
-        fit_transform_dataset(dataset_1, x, x_linear, fit_polynomial, regularize=.1),
+        fit_transform_dataset(
+            dataset_1,
+            x,
+            x_linear,
+            fit_polynomial,
+            regularize=.1),
         fit_transform_dataset(dataset_2, x, x_linear, fit_polynomial, regularize=.1)])
 
     plt.suptitle('Polynomial Regression')
     plot.save_fig('img/polynomial_fits')
-

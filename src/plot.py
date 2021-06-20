@@ -7,7 +7,7 @@ HATCHES = ('-', '+', 'x', '\\', '*', 'o', 'O', '.')
 dot1, dot2, dot3 = (1, 1), (1, 2), (1, 3)
 dash1, dash2, dash3 = (2, 1), (3, 1), (4, 1)
 LINESTYLES = ['-', '--', '-.', ':',
-              (0,  dot1 + dot1 + dash3), (0, dash3 + dash2 + dash1 + dot1),
+              (0, dot1 + dot1 + dash3), (0, dash3 + dash2 + dash1 + dot1),
               (0, dot1 + dot3),
               (0, dot1 + dot3),
               '-', '--', '-.', ':']
