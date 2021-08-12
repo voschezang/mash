@@ -10,3 +10,18 @@ format:
 setup:
 	pip3 install -r requirements.txt
 
+docs-init:
+	mkdir -p docs
+	cd docs && yes y | make sphinx-quickstart
+	cd docs && make html
+	cd docs && sphinx-apidoc -o source ../src
+
+docs-generate:
+	cd docs && make html
+	make docs-show
+
+docs-show:
+	open docs/build/html/index.html
+
+pydocs:
+	cd src && pydoc -b
