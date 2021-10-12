@@ -2,7 +2,7 @@ test:
 	# print difference as a warning
 	autopep8 -r --diff .
 	flake8 --ignore=E241,E501,W504
-	pytest
+	pytest -n 2
 
 format:
 	autopep8 -r -a -a -a --in-place .
