@@ -34,14 +34,12 @@ async def some_custom_func(client: ClientSession, *args, url=''):
 ### Library Functions
 ################################################################################
 
-def main(func, batches, n_threads=2, *args, **kwds):
+def main(func, N, M, n_threads=2, *args, **kwds):
     """Extension of `parallel` with performance metrics
     """
     t1 = time.perf_counter_ns()
 
-    results = parallel(func, batches, n_threads, *args, **kwds)
-    print(results)
-    results = list(results)
+    results = parallel(func, N, M, *args, **kwds)
 
     t2 = time.perf_counter_ns()
     dt = (t2 - t1) * 10**-9
@@ -49,8 +47,8 @@ def main(func, batches, n_threads=2, *args, **kwds):
     return results, dt
 
 
-def parallel(func, batches, n_threads=2, *args, **kwds):
-    """Executes func(*) for every batch.
+def parallel(func, N, M, n_threads=2, *args, **kwds):
+    """Executes func(i) N x M times.
     It is assumed that all function invocations are independent.
 
     Parameters
@@ -58,11 +56,12 @@ def parallel(func, batches, n_threads=2, *args, **kwds):
         func : async funcion(client: aiohttp.ClientSession, *) -> Result
         batches : iterable of iterables
     """
-    def partial(batches):
-        return asynchronous(func, batches, *args, **kwds)
+    def partial(n):
+        inputs = range(n * N, n * N + M)
+        return asynchronous(func, inputs, *args, **kwds)
 
     with ThreadPoolExecutor(max_workers=n_threads) as executor:
-        yield from executor.map(partial, batches)
+        yield from executor.map(partial, range(N))
 
 
 def asynchronous(func, inputs, concurrency=4, *args, **kwds):
@@ -115,42 +114,37 @@ def concat(args=[]):
     return sum(args, [])
 
 
-def batch_sizes(major: int, minor: int):
+def batch_sizes(major: int, minor: int, N: int):
     batch_size = major * minor
-    n_batches = max(n // batch_size, 1)
+    n_major_batches = max(N // batch_size, 1)
 
-    if batch_size > n:
+    if batch_size > N:
         # decrease minor batch size to avoid memory limits
-        major, minor = n, 1
+        major, minor = N, 1
 
-    return n_batches, major, minor
+    return n_major_batches, major, minor
 
 if __name__ == '__main__':
     # warning, this can cause high load
     url = 'http://localhost:8888/'
-    n = 10000
+    n = 100
+    async_concurrency = 2
+    n_threads = multiprocessing.cpu_count() * 2
 
-    major_batch_size = 4 # per thread
-    minor_batch_size = 64 # per async Task
+    batch_size = 2 # per thread
+    n_batches = max(n // batch_size, 1)
+    n = n_batches * batch_size
+    print(f'N: {n_batches} x {batch_size} = {n_batches * batch_size}',
+            f'n_threads: {n_threads}, async concurrency: {async_concurrency}')
 
-    n_batches, major_batch_size, minor_batch_size = batch_sizes(major_batch_size, minor_batch_size)
-    n_major_batches = max(n_batches // minor_batch_size, 1)
-    batch_size = major_batch_size * minor_batch_size
-
-    n_threads = min(multiprocessing.cpu_count() * 2, n)
-    print(f'N: {n_batches * batch_size}, n_batches: {n_batches},',
-            f' batch_size: {major_batch_size} x {minor_batch_size} = {n_batches},',
-            f'n_threads: {n_threads}')
 
     # try non-threaded execution
     tasks = range(2)
     results = asynchronous(some_custom_func, tasks, concurrency=4, url=url)
     print('async', results)
 
-    # a batch is a sequence of tasks
-    batches = [range(major_batch_size)] * n_major_batches
-
-    results, dt = main(some_custom_func, batches, n_threads=n_threads, url=url)
+    results, dt = main(some_custom_func, N=n_batches, M=batch_size,
+            n_threads=n_threads, concurrency=async_concurrency, url=url)
 
     # statistics
     statusses, times = zip(*concat(results))
@@ -159,4 +153,5 @@ if __name__ == '__main__':
     tps = batch_size * n_batches / dt
 
     print(f'Runtime: {dt:.6f} seconds', file=sys.stderr)
+    assert len(statusses) == batch_size * n_batches, (len(statusses), batch_size * n_batches)
     print(f'status: {status}, mean runtime: {mean_time:0.4f} s, number of requests: {batch_size * n_batches}, TPS: {tps:.2f}')
