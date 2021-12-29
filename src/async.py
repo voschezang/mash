@@ -24,6 +24,7 @@ async def some_custom_func(client: ClientSession, *args, url=''):
     async with client.get(url) as response:
         async with response:
 
+            # block until completion
             response.status == 200
 
             t2 = time.perf_counter_ns()
@@ -40,6 +41,8 @@ def main(func, N, M, n_threads=2, *args, **kwds):
     t1 = time.perf_counter_ns()
 
     results = parallel(func, N, M, *args, **kwds)
+    # force evaluation
+    results = list(results)
 
     t2 = time.perf_counter_ns()
     dt = (t2 - t1) * 10**-9
@@ -101,13 +104,21 @@ async def _worker(func, queue: asyncio.Queue, *args, **kwds):
         while True:
             try:
                 task = await queue.get()
-                #result = asyncio.ensure_future(func(session, task, *args, **kwds))
                 result = await func(session, task, *args, **kwds)
+                #result = await try_with_default(None, func, session, task, *args, **kwds)
                 results.append(result)
                 queue.task_done()
 
             except asyncio.CancelledError as error:
                 return results
+
+
+async def try_with_default(default, f, *args, **kwds):
+    try:
+        return await f(*args, **kwds)
+    except Exception:
+        # e.g. aiohttp.client_exceptions.ConnectorError, ClientError
+        return default
 
 
 def concat(args=[]):
