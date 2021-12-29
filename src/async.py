@@ -19,8 +19,9 @@ async def simple_custom_func(client: ClientSession, *args, url=''):
 
 
 async def some_custom_func(client: ClientSession, *args, url=''):
+    timeout = aiohttp.ClientTimeout(total=10)
     t1 = time.perf_counter_ns()
-    async with client.get(url) as response:
+    async with client.get(url, timeout=timeout) as response:
         async with response:
 
             # block until completion
@@ -109,6 +110,7 @@ async def _worker(func, queue: asyncio.Queue, *args, **kwds):
             except Exception as e:
                 # e.g. aiohttp.client_exceptions.ClientConnectorError, ConnectorError
                 # note that this does not include asyncio.CancelledError and asyncio.CancelledError
+                print(e)
                 queue.task_done()
             except asyncio.CancelledError as error:
                 return results
