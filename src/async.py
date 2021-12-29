@@ -7,7 +7,6 @@ import asyncio
 import collections
 import multiprocessing
 import numpy as np
-import sys
 import time
 
 ################################################################################
@@ -83,7 +82,6 @@ def asynchronous(func, inputs, concurrency=4, *args, **kwds):
 
 async def _wrapper(func, inputs, concurrency=2, *args, **kwds):
     queue = asyncio.Queue()
-    #tasks = []
     for input_per_function in inputs:
         queue.put_nowait(input_per_function)
 
@@ -105,20 +103,15 @@ async def _worker(func, queue: asyncio.Queue, *args, **kwds):
             try:
                 task = await queue.get()
                 result = await func(session, task, *args, **kwds)
-                #result = await try_with_default(None, func, session, task, *args, **kwds)
                 results.append(result)
                 queue.task_done()
 
+            except Exception as e:
+                # e.g. aiohttp.client_exceptions.ClientConnectorError, ConnectorError
+                # note that this does not include asyncio.CancelledError and asyncio.CancelledError
+                queue.task_done()
             except asyncio.CancelledError as error:
                 return results
-
-
-async def try_with_default(default, f, *args, **kwds):
-    try:
-        return await f(*args, **kwds)
-    except Exception:
-        # e.g. aiohttp.client_exceptions.ConnectorError, ClientError
-        return default
 
 
 def concat(args=[]):
@@ -138,8 +131,8 @@ def batch_sizes(major: int, minor: int, N: int):
 if __name__ == '__main__':
     # warning, this can cause high load
     url = 'http://localhost:8888/'
-    n = 100
-    async_concurrency = 2
+    n = 1000
+    async_concurrency = 16
     n_threads = multiprocessing.cpu_count() * 2
 
     batch_size = 2 # per thread
@@ -160,9 +153,13 @@ if __name__ == '__main__':
     # statistics
     statusses, times = zip(*concat(results))
     status = collections.Counter(statusses)
-    mean_time = np.mean(times)
+    mu = np.mean(times)
+    rel_std = np.std(times) / mu * 100
+    mean_dt_per_thread = np.sum(times) / n_threads
+
+    print(f'Runtime: {dt:.6f} seconds')
+
     tps = batch_size * n_batches / dt
 
-    print(f'Runtime: {dt:.6f} seconds', file=sys.stderr)
     assert len(statusses) == batch_size * n_batches, (len(statusses), batch_size * n_batches)
-    print(f'status: {status}, mean runtime: {mean_time:0.4f} s, number of requests: {batch_size * n_batches}, TPS: {tps:.2f}')
+    print(f'status: {status}, mean runtime: {mu:0.4f} s ± {rel_std:.2f} %, number of requests: {batch_size * n_batches}, TPS: {tps:.2f}')
