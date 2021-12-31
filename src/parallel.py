@@ -7,7 +7,10 @@ import asyncio
 import collections
 import multiprocessing
 import numpy as np
+import sys
+import threading
 import time
+import traceback
 
 ################################################################################
 ### Use-cases
@@ -35,7 +38,58 @@ async def some_custom_func(client: ClientSession, *args, url=''):
 ### Library Functions
 ################################################################################
 
-def main(func, N, M, n_threads=2, *args, **kwds):
+def run(func, N, M, n_threads=2, *args, **kwds):
+    refresh_interval = 0.2 # sec
+    refresh_age = 0
+
+    generator = parallel(some_custom_func, N, M,
+            n_threads=n_threads, *args, **kwds)
+
+    status = collections.Counter()
+    times = []
+
+    t1 = time.perf_counter_ns()
+    dt = 0
+    # use try-except to gracefully handle thread shutdown
+    try:
+        for results in generator:
+            # update data
+            if results:
+                new_statusses, new_times = zip(*results)
+                status.update(new_statusses)
+                times.extend(new_times)
+
+                t2 = time.perf_counter_ns()
+                dt = (t2 - t1) * 10**-9
+
+                # show statistics
+                if dt - refresh_age > refresh_interval:
+                    refresh_age = 0
+                    show_status(status, times, dt, end='\r')
+
+        if times:
+            show_status(status, times, dt)
+
+    except Exception as e:
+        print(e)
+        traceback.print_exc()
+        return False
+
+    return True
+
+
+def show_status(status, times, start_time, **kwds):
+    dt = (time.perf_counter_ns() - start_time) * 10**-9
+    mu = np.mean(times)
+    rel_std = np.std(times) / mu * 100
+    N = len(times)
+    tps = N / dt
+
+    out = f'> N: {N}, \t{status}, \tE[t]: {mu:0.4f} s ± {rel_std:.2f} % \tTPS: {tps:.2f}'
+    print(out, **kwds)
+
+
+def parallel_with_time(func, N, M, n_threads=2, *args, **kwds):
     """Extension of `parallel` with performance metrics
     """
     t1 = time.perf_counter_ns()
@@ -79,9 +133,10 @@ def asynchronous(func, inputs, concurrency=4, *args, **kwds):
     # reference: https://docs.aiohttp.org/en/stable/client_reference.html
     # create new event loop for thread safety
     loop = asyncio.new_event_loop()
-    return loop.run_until_complete(_wrapper(func, inputs, concurrency, *args, **kwds))
+    return loop.run_until_complete(_wrapper(func, inputs, concurrency, *args, loop=loop, **kwds))
 
-async def _wrapper(func, inputs, concurrency=2, *args, **kwds):
+
+async def _wrapper(func, inputs, concurrency=2, *args, loop=None, **kwds):
     queue = asyncio.Queue()
     for input_per_function in inputs:
         queue.put_nowait(input_per_function)
@@ -102,18 +157,42 @@ async def _worker(func, queue: asyncio.Queue, *args, **kwds):
     async with ClientSession() as session:
         while True:
             try:
-                task = await queue.get()
-                result = await func(session, task, *args, **kwds)
-                results.append(result)
-                queue.task_done()
+                await _do_task(func, queue, session, results, *args, **kwds)
+                if 0:
+                    task = await queue.get()
 
-            except Exception as e:
-                # e.g. aiohttp.client_exceptions.ClientConnectorError, ConnectorError
-                # note that this does not include asyncio.CancelledError and asyncio.CancelledError
-                print(e)
-                queue.task_done()
+                    try:
+                        result = await func(session, task, *args, **kwds)
+                        results.append(result)
+
+
+                    except Exception as e:
+                        # e.g. aiohttp.client_exceptions.ClientConnectorError, ConnectorError
+                        # note that this does not include asyncio.CancelledError and asyncio.CancelledError
+                        print(f'{func}(..) failed:', type(e), e)
+
+                    queue.task_done()
+
             except asyncio.CancelledError as error:
                 return results
+
+
+async def _do_task(func, queue: asyncio.Queue, session, results, *args, log_first_error=True, **kwds):
+    task = await queue.get()
+
+    try:
+        result = await func(session, task, *args, **kwds)
+        results.append(result)
+
+    except Exception as e:
+        # e.g. aiohttp.client_exceptions.ClientConnectorError, ConnectorError
+        # note that this does not include asyncio.CancelledError and asyncio.CancelledError
+        if log_first_error:
+            print(f'{func}(..) failed:', type(e), e)
+            #print(f'{func}(..) failed:', type(e), e, file=sys.stderr)
+            log_first_error = False
+
+    queue.task_done()
 
 
 def concat(args=[]):
@@ -130,10 +209,11 @@ def batch_sizes(major: int, minor: int, N: int):
 
     return n_major_batches, major, minor
 
-if __name__ == '__main__':
+
+def main():
     # warning, this can cause high load
     url = 'http://localhost:8888/'
-    n = 1000
+    n = 100
     async_concurrency = 16
     n_threads = multiprocessing.cpu_count() * 2
 
@@ -149,19 +229,9 @@ if __name__ == '__main__':
     results = asynchronous(some_custom_func, tasks, concurrency=4, url=url)
     print('async', results)
 
-    results, dt = main(some_custom_func, N=n_batches, M=batch_size,
+    run(some_custom_func, N=n_batches, M=batch_size,
             n_threads=n_threads, concurrency=async_concurrency, url=url)
 
-    # statistics
-    statusses, times = zip(*concat(results))
-    status = collections.Counter(statusses)
-    mu = np.mean(times)
-    rel_std = np.std(times) / mu * 100
-    mean_dt_per_thread = np.sum(times) / n_threads
-
-    print(f'Runtime: {dt:.6f} seconds')
-
-    tps = batch_size * n_batches / dt
-
-    assert len(statusses) == batch_size * n_batches, (len(statusses), batch_size * n_batches)
-    print(f'status: {status}, mean runtime: {mu:0.4f} s ± {rel_std:.2f} %, number of requests: {batch_size * n_batches}, TPS: {tps:.2f}')
+if __name__ == '__main__':
+    main()
+    print('done')
