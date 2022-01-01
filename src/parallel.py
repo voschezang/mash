@@ -16,15 +16,16 @@ import traceback
 ### Use-cases
 ################################################################################
 
-async def simple_custom_func(client: ClientSession, *args, url=''):
-    async with client.get(url) as response:
+async def simple_custom_func(session: ClientSession, *args, url=''):
+    async with session.get(url) as response:
         return response.status
 
 
-async def some_custom_func(client: ClientSession, *args, url=''):
+async def some_custom_func(session: ClientSession, *args, url=''):
+    raise Exception('break;')
     timeout = aiohttp.ClientTimeout(total=10)
     t1 = time.perf_counter_ns()
-    async with client.get(url, timeout=timeout) as response:
+    async with session.get(url, timeout=timeout) as response:
         async with response:
 
             # block until completion
@@ -52,7 +53,9 @@ def run(func, N, M, n_threads=2, *args, **kwds):
     dt = 0
     # use try-except to gracefully handle thread shutdown
     try:
-        for results in generator:
+        for results, errros in generator:
+            results = concat(results)
+            errros = concat(errros)
             # update data
             if results:
                 new_statusses, new_times = zip(*results)
@@ -89,21 +92,6 @@ def show_status(status, times, start_time, **kwds):
     print(out, **kwds)
 
 
-def parallel_with_time(func, N, M, n_threads=2, *args, **kwds):
-    """Extension of `parallel` with performance metrics
-    """
-    t1 = time.perf_counter_ns()
-
-    results = parallel(func, N, M, *args, **kwds)
-    # force evaluation
-    results = list(results)
-
-    t2 = time.perf_counter_ns()
-    dt = (t2 - t1) * 10**-9
-
-    return results, dt
-
-
 def parallel(func, N, M, n_threads=2, *args, **kwds):
     """Executes func(i) N x M times.
     It is assumed that all function invocations are independent.
@@ -120,6 +108,26 @@ def parallel(func, N, M, n_threads=2, *args, **kwds):
     with ThreadPoolExecutor(max_workers=n_threads) as executor:
         yield from executor.map(partial, range(N))
 
+
+def create_threads(n, *args, **kwds):
+    return (threading.Thread(*args, *kwds) for _ in range(n))
+
+#class CancellableThread(threading.Thread):
+#    def run(self, f, *args, **kwds):
+#        self.exception = None
+#        try:
+#           f(*args, **kwds)
+#        except Cancel as e:
+#            self.exception = e
+#
+#
+#    def join(self):
+#        threading.Thread.join(self)
+#        if self.execution:
+#            raise self.e
+
+class Cancel(Exception):
+    pass
 
 def asynchronous(func, inputs, concurrency=4, *args, **kwds):
     """Executes func(task) for every task in tasks.
@@ -138,6 +146,9 @@ def asynchronous(func, inputs, concurrency=4, *args, **kwds):
 
 async def _wrapper(func, inputs, concurrency=2, *args, loop=None, **kwds):
     queue = asyncio.Queue()
+    # TODO don't pre-emtively define work, but do it JIT, 
+    #   then keep thread/job alive instead re-creating it,
+    #   and then increase workload per thread
     for input_per_function in inputs:
         queue.put_nowait(input_per_function)
 
@@ -148,51 +159,38 @@ async def _wrapper(func, inputs, concurrency=2, *args, loop=None, **kwds):
     for task in tasks:
         task.cancel()
 
-    results = await asyncio.gather(*tasks, return_exceptions=True)
-    return concat(results)
+    results_per_task = await asyncio.gather(*tasks, return_exceptions=True)
+    #return concat(results_per_task)
+    results, errors = zip(*results_per_task)
+    return results, errors
 
 
 async def _worker(func, queue: asyncio.Queue, *args, **kwds):
     results = []
+    errors = []
     async with ClientSession() as session:
         while True:
             try:
-                await _do_task(func, queue, session, results, *args, **kwds)
-                if 0:
-                    task = await queue.get()
-
-                    try:
-                        result = await func(session, task, *args, **kwds)
-                        results.append(result)
-
-
-                    except Exception as e:
-                        # e.g. aiohttp.client_exceptions.ClientConnectorError, ConnectorError
-                        # note that this does not include asyncio.CancelledError and asyncio.CancelledError
-                        print(f'{func}(..) failed:', type(e), e)
-
-                    queue.task_done()
+                # TODO use get_nowait, and return on asyncio.QueueEmpty to safe resources
+                task = await queue.get()
+                await _do_task(func, task, session, results, errors=[], *args, **kwds)
+                queue.task_done()
+                # yield results, errors
 
             except asyncio.CancelledError as error:
-                return results
+                #break
+                return results, errors
 
 
-async def _do_task(func, queue: asyncio.Queue, session, results, *args, log_first_error=True, **kwds):
-    task = await queue.get()
-
+async def _do_task(func, inputs, session, results, errors, *args, log_first_error=True, **kwds):
     try:
-        result = await func(session, task, *args, **kwds)
+        result = await func(session, inputs, *args, **kwds)
         results.append(result)
 
     except Exception as e:
         # e.g. aiohttp.client_exceptions.ClientConnectorError, ConnectorError
         # note that this does not include asyncio.CancelledError and asyncio.CancelledError
-        if log_first_error:
-            print(f'{func}(..) failed:', type(e), e)
-            #print(f'{func}(..) failed:', type(e), e, file=sys.stderr)
-            log_first_error = False
-
-    queue.task_done()
+        errors.append(e)
 
 
 def concat(args=[]):
