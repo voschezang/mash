@@ -146,15 +146,11 @@ def asynchronous(func, inputs, concurrency=4, **kwds):
 
 async def _wrapper(func, inputs, concurrency=2, **kwds):
     queue = asyncio.Queue()
-    # TODO don't pre-emtively define work, but do it JIT, 
-    #   then keep thread/job alive instead re-creating it,
-    #   and then increase workload per thread
     for input_per_function in inputs:
         queue.put_nowait(input_per_function)
 
     tasks = [asyncio.create_task(worker(func, queue, **kwds))
             for _ in range(concurrency)]
-
 
     # wait for all input queue items to be completed
     await queue.join()
