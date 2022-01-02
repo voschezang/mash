@@ -1,27 +1,32 @@
 """Generic parallelization functions using asyncio.
 """
 from aiohttp import ClientSession
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor, TimeoutError
 import aiohttp
 import asyncio
 import collections
+import contextlib
+import functools
 import multiprocessing
 import numpy as np
+import queue
 import sys
 import threading
 import time
 import traceback
 
+import util
+
 ################################################################################
 ### Use-cases
 ################################################################################
 
-async def simple_custom_func(session: ClientSession, *args, url=''):
+async def simple_custom_func(session: ClientSession, i:int, url=''):
     async with session.get(url) as response:
         return response.status
 
 
-async def some_custom_func(session: ClientSession, *args, url=''):
+async def some_custom_func(session: ClientSession, i:int, url=''):
     raise Exception('break;')
     timeout = aiohttp.ClientTimeout(total=10)
     t1 = time.perf_counter_ns()
@@ -39,12 +44,12 @@ async def some_custom_func(session: ClientSession, *args, url=''):
 ### Library Functions
 ################################################################################
 
-def run(func, N, M, n_threads=2, *args, **kwds):
+def run(func, items, batch_size, n_threads=2, **kwds):
     refresh_interval = 0.2 # sec
     refresh_age = 0
 
-    generator = parallel(some_custom_func, N, M,
-            n_threads=n_threads, *args, **kwds)
+    generator = parallel(some_custom_func, items, batch_size,
+            n_threads=n_threads,  **kwds)
 
     status = collections.Counter()
     times = []
@@ -92,44 +97,201 @@ def show_status(status, times, start_time, **kwds):
     print(out, **kwds)
 
 
-def parallel(func, N, M, n_threads=2, *args, **kwds):
-    """Executes func(i) N x M times.
-    It is assumed that all function invocations are independent.
+def main_(func, *args, **kwds):
+    events = queue.Queue()
+    pool = inner(func)
+    event = events.get()
+    print(event)
+    if event == 'timeout':
+        pool.shutdown()
+    elif event == 'done':
+        'ok'
+
+
+def main3():
+    with LongLivingThreadsExecutor(max_workers=n_threads, timeout=timeout) as results:
+        for results in results:
+            handle(result)
+            show_result(result)
+
+
+def parallel(func, items, batch_size=1, n_threads=4, **kwds):
+    """Execute a function in parallel threads alive
+    Similar to concurrent.futures.ThreadPoolExecutor
 
     Parameters
     ----------
         func : async funcion(client: aiohttp.ClientSession, *) -> Result
-        batches : iterable of iterables
+        items : inputs per function call
+        batch_size : number of function call results that are yielded
+        n_threads : int
+        queue_timeout : float
+        concurrency : max. number of async connections
+        **kwds : arguments for `func`. func(**kwds) must be threadsafe
     """
-    def partial(n):
-        inputs = range(n * N, n * N + M)
-        return asynchronous(func, inputs, *args, **kwds)
+    results = []
+    # keep threads running and continuously feed them work through queues
+    in_queue = queue.Queue()
+    out_queue = queue.Queue()
+
+    total_timeout = 5
+    out_queue_timeout = 1
+
+    #partial = functools.partial(asynchronous, func, in_queue, out_queue, **kwds)
+    def partial(i):
+        return asynchronous(func, in_queue, out_queue, **kwds)
+
+    print(' batches = util.group(items, batch_size)')
+    batches = util.group(items, batch_size)
 
     with ThreadPoolExecutor(max_workers=n_threads) as executor:
-        yield from executor.map(partial, range(N))
+        try:
+            print('map')
+            executor.map(partial, range(n_threads), timeout=total_timeout)
+
+            try:
+                # add enough work in the queue for all resources to be active
+                for i in range(2 * n_threads):
+                    print('i', i)
+                    batch = next(batches)
+                    print('add batch', batch)
+                    util.extend(in_queue, next(batches))
+                    print('< added', in_queue.qsize(), in_queue)
+
+                # continuously get 1 batch and schedule a new one
+                while True:
+
+                    # wait until next result is available
+                    print('par; wait for out')
+                    asyncio.run(asyncio.sleep(1))
+                    time.sleep(1)
+                    print('slept')
+
+                    result = out_queue.get(timeout=out_queue_timeout)
+                    # TODO use yield / context statementt
+                    results.append(result)
+                    print(result)
+
+                    util.extend(in_queue, next(batches))
+
+            except StopIteration:
+                # signal shutdown
+                for n in range(n_threads):
+                    in_queue.put_nowait(None)
+
+            except queue.Empty:
+                print('Queue 1 was empty')
+                pass
 
 
-def create_threads(n, *args, **kwds):
-    return (threading.Thread(*args, *kwds) for _ in range(n))
+            # collect remaining results
+            try:
+                while len(results) < len(items):
+                    result = out_queue.get(timeout=out_queue_timeout)
+                    print(result)
+                    results.append(result)
+            except queue.Empty:
+                print('Queue 2 was empty')
+                pass
 
-#class CancellableThread(threading.Thread):
-#    def run(self, f, *args, **kwds):
-#        self.exception = None
-#        try:
-#           f(*args, **kwds)
-#        except Cancel as e:
-#            self.exception = e
+
+        except TimeoutError as e:
+            print(e)
+            # graceful shutdown
+            for _ in range(n_threads):
+                in_queue.put_nowait(None)
+
+    print('.... return')
+    return results
+
+
+
+    #try:
+    #    # setup a constant number of long-running resources,
+    #    # then pull work from a queue
+    #    # let threads continuously pull for work
+    #    # setup resources, but then let threads ask for tasks continuously
+    #    workers = create_threads(n_threads, start=True, target=partial)
+    #    yield parallel(func, items, *args, **kwds)
+    #finally:
+    #    cleanup_resources(workers)
+
+
+#def parallel2(func, items, batch_size, n_threads=2, **kwds):
+#    # TODO rename to class ConstantThreadPoolExecutor
+#    """Executes func(i) N x M times.
+#    It is assumed that all function invocations are independent.
 #
+#    Parameters
+#    ----------
+#        func : async funcion(client: aiohttp.ClientSession, *) -> Result
+#        batches : iterable of iterables
+#    """
+#    # keep threads alive and continuously feed them work
+#    in_queue = queue.Queue()
+#    out_queue = queue.Queue()
 #
-#    def join(self):
-#        threading.Thread.join(self)
-#        if self.execution:
-#            raise self.e
+#    def partial():
+#        return asynchronous(func, in_queue, out_queue, **kwds)
+#
+#    partial = functools.partial(asynchronous, func, in_queue, out_queue, **kwds)
+#
+#    # TODO use threading.excepthook
+#
+#    #push = 0
+#    #if push:
+#    #    # continuously spawn thread that execute tasks and then shutdown
+#    #    with ThreadPoolExecutor(max_workers=n_threads) as executor:
+#    #        # TODO don't return, but keep login in context
+#    #        # threading.Timer(max_runtime).run()
+#    #        yield from executor.map(partial, range(N))
+#    try:
+#        # setup a constant number of long-running resources,
+#        # then pull work from a queue
+#        # let threads continuously pull for work
+#        # setup resources, but then let threads ask for tasks continuously
+#        workers = create_threads(n_threads, start=True, target=partial)
+#        #TODO threading.Thread(extend, args=[in_queue, items]).run()
+#
+#        for batch in util.group(items, batch_size):
+#            print('b', batch)
+#            # schedule first workload
+#            #TODO threading.Thread(extend, args=[in_queue, items]).start()
+#            util.extend(in_queue, items)
+#
+#            while True:
+#                # wait until next result is available
+#                result = out_queue.get()
+#                print(result)
+#                out_queue.task_done()
+#
+#                if enough_results:
+#                    break
+#
+#                # schedule more work
+#                extend(in_queue, items)
+#        else:
+#                in_queue.put_nowait(None)
+#
+#    finally:
+#        free(workers)
 
-class Cancel(Exception):
-    pass
 
-def asynchronous(func, inputs, concurrency=4, *args, **kwds):
+def free(threads):
+    for t in threads:
+        t.join(timeout=0)
+
+
+def create_threads(n, *thread_args, start=False, **kwds):
+    threads = (threading.Thread(*thread_args, **kwds) for _ in range(n))
+    if start:
+        for t in threads:
+            t.start()
+
+    return threads
+
+
+def asynchronous(func, in_queue, out_queue, queue_timeout=0.1, concurrency=4, **kwds):
     """Executes func(task) for every task in tasks.
 
     Parameters
@@ -141,60 +303,103 @@ def asynchronous(func, inputs, concurrency=4, *args, **kwds):
     # reference: https://docs.aiohttp.org/en/stable/client_reference.html
     # create new event loop for thread safety
     loop = asyncio.new_event_loop()
-    return loop.run_until_complete(_wrapper(func, inputs, concurrency, *args, loop=loop, **kwds))
+    print('run loop')
+    return loop.run_until_complete(_wrapper(func, in_queue, out_queue, queue_timeout, concurrency, **kwds))
 
 
-async def _wrapper(func, inputs, concurrency=2, *args, loop=None, **kwds):
-    queue = asyncio.Queue()
-    # TODO don't pre-emtively define work, but do it JIT, 
-    #   then keep thread/job alive instead re-creating it,
-    #   and then increase workload per thread
-    for input_per_function in inputs:
-        queue.put_nowait(input_per_function)
+async def _wrapper(func, in_queue, out_queue, timeout, concurrency=2, **kwds):
+    #while True:
+    #    tasks = []
+    #    for input_per_function in in_queue.get():
+    #        tasks.append(
 
-    tasks = [asyncio.create_task(_worker(func, queue, *args, **kwds))
-            for _ in range(concurrency)]
-
-    await queue.join()
-    for task in tasks:
-        task.cancel()
-
-    results_per_task = await asyncio.gather(*tasks, return_exceptions=True)
-    #return concat(results_per_task)
-    results, errors = zip(*results_per_task)
-    return results, errors
+    #    tasks = (asyncio.create_task(
+    #        _worker(func, local_in_queue, local_out_queue, **kwds))
+    #            for _ in range(concurrency))
 
 
-async def _worker(func, queue: asyncio.Queue, *args, **kwds):
+    # cache inputs and outputs
+    local_in_queue = asyncio.Queue()
+    local_out_queue = asyncio.Queue()
+
+    # init tasks while local_in_queue is still empty
+
+
+    while True:
+        print('worker; wait for in_queue.get()', in_queue.qsize(), in_queue)
+        #batch = in_queue.get(timeout=timeout)
+        batch = in_queue.get_nowait()
+        print('batch', batch, len(batch))
+        stop
+
+        #if batch is None:
+        #    # abort
+        #    print('done', batch)
+        #    for worker in workers:
+        #        worker.cancel()
+        #    return
+
+        batch_size = len(batch)
+
+        print('worker; put in')
+        for input_per_function in batch:
+            print('i', input_per_function)
+            local_in_queue.put_nowait(input_per_function)
+
+        workers = (asyncio.create_task(
+            worker(func, local_in_queue, local_out_queue, **kwds))
+                for _ in range(concurrency))
+
+        # wait for all input queue items to be completed
+        await queue.join()
+
+        # cancel any remaining tasks (e.g. when batch_size > n_threads)
+        for task in tasks:
+            task.cancel()
+
+        # aggregate results
+        batch = await asyncio.gather(*tasks, return_exceptions=True)
+
+        #batch = []
+        #print('worker; wait for out')
+        #for _ in range(batch_size):
+        #    out = await local_out_queue.get()
+        #    batch.append(out)
+
+        out_queue.put(batch)
+        in_queue.task_done()
+
+
+
+async def worker(func, in_queue: asyncio.Queue, out_queue: asyncio.Queue, **kwds):
+    print('worker')
     results = []
-    errors = []
     async with ClientSession() as session:
         while True:
             try:
-                # TODO use get_nowait, and return on asyncio.QueueEmpty to safe resources
-                task = await queue.get()
-                await _do_task(func, task, session, results, errors=[], *args, **kwds)
-                queue.task_done()
-                # yield results, errors
+                print('> session; await in_queue.')
+                inputs = await in_queue.get()
+                print('> session; try')
+                result = await try_task(func, inputs, session, results, errors=[], **kwds)
+                result.append(results)
+                in_queue.task_done()
+
+                #print('> session; put')
+                #await out_queue.put(result)
 
             except asyncio.CancelledError as error:
-                #break
-                return results, errors
+                return results
 
 
-async def _do_task(func, inputs, session, results, errors, *args, log_first_error=True, **kwds):
+async def try_task(func, inputs, session, results, errors, log_first_error=True, **kwds):
     try:
-        result = await func(session, inputs, *args, **kwds)
-        results.append(result)
+        result = await func(session, inputs, **kwds)
+        return result, None
 
     except Exception as e:
         # e.g. aiohttp.client_exceptions.ClientConnectorError, ConnectorError
         # note that this does not include asyncio.CancelledError and asyncio.CancelledError
-        errors.append(e)
-
-
-def concat(args=[]):
-    return sum(args, [])
+        return None, result
 
 
 def batch_sizes(major: int, minor: int, N: int):
@@ -212,8 +417,9 @@ def main():
     # warning, this can cause high load
     url = 'http://localhost:8888/'
     n = 100
-    async_concurrency = 16
+    async_concurrency = 2
     n_threads = multiprocessing.cpu_count() * 2
+    n_threads = 2
 
     batch_size = 2 # per thread
     n_batches = max(n // batch_size, 1)
@@ -223,12 +429,14 @@ def main():
 
 
     # try non-threaded execution
-    tasks = range(2)
-    results = asynchronous(some_custom_func, tasks, concurrency=4, url=url)
-    print('async', results)
+    #tasks = range(2)
+    #results = asynchronous(some_custom_func, tasks, concurrency=4, url=url)
+    #print('async', results)
 
-    run(some_custom_func, N=n_batches, M=batch_size,
-            n_threads=n_threads, concurrency=async_concurrency, url=url)
+    #run(some_custom_func, N=n_batches, M=batch_size, n_threads=n_threads, concurrency=async_concurrency, url=url)
+    parallel(some_custom_func, range(n), batch_size, 
+            n_threads=n_threads, concurrency=async_concurrency, queue_timeout=0.1,
+            url=url)
 
 if __name__ == '__main__':
     main()
