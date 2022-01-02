@@ -24,7 +24,6 @@ async def simple_custom_func(session: ClientSession, i: int, url=''):
 
 
 async def some_custom_func(session: ClientSession, i: int, url='', timeout=10):
-    #raise Exception('break;')
     timeout = aiohttp.ClientTimeout(total=timeout)
     t1 = time.perf_counter_ns()
     async with session.get(url, timeout=timeout) as response:
@@ -48,78 +47,84 @@ def run(func, items, batch_size, duration, n_threads=2, **kwds):
     Parameters
     ----------
         func : async funcion(client: aiohttp.ClientSession, *) -> Result
+        items : inputs per function call
+        batch_size : number of function call results that are yielded
+        duration : timeout of the process. This evaluated between batches and not during batches.
+        n_threads : int
+        concurrency : max. number of async connections per thread
+        **kwds : arguments for `func`. func(**kwds) must be threadsafe
         batches : iterable of iterables
     """
     refresh_interval = 0.5 # sec
     refresh_age = 0
 
+
     def partial(inputs):
         return asynchronous(func, inputs, **kwds)
 
-
     batches = util.group(items, batch_size)
+    status = collections.Counter()
+    exceptions = collections.defaultdict(collections.Counter)
+    times = []
+
+    t1 = time.perf_counter_ns()
+    dt = 0
 
     with ThreadPoolExecutor(max_workers=n_threads) as executor:
         try:
             # TODO use lazy eval of items instead of .map
             generator = executor.map(partial, batches, timeout=duration)
 
-            status = collections.Counter()
-            times = []
-
-            t1 = time.perf_counter_ns()
-            dt = 0
             # use try-except to gracefully handle thread shutdown
-            try:
-                for results, errors in generator:
-                    # update data
-                    if results:
-                        new_statusses, new_times = zip(*results)
-                        status.update(new_statusses)
-                        times.extend(new_times)
+            for results, errors in generator:
 
-                        t2 = time.perf_counter_ns()
-                        dt = (t2 - t1) * 10**-9
+                for error in errors:
+                    exceptions[type(error)].update([str(error)])
 
-                        # show statistics
-                        if dt - refresh_age > refresh_interval:
-                            refresh_age = 0
-                            show_status(status, times, dt, end='\r')
+                if results:
+                    new_statusses, new_times = zip(*results)
+                    status.update(new_statusses)
+                    times.extend(new_times)
 
-                # clear realtime line
-                print('\n')
+                    t2 = time.perf_counter_ns()
+                    dt = (t2 - t1) * 10**-9
 
-                if times:
-                    show_status(status, times, dt)
+                    # show statistics
+                    if dt - refresh_age > refresh_interval:
+                        refresh_age = 0
+                        show_status(status, times, dt, exceptions, end='\r')
 
-            except Exception as e:
-                print(e)
-                traceback.print_exc()
-                return False
 
-            return True
 
         except TimeoutError as e:
-            print(e)
-            pass
+            print('Timeout')
 
-    return status, times
+    for k,v in exceptions.items():
+        print(f'\n{k}\t {v}')
+
+    if times:
+        show_status(status, times, dt, exceptions, new_line=True)
+
+    return status, times, exceptions
 
 
 
-def show_status(status, times, start_time, **kwds):
+def show_status(status, times, start_time, exceptions=[], new_line=False, **kwds):
+    if new_line:
+        print('\n' + '-' * util.terminal_size().columns)
+
+    n_exceptions = len([v.values for v in exceptions.values()])
+
     dt = (time.perf_counter_ns() - start_time) * 10**-9
     mu = np.mean(times)
     rel_std = np.std(times) / mu * 100
     N = len(times)
     tps = N / dt
+    total = N + n_exceptions
 
-    out = f'> N: {N}, \t{status}, \tE[t]: {mu:0.4f} s ± {rel_std:.2f} % \tTPS: {tps:.2f}'
+    out = f'> N: {N}/{total}, \t{status}, \tE[t]: {mu:0.4f} s ± {rel_std:.2f} % \tTPS: {tps:.2f}'
     print(out, **kwds)
 
-
-class Cancel(Exception):
-    pass
 
 def asynchronous(func, inputs, concurrency=4, **kwds):
     """Executes func(task) for every task in tasks.
@@ -130,6 +135,9 @@ def asynchronous(func, inputs, concurrency=4, **kwds):
         tasks : iterable of (unique) input for each function invocation
         * : constants arguments and keywords to be passed to each function
     """
+    if concurrency < 1:
+        raise ValueError()
+
     # reference: https://docs.aiohttp.org/en/stable/client_reference.html
     # create new event loop for thread safety
     loop = asyncio.new_event_loop()
@@ -198,11 +206,17 @@ async def try_task(func, inputs, session, results, errors, **kwds):
 def main():
     # warning, this can cause high load
     url = 'http://localhost:8888/'
+    duration = 1
     max_n = 1000
     batch_size_per_thread = 16
-    concurrency_per_thread = 4
+    concurrency_per_thread = 3
     n_threads = multiprocessing.cpu_count() * 2
-    duration = 10
+
+    concurrency = concurrency_per_thread * n_threads
+    #concurrency_per_thread = concurrency // max_n
+
+    print(f'Duration: {duration} s, N: {max_n}, #connections: {concurrency}, #threads: {n_threads}',
+            f'batch_size: {batch_size_per_thread}, concurrency_per_thread: {concurrency_per_thread}')
 
     # try non-threaded execution
     results = asynchronous(some_custom_func, range(1), concurrency=2, url=url)
@@ -210,6 +224,7 @@ def main():
 
     run(some_custom_func, range(max_n), batch_size_per_thread, duration,
             n_threads=n_threads, concurrency=concurrency_per_thread, url=url)
+
 
 if __name__ == '__main__':
     main()
