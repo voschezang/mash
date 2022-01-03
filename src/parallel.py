@@ -14,6 +14,7 @@ import sys
 import threading
 import time
 import traceback
+import multiprocessing as mp
 
 import util
 
@@ -99,6 +100,7 @@ def show_status(status, times, start_time, **kwds):
 
 def main_(func, *args, **kwds):
     events = queue.Queue()
+    events = mp.Pipe()
     pool = inner(func)
     event = events.get()
     print(event)
@@ -133,89 +135,74 @@ def parallel(func, items, batch_size=1, n_threads=4, **kwds):
     # keep threads running and continuously feed them work through queues
     in_queue = queue.Queue()
     out_queue = queue.Queue()
+    in_queue = mp.Queue()
+    out_queue = mp.Queue()
+    agg_queue = mp.Queue()
+
+    events = queue.Queue()
+    events = mp.Pipe(duplex=False)
 
     total_timeout = 5
     out_queue_timeout = 1
 
-    #partial = functools.partial(asynchronous, func, in_queue, out_queue, **kwds)
+    n = len(items)
+
     def partial(i):
         return asynchronous(func, in_queue, out_queue, **kwds)
 
-    print(' batches = util.group(items, batch_size)')
-    batches = util.group(items, batch_size)
+    #with ThreadPoolExecutor(max_workers=n_threads) as executor:
+    with mp.Pool(processes=n_threads) as pool:
 
-    with ThreadPoolExecutor(max_workers=n_threads) as executor:
-        try:
-            print('map')
-            executor.map(partial, range(n_threads), timeout=total_timeout)
+        pool.imap(partial, range(n_threads), chunksize=batch_size)
 
-            try:
-                # add enough work in the queue for all resources to be active
-                for i in range(2 * n_threads):
-                    print('i', i)
-                    batch = next(batches)
-                    print('add batch', batch)
-                    util.extend(in_queue, next(batches))
-                    print('< added', in_queue.qsize(), in_queue)
+        aggregator = mp.Process(target=handle_results, args=[out_queue, n, agg_queue, events[1]]).start()
+        # aggregate results in a new thread
+        #threading.Thread(target=handle_results, args=[out_queue, events]).start()
 
-                # continuously get 1 batch and schedule a new one
-                while True:
-
-                    # wait until next result is available
-                    print('par; wait for out')
-                    asyncio.run(asyncio.sleep(1))
-                    time.sleep(1)
-                    print('slept')
-
-                    result = out_queue.get(timeout=out_queue_timeout)
-                    # TODO use yield / context statementt
-                    results.append(result)
-                    print(result)
-
-                    util.extend(in_queue, next(batches))
-
-            except StopIteration:
-                # signal shutdown
-                for n in range(n_threads):
-                    in_queue.put_nowait(None)
-
-            except queue.Empty:
-                print('Queue 1 was empty')
-                pass
-
-
-            # collect remaining results
-            try:
-                while len(results) < len(items):
-                    result = out_queue.get(timeout=out_queue_timeout)
-                    print(result)
-                    results.append(result)
-            except queue.Empty:
-                print('Queue 2 was empty')
-                pass
-
-
-        except TimeoutError as e:
-            print(e)
-            # graceful shutdown
-            for _ in range(n_threads):
-                in_queue.put_nowait(None)
+        print('wait')
+        if events[0].poll(timeout=10):
+            event = events[0].recv()
+            print('event', event)
+        else:
+            print('Timeout')
+            pool.terminate()
+            #aggregator.terminate()
 
     print('.... return')
     return results
 
 
+def handle_results(in_queue, max_n, out_queue, events):
+    print('handle_results')
+    for n in range(max_n):
+        #while True:
+        print(n)
+        result = in_queue.get()
+        if result is None:
+            break
 
-    #try:
-    #    # setup a constant number of long-running resources,
-    #    # then pull work from a queue
-    #    # let threads continuously pull for work
-    #    # setup resources, but then let threads ask for tasks continuously
-    #    workers = create_threads(n_threads, start=True, target=partial)
-    #    yield parallel(func, items, *args, **kwds)
-    #finally:
-    #    cleanup_resources(workers)
+        print('next', result)
+    else:
+        events.send('done')
 
+
+def Te():
+    try:
+        # setup a constant number of long-running resources,
+        # then pull work from a queue
+        # let threads continuously pull for work
+        # setup resources, but then let threads ask for tasks continuously
+        workers = create_threads(n_threads, start=True, target=partial)
+        yield workers
+    finally:
+        cleanup_resources(workers)
+
+
+def lazy_map(func, args):
+    pass
+
+def cleanup_resources():
+    pass
 
 #def parallel2(func, items, batch_size, n_threads=2, **kwds):
 #    # TODO rename to class ConstantThreadPoolExecutor
