@@ -109,13 +109,12 @@ def run(func, items, batch_size, duration, n_threads=2, **kwds):
 
 
 
-def show_status(status, times, start_time, exceptions=[], new_line=False, **kwds):
+def show_status(status, times, dt, exceptions=[], new_line=False, **kwds):
     if new_line:
         print('\n' + '-' * util.terminal_size().columns)
 
     n_exceptions = len([v.values for v in exceptions.values()])
 
-    dt = (time.perf_counter_ns() - start_time) * 10**-9
     mu = np.mean(times)
     rel_std = np.std(times) / mu * 100
     N = len(times)
@@ -168,8 +167,8 @@ async def _wrapper(func, inputs, concurrency=2, **kwds):
             r, e = item
             results.extend(r)
             errors.extend(e)
-        except TypeError as e:
-            errors.append([e])
+        except TypeError:
+            errors.append([item])
 
     return results, errors
 
@@ -186,6 +185,9 @@ async def worker(func, queue: asyncio.Queue,
 
     except asyncio.CancelledError as error:
         return results, errors
+    except Exception as e:
+        print('Warning, deadlock encounterd; queue.join() is waiting for .task_done()')
+        sys.exit(8)
 
 
 async def try_task(func, inputs, session, results, errors, **kwds):
