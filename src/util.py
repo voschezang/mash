@@ -1,3 +1,5 @@
+import os
+
 def concat(items=[]):
     """Concatenate items
     """
@@ -28,3 +30,10 @@ def extend(q, items):
     for item in items:
         # Note that put_nowait is compatible with threading.Queue and asyncio.Queue
         q.put_nowait(item)
+
+
+def terminal_size(default=os.terminal_size((80, 100))):
+    try:
+        return os.get_terminal_size()
+    except OSError:
+        return default

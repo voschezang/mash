@@ -6,6 +6,7 @@ import aiohttp
 import asyncio
 import collections
 import contextlib
+from enum import Enum, auto
 import functools
 import multiprocessing
 import numpy as np
@@ -25,7 +26,6 @@ import util
 async def simple_custom_func(session: ClientSession, i:int, url=''):
     async with session.get(url) as response:
         return response.status
-
 
 async def some_custom_func(session: ClientSession, i:int, url=''):
     raise Exception('break;')
@@ -116,6 +116,8 @@ def main3():
             handle(result)
             show_result(result)
 
+class Event(Enum):
+    DONE = auto()
 
 def parallel(func, items, batch_size=1, n_threads=4, **kwds):
     """Execute a function in parallel threads alive
@@ -132,17 +134,20 @@ def parallel(func, items, batch_size=1, n_threads=4, **kwds):
         **kwds : arguments for `func`. func(**kwds) must be threadsafe
     """
     results = []
+    manager = mp.Manager()
+
     # keep threads running and continuously feed them work through queues
-    in_queue = queue.Queue()
-    out_queue = queue.Queue()
-    in_queue = mp.Queue()
-    out_queue = mp.Queue()
-    agg_queue = mp.Queue()
+    #in_queue = queue.Queue()
+    #out_queue = queue.Queue()
+    #in_queue = mp.Queue()
+    #out_queue = mp.Queue()
+    #agg_queue = mp.Queue()
 
     events = queue.Queue()
     events = mp.Pipe(duplex=False)
 
     total_timeout = 5
+    total_timeout = 10
     out_queue_timeout = 1
 
     n = len(items)
@@ -150,43 +155,63 @@ def parallel(func, items, batch_size=1, n_threads=4, **kwds):
     def partial(i):
         return asynchronous(func, in_queue, out_queue, **kwds)
 
+    #print('args', args)
+
     #with ThreadPoolExecutor(max_workers=n_threads) as executor:
-    with mp.Pool(processes=n_threads) as pool:
+    #pool = mp.Pool(processes=n_threads)
 
-        pool.imap(partial, range(n_threads), chunksize=batch_size)
+    with mp.Manager() as manager:
+        in_queue = manager.Queue()
+        out_queue = manager.Queue()
+        agg_queue = manager.Queue()
 
-        aggregator = mp.Process(target=handle_results, args=[out_queue, n, agg_queue, events[1]]).start()
-        # aggregate results in a new thread
-        #threading.Thread(target=handle_results, args=[out_queue, events]).start()
+        # allow threads to ask for work
+        # event_queue = manager.Queue()
 
-        print('wait')
-        if events[0].poll(timeout=10):
-            event = events[0].recv()
-            print('event', event)
-        else:
-            print('Timeout')
-            pool.terminate()
-            #aggregator.terminate()
+        args = [(func, in_queue, out_queue, kwds.copy()) for _ in range(n_threads)]
+
+        with mp.Pool(processes=n_threads) as pool:
+
+            results = pool.starmap_async(asynchronous, args, chunksize=batch_size)
+            #print('p', pool, results)
+
+            aggregator = mp.Process(target=handle_results, args=(n, in_queue, out_queue, agg_queue, events[1]))
+            aggregator.start()
+            # aggregate results in a new thread
+            #threading.Thread(target=handle_results, args=[out_queue, events]).start()
+
+            print('main ==>')
+            if events[0].poll(timeout=total_timeout):
+                event = events[0].recv()
+                print('event', event)
+            else:
+                print('Timeout')
+
+        for resource in [pool, aggregator]:
+            resource.terminate()
 
     print('.... return')
     return results
 
 
-def handle_results(in_queue, max_n, out_queue, events):
-    print('handle_results')
+def handle_results(max_n, in_queue,out_queue, agg_queue, sender):
+    print('handle_results init')
     for n in range(max_n):
         #while True:
-        print(n)
-        result = in_queue.get()
+        print('handle_results put', n)
+        in_queue.put(n)
+        print('handle_results get', n)
+        result = out_queue.get()
+        #agg_queue.put(result)
         if result is None:
             break
 
         print('next', result)
     else:
-        events.send('done')
+        sender.send('done')
 
 
-def Te():
+def Temp():
     try:
         # setup a constant number of long-running resources,
         # then pull work from a queue
@@ -199,69 +224,8 @@ def Te():
 
 
 def lazy_map(func, args):
+    # TODO
     pass
-
-def cleanup_resources():
-    pass
-
-#def parallel2(func, items, batch_size, n_threads=2, **kwds):
-#    # TODO rename to class ConstantThreadPoolExecutor
-#    """Executes func(i) N x M times.
-#    It is assumed that all function invocations are independent.
-#
-#    Parameters
-#    ----------
-#        func : async funcion(client: aiohttp.ClientSession, *) -> Result
-#        batches : iterable of iterables
-#    """
-#    # keep threads alive and continuously feed them work
-#    in_queue = queue.Queue()
-#    out_queue = queue.Queue()
-#
-#    def partial():
-#        return asynchronous(func, in_queue, out_queue, **kwds)
-#
-#    partial = functools.partial(asynchronous, func, in_queue, out_queue, **kwds)
-#
-#    # TODO use threading.excepthook
-#
-#    #push = 0
-#    #if push:
-#    #    # continuously spawn thread that execute tasks and then shutdown
-#    #    with ThreadPoolExecutor(max_workers=n_threads) as executor:
-#    #        # TODO don't return, but keep login in context
-#    #        # threading.Timer(max_runtime).run()
-#    #        yield from executor.map(partial, range(N))
-#    try:
-#        # setup a constant number of long-running resources,
-#        # then pull work from a queue
-#        # let threads continuously pull for work
-#        # setup resources, but then let threads ask for tasks continuously
-#        workers = create_threads(n_threads, start=True, target=partial)
-#        #TODO threading.Thread(extend, args=[in_queue, items]).run()
-#
-#        for batch in util.group(items, batch_size):
-#            print('b', batch)
-#            # schedule first workload
-#            #TODO threading.Thread(extend, args=[in_queue, items]).start()
-#            util.extend(in_queue, items)
-#
-#            while True:
-#                # wait until next result is available
-#                result = out_queue.get()
-#                print(result)
-#                out_queue.task_done()
-#
-#                if enough_results:
-#                    break
-#
-#                # schedule more work
-#                extend(in_queue, items)
-#        else:
-#                in_queue.put_nowait(None)
-#
-#    finally:
-#        free(workers)
 
 
 def free(threads):
@@ -278,7 +242,7 @@ def create_threads(n, *thread_args, start=False, **kwds):
     return threads
 
 
-def asynchronous(func, in_queue, out_queue, queue_timeout=0.1, concurrency=4, **kwds):
+def asynchronous(func, in_queue, out_queue, kwds):
     """Executes func(task) for every task in tasks.
 
     Parameters
@@ -291,10 +255,10 @@ def asynchronous(func, in_queue, out_queue, queue_timeout=0.1, concurrency=4, **
     # create new event loop for thread safety
     loop = asyncio.new_event_loop()
     print('run loop')
-    return loop.run_until_complete(_wrapper(func, in_queue, out_queue, queue_timeout, concurrency, **kwds))
+    return loop.run_until_complete(_wrapper(func, in_queue, out_queue, **kwds))
 
 
-async def _wrapper(func, in_queue, out_queue, timeout, concurrency=2, **kwds):
+async def _wrapper(func, in_queue, out_queue, queue_timeout, concurrency=2, **kwds):
     #while True:
     #    tasks = []
     #    for input_per_function in in_queue.get():
@@ -313,9 +277,22 @@ async def _wrapper(func, in_queue, out_queue, timeout, concurrency=2, **kwds):
 
 
     while True:
-        print('worker; wait for in_queue.get()', in_queue.qsize(), in_queue)
-        #batch = in_queue.get(timeout=timeout)
-        batch = in_queue.get_nowait()
+        print('worker; wait for in_queue.get()', in_queue.qsize(), queue_timeout)
+
+        for i in range(2):
+            print('i', i, in_queue.qsize(), in_queue.empty())
+            time.sleep(0.1)
+            #batch = in_queue.get_nowait()
+            #try:
+            #    #batch = in_queue.get(block=False, timeout=.1)
+            #    batch = in_queue.get_nowait()
+            #    break
+            #except queue.Empty():
+            #    print('err', i)
+            #    pass
+
+        batch = in_queue.get(block=True, timeout=queue_timeout)
+        #batch = in_queue.get_nowait()
         print('batch', batch, len(batch))
         stop
 
@@ -422,7 +399,7 @@ def main():
 
     #run(some_custom_func, N=n_batches, M=batch_size, n_threads=n_threads, concurrency=async_concurrency, url=url)
     parallel(some_custom_func, range(n), batch_size, 
-            n_threads=n_threads, concurrency=async_concurrency, queue_timeout=0.1,
+            n_threads=n_threads, concurrency=async_concurrency, queue_timeout=5,
             url=url)
 
 if __name__ == '__main__':
