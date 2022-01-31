@@ -2,10 +2,14 @@ test:
 	# print difference as a warning
 	autopep8 -r --diff .
 	flake8 --ignore=E241,E501,W504
-	pytest -n 2
+	pytest -n 4
 
 format:
 	autopep8 -r -a -a -a --in-place .
+
+clean:
+	rm -rf __pycache__
+	rm -rf */__pycache__
 
 setup:
 	pip3 install -r requirements.txt
