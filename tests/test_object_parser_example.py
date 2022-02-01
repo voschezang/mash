@@ -37,5 +37,6 @@ def test_Organization():
 
 def test_Organization_with_translated_key():
     org = Organization(json)
-    assert org.ceo == json['ceo']
+    boss = json['boss']
+    assert org.ceo == boss
 

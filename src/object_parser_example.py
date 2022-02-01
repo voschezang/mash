@@ -27,10 +27,9 @@ class Organization(CustomSpec):
             raise SpecError('Incompatible values')
 
 
-        #'boss': 'bob',
 example_data = {
         'board': ['alice'],
-        'ceo': 'bob',
+        'boss': 'bob',
         'departments': [{
             'manager': 'charlie',
             'teams': [{
