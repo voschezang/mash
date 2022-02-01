@@ -19,16 +19,17 @@ def test_Spec__init__():
         obj = Spec(x=1, y=2)
 
 
-def test_Spec_translate_field_key():
-    key = 'abc_def'
-    Spec._translate_field_key(key)
+def test_Spec_parse_field_key():
+    key = 'non_existing_key'
+    with pytest.raises(SpecError):
+        Spec._parse_field_key(key)
 
 
-def test_Spec_translate_field_nokey():
-    no_keys = ['a b c', 'a: b']
-    for k in no_keys:
+def test_Spec_validate_key_formats():
+    invalid_keys = ['a b c', '-ab', '_']
+    for k in invalid_keys:
         with pytest.raises(SpecError):
-            Spec._translate_field_key(k)
+            Spec._validate_key_format(k)
 
 
 def test_constructor():

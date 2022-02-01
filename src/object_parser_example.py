@@ -2,19 +2,22 @@ from typing import List
 from dataclasses import dataclass
 from object_parser import Spec, SpecError
 
+class CustomSpec(Spec):
+    translations = {'ceo': ['boss']}
+
 User = str
 
-class Team(Spec):
+class Team(CustomSpec):
     manager: User = 'admin'
     members: List[User]
 
 
-class Department(Spec):
+class Department(CustomSpec):
     manager: User
     teams: List[Team]
 
 
-class Organization(Spec):
+class Organization(CustomSpec):
     board: List[User]
     ceo: User
     departments: List[Department]

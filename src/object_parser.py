@@ -15,9 +15,13 @@ class Spec():
         email: str
         default_age: int = 0
     ```
+    Because all attributes are parsable, all methods must start with an underscore.
 
     See object_parser_example.py for a larger use case example.
     """
+
+    translations = {}
+
     def __new__(cls, data={}, **kwds):
         """ Generic constructor that validates the keys before initializing the object.
         """
@@ -38,7 +42,7 @@ class Spec():
 
     @classmethod
     def _init_fields(cls, data: dict) -> dict:
-        filtered_kwds = cls._translate_all_keys(data)
+        filtered_kwds = cls._parse_field_keys(data)
 
         result = {}
         if not filtered_kwds:
@@ -80,16 +84,35 @@ class Spec():
 
 
     @classmethod
-    def _translate_all_keys(cls, data) -> dict:
+    def _parse_field_keys(cls, data) -> dict:
         # note that dict comprehensions ignore duplicates
-        return {cls._translate_field_key(k): v for k, v in data.items()}
+        return {cls._parse_field_key(k): v for k, v in data.items()}
 
 
     @classmethod
-    def _translate_field_key(cls, key: str):
+    def _parse_field_key(cls, key: str):
+        cls._validate_key_format(key)
+
+        key = key.lower()
+        if hasattr(cls, '__annotations__') and key in cls.__annotations__:
+            return key
+
+        return cls._translate_key(key)
+
+
+    @classmethod
+    def _translate_key(cls, key: str):
+        for original_key, key_translations in cls.translations.items():
+            if key in key_translations:
+                return original_key
+
+        raise SpecError(f'Unexpected key `{key}` in {cls}')
+
+
+    @classmethod
+    def _validate_key_format(cls, key: str):
         if not is_alpha(key, ignore='_') or key.startswith('_'):
             raise SpecError(cls._invalid_key_format(key))
-        return key
 
 
     @classmethod
