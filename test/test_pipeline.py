@@ -1,4 +1,6 @@
 import pytest
+from queue import Empty
+import multiprocessing as mp
 
 from pipeline import *
 
@@ -111,7 +113,7 @@ def test_Resource():
 
     # pre-fill queue
     in_queue.put(1)
-    resource = Resource(Processor(), in_queue, out_queue)
+    resource = Resource(Processor(), (in_queue, out_queue))
     assert isinstance(resource.processor, Processor)
     resource.start(max_items=1)
 
@@ -124,7 +126,7 @@ def test_Resource_mp():
     with mp.Manager() as manager:
         in_queue = manager.Queue()
         out_queue = manager.Queue()
-        resource = Resource(Processor(), in_queue, out_queue)
+        resource = Resource(Processor(), (in_queue, out_queue))
         process = mp.Process(target=resource.start, args=(100,))
 
         # start before filling queue
@@ -132,18 +134,65 @@ def test_Resource_mp():
         in_queue.put(value)
 
         # without timeout
-        with pytest.raises(queue.Empty):
+        with pytest.raises(Empty):
             out_queue.get(timeout=0)
 
         # timeout must be significant
         result = out_queue.get(timeout=.3)
         assert result == value
 
-        with pytest.raises(queue.Empty):
+        with pytest.raises(Empty):
             out_queue.get(timeout=.1)
 
 
-def test_Resource_chain():
+def test_Resource_with_pull_strategy():
+    # a chain or pipeline of resources
+    value = 22
+    n_resources = 5
+    processes = []
+    with mp.Manager() as manager:
+        delivery_queues = []
+        demand_queues = []
+        for i in range(n_resources + 1):
+            delivery_queues.append(manager.Queue())
+            demand_queues.append(manager.Queue())
+
+        in_queue = delivery_queues[0]
+        out_queue = delivery_queues[-1]
+
+        for i in range(n_resources):
+            resource = Resource(
+                Processor(),
+                delivery_queues[i:i+2],
+                demand_queues[i:i+2],
+                strategy=Strategy.pull)
+            process = mp.Process(target=resource.start)
+            processes.append(process)
+
+            # start before filling queue
+            process.start()
+
+        with pytest.raises(Empty):
+            out_queue.get(timeout=.1)
+
+        # add items
+        in_queue.put(value)
+
+        # simulate demand
+        demand_queues[-1].put(1)
+
+        # timeout must be significant
+        result = out_queue.get(timeout=2.3)
+        assert result == value
+
+        with pytest.raises(Empty):
+            out_queue.get(timeout=.1)
+
+    for process in processes:
+        process.terminate()
+
+
+def test_Resource_with_push_strategy():
     # a chain or pipeline of resources
     value = 22
     n_resources = 5
@@ -157,7 +206,47 @@ def test_Resource_chain():
         out_queue = queues[-1]
 
         for i in range(n_resources):
-            resource = Resource(Processor(), queues[i], queues[i+1])
+            resource = Resource(
+                Processor(), queues[i:i+2], strategy=Strategy.push)
+            process = mp.Process(target=resource.start)
+            processes.append(process)
+
+            # start before filling queue
+            process.start()
+
+        with pytest.raises(Empty):
+            out_queue.get(timeout=.1)
+
+        # add items
+        in_queue.put(value)
+
+        # timeout must be significant
+        result = out_queue.get(timeout=.3)
+        assert result == value
+
+        with pytest.raises(Empty):
+            out_queue.get(timeout=.1)
+
+    for process in processes:
+        process.terminate()
+
+
+def test_Resource_with_constant_strategy():
+    # a chain or pipeline of resources
+    value = 22
+    n_resources = 5
+    processes = []
+    with mp.Manager() as manager:
+        queues = []
+        for i in range(n_resources + 1):
+            queues.append(manager.Queue())
+
+        in_queue = queues[0]
+        out_queue = queues[-1]
+
+        for i in range(n_resources):
+            resource = Resource(
+                Processor(), queues[i:i+2], strategy=Strategy.constant)
             process = mp.Process(target=resource.start)
             processes.append(process)
 

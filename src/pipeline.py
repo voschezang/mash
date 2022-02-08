@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from time import sleep
-from typing import List
+from typing import List, Tuple
 from functools import update_wrapper
 from itertools import repeat
 import sys
@@ -159,38 +159,41 @@ class Strategy(Enum):
 @ dataclass
 class Resource:
     processor: Processor
-    in_queue: queue.Queue
-    out_queue: queue.Queue
-    demand_queue: queue.Queue = None
+    delivery_queues: Tuple[queue.Queue, queue.Queue]
+    demand_queues: Tuple[queue.Queue, queue.Queue] = None
     strategy: Strategy = Strategy.push
 
     def start(self, max_items=None):
         self.handled_items = 0
-        print('R', self.in_queue, self.out_queue)
-        sys.stdout.flush()
         while True:
             if max_items is not None and self.handled_items >= max_items:
                 return
 
-            self.wait_for_demand()
+            self.wait_for_input_demand()
+            self.demand_input()
+
             item = self.in_queue.get(block=True)
 
             self.processor.append(item)
             self.process()
 
-    def wait_for_demand(self):
+    def wait_for_input_demand(self):
         if self.strategy == Strategy.push:
             # never wait
             return
 
         if self.strategy == Strategy.pull:
-            self.demand_queue.get(block=True)
+            self.demand_queues[1].get(block=True)
 
         # in case of Strategy.constant:
         # maintain a stable out_queue size
         while not self.out_queue.empty():
             sleep(0.1)
         return
+
+    def demand_input(self):
+        if self.strategy == Strategy.pull and self.demand_queues[0].empty():
+            self.demand_queues[0].put(1)
 
     def process(self):
         while self.processor.buffer:
@@ -200,6 +203,14 @@ class Resource:
     def put(self, item):
         self.out_queue.put(item)
         self.handled_items += 1
+
+    @property
+    def in_queue(self) -> queue.Queue:
+        return self.delivery_queues[0]
+
+    @property
+    def out_queue(self) -> queue.Queue:
+        return self.delivery_queues[1]
 
 
 class Pipeline(Processor):
@@ -231,7 +242,7 @@ class Pipeline(Processor):
 
 
 class Pull(Pipeline):
-    def __init__(self, *args, strategy=Strategy.push, **kwds):
+    def __init__(self, *args, strategy=Strategy.constant, **kwds):
         """A Pipeline with queues to pass items to be processed to subsequent processors.
         """
         super().__init__(*args, **kwds)
@@ -250,9 +261,10 @@ class Pull(Pipeline):
         self.queues = [mp.Queue() for _ in range(n_queues)]
 
         if strategy == Strategy.pull:
-            self.demand_queues = [mp.Queue() for _ in range(n_queues - 1)]
+            self.demand_queues = [None] + [mp.Queue()
+                                           for _ in range(n_queues - 1)]
         else:
-            self.demand_queues = [None] * n_queues 
+            self.demand_queues = [None] * n_queues
 
         self.resources = []
 
@@ -262,9 +274,8 @@ class Pull(Pipeline):
         for q, processor in enumerate(self.processors):
             for p in range(n_processes):
                 resource = Resource(processor,
-                                    self.queues[q],
-                                    self.queues[q+1],
-                                    self.demand_queues[q],
+                                    self.queues[q: q+2],
+                                    self.demand_queues[q: q+2],
                                     strategy)
                 process = mp.Process(target=resource.start)
                 self.resources.append(process)
@@ -276,6 +287,10 @@ class Pull(Pipeline):
     def process(self, item=None):
         """ Process an item and then yield the result
         """
+        if self.demand_queues[-1] is not None:
+            # send a reverse signal to indicate demand
+            self.demand_queues[-1].put(1)
+
         if item is None and not self.buffer:
             return next(self)
 
@@ -285,23 +300,8 @@ class Pull(Pipeline):
         if len(self.queues) <= 1:
             return item
 
-        in_queue = self.queues[0]
-        out_queue = self.queues[-1]
-
-        # self.initial_batch_size = 1
-        # batches = util.group(item, self.initial_batch_size)
-
-        inventory_size = 2
-        # for _ in range(inventory_size):
-        #    if batches:
-        #    for item in batches.pop():
-        #        in_queue.put(batch)
-        #    batch = out_queue.get()
-
-        # for item in items:
         self.append(item)
 
-        sys.stdout.flush()
         return next(self)
 
     def process_buffer(self):
@@ -333,10 +333,6 @@ class Pull(Pipeline):
     def __exit__(self, *args):
         for resource in self.resources:
             resource.terminate()
-
-
-class Push(Pipeline):
-    pass
 
 
 def constant_(*args): return 1
