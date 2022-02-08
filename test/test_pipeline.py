@@ -5,108 +5,6 @@ import multiprocessing as mp
 from pipeline import *
 
 
-def test_Pipeline_serial():
-    value = 10
-    processors = [duplicate]
-    with Pull(processors=processors) as pipeline:
-        assert len(pipeline.processors) == len(processors)
-
-        result = pipeline.append(value)
-        result = pipeline.process()
-
-        assert result == 2 * value
-        assert result != value
-
-        for q in pipeline.queues:
-            assert q.empty()
-
-
-def test_Pipeline_with_empty_queue():
-    value = 5
-    with Pull(processors=[duplicate]) as pipeline:
-        pipeline.queues[-1].put(value)
-        result = pipeline.process()
-        assert result == value
-
-
-def test_Pipeline_serial_with_empty_buffer():
-    value = 11
-    processors = [duplicate]
-    with Pull(processors=processors) as pipeline:
-
-        for _ in range(3):
-            result = pipeline.process(value)
-
-            assert result == 2 * value
-            assert result != value
-
-        for q in pipeline.queues:
-            assert q.empty()
-
-
-def test_Pipeline_serial_with_multiple_processors():
-    processors = [constant, identity, duplicate, identity, duplicate]
-    with Pull(processors=processors) as pipeline:
-
-        pipeline.append(123)
-        result = pipeline.process()
-
-        assert result == 4
-
-        for q in pipeline.queues:
-            assert q.empty()
-
-
-def test_Pipeline_serial_with_multiple_items():
-    items = list(range(2))
-    items = [1]
-    processors = [duplicate, constant, duplicate, constant]
-    processors = [duplicate, constant]
-    with Pull(processors=processors) as pipeline:
-
-        pipeline.extend(items)
-        results = []
-        for i in range(len(items)):
-            result = pipeline.process()
-            results.append(result)
-
-    for i, item in enumerate(items):
-        assert results[i] == 1
-
-
-def test_Pipeline_serial_with_group_of_one_item():
-    batch = [10]
-    # processors = [Distributer(n=2), duplicate, constant]
-    processors = [Distributer(n=1), duplicate]
-    results = []
-    with Pull(processors=processors) as pipeline:
-
-        pipeline.append(batch)
-        for i in range(len(batch)):
-            results.append(pipeline.process())
-
-    assert len(results) == len(batch)
-
-    for i, value in enumerate(batch):
-        assert results[i] == 2 * value
-
-
-def test_Pipeline_serial_with_group_of_items():
-    batch = [10, 20, 30]
-    processors = [Distributer(n=3), duplicate]
-    results = []
-    with Pull(processors=processors) as pipeline:
-
-        pipeline.append(batch)
-        for i in range(len(batch)):
-            results.append(pipeline.process())
-
-    assert len(results) == len(batch)
-
-    for i in range(len(batch)):
-        assert results[i] == 2 * batch[i]
-
-
 def test_Resource():
     in_queue = mp.Queue()
     out_queue = mp.Queue()
@@ -326,6 +224,138 @@ def test_constant():
     assert constant() == 1
     for i in range(3):
         assert constant(i) == 1
+
+
+def test_Pipeline_serial():
+    value = 10
+    processors = [duplicate]
+    with Pull(processors=processors) as pipeline:
+        assert len(pipeline.processors) == len(processors)
+
+        result = pipeline.append(value)
+        result = pipeline.process()
+
+        assert result == 2 * value
+        assert result != value
+
+        for q in pipeline.queues:
+            assert q.empty()
+
+
+def test_Pipeline_with_empty_queue():
+    value = 5
+    with Pull(processors=[duplicate]) as pipeline:
+        pipeline.queues[-1].put(value)
+        result = pipeline.process()
+        assert result == value
+
+
+def test_Pipeline_serial_with_empty_buffer():
+    value = 11
+    processors = [duplicate]
+    with Pull(processors=processors) as pipeline:
+
+        for _ in range(3):
+            result = pipeline.process(value)
+
+            assert result == 2 * value
+            assert result != value
+
+        for q in pipeline.queues:
+            assert q.empty()
+
+
+def test_Pipeline_serial_with_multiple_processors():
+    processors = [constant, identity, duplicate, identity, duplicate]
+    with Pull(processors=processors) as pipeline:
+
+        pipeline.append(123)
+        result = pipeline.process()
+
+        assert result == 4
+
+        for q in pipeline.queues:
+            assert q.empty()
+
+
+def test_Pipeline_serial_with_multiple_items():
+    items = list(range(2))
+    items = [1]
+    processors = [duplicate, constant, duplicate, constant]
+    processors = [duplicate, constant]
+    with Pull(processors=processors) as pipeline:
+
+        pipeline.extend(items)
+        results = []
+        for i in range(len(items)):
+            result = pipeline.process()
+            results.append(result)
+
+    for i, item in enumerate(items):
+        assert results[i] == 1
+
+
+def test_Pipeline_serial_with_group_of_one_item():
+    batch = [10]
+    # processors = [Distributer(n=2), duplicate, constant]
+    processors = [Distributer(n=1), duplicate]
+    results = []
+    with Pull(processors=processors) as pipeline:
+
+        pipeline.append(batch)
+        for i in range(len(batch)):
+            results.append(pipeline.process())
+
+    assert len(results) == len(batch)
+
+    for i, value in enumerate(batch):
+        assert results[i] == 2 * value
+
+
+def test_Pipeline_serial_with_group_of_items():
+    batch = [10, 20, 30]
+    processors = [Distributer(n=3), duplicate]
+    results = []
+    with Pull(processors=processors) as pipeline:
+
+        pipeline.append(batch)
+        for i in range(len(batch)):
+            results.append(pipeline.process())
+
+    assert len(results) == len(batch)
+
+    for i in range(len(batch)):
+        assert results[i] == 2 * batch[i]
+
+
+def test_Pipeline_serial_with_pull_strategy_simple():
+    items = list(range(10))
+    processors = [identity]
+    with Pull(processors=processors, strategy=Strategy.pull) as pipeline:
+
+        with pytest.raises(Empty):
+            pipeline.out_queue.get(timeout=0.1)
+
+        pipeline.extend(items)
+
+        sleep(0.1)
+        assert pipeline.out_queue.empty()
+
+        for i in items:
+            result = pipeline.process()
+            assert result == i
+
+
+def test_Pipeline_serial_with_pull_strategy():
+    items = list(range(10))
+    processors = [duplicate, identity, duplicate]
+    with Pull(processors=processors, strategy=Strategy.pull) as pipeline:
+
+        pipeline.extend(items)
+
+        for i in items:
+            result = pipeline.process()
+            assert result == i * 4
 
 
 if __name__ == '__main__':

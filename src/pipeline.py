@@ -165,6 +165,12 @@ class Resource:
 
     def start(self, max_items=None):
         self.handled_items = 0
+
+        if self.strategy == Strategy.push:
+            assert self.demand_queues is not None
+            assert self.demand_queues[0] is not None
+            assert self.demand_queues[1] is not None
+
         while True:
             if max_items is not None and self.handled_items >= max_items:
                 return
@@ -182,7 +188,7 @@ class Resource:
             # never wait
             return
 
-        if self.strategy == Strategy.pull:
+        if self.strategy == Strategy.pull and self.demand_queues[1] is not None:
             self.demand_queues[1].get(block=True)
 
         # in case of Strategy.constant:
@@ -192,7 +198,7 @@ class Resource:
         return
 
     def demand_input(self):
-        if self.strategy == Strategy.pull and self.demand_queues[0].empty():
+        if self.strategy == Strategy.pull and self.demand_queues[0] is not None and self.demand_queues[0].empty():
             self.demand_queues[0].put(1)
 
     def process(self):
@@ -297,11 +303,10 @@ class Pull(Pipeline):
         return super().process(item)
 
     def process_item(self, item):
-        if len(self.queues) <= 1:
+        if not self.processors:
             return item
 
         self.append(item)
-
         return next(self)
 
     def process_buffer(self):
