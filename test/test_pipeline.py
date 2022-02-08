@@ -10,10 +10,8 @@ def test_Pipeline_serial():
         assert len(pipeline.processors) == len(processors)
 
         result = pipeline.append(value)
-        # assert len(pipeline.buffer) == 1
-        # assert pipeline.queues[0].empty()
-
         result = pipeline.process()
+
         assert result == 2 * value
         assert result != value
 

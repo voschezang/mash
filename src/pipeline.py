@@ -1,9 +1,11 @@
 from dataclasses import dataclass
 from time import sleep
 from typing import List
-import functools
+from functools import update_wrapper
+from itertools import repeat
 import sys
 import copy
+from enum import Enum, auto
 import logging
 import multiprocessing as mp
 import queue
@@ -74,7 +76,7 @@ class Processor:
     def _set_process_item_func(self, func):
         self.process_item = func
         # TODO rename function s.t. it can be pickled and used in mp.Process
-        functools.update_wrapper(self, func)
+        update_wrapper(self, func)
 
     def append(self, *args):
         self.buffer.append(*args)
@@ -83,12 +85,11 @@ class Processor:
         self.buffer.extend(*args)
 
     def __str__(self):
-        values = ' '.join([self.__class__.__name__,
-                           f'[ {self.process_item.__name__} ]',
-                           'at',
-                           hex(id(self))
-                           ])
-        return f'<{values}>'
+        values = [self.__class__.__name__,
+                  f'[ {self.process_item.__name__} ]',
+                  'at',
+                  hex(id(self))]
+        return f'<{" ".join(values)}>'
 
     def __call__(self, item=None):
         return self.process(item)
@@ -149,11 +150,19 @@ class Distributer(Buffer):
             self.append(group)
 
 
-@dataclass
+class Strategy(Enum):
+    push = auto()
+    pull = auto()
+    constant = auto()
+
+
+@ dataclass
 class Resource:
     processor: Processor
     in_queue: queue.Queue
     out_queue: queue.Queue
+    demand_queue: queue.Queue = None
+    strategy: Strategy = Strategy.push
 
     def start(self, max_items=None):
         self.handled_items = 0
@@ -163,10 +172,25 @@ class Resource:
             if max_items is not None and self.handled_items >= max_items:
                 return
 
+            self.wait_for_demand()
             item = self.in_queue.get(block=True)
 
             self.processor.append(item)
             self.process()
+
+    def wait_for_demand(self):
+        if self.strategy == Strategy.push:
+            # never wait
+            return
+
+        if self.strategy == Strategy.pull:
+            self.demand_queue.get(block=True)
+
+        # in case of Strategy.constant:
+        # maintain a stable out_queue size
+        while not self.out_queue.empty():
+            sleep(0.1)
+        return
 
     def process(self):
         while self.processor.buffer:
@@ -207,44 +231,43 @@ class Pipeline(Processor):
 
 
 class Pull(Pipeline):
-    def __init__(self, *args, **kwds):
-        """A Pipeline with queues to pass items to be processed to subsequent processors.  
+    def __init__(self, *args, strategy=Strategy.push, **kwds):
+        """A Pipeline with queues to pass items to be processed to subsequent processors.
         """
         super().__init__(*args, **kwds)
 
         self.queues: List[mp.Queue]
+        # self.delivery_queues: List[mp.Queue] = self.queues
+        self.demand_queues: List[mp.Queue] = None
         self.resources: List[List[mp.Process]]
 
-        self.initial_batch_size = 1
-
-        self.init_resources()
+        self.init_resources(strategy)
         self.start_resources()
         self.process_buffer()
 
-    def init_resources(self):
+    def init_resources(self, strategy):
         n_queues = len(self.processors) + 1
         self.queues = [mp.Queue() for _ in range(n_queues)]
+
+        if strategy == Strategy.pull:
+            self.demand_queues = [mp.Queue() for _ in range(n_queues - 1)]
+        else:
+            self.demand_queues = [None] * n_queues 
 
         self.resources = []
 
         # TODO transform constant to arg
-        # TODO vary n_processes per process type
-        # TODO use autoscaling
         n_processes = 1
 
         for q, processor in enumerate(self.processors):
             for p in range(n_processes):
-                resource = Resource(
-                    processor, self.queues[q], self.queues[q+1])
-                assert resource.processor == processor
-                assert resource.in_queue == self.queues[q]
-                assert resource.out_queue == self.queues[q+1]
-
-                assert id(resource.in_queue) == id(self.queues[q])
+                resource = Resource(processor,
+                                    self.queues[q],
+                                    self.queues[q+1],
+                                    self.demand_queues[q],
+                                    strategy)
                 process = mp.Process(target=resource.start)
                 self.resources.append(process)
-
-        assert len(self.resources) == n_processes * len(self.processors)
 
     def start_resources(self):
         for resource in self.resources:
@@ -265,6 +288,7 @@ class Pull(Pipeline):
         in_queue = self.queues[0]
         out_queue = self.queues[-1]
 
+        # self.initial_batch_size = 1
         # batches = util.group(item, self.initial_batch_size)
 
         inventory_size = 2
@@ -292,11 +316,11 @@ class Pull(Pipeline):
         for item in items:
             self.append(item)
 
-    @property
+    @ property
     def in_queue(self):
         return self.queues[0]
 
-    @property
+    @ property
     def out_queue(self):
         return self.queues[-1]
 
