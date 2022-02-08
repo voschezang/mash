@@ -16,8 +16,8 @@ class Processor:
     """A queue-like object that can "process" items.
 
     The superclass `list` allows the "queue" to be sorted and grouped.
-    * Use .append() or .extend() to add items to the queue/buffer
-    * Use .process() to handle or process an item
+    * Use .append() or .extend() to add items to the queue/buffer.
+    * Use .process() to handle or process an item.
     """
 
     def __init__(self, items=[]):
@@ -29,15 +29,15 @@ class Processor:
 
     def process(self, item=None):
         """Add an item to a queue, process the next item in the queue and return the result.
-        The buffer is a FIFO queue and items are processed in-order.
+        Override this method to change queue behaviour into e.g. FIFO.
         """
-        if item is not None:
-            self.append(item)
+        # if item is not None:
+        #     self.append(item)
 
-        try:
+        if item is None and self.buffer:
             item = self.buffer.pop()
-        except IndexError as e:
-            raise IndexError(f'No item to process; {e}')
+            # except IndexError as e:
+            #     raise IndexError(f'No item to process; {e}')
 
         return self.process_item(item)
 
@@ -54,7 +54,7 @@ class Processor:
 
     @staticmethod
     def from_function(pure_func):
-        """Decorator that defines a "stateless" processor
+        """Decorator that defines a "stateless" processor.
 
         Usage
         -----
@@ -186,6 +186,9 @@ class Pipeline(Processor):
 
     def __init__(self, items=[], *, processors: List[Processor] = []):
         super().__init__(items)
+
+        self.processors: List[Processor]
+
         self.init_processors(processors)
 
     def init_processors(self, processors: List[Processor]):
@@ -205,27 +208,23 @@ class Pipeline(Processor):
 
 class Pull(Pipeline):
     def __init__(self, *args, **kwds):
+        """A Pipeline with queues to pass items to be processed to subsequent processors.  
+        """
         super().__init__(*args, **kwds)
 
-        # self.manager: mp.Manager
         self.queues: List[mp.Queue]
         self.resources: List[List[mp.Process]]
+
         self.initial_batch_size = 1
 
         self.init_resources()
         self.start_resources()
+        self.process_buffer()
 
     def init_resources(self):
-        self.manager = mp.Manager()
-        # TODO verify that the  manager class is mandatory
-
-        # Note that buffer of Pipeline itself doesn't support concurrent access.
         n_queues = len(self.processors) + 1
-
-        # self.queues = [self.manager.Queue() for _ in range(n_queues)]
-
         self.queues = [mp.Queue() for _ in range(n_queues)]
-        print('qs', self.queues)
+
         self.resources = []
 
         # TODO transform constant to arg
@@ -276,13 +275,22 @@ class Pull(Pipeline):
         #    batch = out_queue.get()
 
         # for item in items:
-        in_queue.put(item)
+        self.append(item)
 
-        print('Q', in_queue.empty(), out_queue.empty())
-        # sleep(5)
-        # print('Q', in_queue.empty(), out_queue.empty())
         sys.stdout.flush()
         return next(self)
+
+    def process_buffer(self):
+        for item in self.buffer:
+            self.append(item)
+
+    def append(self, item):
+        # forward item to self.in_queue instead of self.buffer
+        self.in_queue.put(item)
+
+    def extend(self, items):
+        for item in items:
+            self.append(item)
 
     @property
     def in_queue(self):
@@ -302,14 +310,12 @@ class Pull(Pipeline):
         for resource in self.resources:
             resource.terminate()
 
-        self.manager.__exit__(*args)
-
 
 class Push(Pipeline):
     pass
 
 
-def constant_(x): return 1
+def constant_(*args): return 1
 def identity_(x): return x
 def duplicate_(x): return x + x
 
