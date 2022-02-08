@@ -3,14 +3,11 @@ import pytest
 from pipeline import *
 
 
-def test_Pipeline_1x1():
+def test_Pipeline_serial():
     value = 10
     processors = [duplicate]
     with Pull(processors=processors) as pipeline:
         assert len(pipeline.processors) == len(processors)
-
-        for i, processor in enumerate(processors):
-            assert pipeline.processors[i] == processor
 
         result = pipeline.append(value)
         assert len(pipeline.buffer) == 1
@@ -24,7 +21,15 @@ def test_Pipeline_1x1():
             assert q.empty()
 
 
-def test_Pipeline_1x1_with_empty_buffer():
+def test_Pipeline_with_empty_queue():
+    value = 5
+    with Pull(processors=[duplicate]) as pipeline:
+        pipeline.queues[-1].put(value)
+        result = pipeline.process()
+        assert result == value
+
+
+def test_Pipeline_serial_with_empty_buffer():
     value = 11
     processors = [duplicate]
     with Pull(processors=processors) as pipeline:
@@ -39,19 +44,72 @@ def test_Pipeline_1x1_with_empty_buffer():
             assert q.empty()
 
 
-def test_Pipeline_with_multiple_items():
-    return
-    # init resources
-    # stateless and stateful processors
-    values = [10, 20]
-    processors = [Distributer(), duplicate, finalize]
+def test_Pipeline_serial_with_multiple_processors():
+    processors = [constant, identity, duplicate, identity, duplicate]
     with Pull(processors=processors) as pipeline:
-        result = pipeline.process(values)
 
-    assert result == values
+        pipeline.append(123)
+        result = pipeline.process()
 
-    # assert len(results) == 10
-    # assert sum(results) == vao
+        assert result == 4
+
+        for q in pipeline.queues:
+            assert q.empty()
+
+
+def test_Pipeline_serial_with_multiple_items():
+    items = list(range(2))
+    items = [1]
+    processors = [duplicate, constant, duplicate, constant]
+    processors = [duplicate, constant]
+    with Pull(processors=processors) as pipeline:
+
+        pipeline.extend(items)
+        assert len(pipeline.buffer) == len(items)
+
+        results = []
+        for i in range(len(items)):
+
+            assert len(pipeline.buffer) == len(items) - i
+
+            result = pipeline.process()
+            results.append(result)
+
+    for i, item in enumerate(items):
+        assert results[i] == 1
+
+
+def test_Pipeline_serial_with_group_of_one_item():
+    batch = [10]
+    # processors = [Distributer(n=2), duplicate, constant]
+    processors = [Distributer(n=1), duplicate]
+    results = []
+    with Pull(processors=processors) as pipeline:
+
+        pipeline.append(batch)
+        for i in range(len(batch)):
+            results.append(pipeline.process())
+
+    assert len(results) == len(batch)
+
+    for i, value in enumerate(batch):
+        assert results[i] == 2 * value
+
+
+def test_Pipeline_serial_with_group_of_items():
+    batch = [10, 20, 30]
+    processors = [Distributer(n=3), duplicate]
+    results = []
+    with Pull(processors=processors) as pipeline:
+
+        pipeline.append(batch)
+        for i in range(len(batch)):
+            results.append(pipeline.process())
+
+    assert len(results) == len(batch)
+
+    for i in range(len(batch)):
+        assert results[i] == 2 * batch[i]
 
 
 def test_Resource():
@@ -74,7 +132,7 @@ def test_Resource_mp():
         in_queue = manager.Queue()
         out_queue = manager.Queue()
         resource = Resource(Processor(), in_queue, out_queue)
-        process = mp.Process(target=resource.start, args=(1,))
+        process = mp.Process(target=resource.start, args=(100,))
 
         # start before filling queue
         process.start()
@@ -90,6 +148,41 @@ def test_Resource_mp():
 
         with pytest.raises(queue.Empty):
             out_queue.get(timeout=.1)
+
+
+def test_Resource_chain():
+    # a chain or pipeline of resources
+    value = 22
+    n_resources = 5
+    processes = []
+    with mp.Manager() as manager:
+        queues = []
+        for i in range(n_resources + 1):
+            queues.append(manager.Queue())
+
+        in_queue = queues[0]
+        out_queue = queues[-1]
+
+        for i in range(n_resources):
+            resource = Resource(Processor(), queues[i], queues[i+1])
+            process = mp.Process(target=resource.start)
+            processes.append(process)
+
+            # start before filling queue
+            process.start()
+
+        # add items
+        in_queue.put(value)
+
+        # timeout must be significant
+        result = out_queue.get(timeout=.3)
+        assert result == value
+
+        with pytest.raises(queue.Empty):
+            out_queue.get(timeout=.1)
+
+    for process in processes:
+        process.terminate()
 
 
 def test_combiner():

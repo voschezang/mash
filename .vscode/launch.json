@@ -6,6 +6,9 @@
             "type": "python",
             "request": "launch",
             "program": "${file}",
+            "args": [
+                "-vv"
+            ],
             "console": "integratedTerminal",
             "env": {
                 "PYTHONPATH": "${workspaceFolder}/src"

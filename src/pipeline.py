@@ -2,10 +2,14 @@ from dataclasses import dataclass
 from time import sleep
 from typing import List
 import functools
+import sys
+import copy
+import logging
 import multiprocessing as mp
 import queue
 
 import util
+from util import debug
 
 
 class Processor:
@@ -24,13 +28,16 @@ class Processor:
         assert self.buffer == items
 
     def process(self, item=None):
-        """ Process an item and then yield the result
+        """Add an item to a queue, process the next item in the queue and return the result.
+        The buffer is a FIFO queue and items are processed in-order.
         """
-        if item is None:
-            try:
-                item = self.buffer.pop()
-            except IndexError as e:
-                raise IndexError(f'No item to process; {e}')
+        if item is not None:
+            self.append(item)
+
+        try:
+            item = self.buffer.pop()
+        except IndexError as e:
+            raise IndexError(f'No item to process; {e}')
 
         return self.process_item(item)
 
@@ -41,6 +48,9 @@ class Processor:
 
     def ready_to_process(self) -> bool:
         return len(self.buffer) > 0
+
+    def clear(self):
+        self.buffer = []
 
     @staticmethod
     def from_function(pure_func):
@@ -72,10 +82,13 @@ class Processor:
     def extend(self, *args):
         self.buffer.extend(*args)
 
-    # def __sizeof__(self) -> int:
-    #     """Return the buffer-size, i.e. the number of items in the queue that can be processed
-    #     """
-    #     return super().__sizeof__()
+    def __str__(self):
+        values = ' '.join([self.__class__.__name__,
+                           f'[ {self.process_item.__name__} ]',
+                           'at',
+                           hex(id(self))
+                           ])
+        return f'<{values}>'
 
     def __call__(self, item=None):
         return self.process(item)
@@ -129,11 +142,10 @@ class Distributer(Buffer):
     """
 
     def append(self, group_of_items):
-        self.buffer.extend(group_of_items)
+        self.buffer.extend(reversed(group_of_items))
 
     def extend(self, groups_of_items):
-        self.buffer += groups_of_items
-        for group in groups_of_items:
+        for group in reversed(groups_of_items):
             self.append(group)
 
 
@@ -144,24 +156,26 @@ class Resource:
     out_queue: queue.Queue
 
     def start(self, max_items=None):
-        assert isinstance(self.processor, Processor)
         self.handled_items = 0
+        print('R', self.in_queue, self.out_queue)
+        sys.stdout.flush()
         while True:
             if max_items is not None and self.handled_items >= max_items:
                 return
 
-            pre = self.in_queue.get()
-            post = self.processor.process(pre)
-            self.put(post)
+            item = self.in_queue.get(block=True)
+
+            self.processor.append(item)
+            self.process()
+
+    def process(self):
+        while self.processor.buffer:
+            result = self.processor.process()
+            self.put(result)
 
     def put(self, item):
         self.out_queue.put(item)
         self.handled_items += 1
-
-
-class Processors(list):
-    def __repr__(self):
-        return '[' + ' > '.join(p.__name__ for p in self.processors) + ']'
 
 
 class Pipeline(Processor):
@@ -172,10 +186,21 @@ class Pipeline(Processor):
 
     def __init__(self, items=[], *, processors: List[Processor] = []):
         super().__init__(items)
-        self.processors = processors
+        self.init_processors(processors)
+
+    def init_processors(self, processors: List[Processor]):
+        self.processors = []
+        for p in processors:
+            # make a shallow copy of each processor
+            processor = copy.copy(p)
+            processor.clear()
+            self.processors.append(processor)
 
     def __sizeof__(self) -> int:
         return len(self.processors)
+
+    def __repr__(self):
+        return '[' + ' > '.join(p.__name__ for p in self.processors) + ']'
 
 
 class Pull(Pipeline):
@@ -191,13 +216,16 @@ class Pull(Pipeline):
         self.start_resources()
 
     def init_resources(self):
-        # self.manager = mp.Manager()
+        self.manager = mp.Manager()
         # TODO verify that the  manager class is mandatory
 
         # Note that buffer of Pipeline itself doesn't support concurrent access.
         n_queues = len(self.processors) + 1
-        self.queues = [mp.Queue() for _ in range(n_queues)]
+
         # self.queues = [self.manager.Queue() for _ in range(n_queues)]
+
+        self.queues = [mp.Queue() for _ in range(n_queues)]
+        print('qs', self.queues)
         self.resources = []
 
         # TODO transform constant to arg
@@ -206,18 +234,30 @@ class Pull(Pipeline):
         n_processes = 1
 
         for q, processor in enumerate(self.processors):
-            self.resources = []
-            assert processor != []
-
             for p in range(n_processes):
                 resource = Resource(
                     processor, self.queues[q], self.queues[q+1])
+                assert resource.processor == processor
+                assert resource.in_queue == self.queues[q]
+                assert resource.out_queue == self.queues[q+1]
+
+                assert id(resource.in_queue) == id(self.queues[q])
                 process = mp.Process(target=resource.start)
                 self.resources.append(process)
+
+        assert len(self.resources) == n_processes * len(self.processors)
 
     def start_resources(self):
         for resource in self.resources:
             resource.start()
+
+    def process(self, item=None):
+        """ Process an item and then yield the result
+        """
+        if item is None and not self.buffer:
+            return next(self)
+
+        return super().process(item)
 
     def process_item(self, item):
         if len(self.queues) <= 1:
@@ -238,39 +278,42 @@ class Pull(Pipeline):
         # for item in items:
         in_queue.put(item)
 
-        # for i, item in enumerate(items):
-        result = out_queue.get(timeout=3)
-        return result
+        print('Q', in_queue.empty(), out_queue.empty())
+        # sleep(5)
+        # print('Q', in_queue.empty(), out_queue.empty())
+        sys.stdout.flush()
+        return next(self)
+
+    @property
+    def in_queue(self):
+        return self.queues[0]
+
+    @property
+    def out_queue(self):
+        return self.queues[-1]
+
+    def __next__(self):
+        return self.out_queue.get()
 
     def __enter__(self, *args):
-        # self.manager.__enter__(*args)
         return self
 
     def __exit__(self, *args):
-        # self.manager.__exit__(*args)
         for resource in self.resources:
             resource.terminate()
+
+        self.manager.__exit__(*args)
 
 
 class Push(Pipeline):
     pass
 
 
-# @Processor.from_function
-def create_():
-    return 1
+def constant_(x): return 1
+def identity_(x): return x
+def duplicate_(x): return x + x
 
 
-# @Processor.from_function
-def duplicate_(x):
-    return x + x
-
-
-# @Processor.from_function
-def finalize_(batch):
-    return batch
-
-
-create = Processor.from_function(create_)
+constant = Processor.from_function(constant_)
+identity = Processor.from_function(identity_)
 duplicate = Processor.from_function(duplicate_)
-finalize = Processor.from_function(finalize_)
