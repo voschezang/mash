@@ -1,8 +1,10 @@
 
+from pipeline import Strategy
 from multiprocessing.sharedctypes import Value
 import aiohttp
 from aiohttp import ClientSession
 import time
+import random
 
 import util
 from server import basepath
@@ -47,15 +49,19 @@ def to_int_(s: str) -> int:
     return int(s)
 
 
+def to_str_(s: str) -> int:
+    return str(s)
+
+
 parse_response = Processor.from_function(parse_response_)
 to_int = Processor.from_function(to_int_)
+to_str = Processor.from_function(to_str_)
 
 
 def echo(json, n_calls=1):
-    endpoint = 'echo'
     results, errors = asynchronous(post, range(n_calls),
                                    concurrency=1,
-                                   url=url + endpoint,
+                                   url=url + 'echo',
                                    json=json)
 
     return results, errors
@@ -63,6 +69,15 @@ def echo(json, n_calls=1):
 
 def echo_offline(json):
     return [(200, json)], []
+
+
+def sleep(seconds, n_calls=1):
+    results, errors = asynchronous(get, range(n_calls),
+                                   concurrency=1,
+                                   url=url + 'sleep',
+                                   params={'sleep': seconds})
+
+    return results, errors
 
 
 def call_api(n_calls=1):
@@ -91,7 +106,7 @@ def test_compute_pipeline():
             assert result == item
 
 
-def compute():
+def run_compute_pipeline():
     items = [str(i) for i in range(10)]
     results = []
 
@@ -110,7 +125,33 @@ def compute():
     return results
 
 
+def compute(N=1, strategy=Strategy.push):
+    items = [random.random() for i in range(N)]
+    results = []
+
+    compute = Processor.from_function(echo)
+    process = Processor.from_function(sleep)
+    concat = Processor.from_function(util.concat)
+    processors = [identity, compute, parse_response, concat, to_int, duplicate]
+    processors = [process]
+    with Pull(processors=processors, strategy=strategy) as pipeline:
+
+        pipeline.extend(items)
+
+        for item in items:
+            result = pipeline.process()
+
+
 if __name__ == '__main__':
-    test_compute_pipeline()
-    results = compute()
-    print(results)
+    # test_compute_pipeline()
+    # run_compute_pipeline()
+    for s in Strategy:
+        t1 = time.perf_counter()
+        compute(100, s)
+        t2 = time.perf_counter()
+
+        print(f'{s:<20} {t2 - t1:.2f} s')
+
+    # compute(1, Strategy.push)
+    # compute(1, Strategy.pull)
+    # compute(1, Strategy.constant)

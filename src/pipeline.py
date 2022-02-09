@@ -185,7 +185,7 @@ class Resource:
         # in case of Strategy.constant:
         # maintain a stable out_queue size
         while not self.out_queue.empty():
-            sleep(0.1)
+            sleep(0.01)
         return
 
     def demand_input(self):
@@ -226,6 +226,7 @@ class Pipeline(Processor):
     def init_processors(self, processors: List[Processor]):
         self.processors = []
         for p in processors:
+            assert isinstance(p, Processor)
             # make a shallow copy of each processor
             processor = copy.copy(p)
             processor.clear()
