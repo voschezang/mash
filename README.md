@@ -58,3 +58,19 @@ python3 src/random_walk.py
 python3 src/linear_fit.py
 python3 src/semilinear_fit.py
 ```
+
+# Parallelization Utilities
+
+Some experiments with parallelization, concurrency and `asyncio` in Python.
+
+## Test
+
+Start a dummy server.
+```
+python3 src/server.py
+```
+
+Do a simple load test
+```
+python3 src/parallel.py -v
+```
