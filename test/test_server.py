@@ -1,6 +1,6 @@
 import flask
 from flask.testing import FlaskClient
-# from src import server
+import pytest
 import server
 from server import basepath
 from http import HTTPStatus
@@ -18,6 +18,22 @@ def test_route_stable():
     url = basepath + 'stable'
     responses = requests(url, N=5)
     assert all(verify_response(r, expected_data=b'ok')
+               for r in responses)
+
+
+def test_route_sleep():
+    url = basepath + 'sleep?time=0.0001'
+    responses = requests(url, N=5)
+    responses = list(responses)
+    print(responses[0].get_data())
+    assert all(verify_response(r, expected_data=b'ok')
+               for r in responses)
+
+
+def test_route_sleep_without_args():
+    url = basepath + 'sleep'
+    responses = requests(url, N=5)
+    assert all(verify_response(r, expected_status=HTTPStatus.BAD_REQUEST)
                for r in responses)
 
 
@@ -53,6 +69,14 @@ def test_route_echo():
                for r in responses)
 
 
+def test_route_echo_int():
+    json = 123
+    url = basepath + 'echo'
+    responses = requests(url, N=5, json=json)
+    assert all(verify_response(r, expected_data=str(json).encode())
+               for r in responses)
+
+
 def assert_response(response, expected_data=b'ok'):
     assert response.status_code == HTTPStatus.OK
     assert response.get_data() == expected_data
@@ -80,3 +104,8 @@ def init():
     app = server.init()
     client = app.test_client()
     return client
+
+
+if __name__ == '__main__':
+    # pytest.main()
+    test_route_sleep()

@@ -1,4 +1,4 @@
-from flask import Flask, request
+from flask import Flask, request, jsonify
 import numpy as np
 import time
 from http import HTTPStatus
@@ -41,14 +41,19 @@ def init_routes(app):
         if isinstance(json, dict):
             # merge json with url params if possible
             json.update(args)
+        elif not isinstance(json, str):
+            return str(json)
 
         return json
 
     @app.route(basepath + "sleep")
     def sleep():
-        args = request.args.items()
-        time.sleep(args['time'])
-        return 'ok'
+        if 'time' in request.args:
+            t = request.args['time']
+            time.sleep(float(t))
+            return 'ok'
+
+        return '', HTTPStatus.BAD_REQUEST
 
     @app.route(basepath + "document", methods=['POST'])
     def create_document():

@@ -229,7 +229,7 @@ def test_constant():
 def test_Pipeline_serial():
     value = 10
     processors = [duplicate]
-    with Pull(processors=processors) as pipeline:
+    with PushPull(processors=processors) as pipeline:
         assert len(pipeline.processors) == len(processors)
 
         result = pipeline.append(value)
@@ -244,7 +244,7 @@ def test_Pipeline_serial():
 
 def test_Pipeline_with_empty_queue():
     value = 5
-    with Pull(processors=[duplicate]) as pipeline:
+    with PushPull(processors=[duplicate]) as pipeline:
         pipeline.queues[-1].put(value)
         result = pipeline.process()
         assert result == value
@@ -253,7 +253,7 @@ def test_Pipeline_with_empty_queue():
 def test_Pipeline_serial_with_empty_buffer():
     value = 11
     processors = [duplicate]
-    with Pull(processors=processors) as pipeline:
+    with PushPull(processors=processors) as pipeline:
 
         for _ in range(3):
             result = pipeline.process(value)
@@ -267,7 +267,7 @@ def test_Pipeline_serial_with_empty_buffer():
 
 def test_Pipeline_serial_with_multiple_processors():
     processors = [constant, identity, duplicate, identity, duplicate]
-    with Pull(processors=processors) as pipeline:
+    with PushPull(processors=processors) as pipeline:
 
         pipeline.append(123)
         result = pipeline.process()
@@ -283,7 +283,7 @@ def test_Pipeline_serial_with_multiple_items():
     items = [1]
     processors = [duplicate, constant, duplicate, constant]
     processors = [duplicate, constant]
-    with Pull(processors=processors) as pipeline:
+    with PushPull(processors=processors) as pipeline:
 
         pipeline.extend(items)
         results = []
@@ -300,7 +300,7 @@ def test_Pipeline_serial_with_group_of_one_item():
     # processors = [Distributer(n=2), duplicate, constant]
     processors = [Distributer(n=1), duplicate]
     results = []
-    with Pull(processors=processors) as pipeline:
+    with PushPull(processors=processors) as pipeline:
 
         pipeline.append(batch)
         for i in range(len(batch)):
@@ -316,7 +316,7 @@ def test_Pipeline_serial_with_group_of_items():
     batch = [10, 20, 30]
     processors = [Distributer(n=3), duplicate]
     results = []
-    with Pull(processors=processors) as pipeline:
+    with PushPull(processors=processors) as pipeline:
 
         pipeline.append(batch)
         for i in range(len(batch)):
@@ -331,7 +331,7 @@ def test_Pipeline_serial_with_group_of_items():
 def test_Pipeline_serial_with_pull_strategy_simple():
     items = list(range(10))
     processors = [identity]
-    with Pull(processors=processors, strategy=Strategy.pull) as pipeline:
+    with PushPull(processors=processors, strategy=Strategy.pull) as pipeline:
 
         with pytest.raises(Empty):
             pipeline.out_queue.get(timeout=0.1)
@@ -349,7 +349,7 @@ def test_Pipeline_serial_with_pull_strategy_simple():
 def test_Pipeline_serial_with_pull_strategy():
     items = list(range(10))
     processors = [duplicate, identity, duplicate]
-    with Pull(processors=processors, strategy=Strategy.pull) as pipeline:
+    with PushPull(processors=processors, strategy=Strategy.pull) as pipeline:
 
         pipeline.extend(items)
 

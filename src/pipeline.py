@@ -239,7 +239,9 @@ class Pipeline(Processor):
         return '[' + ' > '.join(p.__name__ for p in self.processors) + ']'
 
 
-class Pull(Pipeline):
+class PushPull(Pipeline):
+    n_processors = 1
+
     def __init__(self, *args, strategy=Strategy.constant, **kwds):
         """A Pipeline with queues to pass items to be processed to subsequent processors.
         """
@@ -266,11 +268,8 @@ class Pull(Pipeline):
 
         self.resources = []
 
-        # TODO transform constant to arg
-        n_processes = 1
-
         for q, processor in enumerate(self.processors):
-            for p in range(n_processes):
+            for p in range(PushPull.n_processors):
                 resource = Resource(processor,
                                     self.queues[q: q+2],
                                     self.demand_queues[q: q+2],

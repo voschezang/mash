@@ -9,7 +9,7 @@ import random
 import util
 from server import basepath
 from parallel import asynchronous
-from pipeline import Processor, Pull, Pipeline, identity, duplicate
+from pipeline import Processor, PushPull, Pipeline, identity, constant, duplicate
 
 url = 'http://localhost:5000' + basepath
 
@@ -49,13 +49,28 @@ def to_int_(s: str) -> int:
     return int(s)
 
 
+def to_float_(s: str) -> int:
+    return float(s)
+
+
 def to_str_(s: str) -> int:
     return str(s)
 
 
+def randomize_(*args) -> int:
+    return random.random()
+
+
+def generate_(*args) -> int:
+    return [random.random() for _ in range(10)]
+
+
 parse_response = Processor.from_function(parse_response_)
 to_int = Processor.from_function(to_int_)
+to_float = Processor.from_function(to_float_)
 to_str = Processor.from_function(to_str_)
+randomize = Processor.from_function(randomize_)
+generate = Processor.from_function(generate_)
 
 
 def echo(json, n_calls=1):
@@ -75,19 +90,7 @@ def sleep(seconds, n_calls=1):
     results, errors = asynchronous(get, range(n_calls),
                                    concurrency=1,
                                    url=url + 'sleep',
-                                   params={'sleep': seconds})
-
-    return results, errors
-
-
-def call_api(n_calls=1):
-    endpoint = 'stable'
-    endpoint = 'scrambled'
-    endpoint = 'noisy'
-    endpoint = 'echo'
-    results, errors = asynchronous(get, range(n_calls),
-                                   concurrency=1,
-                                   url=url + endpoint)
+                                   params={'time': seconds})
 
     return results, errors
 
@@ -98,7 +101,7 @@ def test_compute_pipeline():
 
     # processors = [Processor.from_function(echo_offline)]
     processors = [Processor.from_function(echo)]
-    with Pull(processors=processors) as pipeline:
+    with PushPull(processors=processors) as pipeline:
 
         for item in items:
             r, errors = pipeline.process(item)
@@ -113,7 +116,7 @@ def run_compute_pipeline():
     compute = Processor.from_function(echo)
     concat = Processor.from_function(util.concat)
     processors = [identity, compute, parse_response, concat, to_int, duplicate]
-    with Pull(processors=processors) as pipeline:
+    with PushPull(processors=processors) as pipeline:
 
         pipeline.extend(items)
 
@@ -126,32 +129,34 @@ def run_compute_pipeline():
 
 
 def compute(N=1, strategy=Strategy.push):
-    items = [random.random() for i in range(N)]
-    results = []
+    items = [random.random() * .1 for _ in range(N * 10)]
 
     compute = Processor.from_function(echo)
     process = Processor.from_function(sleep)
     concat = Processor.from_function(util.concat)
-    processors = [identity, compute, parse_response, concat, to_int, duplicate]
-    processors = [process]
-    with Pull(processors=processors, strategy=strategy) as pipeline:
+
+    processors = [generate, compute, concat, constant]
+
+    with PushPull(processors=processors, strategy=strategy) as pipeline:
 
         pipeline.extend(items)
 
-        for item in items:
+        for i in range(N):
             result = pipeline.process()
+            assert result == 1, result
+
+        return
 
 
 if __name__ == '__main__':
     # test_compute_pipeline()
+
     # run_compute_pipeline()
+
+    PushPull.n_processors = 2
     for s in Strategy:
         t1 = time.perf_counter()
         compute(100, s)
         t2 = time.perf_counter()
 
         print(f'{s:<20} {t2 - t1:.2f} s')
-
-    # compute(1, Strategy.push)
-    # compute(1, Strategy.pull)
-    # compute(1, Strategy.constant)
