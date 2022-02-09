@@ -44,6 +44,12 @@ def init_routes(app):
 
         return json
 
+    @app.route(basepath + "sleep")
+    def sleep():
+        args = request.args.items()
+        time.sleep(args['time'])
+        return 'ok'
+
     @app.route(basepath + "document", methods=['POST'])
     def create_document():
         json = request.get_json()

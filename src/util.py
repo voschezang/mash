@@ -3,6 +3,7 @@ import logging
 import argparse
 import functools
 import sys
+from collections.abc import Sequence
 
 parse_args: argparse.Namespace = None
 parser: argparse.ArgumentParser = None
@@ -71,10 +72,48 @@ def add_and_parse_args():
         set_verbosity()
 
 
-def concat(items=[]):
+def concat(items: Sequence = []):
     """Concatenate items
+
+    `items` must must be a container or iterable
     """
-    return sum(items, [])
+    try:
+        return concat_empty_container(items)
+    except TypeError:
+        pass
+
+    # in case of list-like container
+    for e in (list(), tuple()):
+        try:
+            return sum(items, e)
+        except TypeError:
+            continue
+
+    # in case of string-like container
+    if isinstance(items, str):
+        return ''.join(items)
+
+    iter = items.__iter__()
+    acc = next(iter)
+    for item in iter:
+        try:
+            acc |= item
+        except TypeError:
+            try:
+                acc.update(item)
+            except TypeError:
+                pass
+
+    return acc
+
+
+def concat_empty_container(items):
+    emtpy_containers = (str(), list(), dict(), set(), tuple())
+    for e in emtpy_containers:
+        if items == e:
+            return e
+
+    raise TypeError()
 
 
 def group(items, n):
