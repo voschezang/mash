@@ -1,8 +1,9 @@
-pytest
-pytest-xdist
-matplotlib
-numpy
-scipy
-sklearn
+aiohttp
 autopep8
 flake8
+matplotlib
+numpy
+pytest
+pytest-xdist
+scipy
+sklearn

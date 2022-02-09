@@ -7,6 +7,7 @@ from http import HTTPStatus
 
 LARGE_N = 1000
 
+
 def test_route_stable_simple():
     client = init()
     response = client.get(basepath + 'stable')
@@ -17,7 +18,7 @@ def test_route_stable():
     url = basepath + 'stable'
     responses = requests(url, N=5)
     assert all(verify_response(r, expected_data=b'ok')
-            for r in responses)
+               for r in responses)
 
 
 def test_route_scrambled():
@@ -38,10 +39,18 @@ def test_route_noisy_bad_flow():
     responses = requests(url)
 
     assert any(verify_response(r, HTTPStatus.SERVICE_UNAVAILABLE)
-            for r in responses)
+               for r in responses)
 
     assert any(verify_response(r, HTTPStatus.GATEWAY_TIMEOUT)
-            for r in responses)
+               for r in responses)
+
+
+def test_route_echo():
+    url = basepath + 'echo'
+    json = 'this could be json'
+    responses = requests(url, N=5, json=json)
+    assert all(verify_response(r, expected_data=json.encode())
+               for r in responses)
 
 
 def assert_response(response, expected_data=b'ok'):
@@ -50,21 +59,21 @@ def assert_response(response, expected_data=b'ok'):
 
 
 def verify_response(response,
-        expected_status=HTTPStatus.OK,
-        expected_data=None) -> bool:
+                    expected_status=HTTPStatus.OK,
+                    expected_data=None) -> bool:
 
     if expected_data is None:
         return response.status_code == expected_status
 
     return response.status_code == expected_status and \
-            response.get_data() == expected_data
+        response.get_data() == expected_data
 
 
-def requests(url='', N=LARGE_N, client: FlaskClient = None):
+def requests(url='', N=LARGE_N, client: FlaskClient = None, **kwds):
     if client is None:
         client = init()
 
-    yield from (client.get(url) for _ in range(N) )
+    yield from (client.get(url, **kwds) for _ in range(N))
 
 
 def init():

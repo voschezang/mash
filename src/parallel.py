@@ -2,21 +2,21 @@
 """
 from aiohttp import ClientSession
 from concurrent.futures import ThreadPoolExecutor, TimeoutError
+from contextlib import contextmanager
 import aiohttp
 import asyncio
 import collections
 import multiprocessing
 import numpy as np
 import sys
-import threading
 import time
-import traceback
 
 import util
 
 ################################################################################
-### Use-cases
+# Use-cases
 ################################################################################
+
 
 async def simple_custom_func(session: ClientSession, i: int, url=''):
     async with session.get(url) as response:
@@ -37,8 +37,9 @@ async def some_custom_func(session: ClientSession, i: int, url='', timeout=10):
             return response.status, dt
 
 ################################################################################
-### Library Functions
+# Library Functions
 ################################################################################
+
 
 def run(func, items, batch_size, duration, n_threads=2, **kwds):
     """Executes func(i) N x M times.
@@ -55,9 +56,8 @@ def run(func, items, batch_size, duration, n_threads=2, **kwds):
         **kwds : arguments for `func`. func(**kwds) must be threadsafe
         batches : iterable of iterables
     """
-    refresh_interval = 0.5 # sec
+    refresh_interval = 0.5  # sec
     refresh_age = 0
-
 
     def partial(inputs):
         return asynchronous(func, inputs, **kwds)
@@ -90,16 +90,14 @@ def run(func, items, batch_size, duration, n_threads=2, **kwds):
                     dt = (t2 - t1) * 10**-9
 
                     # show statistics
-                    if dt - refresh_age > refresh_interval:
+                    if dt - refresh_age > refresh_interval and util.verbosity():
                         refresh_age = 0
                         show_status(status, times, dt, exceptions, end='\r')
-
-
 
         except TimeoutError as e:
             print('Timeout')
 
-    for k,v in exceptions.items():
+    for k, v in exceptions.items():
         print(f'\n{k}\t {v}')
 
     if times:
@@ -108,8 +106,10 @@ def run(func, items, batch_size, duration, n_threads=2, **kwds):
     return status, times, exceptions
 
 
-
 def show_status(status, times, dt, exceptions=[], new_line=False, **kwds):
+    # sort statusses for readability
+    status = {k: v for k, v in sorted(status.items())}
+
     if new_line:
         print('\n' + '-' * util.terminal_size().columns)
 
@@ -139,8 +139,11 @@ def asynchronous(func, inputs, concurrency=4, **kwds):
 
     # reference: https://docs.aiohttp.org/en/stable/client_reference.html
     # create new event loop for thread safety
-    loop = asyncio.new_event_loop()
-    return loop.run_until_complete(_wrapper(func, inputs, concurrency, **kwds))
+    with new_event_loop() as loop:
+        result = loop.run_until_complete(
+            _wrapper(func, inputs, concurrency, **kwds))
+
+    return result
 
 
 async def _wrapper(func, inputs, concurrency=2, **kwds):
@@ -149,7 +152,7 @@ async def _wrapper(func, inputs, concurrency=2, **kwds):
         queue.put_nowait(input_per_function)
 
     tasks = [asyncio.create_task(worker(func, queue, **kwds))
-            for _ in range(concurrency)]
+             for _ in range(concurrency)]
 
     # wait for all input queue items to be completed
     await queue.join()
@@ -173,9 +176,14 @@ async def _wrapper(func, inputs, concurrency=2, **kwds):
     return results, errors
 
 
-async def worker(func, queue: asyncio.Queue,
-        results=[], errors=[], **kwds):
+# async def worker(func, queue: asyncio.Queue, results: list, errors: list, **kwds):
+async def worker(func, queue: asyncio.Queue, results=[], errors=[], **kwds):
+    # immediately start the try-block to allow cancellation
     try:
+        # copy variables to prevent mutable state
+        results = results.copy()
+        errors = results.copy()
+
         async with ClientSession() as session:
             while True:
                 # TODO use get_nowait, and return on asyncio.QueueEmpty to safe resources
@@ -201,9 +209,20 @@ async def try_task(func, inputs, session, results, errors, **kwds):
         errors.append(e)
 
 
+@contextmanager
+def new_event_loop():
+    # automatically close custom loop to prevent leaking resources
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    try:
+        yield loop
+    finally:
+        loop.close()
+
+
 def main():
     # warning, this can cause high load
-    url = 'http://localhost:8888/'
+    url = 'http://localhost:5000/v1/noisy'
     duration = 1
     max_n = 1000
     batch_size_per_thread = 16
@@ -214,14 +233,14 @@ def main():
     #concurrency_per_thread = concurrency // max_n
 
     print(f'Duration: {duration} s, N: {max_n}, #connections: {concurrency}, #threads: {n_threads}',
-            f'batch_size: {batch_size_per_thread}, concurrency_per_thread: {concurrency_per_thread}')
+          f'batch_size: {batch_size_per_thread}, concurrency_per_thread: {concurrency_per_thread}')
 
     # try non-threaded execution
     results = asynchronous(some_custom_func, range(1), concurrency=2, url=url)
     print('async', results)
 
     run(some_custom_func, range(max_n), batch_size_per_thread, duration,
-            n_threads=n_threads, concurrency=concurrency_per_thread, url=url)
+        n_threads=n_threads, concurrency=concurrency_per_thread, url=url)
 
 
 if __name__ == '__main__':
