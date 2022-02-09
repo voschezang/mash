@@ -24,10 +24,6 @@ class Processor:
 
     def __init__(self, items=[]):
         self.buffer = list(items)
-        if not items:
-            assert self.buffer == []
-
-        assert self.buffer == items
 
     def process(self, item=None):
         """Add an item to a queue, process the next item in the queue and return the result.
@@ -165,11 +161,6 @@ class Resource:
 
     def start(self, max_items=None):
         self.handled_items = 0
-
-        if self.strategy == Strategy.push:
-            assert self.demand_queues is not None
-            assert self.demand_queues[0] is not None
-            assert self.demand_queues[1] is not None
 
         while True:
             if max_items is not None and self.handled_items >= max_items:

@@ -15,7 +15,7 @@ def test_Resource():
     assert isinstance(resource.processor, Processor)
     resource.start(max_items=1)
 
-    result = out_queue.get(timeout=1)
+    result = out_queue.get(timeout=.3)
     assert result == 1
 
 
