@@ -3,6 +3,7 @@ from src.object_parser_example import *
 
 json = example_data
 
+
 def test_User():
     email = 'email@example.com'
     user = User(email)
@@ -39,4 +40,3 @@ def test_Organization_with_translated_key():
     org = Organization(json)
     boss = json['boss']
     assert org.ceo == boss
-

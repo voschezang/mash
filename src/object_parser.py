@@ -1,5 +1,6 @@
 from typing import _GenericAlias
 
+
 class Spec():
     """Spec
 
@@ -36,9 +37,11 @@ class Spec():
             for k in cls.__annotations__:
                 setattr(instance, k, fields[k])
 
-        instance._validate()
+        instance._verify()
         return instance
 
+    def __init__(self, **kwds):
+        print(self.__name__)
 
     @classmethod
     def _init_fields(cls, data: dict) -> dict:
@@ -56,7 +59,6 @@ class Spec():
 
         return result
 
-
     @classmethod
     def _init_field(cls, key, data):
 
@@ -65,16 +67,13 @@ class Spec():
         elif hasattr(cls, key):
             return getattr(cls, key)
 
-
         raise SpecError(cls._missing_mandatory_key(key))
 
-
-    def _validate(self):
-        """Validate this Spec
-        Note that this method can do validations that are based on multiple fields.
+    def _verify(self):
+        """Verify this object.
+        Note that this method can do verifications that are based on multiple fields.
         """
         pass
-
 
     def __init__(self, data=None, **kwds):
         """"Init
@@ -82,12 +81,10 @@ class Spec():
         """
         pass
 
-
     @classmethod
     def _parse_field_keys(cls, data) -> dict:
         # note that dict comprehensions ignore duplicates
         return {cls._parse_field_key(k): v for k, v in data.items()}
-
 
     @classmethod
     def _parse_field_key(cls, key: str):
@@ -99,7 +96,6 @@ class Spec():
 
         return cls._translate_key(key)
 
-
     @classmethod
     def _translate_key(cls, key: str):
         for original_key, key_translations in cls.translations.items():
@@ -108,12 +104,10 @@ class Spec():
 
         raise SpecError(f'Unexpected key `{key}` in {cls}')
 
-
     @classmethod
     def _validate_key_format(cls, key: str):
         if not is_alpha(key, ignore='_') or key.startswith('_'):
             raise SpecError(cls._invalid_key_format(key))
-
 
     @classmethod
     def _invalid_key_format(cls, key: str):
@@ -131,10 +125,58 @@ class Spec():
     def _no_type_annotations(cls):
         return f'No fields specified to initialize (no type annotations in {cls})'
 
+    def items(self):
+        return {k: getattr(self, k) for k in self.__annotations__}
+
+    def oas(self):
+        pass
+
+    def _extend_oas(self, components: dict):
+        """Generate a OAS/Swagger component 
+        See: [OAS](https://swagger.io/specification/)
+        E.g.
+        ```yml
+        components:
+            schemas:
+                User:
+                    properties:
+                        id:
+                            type: integer
+                        name:
+                            type: string
+        ```
+        """
+        t = type(self).__name__
+        if t not in components:
+            components[t] = {}
+            components[t]['properties'] = {}
+            if self.__doc__:
+                components[t]['description'] = self.__doc__
+
+        for k in self.__annotations__:
+            v = getattr(self, k)
+            item_type = infer_oas_type(v)
+
+            if isinstance(v, Spec):
+                v._extend_oas(components)
+                ref = f'$ref: #/components/schemas/{item_type}'
+                components[t]['properties'][k] = ref
+            if isinstance(v, _GenericAlias) or isinstance(v, list):
+                ref = f'$ref: #/components/schemas/{item_type}'
+                item_type = infer_oas_type(v[0])
+                if isinstance(v[0], Spec):
+                    v[0]._extend_oas(components)
+                    item_type = f'$ref: #/components/schemas/{item_type}'
+
+                components[t]['properties'][k] = {}
+                components[t]['properties'][k]['type'] = 'array'
+                components[t]['properties'][k]['items'] = item_type
+            else:
+                components[t]['properties'][k] = item_type
+
 
 class SpecError(Exception):
     pass
-
 
 
 def construct(cls, args):
@@ -148,14 +190,15 @@ def construct(cls, args):
     return cls(args)
 
 
-### Error Messages
+
+# Error Messages
+
 
 def key_error_msg(key, spec: Spec):
     return f'key: {key} in {spec}'
 
 
-### Predicates
+# Predicates
 
 def is_alpha(key: str, ignore=[]) -> bool:
     return all(c.isalpha() or c in ignore for c in key)
-
