@@ -74,3 +74,14 @@ Do a simple load test
 ```
 python3 src/parallel.py -v
 ```
+
+# Object Parser
+
+- [src/object_parser.py](src/object_parser.py) parses JSON data and instantiate Python objects.
+- [src/oas.py](src/oas.py) converts domain-models to OAS.
+
+## Exammple
+
+```sh
+python src/object_parser_example.py
+```

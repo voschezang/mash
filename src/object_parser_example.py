@@ -2,6 +2,7 @@ from typing import List
 from dataclasses import dataclass
 from object_parser import Spec, SpecError
 from oas import OAS
+from pprint import pprint
 
 
 class CustomSpec(Spec):
