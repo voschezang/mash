@@ -138,14 +138,11 @@ class SpecError(Exception):
 
 
 def construct(cls, args):
-    try:
-        if issubclass(cls, Enum):
-            try:
-                return cls[args]
-            except KeyError:
-                raise SpecError(f'Invalid value for {cls}(Enum)')
-    except TypeError:
-        pass
+    if is_enum(cls):
+        try:
+            return cls[args]
+        except KeyError:
+            raise SpecError(f'Invalid value for {cls}(Enum)')
 
     if isinstance(cls, _GenericAlias):
         # assume this is a typing.List
@@ -168,3 +165,10 @@ def key_error_msg(key, spec: Spec):
 
 def is_alpha(key: str, ignore=[]) -> bool:
     return all(c.isalpha() or c in ignore for c in key)
+
+
+def is_enum(cls):
+    try:
+        return issubclass(cls, Enum)
+    except TypeError:
+        pass
