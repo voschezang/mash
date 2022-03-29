@@ -2,6 +2,7 @@ from typing import List
 from dataclasses import dataclass
 from object_parser import Spec, SpecError
 from oas import OAS
+from enum import Enum, auto
 from pprint import pprint
 
 
@@ -12,11 +13,17 @@ class CustomSpec(Spec):
 User = str
 
 
+class TeamType(Enum):
+    A = auto()
+    B = auto()
+
+
 class Team(CustomSpec):
     """A Team
     """
     manager: User = 'admin'
     members: List[User]
+    team_type: TeamType = 'A'
 
 
 class Department(CustomSpec):
@@ -41,7 +48,8 @@ example_data = {
             'manager': 'charlie',
             'teams': [{
                 'manager': 'danny',
-                'members': ['ernie', 'felix']
+                'members': ['ernie', 'felix'],
+                'team_type': 'A'
             }]
     }]
 }

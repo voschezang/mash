@@ -21,6 +21,19 @@ def test_Team():
     with pytest.raises(SpecError):
         team = Team(manager=manager, an_incorrect_key=[])
 
+    # missing mandatory key
+    with pytest.raises(SpecError):
+        team = Team(manager=manager)
+
+
+def test_Team_enum():
+    team_type = 'B'
+    team = Team(manager='a', members=[], team_type=team_type)
+    assert team.team_type == TeamType.B
+
+    with pytest.raises(SpecError):
+        Team(manager='a', members=[], team_type='none')
+
 
 def test_Department():
     for department in json['departments']:

@@ -1,4 +1,5 @@
 from typing import _GenericAlias
+from enum import Enum
 
 
 class Spec():
@@ -180,6 +181,15 @@ class SpecError(Exception):
 
 
 def construct(cls, args):
+    try:
+        if issubclass(cls, Enum):
+            try:
+                return cls[args]
+            except KeyError:
+                raise SpecError(f'Invalid value for {cls}(Enum)')
+    except TypeError:
+        pass
+
     if isinstance(cls, _GenericAlias):
         # assume this is a typing.List
         if len(cls.__args__) != 1:
@@ -188,7 +198,6 @@ def construct(cls, args):
         return [list_item(v) for v in args]
 
     return cls(args)
-
 
 
 # Error Messages
