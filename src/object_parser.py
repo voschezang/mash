@@ -132,49 +132,6 @@ class Spec():
     def oas(self):
         pass
 
-    def _extend_oas(self, components: dict):
-        """Generate a OAS/Swagger component 
-        See: [OAS](https://swagger.io/specification/)
-        E.g.
-        ```yml
-        components:
-            schemas:
-                User:
-                    properties:
-                        id:
-                            type: integer
-                        name:
-                            type: string
-        ```
-        """
-        t = type(self).__name__
-        if t not in components:
-            components[t] = {}
-            components[t]['properties'] = {}
-            if self.__doc__:
-                components[t]['description'] = self.__doc__
-
-        for k in self.__annotations__:
-            v = getattr(self, k)
-            item_type = infer_oas_type(v)
-
-            if isinstance(v, Spec):
-                v._extend_oas(components)
-                ref = f'$ref: #/components/schemas/{item_type}'
-                components[t]['properties'][k] = ref
-            if isinstance(v, _GenericAlias) or isinstance(v, list):
-                ref = f'$ref: #/components/schemas/{item_type}'
-                item_type = infer_oas_type(v[0])
-                if isinstance(v[0], Spec):
-                    v[0]._extend_oas(components)
-                    item_type = f'$ref: #/components/schemas/{item_type}'
-
-                components[t]['properties'][k] = {}
-                components[t]['properties'][k]['type'] = 'array'
-                components[t]['properties'][k]['items'] = item_type
-            else:
-                components[t]['properties'][k] = item_type
-
 
 class SpecError(Exception):
     pass
