@@ -85,3 +85,17 @@ python3 src/parallel.py -v
 ```sh
 python src/object_parser_example.py
 ```
+
+### REST API
+
+Server
+```sh
+python src/object_parser_server.py
+```
+
+Client
+```sh
+curl -X 'POST' 'http://localhost:5000/v1/organizations' \
+  -H 'Content-Type: application/json' \
+  -d '{ "board": [ "string" ], "ceo": "string", "departments": [ { "manager": "string", "teams": [ { "manager": "string", "members": [ "string" ], "team_type": "A", "active": true, "capacity": 0, "value": 0 } ] } ] }'
+```
