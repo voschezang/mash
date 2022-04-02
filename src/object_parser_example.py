@@ -103,14 +103,11 @@ example_data = {
 
 if __name__ == '__main__':
     org = Organization(example_data)
-    print(vars(org))
-
-    oas = OAS()
-    oas.extend(org)
-    oas['servers'] = [{'url': 'http://localhost:5000/v1'}]
-    oas['paths']['/organizations'] = path_create('Organization')
-    # oas['paths']['/departments'] = path_create('Department')
-    import yaml
-    import json
-    print(json.dumps(oas))
-    # print(oas)
+    print(org)
+    # oas = OAS()
+    # oas.extend(org)
+    # oas['servers'] = [{'url': 'http://localhost:5000/v1'}]
+    # oas['paths']['/organizations'] = path_create('Organization')
+    # import yaml
+    # import json
+    # print(json.dumps(oas))

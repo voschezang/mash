@@ -107,6 +107,12 @@ class Spec():
         instance.verify()
         return instance
 
+    def __repr__(self) -> str:
+        cls = str(self.__class__)[1:-1]
+        repr = f'<{cls} object at {hex(id(self))}>'
+        data = vars(self)
+        return f'{repr} {data}'
+
     @classmethod
     def _init_fields(cls, data: dict) -> dict:
         """Instantiate all entries of `data`
