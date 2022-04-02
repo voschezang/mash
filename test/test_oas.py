@@ -1,4 +1,4 @@
-from src.object_parser_example import example_data, Organization
+from src.object_parser_example import example_data, Organization, Capacity
 from src.oas import OAS
 
 json = example_data
@@ -10,7 +10,7 @@ properties = {'manager': {'type': 'string'},
               'members': members,
               'team_type': team_type,
               'active': {'type': 'boolean'},
-              'capacity': {'type': 'integer'},
+              'capacity': {'$ref': '#/components/schemas/Capacity'},
               'value': {'type': 'number'}
               }
 
@@ -30,7 +30,9 @@ def test_oas_component():
     assert components == {'Team': {'description': team.__doc__.strip(),
                                    'type': 'object',
                                    'properties': properties
-                                   }
+                                   },
+                          'Capacity': {'description': Capacity.__doc__.strip(),
+                                       'type': 'string'}
                           }
 
 

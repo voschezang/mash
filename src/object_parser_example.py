@@ -1,7 +1,7 @@
 from typing import List
 from dataclasses import dataclass
 from object_parser import Spec, SpecError
-from oas import OAS
+from oas import OAS, path_create
 from enum import Enum, auto
 from pprint import pprint
 
@@ -20,8 +20,11 @@ class Capacity(int):
     """An example of a subclass of `int`
     """
 
-    def __init__(self, value):
-        super().__init__(self, value)
+    def __new__(cls, value):
+        if value < 0:
+            raise SpecError(value)
+
+        return super().__new__(cls, value)
 
 
 class SuperUser(User):
@@ -31,7 +34,7 @@ class SuperUser(User):
         # transform example 1
         value = value.lower()
 
-        return str.__new__(cls, value)
+        return super().__new__(cls, value)
 
     @staticmethod
     def parse(name):
@@ -90,7 +93,9 @@ example_data = {
             'teams': [{
                 'manager': 'danny',
                 'members': ['ernie', 'felix'],
-                'team_type': 'a'
+                'team_type': 'a',
+                'capacity': 2,
+                'value': 3.1
             }]
     }]
 }
@@ -102,4 +107,10 @@ if __name__ == '__main__':
 
     oas = OAS()
     oas.extend(org)
-    print(oas)
+    oas['servers'] = [{'url': 'http://localhost:5000/v1'}]
+    oas['paths']['/organizations'] = path_create('Organization')
+    # oas['paths']['/departments'] = path_create('Department')
+    import yaml
+    import json
+    print(json.dumps(oas))
+    # print(oas)

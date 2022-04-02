@@ -39,10 +39,20 @@ template = {
         'version': '1.0.0',
         K.doc: ''
     },
-    'servers': [{'url': 'https://petstore.swagger.io/v2'}],
+    'servers': [{'url': 'https://example.com/v1'}],
     'paths': {},
     K.components: {K.schemas: {}}
 }
+
+
+def path_create(item_type: str, verb='POST', ):
+    verb = verb.lower()
+    return {verb:
+            {'operationId': verb + item_type,
+             'requestBody': {'content': {'application/json':
+                                         {'schema': oas_ref(item_type)}},
+                             'required': True},
+             'responses': {405: {'description': 'Invalid input'}}}}
 
 
 class OAS(dict):
@@ -54,7 +64,7 @@ class OAS(dict):
     def __init__(self, *args, **kwds):
         super().__init__(template.copy())
 
-    @property
+    @ property
     def components(self):
         return self[K.components][K.schemas]
 
