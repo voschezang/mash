@@ -22,12 +22,12 @@ def test_oas_component():
     oas.extend(team)
     components = oas.components
 
-    assert components['Team']['description'] == team.__doc__
+    assert components['Team']['description'] == team.__doc__.strip()
     assert components['Team']['type'] == 'object'
     assert components['Team']['properties']['members'] == members
     assert components['Team']['properties']['team_type'] == team_type
     assert components['Team']['properties'] == properties
-    assert components == {'Team': {'description': team.__doc__,
+    assert components == {'Team': {'description': team.__doc__.strip(),
                                    'type': 'object',
                                    'properties': properties
                                    }
@@ -41,7 +41,7 @@ def test_oas_components():
     team = org.departments[0].teams[0]
     oas.extend(department)
 
-    assert oas.components['Team'] == {'description': team.__doc__,
+    assert oas.components['Team'] == {'description': team.__doc__.strip(),
                                       'type': 'object',
                                       'properties': properties
                                       }
