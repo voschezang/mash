@@ -5,6 +5,13 @@ See: [OAS](https://swagger.io/specification/)
 from object_parser import Spec, is_enum
 from typing import _GenericAlias
 
+translations = {
+    int: 'integer',
+    float: 'number',
+    str: 'string',
+    bool: 'boolean',
+}
+
 
 class K:
     """OAS keys
@@ -104,7 +111,7 @@ class OAS(dict):
                     'items': item
                 }
 
-            elif isinstance(v, str) and not type(v) is str:
+            elif type(v) not in translations.keys():
                 self.extend(v)
                 self.components[t][K.props][k] = oas_ref(item_type)
 
@@ -112,13 +119,19 @@ class OAS(dict):
                 self.components[t][K.props][k] = {'type': item_type}
 
 
-def oas_component(obj: Spec):
-    doc = obj.__doc__ if obj.__doc__ else ''
-    return {
-        'type': 'object',
-        K.props: {},
-        K.doc: doc
-    }
+def oas_component(obj: Spec, doc=''):
+    if not doc and obj.__doc__:
+        doc = obj.__doc__.strip()
+
+    result = {K.doc: doc}
+    if isinstance(obj, Spec):
+        result['type'] = 'object'
+        result[K.props] = {}
+
+    else:
+        result['type'] = infer_oas_type('')
+
+    return result
 
 
 def oas_ref(item=''):
@@ -127,12 +140,6 @@ def oas_ref(item=''):
 
 def infer_oas_type(obj):
     obj_type = type(obj)
-    translations = {
-        int: 'integer',
-        float: 'number',
-        str: 'string',
-        bool: 'boolean',
-    }
     try:
         return translations[obj_type]
     except KeyError:

@@ -16,8 +16,16 @@ class CustomSpec(Spec):
 User = str
 
 
+class Capacity(int):
+    """An example of a subclass of `int`
+    """
+
+    def __init__(self, value):
+        super().__init__(self, value)
+
+
 class SuperUser(User):
-    """An example of a subclass of a native type
+    """An example of a subclass of `str`
     """
     def __new__(cls, value):
         # transform example 1
@@ -55,6 +63,8 @@ class Team(CustomSpec):
     members: List[User]
     team_type: TeamType = 'A'
     active: bool = True
+    capacity: Capacity = 1
+    value: float = 1.
 
 
 class Department(CustomSpec):
