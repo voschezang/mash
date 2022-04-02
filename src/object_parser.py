@@ -17,7 +17,6 @@ class Spec():
         email: str
         default_age: int = 0
     ```
-    Because all attributes are parsable, all methods must start with an underscore.
 
     See object_parser_example.py for a larger use case example.
     """
@@ -31,50 +30,59 @@ class Spec():
             # merge all arguments
             kwds.update(data)
 
-        fields = cls._init_fields(kwds)
+        fields = cls.init_fields(kwds)
 
         instance = super(Spec, cls).__new__(cls)
         if hasattr(cls, '__annotations__'):
             for k in cls.__annotations__:
                 setattr(instance, k, fields[k])
 
-        instance._verify()
+        instance.verify()
         return instance
 
     def __init__(self, **kwds):
         print(self.__name__)
 
     @classmethod
-    def _init_fields(cls, data: dict) -> dict:
-        filtered_kwds = cls._parse_field_keys(data)
+    def init_fields(cls, data: dict) -> dict:
+        """Instantiate all entries of `data`
+        """
+        filtered_kwds = cls.parse_field_keys(data)
 
         result = {}
         if not filtered_kwds:
             return result
         elif not hasattr(cls, '__annotations__'):
             #raise SpecError(cls._unexpected_key(''))
-            raise SpecError(cls._no_type_annotations())
+            raise SpecError(cls.no_type_annotations())
 
         for key in cls.__annotations__:
-            result[key] = cls._init_field(key, filtered_kwds)
+            result[key] = cls.init_field(key, filtered_kwds)
 
         return result
 
     @classmethod
-    def _init_field(cls, key, data):
-
+    def init_field(cls, key, data):
         if key in data:
             return construct(cls.__annotations__[key], data[key])
         elif hasattr(cls, key):
             return getattr(cls, key)
 
-        raise SpecError(cls._missing_mandatory_key(key))
+        raise SpecError(cls.missing_mandatory_key(key))
 
-    def _verify(self):
+    def verify(self):
         """Verify this object.
         Note that this method can do verifications that are based on multiple fields.
+        Raise `SpecError` in case of a failed verification.
         """
         pass
+
+    @staticmethod
+    def parse(value):
+        """Transform raw input.
+        This can be used to for example convert an input to lowercase.
+        """
+        return value
 
     def __init__(self, data=None, **kwds):
         """"Init
@@ -83,22 +91,22 @@ class Spec():
         pass
 
     @classmethod
-    def _parse_field_keys(cls, data) -> dict:
+    def parse_field_keys(cls, data) -> dict:
         # note that dict comprehensions ignore duplicates
-        return {cls._parse_field_key(k): v for k, v in data.items()}
+        return {cls.parse_field_key(k): v for k, v in data.items()}
 
     @classmethod
-    def _parse_field_key(cls, key: str):
-        cls._validate_key_format(key)
+    def parse_field_key(cls, key: str):
+        cls.validate_key_format(key)
 
         key = key.lower()
         if hasattr(cls, '__annotations__') and key in cls.__annotations__:
             return key
 
-        return cls._translate_key(key)
+        return cls.translate_key(key)
 
     @classmethod
-    def _translate_key(cls, key: str):
+    def translate_key(cls, key: str):
         for original_key, key_translations in cls.translations.items():
             if key in key_translations:
                 return original_key
@@ -106,24 +114,24 @@ class Spec():
         raise SpecError(f'Unexpected key `{key}` in {cls}')
 
     @classmethod
-    def _validate_key_format(cls, key: str):
+    def validate_key_format(cls, key: str):
         if not is_alpha(key, ignore='_') or key.startswith('_'):
-            raise SpecError(cls._invalid_key_format(key))
+            raise SpecError(cls.invalid_key_format(key))
 
     @classmethod
-    def _invalid_key_format(cls, key: str):
+    def invalid_key_format(cls, key: str):
         return f'Format of key: `{key}` was invalid  in {cls}'
 
     @classmethod
-    def _missing_mandatory_key(cls, key: str):
+    def missing_mandatory_key(cls, key: str):
         return f'Missing mandatory key: `{key}` in {cls}'
 
     @classmethod
-    def _unexpected_key(cls, key):
+    def unexpected_key(cls, key):
         return f'Unexpected key `{key}` in {cls}'
 
     @classmethod
-    def _no_type_annotations(cls):
+    def no_type_annotations(cls):
         return f'No fields specified to initialize (no type annotations in {cls})'
 
     def items(self):

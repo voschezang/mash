@@ -3,6 +3,7 @@ import pytest
 from typing import List
 from object_parser import *
 
+
 def test_Spec__new__():
     obj = Spec.__new__(Spec)
     assert obj
@@ -22,14 +23,14 @@ def test_Spec__init__():
 def test_Spec_parse_field_key():
     key = 'non_existing_key'
     with pytest.raises(SpecError):
-        Spec._parse_field_key(key)
+        Spec.parse_field_key(key)
 
 
 def test_Spec_validate_key_formats():
     invalid_keys = ['a b c', '-ab', '_']
     for k in invalid_keys:
         with pytest.raises(SpecError):
-            Spec._validate_key_format(k)
+            Spec.validate_key_format(k)
 
 
 def test_constructor():
@@ -40,7 +41,7 @@ def test_constructor():
     assert construct(cls, value) == cls(value)
 
     list_of_ints = List[int]
-    values: list_of_ints = [2,3,4]
+    values: list_of_ints = [2, 3, 4]
     assert construct(list_of_ints, values) == values
 
 

@@ -17,6 +17,9 @@ class TeamType(Enum):
     A = auto()
     B = auto()
 
+    def f(self):
+        return 1
+
 
 class Team(CustomSpec):
     """A Team
@@ -36,7 +39,10 @@ class Organization(CustomSpec):
     ceo: User
     departments: List[Department]
 
-    def _validate(self):
+    def f(self) -> str:
+        return 1
+
+    def validate(self):
         if self.ceo in self.board:
             raise SpecError('Incompatible values')
 

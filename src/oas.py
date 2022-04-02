@@ -70,6 +70,9 @@ class OAS(dict):
         if t not in self.components:
             self.components[t] = oas_component(obj)
 
+        if not hasattr(obj, '__annotations__'):
+            return
+
         for k in obj.__annotations__:
             v = getattr(obj, k)
             item_type = infer_oas_type(v)
@@ -78,7 +81,7 @@ class OAS(dict):
                 self.extend(v)
                 self.components[t][K.props][k] = oas_ref(item_type)
 
-            if is_enum(type(v)):
+            elif is_enum(type(v)):
                 # use strings rather than enum.value
                 item_type = infer_oas_type('')
                 values = [e.name for e in type(v)]
@@ -100,6 +103,11 @@ class OAS(dict):
                     'type': 'array',
                     'items': item
                 }
+            
+            elif isinstance(v, str) and not type(v) is str:
+                self.extend(v)
+                self.components[t][K.props][k] = oas_ref(item_type)
+
             else:
                 self.components[t][K.props][k] = {'type': item_type}
 
