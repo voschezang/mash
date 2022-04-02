@@ -23,14 +23,14 @@ def test_Spec__init__():
 def test_Spec_parse_field_key():
     key = 'non_existing_key'
     with pytest.raises(SpecError):
-        Spec.parse_field_key(key)
+        Spec._parse_field_key(key)
 
 
 def test_Spec_validate_key_formats():
     invalid_keys = ['a b c', '-ab', '_']
     for k in invalid_keys:
         with pytest.raises(SpecError):
-            Spec.validate_key_format(k)
+            Spec.verify_key_format(k)
 
 
 def test_constructor():

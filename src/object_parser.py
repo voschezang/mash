@@ -18,57 +18,24 @@ class Spec():
         default_age: int = 0
     ```
 
-    See object_parser_example.py for a larger use case example.
+    User-defined methods
+    --------------------
+    - `.parse()` can be used to pre-process input values before instantiating objects
+    - `.verify()` can be used to check an object after instantiation
+
+    See object_parser_example.py for a larger usecase as an example.
     """
 
-    translations = {}
+    key_synonyms = {}
 
-    def __new__(cls, data={}, **kwds):
-        """ Generic constructor that validates the keys before initializing the object.
+    # def __init__(self, **kwds):
+    #     print(self.__name__)
+
+    def __init__(self, data=None, **kwds):
+        """"Init
+        This stub is included to show which args are used.
         """
-        if data:
-            # merge all arguments
-            kwds.update(data)
-
-        fields = cls.init_fields(kwds)
-
-        instance = super(Spec, cls).__new__(cls)
-        if hasattr(cls, '__annotations__'):
-            for k in cls.__annotations__:
-                setattr(instance, k, fields[k])
-
-        instance.verify()
-        return instance
-
-    def __init__(self, **kwds):
-        print(self.__name__)
-
-    @classmethod
-    def init_fields(cls, data: dict) -> dict:
-        """Instantiate all entries of `data`
-        """
-        filtered_kwds = cls.parse_field_keys(data)
-
-        result = {}
-        if not filtered_kwds:
-            return result
-        elif not hasattr(cls, '__annotations__'):
-            #raise SpecError(cls._unexpected_key(''))
-            raise SpecError(cls.no_type_annotations())
-
-        for key in cls.__annotations__:
-            result[key] = cls.init_field(key, filtered_kwds)
-
-        return result
-
-    @classmethod
-    def init_field(cls, key, data):
-        if key in data:
-            return construct(cls.__annotations__[key], data[key])
-        elif hasattr(cls, key):
-            return getattr(cls, key)
-
-        raise SpecError(cls.missing_mandatory_key(key))
+        pass
 
     def verify(self):
         """Verify this object.
@@ -79,44 +46,30 @@ class Spec():
 
     @staticmethod
     def parse(value):
-        """Transform raw input.
+        """Transform the raw input value of this object.
         This can be used to for example convert an input to lowercase.
         """
         return value
 
-    def __init__(self, data=None, **kwds):
-        """"Init
-        This stub is included to show which args are used.
+    @staticmethod
+    def parse_key(key):
+        """Transform a raw input key (attribute) of this object
+        This can be used to for example convert an input to lowercase.
+        Note that this method is applied to all keys (attributes).
         """
-        pass
+        return key
 
     @classmethod
-    def parse_field_keys(cls, data) -> dict:
-        # note that dict comprehensions ignore duplicates
-        return {cls.parse_field_key(k): v for k, v in data.items()}
-
-    @classmethod
-    def parse_field_key(cls, key: str):
-        cls.validate_key_format(key)
-
-        key = key.lower()
-        if hasattr(cls, '__annotations__') and key in cls.__annotations__:
-            return key
-
-        return cls.translate_key(key)
-
-    @classmethod
-    def translate_key(cls, key: str):
-        for original_key, key_translations in cls.translations.items():
-            if key in key_translations:
-                return original_key
-
-        raise SpecError(f'Unexpected key `{key}` in {cls}')
-
-    @classmethod
-    def validate_key_format(cls, key: str):
+    def verify_key_format(cls, key: str):
         if not is_alpha(key, ignore='_') or key.startswith('_'):
             raise SpecError(cls.invalid_key_format(key))
+
+    def items(self):
+        return {k: getattr(self, k) for k in self.__annotations__}
+
+    ############################################################################
+    # Error Messages
+    ############################################################################
 
     @classmethod
     def invalid_key_format(cls, key: str):
@@ -134,11 +87,77 @@ class Spec():
     def no_type_annotations(cls):
         return f'No fields specified to initialize (no type annotations in {cls})'
 
-    def items(self):
-        return {k: getattr(self, k) for k in self.__annotations__}
+    ############################################################################
+    # Internals
+    ############################################################################
 
-    def oas(self):
-        pass
+    def __new__(cls, data={}, **kwds):
+        """ Generic constructor that validates the keys before initializing the object.
+        """
+        if data:
+            # merge all arguments
+            kwds.update(data)
+
+        fields = cls._init_fields(kwds)
+
+        instance = super(Spec, cls).__new__(cls)
+        if hasattr(cls, '__annotations__'):
+            for k in cls.__annotations__:
+                setattr(instance, k, fields[k])
+
+        instance.verify()
+        return instance
+
+    @classmethod
+    def _init_fields(cls, data: dict) -> dict:
+        """Instantiate all entries of `data`
+        """
+        filtered_kwds = cls._parse_field_keys(data)
+
+        result = {}
+        if not filtered_kwds:
+            return result
+        elif not hasattr(cls, '__annotations__'):
+            #raise SpecError(cls._unexpected_key(''))
+            raise SpecError(cls.no_type_annotations())
+
+        for key in cls.__annotations__:
+            result[key] = cls._init_field(key, filtered_kwds)
+
+        return result
+
+    @classmethod
+    def _init_field(cls, key, data):
+        if key in data:
+            return construct(cls.__annotations__[key], data[key])
+        elif hasattr(cls, key):
+            return getattr(cls, key)
+
+        raise SpecError(cls.missing_mandatory_key(key))
+
+    @classmethod
+    def _parse_field_keys(cls, data) -> dict:
+        # note that dict comprehensions ignore duplicates
+        return {cls._parse_field_key(k): v for k, v in data.items()}
+
+    @classmethod
+    def _parse_field_key(cls, key: str):
+        cls.verify_key_format(key)
+
+        key = cls.parse_key(key)
+        if hasattr(cls, '__annotations__') and key in cls.__annotations__:
+            return key
+
+        return cls._find_synonym(key)
+
+    @classmethod
+    def _find_synonym(cls, key: str):
+        0
+        for original_key, synonyms in cls.key_synonyms.items():
+            if key in synonyms:
+                return original_key
+
+        raise SpecError(f'Unexpected key `{key}` in {cls}')
 
 
 class SpecError(Exception):
@@ -148,7 +167,7 @@ class SpecError(Exception):
 def construct(cls, args):
     if is_enum(cls):
         try:
-            return cls[args]
+            return cls[cls.parse(args)]
         except KeyError:
             raise SpecError(f'Invalid value for {cls}(Enum)')
 

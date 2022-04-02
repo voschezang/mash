@@ -7,7 +7,10 @@ from pprint import pprint
 
 
 class CustomSpec(Spec):
-    translations = {'ceo': ['boss']}
+    key_synonyms = {'ceo': ['boss']}
+
+    def parse_key(key):
+        return key.lower()
 
 
 User = str
@@ -17,8 +20,17 @@ class TeamType(Enum):
     A = auto()
     B = auto()
 
-    def f(self):
-        return 1
+    @staticmethod
+    def parse(value):
+        # standardize casing
+        value = value.upper()
+
+        # allow synonyms
+        value = value.upper()
+        if value in 'CDE':
+            value = 'A'
+
+        return value
 
 
 class Team(CustomSpec):
@@ -39,9 +51,6 @@ class Organization(CustomSpec):
     ceo: User
     departments: List[Department]
 
-    def f(self) -> str:
-        return 1
-
     def validate(self):
         if self.ceo in self.board:
             raise SpecError('Incompatible values')
@@ -55,7 +64,7 @@ example_data = {
             'teams': [{
                 'manager': 'danny',
                 'members': ['ernie', 'felix'],
-                'team_type': 'A'
+                'team_type': 'a'
             }]
     }]
 }
