@@ -28,9 +28,6 @@ class Spec():
 
     key_synonyms = {}
 
-    # def __init__(self, **kwds):
-    #     print(self.__name__)
-
     def __init__(self, data=None, **kwds):
         """"Init
         This stub is included to show which args are used.
@@ -46,8 +43,10 @@ class Spec():
 
     @staticmethod
     def parse(value):
-        """Transform the raw input value of this object.
-        This can be used to for example convert an input to lowercase.
+        """Transform the raw input value of this object, before calling `.__init__()`
+        This is mainly useful for Enums, but it is applied to all datatypes for consistency.
+
+        E.g. use this to change the casing of an input string.
         """
         return value
 
@@ -112,17 +111,17 @@ class Spec():
     def _init_fields(cls, data: dict) -> dict:
         """Instantiate all entries of `data`
         """
-        filtered_kwds = cls._parse_field_keys(data)
+        data = cls._parse_field_keys(data)
 
         result = {}
-        if not filtered_kwds:
+        if not data:
             return result
         elif not hasattr(cls, '__annotations__'):
-            #raise SpecError(cls._unexpected_key(''))
             raise SpecError(cls.no_type_annotations())
 
         for key in cls.__annotations__:
-            result[key] = cls._init_field(key, filtered_kwds)
+            result[key] = cls._init_field(key, data)
+            cls.verify(result[key])
 
         return result
 
@@ -167,7 +166,8 @@ class SpecError(Exception):
 def construct(cls, args):
     if is_enum(cls):
         try:
-            return cls[cls.parse(args)]
+            parsed_value = cls.parse(args)
+            return cls[parsed_value]
         except KeyError:
             raise SpecError(f'Invalid value for {cls}(Enum)')
 
@@ -175,8 +175,13 @@ def construct(cls, args):
         # assume this is a typing.List
         if len(cls.__args__) != 1:
             raise NotImplementedError
+
         list_item = cls.__args__[0]
         return [list_item(v) for v in args]
+
+    # try to apply `.parse`
+    if hasattr(cls, 'parse') and hasattr(cls.parse, '__call__'):
+        args = cls.parse(args)
 
     return cls(args)
 
@@ -189,6 +194,7 @@ def key_error_msg(key, spec: Spec):
 
 
 # Predicates
+
 
 def is_alpha(key: str, ignore=[]) -> bool:
     return all(c.isalpha() or c in ignore for c in key)

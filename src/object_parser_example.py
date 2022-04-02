@@ -16,6 +16,21 @@ class CustomSpec(Spec):
 User = str
 
 
+class SuperUser(User):
+    """An example of a subclass of a native type
+    """
+    def __new__(cls, value):
+        # transform example 1
+        value = value.lower()
+
+        return str.__new__(cls, value)
+
+    @staticmethod
+    def parse(name):
+        # transform example 2
+        return name.title()
+
+
 class TeamType(Enum):
     A = auto()
     B = auto()
@@ -34,11 +49,12 @@ class TeamType(Enum):
 
 
 class Team(CustomSpec):
-    """A Team
+    """An example of a subclass of custom Spec type
     """
     manager: User = 'admin'
     members: List[User]
     team_type: TeamType = 'A'
+    active: bool = True
 
 
 class Department(CustomSpec):
@@ -48,7 +64,7 @@ class Department(CustomSpec):
 
 class Organization(CustomSpec):
     board: List[User]
-    ceo: User
+    ceo: SuperUser
     departments: List[Department]
 
     def validate(self):

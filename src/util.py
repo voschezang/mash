@@ -18,9 +18,9 @@ def verbosity():
     if '-vvv' in sys.argv:
         return 3
     elif '-vv' in sys.argv:
-        return 3
+        return 2
     elif '-v' in sys.argv:
-        return 3
+        return 1
 
     return 0
 

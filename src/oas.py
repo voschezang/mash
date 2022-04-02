@@ -103,7 +103,7 @@ class OAS(dict):
                     'type': 'array',
                     'items': item
                 }
-            
+
             elif isinstance(v, str) and not type(v) is str:
                 self.extend(v)
                 self.components[t][K.props][k] = oas_ref(item_type)
@@ -126,13 +126,14 @@ def oas_ref(item=''):
 
 
 def infer_oas_type(obj):
-    obj_type = type(obj).__name__
+    obj_type = type(obj)
     translations = {
-        'int': 'integer',
-        'float': 'number',
-        'str': 'string',
+        int: 'integer',
+        float: 'number',
+        str: 'string',
+        bool: 'boolean',
     }
     try:
         return translations[obj_type]
     except KeyError:
-        return obj_type
+        return obj_type.__name__

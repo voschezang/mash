@@ -8,7 +8,8 @@ members = {'type': 'array',
 team_type = {'type': 'string', 'enum': ['A', 'B']}
 properties = {'manager': {'type': 'string'},
               'members': members,
-              'team_type': team_type
+              'team_type': team_type,
+              'active': {'type': 'boolean'}
               }
 
 

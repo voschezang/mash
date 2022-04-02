@@ -13,13 +13,23 @@ def test_User():
     assert user != email
 
 
+def test_SuperUser():
+    name = 'somename'
+    assert SuperUser.parse(SuperUser(name)) == 'Somename'
+
+
 def test_Team():
     manager = 'alice'
-    team = Team(manager=manager, members=[])
+    team = Team(manager=manager, members=[], active=False)
     assert team.manager == manager
+    assert not team.active
+
+    team = Team({'manager': manager, 'members': []})
+    assert team.manager == manager
+    assert team.active
 
     with pytest.raises(SpecError):
-        team = Team(manager=manager, an_incorrect_key=[])
+        team = Team(manager=manager, members=[], an_incorrect_key=[])
 
     # missing mandatory key
     with pytest.raises(SpecError):
@@ -52,4 +62,4 @@ def test_Organization():
 def test_Organization_with_translated_key():
     org = Organization(json)
     boss = json['boss']
-    assert org.ceo == boss
+    assert org.ceo.lower() == boss.lower()
