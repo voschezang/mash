@@ -1,27 +1,190 @@
 from typing import _GenericAlias
 from enum import Enum
+from util import has_method
+
+
+def init_recursively(cls, data={}):
+    """ Initialize `cls` with fields from `data`.
+    All child objects are recursively instantiated as well, based on type annotations.
+
+    `cls` should be an object with type annotations, e.g. a dataclass.
+    ```py
+    class User:
+        email: str
+        default_age: int = 0
+    ```
+    See object_parser_example.py for a larger usecase example.
+
+
+    User-defineable methods
+    --------------------
+    See the class `Spec` below for an example.
+
+    Process values
+    - `cls.parse_value()` can be used to pre-process input values before instantiating objects
+    - `cls.__post_init__()` can be used to check an object after initialization
+
+    Processing of keys
+    - `cls.parse_key()` can be used to pre-process input keys.
+    - `cls.verify_key_format()` defaults to verify_key_format
+    """
+    fields: dict = init_values(cls, data)
+
+    if hasattr(cls, '__dataclass_fields__'):
+        instance = cls(**fields)
+
+    else:
+        if issubclass(cls, Spec):
+            instance = super(Spec, cls).__new__(cls)
+        else:
+            instance = cls()
+
+        if hasattr(cls, '__annotations__'):
+            # assume instance of Spec
+            for k in cls.__annotations__:
+                if k not in fields:
+                    raise SpecError()
+                setattr(instance, k, fields[k])
+
+    if has_method(cls, '__post_init__'):
+        instance.__post_init__()
+
+    return instance
+
+
+def init_values(cls, data: dict) -> dict:
+    """Instantiate all values in `data`, based on the type annotations in `cls`.
+    """
+    data = _parse_field_keys(cls, data)
+
+    result = {}
+    if not data:
+        return result
+    elif not hasattr(cls, '__annotations__'):
+        raise SpecError(cls.no_type_annotations())
+
+    for key in cls.__annotations__:
+        result[key] = _init_field(cls, key, data)
+
+    return result
+
+
+def _init_field(cls, key, data):
+    if key in data:
+        return init(cls.__annotations__[key], data[key])
+    elif hasattr(cls, key):
+        return getattr(cls, key)
+
+    raise SpecError(missing_mandatory_key(cls, key))
+
+
+def init(cls, args):
+    if isinstance(cls, _GenericAlias):
+        # assume this is a typing.List
+        if len(cls.__args__) != 1:
+            raise NotImplementedError
+
+        list_item = cls.__args__[0]
+        return [list_item(v) for v in args]
+
+    if has_method(cls, 'parse_value'):
+        args = cls.parse_value(args)
+
+    if is_enum(cls):
+        try:
+            return cls[args]
+        except KeyError:
+            raise SpecError(f'Invalid value for {cls}(Enum)')
+
+    try:
+        obj = cls(args)
+
+    except ValueError as e:
+        raise SpecError(e)
+
+    if has_method(cls, '__post_init__'):
+        obj.__post_init__()
+
+    return obj
+
+
+def _parse_field_keys(cls, data) -> dict:
+    # note that dict comprehensions ignore duplicates
+    return {_parse_field_key(cls, k): v for k, v in data.items()}
+
+
+def _parse_field_key(cls, key: str):
+    if has_method(cls, 'verify_key_format'):
+        cls.verify_key_format(key)
+    else:
+        verify_key_format(cls, key)
+
+    if has_method(cls, 'parse_key'):
+        key = cls.parse_key(key)
+
+    if hasattr(cls, '__annotations__') and key in cls.__annotations__:
+        return key
+
+    return _find_synonym(cls, key)
+
+
+def _find_synonym(cls, key: str):
+    if hasattr(cls, 'key_synonyms'):
+        for original_key, synonyms in cls.key_synonyms.items():
+            if key in synonyms:
+                return original_key
+
+    raise SpecError(f'Unexpected key `{key}` in {cls}')
+
+################################################################################
+# Error Messages
+################################################################################
+
+
+def verify_key_format(cls, key: str):
+    if not is_alpha(key, ignore='_') or key.startswith('_'):
+        raise SpecError(invalid_key_format(cls, key))
+
+
+def invalid_key_format(cls, key: str):
+    return f'Format of key: `{key}` was invalid  in {cls}'
+
+
+def missing_mandatory_key(cls, key: str):
+    return f'Missing mandatory key: `{key}` in {cls}'
+
+
+def unexpected_key(cls, key):
+    return f'Unexpected key `{key}` in {cls}'
+
+
+def no_type_annotations(cls):
+    return f'No fields specified to initialize (no type annotations in {cls})'
+
+################################################################################
+# Predicates
+################################################################################
+
+
+def is_alpha(key: str, ignore=[]) -> bool:
+    return all(c.isalpha() or c in ignore for c in key)
+
+
+def is_enum(cls):
+    try:
+        return issubclass(cls, Enum)
+    except TypeError:
+        pass
 
 
 class Spec():
-    """Spec
+    """Example class
 
     Initialize with either:
     ```py
     Spec( {'a': 1, 'b': 2} )
     Spec(a=1, b=2)
     ```
-
-    A specification for an object can be defined using type annotations:
-    ```py
-    class User:
-        email: str
-        default_age: int = 0
-    ```
-
-    User-defined methods
-    --------------------
-    - `.parse()` can be used to pre-process input values before instantiating objects
-    - `.verify()` can be used to check an object after instantiation
 
     See object_parser_example.py for a larger usecase as an example.
     """
@@ -42,7 +205,7 @@ class Spec():
         pass
 
     @staticmethod
-    def parse(value):
+    def parse_value(value):
         """Transform the raw input value of this object, before calling `.__init__()`
         This is mainly useful for Enums, but it is applied to all datatypes for consistency.
 
@@ -60,31 +223,10 @@ class Spec():
 
     @classmethod
     def verify_key_format(cls, key: str):
-        if not is_alpha(key, ignore='_') or key.startswith('_'):
-            raise SpecError(cls.invalid_key_format(key))
+        return verify_key_format(cls, key)
 
     def items(self):
         return {k: getattr(self, k) for k in self.__annotations__}
-
-    ############################################################################
-    # Error Messages
-    ############################################################################
-
-    @classmethod
-    def invalid_key_format(cls, key: str):
-        return f'Format of key: `{key}` was invalid  in {cls}'
-
-    @classmethod
-    def missing_mandatory_key(cls, key: str):
-        return f'Missing mandatory key: `{key}` in {cls}'
-
-    @classmethod
-    def unexpected_key(cls, key):
-        return f'Unexpected key `{key}` in {cls}'
-
-    @classmethod
-    def no_type_annotations(cls):
-        return f'No fields specified to initialize (no type annotations in {cls})'
 
     ############################################################################
     # Internals
@@ -96,16 +238,7 @@ class Spec():
         if data:
             # merge all arguments
             kwds.update(data)
-
-        fields = cls._init_fields(kwds)
-
-        instance = super(Spec, cls).__new__(cls)
-        if hasattr(cls, '__annotations__'):
-            for k in cls.__annotations__:
-                setattr(instance, k, fields[k])
-
-        instance.verify()
-        return instance
+        return init_recursively(cls, kwds)
 
     def __repr__(self) -> str:
         cls = str(self.__class__)[1:-1]
@@ -113,101 +246,6 @@ class Spec():
         data = vars(self)
         return f'{repr} {data}'
 
-    @classmethod
-    def _init_fields(cls, data: dict) -> dict:
-        """Instantiate all entries of `data`
-        """
-        data = cls._parse_field_keys(data)
-
-        result = {}
-        if not data:
-            return result
-        elif not hasattr(cls, '__annotations__'):
-            raise SpecError(cls.no_type_annotations())
-
-        for key in cls.__annotations__:
-            result[key] = cls._init_field(key, data)
-            cls.verify(result[key])
-
-        return result
-
-    @classmethod
-    def _init_field(cls, key, data):
-        if key in data:
-            return construct(cls.__annotations__[key], data[key])
-        elif hasattr(cls, key):
-            return getattr(cls, key)
-
-        raise SpecError(cls.missing_mandatory_key(key))
-
-    @classmethod
-    def _parse_field_keys(cls, data) -> dict:
-        # note that dict comprehensions ignore duplicates
-        return {cls._parse_field_key(k): v for k, v in data.items()}
-
-    @classmethod
-    def _parse_field_key(cls, key: str):
-        cls.verify_key_format(key)
-
-        key = cls.parse_key(key)
-        if hasattr(cls, '__annotations__') and key in cls.__annotations__:
-            return key
-
-        return cls._find_synonym(key)
-
-    @classmethod
-    def _find_synonym(cls, key: str):
-        0
-        for original_key, synonyms in cls.key_synonyms.items():
-            if key in synonyms:
-                return original_key
-
-        raise SpecError(f'Unexpected key `{key}` in {cls}')
-
 
 class SpecError(Exception):
     pass
-
-
-def construct(cls, args):
-    if is_enum(cls):
-        try:
-            parsed_value = cls.parse(args)
-            return cls[parsed_value]
-        except KeyError:
-            raise SpecError(f'Invalid value for {cls}(Enum)')
-
-    if isinstance(cls, _GenericAlias):
-        # assume this is a typing.List
-        if len(cls.__args__) != 1:
-            raise NotImplementedError
-
-        list_item = cls.__args__[0]
-        return [list_item(v) for v in args]
-
-    # try to apply `.parse`
-    if hasattr(cls, 'parse') and hasattr(cls.parse, '__call__'):
-        args = cls.parse(args)
-
-    return cls(args)
-
-
-# Error Messages
-
-
-def key_error_msg(key, spec: Spec):
-    return f'key: {key} in {spec}'
-
-
-# Predicates
-
-
-def is_alpha(key: str, ignore=[]) -> bool:
-    return all(c.isalpha() or c in ignore for c in key)
-
-
-def is_enum(cls):
-    try:
-        return issubclass(cls, Enum)
-    except TypeError:
-        pass

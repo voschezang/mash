@@ -2,6 +2,7 @@ import string
 import pytest
 from typing import List
 from object_parser import *
+from object_parser import _parse_field_key
 
 
 def test_Spec__new__():
@@ -23,7 +24,7 @@ def test_Spec__init__():
 def test_Spec_parse_field_key():
     key = 'non_existing_key'
     with pytest.raises(SpecError):
-        Spec._parse_field_key(key)
+        _parse_field_key(Spec, key)
 
 
 def test_Spec_validate_key_formats():
@@ -35,19 +36,14 @@ def test_Spec_validate_key_formats():
 
 def test_constructor():
     value = 2
-    assert construct(int, value) == value
+    assert init(int, value) == value
 
     cls = str
-    assert construct(cls, value) == cls(value)
+    assert init(cls, value) == cls(value)
 
     list_of_ints = List[int]
     values: list_of_ints = [2, 3, 4]
-    assert construct(list_of_ints, values) == values
-
-
-def test_key_error_msg():
-    msg = key_error_msg('a', '<some class>')
-    assert len(msg) > 10
+    assert init(list_of_ints, values) == values
 
 
 def test_is_alpha():

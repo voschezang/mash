@@ -1,4 +1,5 @@
 import pytest
+from object_parser import init_recursively, init_values
 from src.object_parser_example import *
 
 json = example_data
@@ -47,7 +48,32 @@ def test_Team_enum():
 
 def test_Department():
     for department in json['departments']:
+
         d = Department(department)
+
+        assert d.manager == department['manager']
+        i = 0
+        assert d.teams[i].manager == department['teams'][i]['manager']
+        assert d.teams[i].members == department['teams'][i]['members']
+
+
+def test_DepartmentData():
+    for department in json['departments']:
+
+        d = init_recursively(DepartmentData, department)
+
+        assert d.manager == department['manager']
+        i = 0
+        assert d.teams[i].manager == department['teams'][i]['manager']
+        assert d.teams[i].members == department['teams'][i]['members']
+
+
+def test_DepartmentData2():
+    for department in json['departments']:
+
+        fields = init_values(DepartmentData, department)
+        d = DepartmentData(**fields)
+
         assert d.manager == department['manager']
         i = 0
         assert d.teams[i].manager == department['teams'][i]['manager']
@@ -63,3 +89,16 @@ def test_Organization_with_translated_key():
     org = Organization(json)
     boss = json['boss']
     assert org.ceo.lower() == boss.lower()
+
+
+def test_dataclass():
+
+    b = {'c': False}
+    b = init_recursively(B, b)
+
+    a = {'a': 1, 'b': 2, 'c': False}
+    a = init_recursively(A, a)
+
+    a = {'a': 'nan', 'b': 2, 'c': 'yes'}
+    with pytest.raises(SpecError):
+        a = init_recursively(A, a)

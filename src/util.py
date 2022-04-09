@@ -148,5 +148,7 @@ def terminal_size(default=os.terminal_size((80, 100))):
     except OSError:
         return default
 
+def has_method(cls, method) -> bool:
+    return hasattr(cls, method) and hasattr(getattr(cls, method), '__call__')
 
 set_verbosity()
