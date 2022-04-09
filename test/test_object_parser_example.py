@@ -16,7 +16,7 @@ def test_User():
 
 def test_SuperUser():
     name = 'somename'
-    assert SuperUser.parse(SuperUser(name)) == 'Somename'
+    assert SuperUser.parse_value(SuperUser(name)) == 'Somename'
 
 
 def test_Team():

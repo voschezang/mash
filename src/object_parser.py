@@ -27,6 +27,7 @@ def init_recursively(cls, data={}):
     Processing of keys
     - `cls.parse_key()` can be used to pre-process input keys.
     - `cls.verify_key_format()` defaults to verify_key_format
+    - `cls._key_synonyms` can be used to define alternative keys
     """
     fields: dict = init_values(cls, data)
 
@@ -129,8 +130,8 @@ def _parse_field_key(cls, key: str):
 
 
 def _find_synonym(cls, key: str):
-    if hasattr(cls, 'key_synonyms'):
-        for original_key, synonyms in cls.key_synonyms.items():
+    if hasattr(cls, '_key_synonyms'):
+        for original_key, synonyms in cls._key_synonyms.items():
             if key in synonyms:
                 return original_key
 
@@ -189,7 +190,7 @@ class Spec():
     See object_parser_example.py for a larger usecase as an example.
     """
 
-    key_synonyms = {}
+    _key_synonyms = {}
 
     def __init__(self, data=None, **kwds):
         """"Init

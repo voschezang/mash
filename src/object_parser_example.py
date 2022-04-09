@@ -111,6 +111,8 @@ class Organization(CustomSpec):
     ceo: SuperUser
     departments: List[Department]
 
+    _key_synonyms = {'ceo': ['boss']}
+
     def __post_init__(self):
         if self.ceo in self.board:
             raise SpecError('Incompatible values')
