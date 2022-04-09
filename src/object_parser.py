@@ -17,7 +17,7 @@ def init_recursively(cls, data={}):
 
 
     User-defineable methods
-    --------------------
+    -----------------------
     See the class `Spec` below for an example.
 
     Process values
@@ -28,6 +28,22 @@ def init_recursively(cls, data={}):
     - `cls.parse_key()` can be used to pre-process input keys.
     - `cls.verify_key_format()` defaults to verify_key_format
     - `cls._key_synonyms` can be used to define alternative keys
+
+
+    Internal
+    --------
+    In pseudocode:
+    ```py
+    for key, type in cls.annotations:
+        # pre-process
+        value = data[key]
+
+        # recursively initialize child-values
+        cls.key = type.__init__(value)
+
+        # post-process
+        cls.key.__post_init__()
+    ```
     """
     fields: dict = init_values(cls, data)
 
