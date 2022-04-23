@@ -1,6 +1,8 @@
 import flask
 from flask.testing import FlaskClient
 import pytest
+import os
+from io import BytesIO
 import server
 from server import basepath
 from http import HTTPStatus
@@ -75,6 +77,34 @@ def test_route_echo_int():
     responses = requests(url, N=5, json=json)
     assert all(verify_response(r, expected_data=str(json).encode())
                for r in responses)
+
+
+def test_document_post():
+    client = init()
+    fn = 'myfile.txt'
+    out_fn = server.UPLOAD_FOLDER + '/' + fn
+    try:
+        os.remove(out_fn)
+    except FileNotFoundError:
+        pass
+
+    body = b'abc'
+    expected_data = f'file {fn} was saved'
+    file = (BytesIO(body), fn)
+    res = client.post(basepath + 'document', data={'file': file})
+    assert_response(res, expected_data.encode())
+    assert fn in os.listdir(server.UPLOAD_FOLDER)
+
+
+def test_document_del():
+    client = init()
+    fn = server.UPLOAD_FOLDER + '/anotherfile.csv'
+    with open(fn, 'w') as f:
+        f.write('abc,def')
+
+    res = client.delete(basepath + 'document')
+    assert_response(res)
+    assert fn not in os.listdir(server.UPLOAD_FOLDER)
 
 
 def assert_response(response, expected_data=b'ok'):

@@ -1,13 +1,21 @@
-from flask import Flask, request, jsonify
-import numpy as np
-import time
+from flask import Flask, request
 from http import HTTPStatus
+from werkzeug.utils import secure_filename
+import numpy as np
+import os
+import shutil
+import time
 
+UPLOAD_FOLDER = 'tmp/flask-app'
+
+# Note the trailing `/`
 basepath = '/v1/'
 
 
 def init():
     app = Flask(__name__)
+    app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+    os.makedirs(UPLOAD_FOLDER, exist_ok=True)
     init_routes(app)
     return app
 
@@ -57,8 +65,27 @@ def init_routes(app):
 
     @app.route(basepath + "document", methods=['POST'])
     def create_document():
-        json = request.get_json()
-        return json.keys()
+        print(request.files)
+        try:
+            file = request.files['file']
+        except KeyError:
+            return 'Invalid Payload', HTTPStatus.BAD_REQUEST
+
+        fn = secure_filename(file.filename)
+        file.save(UPLOAD_FOLDER + '/' + fn)
+
+        return f'file {fn} was saved'
+
+    @app.route(basepath + "document", methods=['DELETE'])
+    def clear_documents():
+        for fn in os.listdir(UPLOAD_FOLDER):
+            try:
+                os.remove(UPLOAD_FOLDER + '/' + fn)
+            except (IsADirectoryError, PermissionError) as e:
+                # ignore folders
+                continue
+
+        return 'ok'
 
 
 if __name__ == "__main__":
