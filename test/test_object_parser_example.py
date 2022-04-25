@@ -1,5 +1,6 @@
 import pytest
 from object_parser import init_recursively, init_values
+from object_parser import JSONFactory
 from src.object_parser_example import *
 
 json = example_data
@@ -21,20 +22,34 @@ def test_SuperUser():
 
 def test_Team():
     manager = 'alice'
-    team = Team(manager=manager, members=[], active=False)
+    data = {'manager': manager, 'members': []}
+    team = Team(**data, active=False)
     assert team.manager == manager
     assert not team.active
 
-    team = Team({'manager': manager, 'members': []})
+    team = Team(data)
+    assert team.manager == manager
+    assert team.active
+
+    # alt init method, using Factory
+    user = JSONFactory(Team).build(data)
     assert team.manager == manager
     assert team.active
 
     with pytest.raises(SpecError):
-        team = Team(manager=manager, members=[], an_incorrect_key=[])
+        team = Team(**data, an_incorrect_key=[])
+
+    with pytest.raises(SpecError):
+        invalid_data = data.copy()
+        invalid_data['an_incorrect_key'] = []
+        team = JSONFactory(Team).build(invalid_data)
 
     # missing mandatory key
     with pytest.raises(SpecError):
         team = Team(manager=manager)
+
+    with pytest.raises(SpecError):
+        team = JSONFactory(Team).build({'manager': manager})
 
 
 def test_Team_enum():

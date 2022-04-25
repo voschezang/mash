@@ -1,10 +1,11 @@
 from typing import List
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from object_parser import Spec, SpecError
 from oas import OAS, path_create
 from enum import Enum, auto
 from json import dumps
-from pprint import pprint
+
+from object_parser import JSONFactory
 
 
 @dataclass
@@ -135,7 +136,11 @@ example_data = {
 
 
 if __name__ == '__main__':
-    org = Organization(example_data)
+    if 0:
+        org = Organization(example_data)
+    else:
+        org = JSONFactory(Organization).build(example_data)
+
     print(org)
     oas = OAS()
     oas.extend(org)

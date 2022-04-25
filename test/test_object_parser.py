@@ -3,6 +3,20 @@ import pytest
 from typing import List
 from object_parser import *
 from object_parser import _parse_field_key
+from object_parser import Factory, JSONFactory
+
+
+def test_abstract_factory():
+    with pytest.raises(TypeError):
+        Factory()
+
+
+def test_factory():
+    cls = int
+    errors = 'dummy'
+    f = JSONFactory(cls, errors)
+    assert f.cls == cls
+    assert f.errors == errors
 
 
 def test_Spec__new__():
