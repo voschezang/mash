@@ -272,7 +272,7 @@ def init_values(cls, data: dict) -> dict:
     if not data:
         return result
     elif not hasattr(cls, '__annotations__'):
-        raise SpecError(cls.no_type_annotations())
+        raise SpecError(ErrorMessages.no_type_annotations())
 
     for key in cls.__annotations__:
         result[key] = _init_field(cls, key, data)
@@ -286,7 +286,7 @@ def _init_field(cls, key, data):
     elif hasattr(cls, key):
         return getattr(cls, key)
 
-    raise SpecError(missing_mandatory_key(cls, key))
+    raise SpecError(ErrorMessages.missing_mandatory_key(cls, key))
 
 
 def init(cls, args):
@@ -350,27 +350,7 @@ def find_synonym(cls, key: str):
 
 def verify_key_format(cls, key: str):
     if not is_alpha(key, ignore='_') or key.startswith('_'):
-        raise SpecError(invalid_key_format(cls, key))
-
-################################################################################
-# Error Messages
-################################################################################
-
-
-def invalid_key_format(cls, key: str):
-    return f'Format of key: `{key}` was invalid  in {cls}'
-
-
-def missing_mandatory_key(cls, key: str):
-    return f'Missing mandatory key: `{key}` in {cls}'
-
-
-def unexpected_key(cls, key):
-    return f'Unexpected key `{key}` in {cls}'
-
-
-def no_type_annotations(cls):
-    return f'No fields specified to initialize (no type annotations in {cls})'
+        raise SpecError(ErrorMessages.invalid_key_format(cls, key))
 
 ################################################################################
 # Predicates
