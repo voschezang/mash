@@ -1,3 +1,12 @@
+"""Parse json-like data and init objects such as dataclasses.
+
+# Classes
+
+- `Factory` is a generic interface. 
+- `JSONFactory` is a concrete implementation.
+- `ErrorMessages` exposes a few custom strings.
+- `Spec` is a legacy alternative to dataclasses that provides a simplified constructor.
+"""
 from typing import _GenericAlias
 from enum import Enum
 from abc import ABC, abstractmethod
@@ -8,12 +17,20 @@ class ErrorMessages:
     """A static class with can be subclassed
     """
     @staticmethod
-    def missing_mandatory_key(cls, key: str):
+    def invalid_key_format(cls, key: str):
+        return f'Format of key: `{key}` was invalid  in {cls}'
+
+    @staticmethod
+    def missing_mandatory_key(cls, key: str) -> str:
         return f'Missing mandatory key: `{key}` in {cls}'
 
     @staticmethod
-    def no_type_annotations(cls):
+    def no_type_annotations(cls) -> str:
         return f'No fields specified to initialize (no type annotations in {cls})'
+
+    @staticmethod
+    def unexpected_key(cls, key):
+        return f'Unexpected key `{key}` in {cls}'
 
 
 class Factory(ABC):
@@ -30,6 +47,7 @@ class Factory(ABC):
 
         errors: ErrorMessages
             Can be replaced by a custom error message class.
+            Note that errors messages can be specific for a given field in `cls`.
 
         Examples
         --------
@@ -43,7 +61,6 @@ class Factory(ABC):
         self.cls = cls
         self.errors = errors
 
-    @abstractmethod
     def build(self, data={}):
         """Initialize `self.cls` with fields from `data`.
         All child objects are recursively instantiated as well, based on type annotations.
@@ -52,9 +69,8 @@ class Factory(ABC):
 
         Raises
         ------
-        SpecError (for a single field) 
-
-        SpecErrors (for multiple invalid fields).
+        - SpecError (for a single field) 
+        - SpecErrors (for multiple invalid fields).
 
         User-defineable methods
         -----------------------
@@ -67,35 +83,72 @@ class Factory(ABC):
         Processing of keys
         - `cls.parse_key()` can be used to pre-process input keys.
         - `cls.verify_key_format()` defaults to verify_key_format
-        - `cls._key_synonyms` can be used to define alternative keys
-
-        Internal
-        --------
-        In pseudocode:
-        ```py
-        for key, type in cls.annotations:
-            # 1. Pre-process
-            value = data[key]
-
-            # 2. Recursively initialize child-values
-            cls.key = type.__init__(value)
-
-            # 3. Post-process
-            cls.key.__post_init__()
-        ```
+        - `cls._key_synonyms: dict` can be used to define alternative keys
         """
-        pass
+        # pass
 
-
-class JSONFactory(Factory):
-    def build(self, data={}) -> object:
-        fields = self.build_fields(data)
-        instance = self.build_from_fields(fields)
+        parsed_data = self.parse_value(data)
+        instance = self.build_instance(parsed_data)
 
         if has_method(self.cls, '__post_init__'):
             instance.__post_init__()
 
         return instance
+
+    def parse_value(self, value) -> object:
+        """Use the optional method "parse_value" in `cls` to parse a value.
+        """
+        if has_method(self.cls, 'parse_value'):
+            return self.cls.parse_value(value)
+
+        return value
+
+    @abstractmethod
+    def build_instance(self, data) -> object:
+        """Build an instance of `self.cls`, after parsing input data but before finializing.
+        """
+        pass
+
+    ############################################################################
+    # Helpers
+    #
+    # These methods restrict how this class can be used.
+    ############################################################################
+
+    def verify_key_format(self, key: str):
+        """Verify key format.
+        Either using the optional method "parse_value" in `cls`, or otherwise 
+        using a default verification.
+        """
+        if has_method(self.cls, 'verify_key_format'):
+            self.cls.verify_key_format(key)
+
+    def find_synonym(self, key: str) -> str:
+        """Use the optional field "_key_synonyms" in `cls` to translate a key.
+        """
+        if hasattr(self.cls, '_key_synonyms'):
+            for original_key, synonyms in self.cls._key_synonyms.items():
+                if key in synonyms:
+                    return original_key
+
+        raise BuildError(self.errors.unexpected_key(self.cls, key))
+
+
+class JSONFactory(Factory):
+    def build_instance(self, data) -> object:
+        """Init either a `dataclass, list, Enum` or custom class. 
+        """
+        if has_method(data, 'items'):
+            fields = self.build_fields(data)
+            return self.build_from_dict(fields)
+
+        elif isinstance(self.cls, _GenericAlias):
+            return self.build_list(data)
+
+        if is_enum(self.cls):
+            return self.build_enum(data)
+
+        return self.build_object(data)
 
     ############################################################################
     # Internals
@@ -104,7 +157,7 @@ class JSONFactory(Factory):
     def build_fields(self, data={}) -> object:
         """Instantiate all fields in `cls`, based its type annotations and the values in `data`.
         """
-        data = _parse_field_keys(self.cls, data)
+        data = parse_field_keys(self.cls, data)
 
         result = {}
         if not data:
@@ -127,13 +180,16 @@ class JSONFactory(Factory):
 
     def build_field(self, key, data):
         if key in data:
-            return init(self.cls.__annotations__[key], data[key])
+            # return init(self.cls.__annotations__[key], data[key])
+            factory = JSONFactory(self.cls.__annotations__[key])
+            return factory.build(data[key])
+
         elif hasattr(self.cls, key):
             return getattr(self.cls, key)
 
         raise SpecError(self.errors.missing_mandatory_key(self.cls, key))
 
-    def build_from_fields(self, fields):
+    def build_from_dict(self, fields):
         if hasattr(self.cls, '__dataclass_fields__'):
             return self.cls(**fields)
 
@@ -150,6 +206,36 @@ class JSONFactory(Factory):
                 setattr(instance, k, fields[k])
 
         return instance
+
+    def build_list(self, items: list) -> list:
+        if len(self.cls.__args__) != 1:
+            raise NotImplementedError
+
+        list_item = self.cls.__args__[0]
+        factory = JSONFactory(list_item)
+        # return [list_item(v) for v in items]
+        return [factory.build(v) for v in items]
+
+    def build_enum(self, value) -> Enum:
+        if has_method(self.cls, 'parse_value'):
+            value = self.cls.parse_value(value)
+
+        try:
+            return self.cls[value]
+        except KeyError:
+            raise SpecError(f'Invalid value for {self.cls}(Enum)')
+
+    def build_object(self, data) -> object:
+        if has_method(self.cls, 'parse_value'):
+            data = self.cls.parse_value(data)
+
+        return self.cls(data)
+
+    def verify_key_format(self, key: str):
+        super().verify_key_format(key)
+        if not is_alpha(key, ignore='_') or key.startswith('_'):
+            raise BuildError(self.errors.invalid_key_format(key))
+            raise BuildError(self.errors.invalid_key_format(self.cls, key))
 
 
 def init_recursively(cls, data={}):
@@ -180,7 +266,7 @@ def init_recursively(cls, data={}):
 def init_values(cls, data: dict) -> dict:
     """Instantiate all values in `data`, based on the type annotations in `cls`.
     """
-    data = _parse_field_keys(cls, data)
+    data = parse_field_keys(cls, data)
 
     result = {}
     if not data:
@@ -233,12 +319,12 @@ def init(cls, args):
     return obj
 
 
-def _parse_field_keys(cls, data) -> dict:
+def parse_field_keys(cls, data) -> dict:
     # note that dict comprehensions ignore duplicates
-    return {_parse_field_key(cls, k): v for k, v in data.items()}
+    return {parse_field_key(cls, k): v for k, v in data.items()}
 
 
-def _parse_field_key(cls, key: str):
+def parse_field_key(cls, key: str):
     if has_method(cls, 'verify_key_format'):
         cls.verify_key_format(key)
     else:
@@ -250,10 +336,10 @@ def _parse_field_key(cls, key: str):
     if hasattr(cls, '__annotations__') and key in cls.__annotations__:
         return key
 
-    return _find_synonym(cls, key)
+    return find_synonym(cls, key)
 
 
-def _find_synonym(cls, key: str):
+def find_synonym(cls, key: str):
     if hasattr(cls, '_key_synonyms'):
         for original_key, synonyms in cls._key_synonyms.items():
             if key in synonyms:
@@ -295,7 +381,7 @@ def is_alpha(key: str, ignore=[]) -> bool:
     return all(c.isalpha() or c in ignore for c in key)
 
 
-def is_enum(cls):
+def is_enum(cls: type) -> bool:
     try:
         return issubclass(cls, Enum)
     except TypeError:
@@ -377,4 +463,12 @@ class SpecError(Exception):
 
 
 class SpecErrors(SpecError):
+    pass
+
+
+class BuildError(SpecError):
+    pass
+
+
+class BuildErrors(SpecError):
     pass

@@ -71,11 +71,27 @@ def test_Department():
         assert d.teams[i].manager == department['teams'][i]['manager']
         assert d.teams[i].members == department['teams'][i]['members']
 
+        # alt init method, using Factory
+        d = JSONFactory(Department).build(department)
+
+        assert d.manager == department['manager']
+        i = 0
+        assert d.teams[i].manager == department['teams'][i]['manager']
+        assert d.teams[i].members == department['teams'][i]['members']
+
 
 def test_DepartmentData():
     for department in json['departments']:
 
         d = init_recursively(DepartmentData, department)
+
+        assert d.manager == department['manager']
+        i = 0
+        assert d.teams[i].manager == department['teams'][i]['manager']
+        assert d.teams[i].members == department['teams'][i]['members']
+
+        # alt init method, using Factory
+        d = JSONFactory(DepartmentData).build(department)
 
         assert d.manager == department['manager']
         i = 0
@@ -97,6 +113,10 @@ def test_DepartmentData2():
 
 def test_Organization():
     org = Organization(json)
+    assert org.board == json['board']
+
+    # alt init method, using Factory
+    org = JSONFactory(Organization).build(json)
     assert org.board == json['board']
 
 

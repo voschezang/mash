@@ -1,9 +1,9 @@
-from typing import List
 from dataclasses import dataclass
-from object_parser import Spec, SpecError
-from oas import OAS, path_create
-from enum import Enum, auto
+from enum import auto, Enum
 from json import dumps
+from oas import OAS, path_create
+from object_parser import Spec, SpecError
+from typing import List
 
 from object_parser import JSONFactory
 
