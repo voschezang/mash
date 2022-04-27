@@ -124,14 +124,9 @@ class Factory(ABC):
             self.cls.verify_key_format(key)
 
     def find_synonym(self, key: str) -> str:
-        """Use the optional field "_key_synonyms" in `cls` to translate a key.
+        """Use the optional field "_key_synonyms" in `self.cls` to translate a key.
         """
-        if hasattr(self.cls, '_key_synonyms'):
-            for original_key, synonyms in self.cls._key_synonyms.items():
-                if key in synonyms:
-                    return original_key
-
-        raise BuildError(self.errors.unexpected_key(self.cls, key))
+        find_synonym(self.cls, key)
 
 
 class JSONFactory(Factory):
@@ -180,7 +175,7 @@ class JSONFactory(Factory):
 
     def build_field(self, key, data):
         if key in data:
-            # return init(self.cls.__annotations__[key], data[key])
+            self.verify_key_format(key)
             factory = JSONFactory(self.cls.__annotations__[key])
             return factory.build(data[key])
 
@@ -234,8 +229,79 @@ class JSONFactory(Factory):
     def verify_key_format(self, key: str):
         super().verify_key_format(key)
         if not is_alpha(key, ignore='_') or key.startswith('_'):
-            raise BuildError(self.errors.invalid_key_format(key))
             raise BuildError(self.errors.invalid_key_format(self.cls, key))
+
+################################################################################
+# Helpers
+################################################################################
+
+
+def parse_field_keys(cls, data) -> dict:
+    # note that dict comprehensions ignore duplicates
+    return {parse_field_key(cls, k): v for k, v in data.items()}
+
+
+def parse_field_key(cls, key: str):
+    if has_method(cls, 'verify_key_format'):
+        cls.verify_key_format(key)
+    else:
+        verify_key_format(cls, key)
+
+    if has_method(cls, 'parse_key'):
+        key = cls.parse_key(key)
+
+    if hasattr(cls, '__annotations__') and key in cls.__annotations__:
+        return key
+
+    return find_synonym(cls, key)
+
+
+def find_synonym(cls, key: str):
+    if hasattr(cls, '_key_synonyms'):
+        for original_key, synonyms in cls._key_synonyms.items():
+            if key in synonyms:
+                return original_key
+
+    raise BuildError(ErrorMessages.unexpected_key(cls, key))
+
+################################################################################
+# Predicates
+################################################################################
+
+
+def is_alpha(key: str, ignore=[]) -> bool:
+    return all(c.isalpha() or c in ignore for c in key)
+
+
+def is_enum(cls: type) -> bool:
+    try:
+        return issubclass(cls, Enum)
+    except TypeError:
+        pass
+
+###############################################################################
+# Exceptions
+###############################################################################
+
+
+class SpecError(Exception):
+    pass
+
+
+class SpecErrors(SpecError):
+    pass
+
+
+class BuildError(SpecError):
+    pass
+
+
+class BuildErrors(SpecError):
+    pass
+
+###############################################################################
+# Legacy
+###############################################################################
 
 
 def init_recursively(cls, data={}):
@@ -319,53 +385,9 @@ def init(cls, args):
     return obj
 
 
-def parse_field_keys(cls, data) -> dict:
-    # note that dict comprehensions ignore duplicates
-    return {parse_field_key(cls, k): v for k, v in data.items()}
-
-
-def parse_field_key(cls, key: str):
-    if has_method(cls, 'verify_key_format'):
-        cls.verify_key_format(key)
-    else:
-        verify_key_format(cls, key)
-
-    if has_method(cls, 'parse_key'):
-        key = cls.parse_key(key)
-
-    if hasattr(cls, '__annotations__') and key in cls.__annotations__:
-        return key
-
-    return find_synonym(cls, key)
-
-
-def find_synonym(cls, key: str):
-    if hasattr(cls, '_key_synonyms'):
-        for original_key, synonyms in cls._key_synonyms.items():
-            if key in synonyms:
-                return original_key
-
-    raise SpecError(f'Unexpected key `{key}` in {cls}')
-
-
 def verify_key_format(cls, key: str):
     if not is_alpha(key, ignore='_') or key.startswith('_'):
         raise SpecError(ErrorMessages.invalid_key_format(cls, key))
-
-################################################################################
-# Predicates
-################################################################################
-
-
-def is_alpha(key: str, ignore=[]) -> bool:
-    return all(c.isalpha() or c in ignore for c in key)
-
-
-def is_enum(cls: type) -> bool:
-    try:
-        return issubclass(cls, Enum)
-    except TypeError:
-        pass
 
 
 class Spec():
@@ -436,19 +458,3 @@ class Spec():
         repr = f'<{cls} object at {hex(id(self))}>'
         data = vars(self)
         return f'{repr} {data}'
-
-
-class SpecError(Exception):
-    pass
-
-
-class SpecErrors(SpecError):
-    pass
-
-
-class BuildError(SpecError):
-    pass
-
-
-class BuildErrors(SpecError):
-    pass
