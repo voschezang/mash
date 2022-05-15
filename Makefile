@@ -14,6 +14,9 @@ clean:
 setup:
 	pip3 install -r requirements.txt
 
+install:
+	python3 -m pip install .
+
 docs-init:
 	mkdir -p docs
 	cd docs && yes y | make sphinx-quickstart

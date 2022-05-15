@@ -10,6 +10,7 @@
 from typing import _GenericAlias
 from enum import Enum
 from abc import ABC, abstractmethod
+
 from util import has_method
 
 
