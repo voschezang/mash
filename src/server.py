@@ -1,3 +1,4 @@
+from http.client import BAD_REQUEST
 from flask import Flask, request
 from http import HTTPStatus
 from werkzeug.utils import secure_filename
@@ -5,6 +6,7 @@ import numpy as np
 import os
 import shutil
 import time
+import verify_server
 
 UPLOAD_FOLDER = 'tmp/flask-app'
 
@@ -86,6 +88,20 @@ def init_routes(app):
                 continue
 
         return 'ok'
+
+    @app.route(basepath + "server/verify", methods=['POST'])
+    def verify_target_server():
+        if 'URL' not in request.args:
+            return '', HTTPStatus.BAD_REQUEST
+
+        url = request.args['URL']
+
+        try:
+            success, msg = verify_server.main(url)
+        except ValueError:
+            return 'Invalid URL', HTTPStatus.BAD_REQUEST
+
+        return {'success': success, 'msg': msg}
 
 
 if __name__ == "__main__":
