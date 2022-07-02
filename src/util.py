@@ -116,6 +116,14 @@ def concat_empty_container(items):
     raise TypeError()
 
 
+def constant(value):
+    """Returns a constant function
+    """
+    def K(*args):
+        return value
+    return K
+
+
 def group(items, n):
     """Group items by chunks of size n.
     I.e. a lazy version of itertools.pairwise with variable groupsize.
@@ -148,7 +156,9 @@ def terminal_size(default=os.terminal_size((80, 100))):
     except OSError:
         return default
 
+
 def has_method(cls, method) -> bool:
     return hasattr(cls, method) and hasattr(getattr(cls, method), '__call__')
+
 
 set_verbosity()
