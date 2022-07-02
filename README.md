@@ -99,3 +99,34 @@ curl -X 'POST' 'http://localhost:5000/v1/organizations' \
   -H 'Content-Type: application/json' \
   -d '{ "board": [ "string" ], "ceo": "string", "departments": [ { "manager": "string", "teams": [ { "manager": "string", "members": [ "string" ], "team_type": "A", "active": true, "capacity": 0, "value": 0 } ] } ] }'
 ```
+
+# DSL Generator
+
+A tool to generate a [Domain-specific Language](https://en.wikipedia.org/wiki/Domain-specific_language) (DSL).
+
+## Usage
+
+Define a mapping between commands and functions.  Both Python functions and System-calls are supported.
+
+### Example
+
+See `src/dsl_example.py`.
+
+```sh
+# py src/dsl_example.py
+Welcome.  Type help or ? to list commands.
+
+$ ?
+
+Documented commands (type help <topic>):
+========================================
+e  example  f  g  h  help  ls  shell
+
+$ help g
+g x [y]
+
+	Parameters
+	----------
+		x: int
+		y
+```

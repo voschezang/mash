@@ -27,11 +27,18 @@ def infer(k, data: dict):
     return k
 
 
-def infer_args(func) -> list:
+def infer_default_and_non_default_args(func):
     args = list(func.__code__.co_varnames)
     n_default_args = len(func.__defaults__) if func.__defaults__ else 0
-    default_args = args[-n_default_args:]
-    return args[:-n_default_args] + [f'[{a}]' for a in default_args]
+    n_non_default_args = len(args) - n_default_args
+    non_default_args = args[:n_non_default_args]
+    default_args = args[n_non_default_args:]
+    return non_default_args, default_args
+
+
+def infer_args(func) -> list:
+    non_default_args, default_args = infer_default_and_non_default_args(func)
+    return non_default_args + [f'[{a}]' for a in default_args]
 
 
 def infer_synopsis(func) -> str:
@@ -58,7 +65,7 @@ def infer_signature(func) -> list:
 
 class Function:
     def __init__(self, func, synopsis=None, args=None, doc=None) -> None:
-        # synopsis = func.__name__ + '-' + '[a] b c'
+        # TODO args should be a dict {name: description}
         if synopsis is None:
             synopsis = infer_synopsis(func)
         if args is None:
@@ -81,9 +88,10 @@ class Function:
         self.help = help
 
     def __call__(self, args):
-        # TODO verify min_args < n_args < max_args
+        args = args.split(' ')
+
         try:
-            result = self.func(*args.split(' '))
+            result = self.func(*args)
         except TypeError as e:
             print('TypeError:', e)
             return

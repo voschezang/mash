@@ -2,7 +2,7 @@ from dsl import Shell, set_functions, Function, shell
 
 
 def f(x: int): return x
-def g(x: int, y): return x + y
+def g(x: int, y=1): return x + y
 def h(x: int, y: float, z): return x + y * z
 
 
