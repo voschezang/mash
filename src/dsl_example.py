@@ -1,4 +1,4 @@
-from dsl import Shell, set_functions, Function, shell, run
+from dsl import Function, shell, main
 from util import identity
 
 
@@ -12,7 +12,7 @@ def example(a: int, b, c: float = 3.):
 
     Parameters
     ----------
-        a: positive number 
+        a: positive number
         b: object
     """
     return a
@@ -23,10 +23,10 @@ functions = {'f': f,
              'h': h,
              'example': example,
              'echo': identity,
-             'ls': Function(shell('ls'), args=['-latr'])}
+             'ls': Function(shell('ls'), args=['-latr'], synopsis='ls -latr [FOLDER]'),
+             'cat': Function(shell('cat'), args=['file'], synopsis='cat file'),
+             'vi': Function(shell('vi'), args=['[file]'], synopsis='vi [file]')}
 
 
 if __name__ == '__main__':
-    shell = Shell()
-    set_functions(functions)
-    run(shell)
+    main(functions)

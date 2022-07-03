@@ -22,6 +22,8 @@ class Shell(cmd.Cmd):
     prompt = '$ '
     exception = None
 
+    # TODO save stdout in a tmp file
+
     def do_shell(self, args):
         """System call
         """
@@ -45,12 +47,12 @@ class Shell(cmd.Cmd):
     def onecmd_prehook(self, line):
         """Similar to cmd.precmd but executed before cmd.onecmd
         """
-        assert util.interactive
-
-        print('Command:', line)
         if confirmation_mode:
+            assert util.interactive
+            print('Command:', line)
             if not util.confirm():
-                return 'nothing'
+                return ''
+
         return line
 
 
@@ -93,7 +95,8 @@ def set_functions(functions: Dict[str, Function]):
 
 def shell(cmd: str):
     def func(*args):
-        return os.system(''.join(cmd + args))
+        args = ' '.join(args)
+        return os.system(''.join(cmd + ' ' + args))
     func.__name__ = cmd
     return func
 
@@ -133,6 +136,13 @@ def run(shell=None):
         # run interactively
         util.interactive = True
         shell.cmdloop()
+
+
+def main(functions: Dict[str, Function] = {}):
+    shell = Shell()
+    if functions:
+        set_functions(functions)
+    run(shell)
 
 
 if __name__ == '__main__':
