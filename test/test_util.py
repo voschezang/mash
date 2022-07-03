@@ -1,4 +1,4 @@
-from util import concat
+from util import concat, infer_signature, infer_synopsis, generate_docs
 
 
 def test_concat_empty_container():
@@ -21,3 +21,34 @@ def test_concat():
     assert concat([(1, 2), (2, 3)]) == (1, 2, 2, 3)
 
     assert concat([{'a': 1, 'z': 2}]) == {'a': 1, 'z': 2}
+
+
+def func(a, b: int, c: str = None) -> tuple:
+    return a, b
+
+
+def test_infer_synopsis():
+    expected = 'func a b [c]'
+    result = infer_synopsis(func)
+    assert result == expected
+
+
+def test_infer_signature():
+    expected = ['a', 'b: int', '[c]: str']
+    result = infer_signature(func)
+    assert result == expected
+
+
+def test_generate_docs():
+    expected = """func a b [c]
+
+    Parameters
+    ----------
+        a
+        b: int
+        [c]: str
+    """
+    result = generate_docs(func)
+    print(result)
+    print(expected)
+    assert result == expected

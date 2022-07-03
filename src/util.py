@@ -1,4 +1,5 @@
 import os
+from typing import Dict, List
 import logging
 import argparse
 import functools
@@ -116,12 +117,93 @@ def concat_empty_container(items):
     raise TypeError()
 
 
+def identity(value):
+    return value
+
+
 def constant(value):
     """Returns a constant function
     """
     def K(*args):
         return value
     return K
+
+
+def infer_default_and_non_default_args(func):
+    args = list(func.__code__.co_varnames)
+    n_default_args = len(func.__defaults__) if func.__defaults__ else 0
+    n_non_default_args = len(args) - n_default_args
+    non_default_args = args[:n_non_default_args]
+    default_args = args[n_non_default_args:]
+    return non_default_args, default_args
+
+
+def infer_args(func) -> list:
+    non_default_args, default_args = infer_default_and_non_default_args(func)
+    return non_default_args + [f'[{a}]' for a in default_args]
+
+
+def infer_synopsis(func) -> str:
+    items = [func.__name__]
+    if func.__code__.co_varnames:
+        return ' '.join([func.__name__] + infer_args(func))
+    return func.__name__
+
+
+def infer_signature(func) -> list:
+    _, default_args = infer_default_and_non_default_args(func)
+
+    def format(k):
+        key = k
+        if k in default_args:
+            key = f'[{k}]'
+
+        if k in func.__annotations__:
+            v = func.__annotations__[k].__name__
+            return f'{key}: {v}'
+
+        return key
+
+    return [format(var) for var in func.__code__.co_varnames]
+
+
+def generate_parameter_docs(parameters) -> str:
+    # explicitly define a tab to allow custom tab-widths
+    tab = """
+    """[1:]
+
+    double_tab = tab + tab
+    parameters = f'\n{double_tab}'.join(parameters)
+
+    doc = f"""
+    Parameters
+    ----------
+        {parameters}
+    """
+
+    # rm first newline
+    return doc[1:]
+
+
+def generate_docs(func, synopsis: str = None, args: List[str] = None, doc: str = None) -> str:
+    if not hasattr(func, '__code__'):
+        if synopsis is None and args is None:
+            raise NotImplementedError('Cannot infer function signature')
+
+    if synopsis is None:
+        synopsis = infer_synopsis(func)
+    if args is None:
+        args = infer_signature(func)
+    if doc is None:
+        if func.__doc__:
+            doc = func.__doc__
+        elif args:
+            doc = generate_parameter_docs(args)
+
+    # only use doc when non-empty
+    if doc:
+        return synopsis + '\n\n' + doc
+    return synopsis
 
 
 def group(items, n):
