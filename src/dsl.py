@@ -79,14 +79,16 @@ def shell(cmd: str):
 
 def set_cli_args():
     add_default_args()
-    util.parser.add_argument('cmd', nargs='*')
+    util.parser.add_argument(
+        'cmd', nargs='*', help='A comma separated list of commands')
     util.parse_args = util.parser.parse_args()
 
 
-def run_commands(shell: Shell, commands: list):
-    commands = ' '.join(commands) + ';'
-    for line in commands.split(';'):
-        shell.onecmd(line)
+def run_commands(shell: Shell, commands: list, delimiter=','):
+    commands = ' '.join(commands) + delimiter
+    for line in commands.split(delimiter):
+        if line:
+            shell.onecmd(line)
 
 
 def run(shell=None):
@@ -95,9 +97,9 @@ def run(shell=None):
     if shell is None:
         shell = Shell()
 
-    if util.parse_args.dsl:
+    if util.parse_args.cmd:
         # compile mode
-        run_commands(shell, util.parse_args.dsl)
+        run_commands(shell, util.parse_args.cmd)
     else:
         # run interactively
         shell.cmdloop()

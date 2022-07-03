@@ -112,6 +112,13 @@ Define a mapping between commands and functions.  Both Python functions and Syst
 
 See `src/dsl_example.py`.
 
+
+```sh
+# py src/dsl_example.py echo hello, echo world
+hello
+world
+```
+
 ```sh
 # py src/dsl_example.py
 Welcome.  Type help or ? to list commands.

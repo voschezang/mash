@@ -1,4 +1,5 @@
 from dsl import Shell, set_functions, Function, shell, run
+from util import identity
 
 
 def f(x: int): return x
@@ -22,6 +23,7 @@ functions = {'f': f,
              'h': h,
              'e': example,
              'example': example,
+             'echo': identity,
              'ls': Function(shell('ls'), args=['-latr'])}
 
 
