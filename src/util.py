@@ -9,6 +9,8 @@ from collections.abc import Sequence
 parse_args: argparse.Namespace = None
 parser: argparse.ArgumentParser = None
 
+interactive = False
+
 
 @functools.lru_cache(maxsize=1)
 def verbosity():
@@ -115,6 +117,17 @@ def concat_empty_container(items):
             return e
 
     raise TypeError()
+
+
+def confirm(msg='Continue [Y/n]? '):
+    """Ask user for confirmation
+    Default to yes
+    """
+    if not interactive:
+        return True
+
+    res = input(msg).lower()
+    return 'n' not in res
 
 
 def identity(value):

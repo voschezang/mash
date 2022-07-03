@@ -1,12 +1,11 @@
-import argparse
+from types import TracebackType
+from typing import Dict, List
 import cmd
-import traceback
 import os
 import sys
-from typing import Dict, List
-from types import TracebackType
+import traceback
 import util
-from util import generate_docs, add_and_parse_args, add_default_args
+from util import generate_docs, add_default_args
 
 # this data is impacts by both the classes Function and Shell, hence it should be global
 exception_hint = '(run `E` for details)'
@@ -14,6 +13,8 @@ exception_hint = '(run `E` for details)'
 # global cache: sys.last_value and sys.last_traceback don't store exceptions raised in cmd.Cmd
 last_exception: Exception = None
 last_traceback: TracebackType = None
+
+confirmation_mode = False
 
 
 class Shell(cmd.Cmd):
@@ -31,6 +32,26 @@ class Shell(cmd.Cmd):
         """
         traceback.print_exception(
             type(last_exception), last_exception, last_traceback)
+
+    def emptyline(self, line):
+        # supresses the default behaviour of repeating the previous command
+        pass
+
+    def onecmd(self, line):
+        # force precmd hook to be used outside of loop mode
+        line = self.onecmd_prehook(line)
+        super().onecmd(line)
+
+    def onecmd_prehook(self, line):
+        """Similar to cmd.precmd but executed before cmd.onecmd
+        """
+        assert util.interactive
+
+        print('Command:', line)
+        if confirmation_mode:
+            if not util.confirm():
+                return 'nothing'
+        return line
 
 
 class Function:
@@ -78,10 +99,18 @@ def shell(cmd: str):
 
 
 def set_cli_args():
+    global confirmation_mode
+
     add_default_args()
     util.parser.add_argument(
         'cmd', nargs='*', help='A comma separated list of commands')
+    util.parser.add_argument(
+        '-s', '--safe', action='store_true', help='Safe-mode. Ask for confirmation before executing commands')
     util.parse_args = util.parser.parse_args()
+
+    if util.parse_args.safe:
+        confirmation_mode = True
+        util.interactive = True
 
 
 def run_commands(shell: Shell, commands: list, delimiter=','):
@@ -102,6 +131,7 @@ def run(shell=None):
         run_commands(shell, util.parse_args.cmd)
     else:
         # run interactively
+        util.interactive = True
         shell.cmdloop()
 
 

@@ -21,7 +21,6 @@ def example(a: int, b, c: float = 3.):
 functions = {'f': f,
              'g': g,
              'h': h,
-             'e': example,
              'example': example,
              'echo': identity,
              'ls': Function(shell('ls'), args=['-latr'])}
