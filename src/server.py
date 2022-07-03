@@ -4,7 +4,6 @@ from http import HTTPStatus
 from werkzeug.utils import secure_filename
 import numpy as np
 import os
-import shutil
 import time
 import verify_server
 
