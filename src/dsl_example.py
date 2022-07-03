@@ -23,9 +23,9 @@ functions = {'f': f,
              'h': h,
              'example': example,
              'echo': identity,
-             'ls': Function(shell('ls'), args=['-latr'], synopsis='ls -latr [FOLDER]'),
-             'cat': Function(shell('cat'), args=['file'], synopsis='cat file'),
-             'vi': Function(shell('vi'), args=['[file]'], synopsis='vi [file]')}
+             'ls': Function(shell('ls'), args={'-latr': 'flags', '[file]': ''}),
+             'cat': Function(shell('cat'), args={'file': ''}),
+             'vi': Function(shell('vi'), args={'[file]': ''})}
 
 
 if __name__ == '__main__':

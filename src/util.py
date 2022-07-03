@@ -156,14 +156,15 @@ def infer_args(func) -> list:
     return non_default_args + [f'[{a}]' for a in default_args]
 
 
-def infer_synopsis(func) -> str:
-    items = [func.__name__]
-    if func.__code__.co_varnames:
-        return ' '.join([func.__name__] + infer_args(func))
-    return func.__name__
+def infer_synopsis(func, variables=[]) -> str:
+    if not variables:
+        variables = infer_args(func)
+    # if func.__code__.co_varnames:
+    # return ' '.join([func.__name__] + infer_args(func))
+    return ' '.join([func.__name__] + variables)
 
 
-def infer_signature(func) -> list:
+def infer_signature(func) -> dict:
     _, default_args = infer_default_and_non_default_args(func)
 
     def format(k):
@@ -173,11 +174,12 @@ def infer_signature(func) -> list:
 
         if k in func.__annotations__:
             v = func.__annotations__[k].__name__
-            return f'{key}: {v}'
+            return key, f': {v}'
 
-        return key
+        return key, ''
 
-    return [format(var) for var in func.__code__.co_varnames]
+    pairs = [format(var) for var in func.__code__.co_varnames]
+    return {k: v for k, v in pairs}
 
 
 def generate_parameter_docs(parameters) -> str:
@@ -185,8 +187,9 @@ def generate_parameter_docs(parameters) -> str:
     tab = """
     """[1:]
 
-    double_tab = tab + tab
-    parameters = f'\n{double_tab}'.join(parameters)
+    # transform dict to a multline string
+    lines = (''.join(v) for v in parameters.items())
+    parameters = f'\n{tab}{tab}'.join(lines)
 
     doc = f"""
     Parameters
@@ -198,15 +201,15 @@ def generate_parameter_docs(parameters) -> str:
     return doc[1:]
 
 
-def generate_docs(func, synopsis: str = None, args: List[str] = None, doc: str = None) -> str:
+def generate_docs(func, synopsis: str = None, args: Dict[str, str] = None, doc: str = None) -> str:
     if not hasattr(func, '__code__'):
         if synopsis is None and args is None:
             raise NotImplementedError('Cannot infer function signature')
 
-    if synopsis is None:
-        synopsis = infer_synopsis(func)
     if args is None:
         args = infer_signature(func)
+    if synopsis is None:
+        synopsis = infer_synopsis(func, list(args.keys()))
     if doc is None:
         if func.__doc__:
             doc = func.__doc__

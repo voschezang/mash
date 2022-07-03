@@ -35,6 +35,7 @@ def test_infer_synopsis():
 
 def test_infer_signature():
     expected = ['a', 'b: int', '[c]: str']
+    expected = {'a': '', 'b': ': int', '[c]': ': str'}
     result = infer_signature(func)
     assert result == expected
 

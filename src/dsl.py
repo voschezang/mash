@@ -57,7 +57,8 @@ class Shell(cmd.Cmd):
 
 
 class Function:
-    def __init__(self, func, synopsis: str = None, args: List[str] = None, doc: str = None) -> None:
+    # def __init__(self, func, synopsis: str = None, args: List[str] = None, doc: str = None) -> None:
+    def __init__(self, func, synopsis: str = None, args: Dict[str, str] = None, doc: str = None) -> None:
         help = generate_docs(func, synopsis, args, doc)
 
         self.func = func
