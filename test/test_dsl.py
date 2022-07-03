@@ -10,7 +10,6 @@ def test_Function_args():
     synopsis = 'list'
     func = Function(list, args=[], synopsis=synopsis, doc='')
     assert func.func == list
-    assert func.args == []
     assert func.help == synopsis
 
 

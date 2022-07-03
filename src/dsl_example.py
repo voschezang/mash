@@ -1,4 +1,4 @@
-from dsl import Shell, set_functions, Function, shell
+from dsl import Shell, set_functions, Function, shell, run
 
 
 def f(x: int): return x
@@ -27,5 +27,5 @@ functions = {'f': f,
 
 if __name__ == '__main__':
     shell = Shell()
-    set_functions(shell, functions)
-    shell.cmdloop()
+    set_functions(functions)
+    run(shell)

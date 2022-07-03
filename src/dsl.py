@@ -1,10 +1,12 @@
+import argparse
 import cmd
 import traceback
 import os
 import sys
 from typing import Dict, List
 from types import TracebackType
-from util import generate_docs
+import util
+from util import generate_docs, add_and_parse_args, add_default_args
 
 # this data is impacts by both the classes Function and Shell, hence it should be global
 exception_hint = '(run `E` for details)'
@@ -59,7 +61,7 @@ class Function:
         print('\t', last_exception)
 
 
-def set_functions(shell: cmd.Cmd, functions: Dict[str, Function]):
+def set_functions(functions: Dict[str, Function]):
     for key, func in functions.items():
         if not isinstance(func, Function):
             func = Function(func)
@@ -75,6 +77,31 @@ def shell(cmd: str):
     return func
 
 
+def set_cli_args():
+    add_default_args()
+    util.parser.add_argument('cmd', nargs='*')
+    util.parse_args = util.parser.parse_args()
+
+
+def run_commands(shell: Shell, commands: list):
+    commands = ' '.join(commands) + ';'
+    for line in commands.split(';'):
+        shell.onecmd(line)
+
+
+def run(shell=None):
+    set_cli_args()
+
+    if shell is None:
+        shell = Shell()
+
+    if util.parse_args.dsl:
+        # compile mode
+        run_commands(shell, util.parse_args.dsl)
+    else:
+        # run interactively
+        shell.cmdloop()
+
+
 if __name__ == '__main__':
-    shell = Shell()
-    shell.cmdloop()
+    run()
