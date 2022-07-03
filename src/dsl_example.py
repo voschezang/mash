@@ -24,6 +24,7 @@ functions = {'f': f,
              'example': example,
              'ls': Function(shell('ls'), args=['-latr'])}
 
+
 if __name__ == '__main__':
     shell = Shell()
     set_functions(shell, functions)
