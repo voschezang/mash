@@ -1,9 +1,9 @@
-import io
-import sys
 from contextlib import redirect_stdout
-# from io import StringIO
+from io import StringIO
 from pydoc import synopsis
-from dsl import Function
+import pytest
+
+from dsl import Function, run_command
 
 
 def test_Function_args():
@@ -16,12 +16,17 @@ def test_Function_args():
 def test_Function_call():
     value = '1'
 
-    # note that results are printed rather than returned
-    out = io.StringIO()
-    with redirect_stdout(out):
-        Function(int, args=[], synopsis='')(value)
-        assert out.getvalue() == value + '\n'
+    f = Function(int, args=[], synopsis='')
 
-        # with missing argument
-        Function(int, args=[], synopsis='')()
-        assert 'ValueError' in out.getvalue()
+    assert f(value) in [int(value), value + '\n']
+    assert f() is None
+
+
+def test_pipe():
+    line = 'echo 100 |> echo'
+    out = StringIO()
+    with redirect_stdout(out):
+        run_command(line)
+        x = out.getvalue()
+
+    assert out.getvalue() == '100\n'

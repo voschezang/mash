@@ -1,11 +1,17 @@
+#!/usr/bin/python3
+from contextlib import redirect_stdout
+import subprocess
+from copy import deepcopy
+from io import StringIO
 from types import TracebackType
 from typing import Dict, List
 import cmd
 import os
 import sys
 import traceback
+
 import util
-from util import generate_docs, add_default_args
+from util import generate_docs
 
 # this data is impacts by both the classes Function and Shell, hence it should be global
 exception_hint = '(run `E` for details)'
@@ -21,6 +27,8 @@ class Shell(cmd.Cmd):
     intro = 'Welcome.  Type help or ? to list commands.\n'
     prompt = '$ '
     exception = None
+    shell_result = ''
+    suppress_shell_output = False
 
     # TODO save stdout in a tmp file
 
@@ -29,20 +37,107 @@ class Shell(cmd.Cmd):
         """
         os.system(args)
 
+    def do_echo(self, args):
+        return args
+
     def do_E(self, args):
         """Show the last exception
         """
         traceback.print_exception(
             type(last_exception), last_exception, last_traceback)
 
-    def emptyline(self, line):
-        # supresses the default behaviour of repeating the previous command
+    def emptyline(self):
+        # this supresses the default behaviour of repeating the previous command
+        # TODO fixme
         pass
 
+    def default(self, line):
+        self.last_command_has_failed = True
+        super().default(line)
+
     def onecmd(self, line):
-        # force precmd hook to be used outside of loop mode
+        """Parse and run `line`.
+        Return 0 on success and None otherwise
+        """
+        # force a custom precmd hook to be used outside of loop mode
         line = self.onecmd_prehook(line)
-        super().onecmd(line)
+
+        self.last_command_has_failed = False
+
+        if '|' in line:
+            return self.onecmd_with_pipe(line)
+
+        result = super().onecmd(line)
+        print(result)
+        return 0
+
+    def onecmd_with_pipe(self, line):
+        if '|' in line:
+            line, *lines = line.split('|')
+        else:
+            lines = []
+
+        result = self.onecmd_supress_output(line)
+        if not result:
+            self.last_command_has_failed = True
+
+        if self.last_command_has_failed:
+            print('Abort - No return value (3)')
+            return
+
+        # TODO pipe shell output back to Python after |>
+
+        elif lines:
+            for line in lines:
+                line = f'{line} {result}'
+                if line[0] == '>':
+                    # use Python
+                    line = line[1:]
+                    # result = super().onecmd(line)
+                    result = self.onecmd_supress_output(line)
+                else:
+                    # use shell
+                    result = subprocess.run(
+                        args=line, capture_output=True, shell=True)
+                    if result.returncode != 0:
+                        print(
+                            f'Shell exited with {result.returncode}: {result.stderr.decode()}')
+                        return
+
+                    # self.stderr.append(f'stderr: {result.stderr.decode()}')
+
+                    # TODO don't ignore stderr
+                    result = result.stdout.decode()
+
+                if result is None:
+                    print('Abort - No return value')
+                    return
+
+        print(result)
+        return 0
+
+    def onecmd_supress_output(self, line):
+
+        # TODO rm this block
+        if 0:
+            # modify self.stdout
+            original_stdout = self.stdout
+            self.stdout = StringIO()
+            r = super().onecmd(line)
+            result = self.stdout.getvalue()
+            self.stdout = original_stdout
+            return result
+
+        # TODO rm this block
+        if 0:
+            out = StringIO()
+            with redirect_stdout(out):
+                r = super().onecmd(line)
+                result = out.getvalue()[:-1]
+
+            return result
+
+        return super().onecmd(line)
 
     def onecmd_prehook(self, line):
         """Similar to cmd.precmd but executed before cmd.onecmd
@@ -57,13 +152,14 @@ class Shell(cmd.Cmd):
 
 
 class Function:
-    # def __init__(self, func, synopsis: str = None, args: List[str] = None, doc: str = None) -> None:
-    def __init__(self, func, synopsis: str = None, args: Dict[str, str] = None, doc: str = None) -> None:
+    def __init__(self, func, func_name=None, synopsis: str = None, args: Dict[str, str] = None, doc: str = None) -> None:
         help = generate_docs(func, synopsis, args, doc)
 
-        self.func = func
-        # self.args = args
         self.help = help
+        self.func = deepcopy(func)
+
+        if func_name is not None:
+            util.rename(self.func, func_name)
 
     def __call__(self, args: str = ''):
         args = args.split(' ')
@@ -74,7 +170,7 @@ class Function:
             self.handle_exception()
             return
 
-        print(result)
+        return result
 
     def handle_exception(self):
         global last_exception, last_traceback
@@ -86,6 +182,8 @@ class Function:
 
 
 def set_functions(functions: Dict[str, Function]):
+    """Extend `Shell` with a set of functions
+    """
     for key, func in functions.items():
         if not isinstance(func, Function):
             func = Function(func)
@@ -105,7 +203,7 @@ def shell(cmd: str):
 def set_cli_args():
     global confirmation_mode
 
-    add_default_args()
+    util.add_default_args()
     util.parser.add_argument(
         'cmd', nargs='*', help='A comma separated list of commands')
     util.parser.add_argument(
@@ -117,11 +215,22 @@ def set_cli_args():
         util.interactive = True
 
 
-def run_commands(shell: Shell, commands: list, delimiter=','):
-    commands = ' '.join(commands) + delimiter
+def run_commands(commands=[], shell: Shell = None, delimiter=','):
+    commands = ' '.join(commands)
+
+    run_command(commands, shell, delimiter)
+
+
+def run_command(commands=[], shell: Shell = None, delimiter=','):
+    if shell is None:
+        shell = Shell()
+
     for line in commands.split(delimiter):
         if line:
-            shell.onecmd(line)
+            result = shell.onecmd(line)
+            if result != 0:
+                print('Abort - No return value (2)', result)
+                return
 
 
 def run(shell=None):
@@ -132,7 +241,7 @@ def run(shell=None):
 
     if util.parse_args.cmd:
         # compile mode
-        run_commands(shell, util.parse_args.cmd)
+        run_commands(util.parse_args.cmd, shell)
     else:
         # run interactively
         util.interactive = True
@@ -140,9 +249,10 @@ def run(shell=None):
 
 
 def main(functions: Dict[str, Function] = {}):
-    shell = Shell()
     if functions:
         set_functions(functions)
+
+    shell = Shell()
     run(shell)
 
 

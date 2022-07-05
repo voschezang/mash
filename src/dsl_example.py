@@ -1,3 +1,4 @@
+#!/usr/bin/python3
 from dsl import Function, shell, main
 from util import identity
 
@@ -22,7 +23,6 @@ functions = {'f': f,
              'g': g,
              'h': h,
              'example': example,
-             'echo': identity,
              'ls': Function(shell('ls'), args={'-latr': 'flags', '[file]': ''}),
              'cat': Function(shell('cat'), args={'file': ''}),
              'vi': Function(shell('vi'), args={'[file]': ''})}
