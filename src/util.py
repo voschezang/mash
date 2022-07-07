@@ -42,9 +42,7 @@ def set_verbosity():
 def log(*args, file=sys.stderr, **kwds):
     """Print to stderr
     """
-    # TODO uncomment
-    # print(*args, file=file, **kwds)
-    print(*args, **kwds)
+    print(*args, file=file, **kwds)
 
 
 def debug(*args, **kwds):
@@ -54,10 +52,15 @@ def debug(*args, **kwds):
         log(*args, **kwds)
 
 
+def set_parser():
+    global parser
+    parser = argparse.ArgumentParser()
+
+
 def add_default_args():
     global parser
     if parser is None:
-        parser = argparse.ArgumentParser()
+        set_parser()
 
     parser.add_argument('-v', '--verbose', default=0, action='count')
 
@@ -72,6 +75,7 @@ def add_and_parse_args():
     if parse_args is None:
         parse_args = parser.parse_args()
 
+        # Note that verbosity will also set at the end of this file
         set_verbosity()
 
 
@@ -117,6 +121,13 @@ def concat_empty_container(items):
             return e
 
     raise TypeError()
+
+
+def split(line: str, delimiters=',.'):
+    lines = [line]
+    for delimiter in delimiters:
+        lines = concat([line.split(delimiter) for line in lines if line])
+    return [line for line in lines if line]
 
 
 def confirm(msg='Continue [Y/n]? '):
@@ -246,6 +257,11 @@ def extend(q, items):
     for item in items:
         # Note that put_nowait is compatible with threading.Queue and asyncio.Queue
         q.put_nowait(item)
+
+
+def rename(func, new_name: str):
+    func.__name__ = new_name
+    func.__qualname__ = new_name
 
 
 def terminal_size(default=os.terminal_size((80, 100))):

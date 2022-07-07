@@ -1,12 +1,13 @@
 #!/usr/bin/python3
 from contextlib import redirect_stdout
-import subprocess
 from copy import deepcopy
 from io import StringIO
 from types import TracebackType
 from typing import Dict, List
 import cmd
+import logging
 import os
+import subprocess
 import sys
 import traceback
 
@@ -72,6 +73,7 @@ class Shell(cmd.Cmd):
         return 0
 
     def onecmd_with_pipe(self, line):
+        # TODO escape quotes
         if '|' in line:
             line, *lines = line.split('|')
         else:
@@ -89,16 +91,29 @@ class Shell(cmd.Cmd):
 
         elif lines:
             for line in lines:
-                line = f'{line} {result}'
                 if line[0] == '>':
                     # use Python
+
+                    # rm first '>'
                     line = line[1:]
+
+                    # append arguments
+                    line = f'{line} {result}'
+
                     # result = super().onecmd(line)
                     result = self.onecmd_supress_output(line)
+
                 else:
                     # use shell
+
+                    # pass last result to stdin
+                    line = f'echo {result} | {line}'
+
+                    logging.info(f'Cmd = {line}')
+
                     result = subprocess.run(
                         args=line, capture_output=True, shell=True)
+
                     if result.returncode != 0:
                         print(
                             f'Shell exited with {result.returncode}: {result.stderr.decode()}')
@@ -107,7 +122,7 @@ class Shell(cmd.Cmd):
                     # self.stderr.append(f'stderr: {result.stderr.decode()}')
 
                     # TODO don't ignore stderr
-                    result = result.stdout.decode()
+                    result = result.stdout.decode().rstrip('\n')
 
                 if result is None:
                     print('Abort - No return value')
@@ -117,26 +132,7 @@ class Shell(cmd.Cmd):
         return 0
 
     def onecmd_supress_output(self, line):
-
-        # TODO rm this block
-        if 0:
-            # modify self.stdout
-            original_stdout = self.stdout
-            self.stdout = StringIO()
-            r = super().onecmd(line)
-            result = self.stdout.getvalue()
-            self.stdout = original_stdout
-            return result
-
-        # TODO rm this block
-        if 0:
-            out = StringIO()
-            with redirect_stdout(out):
-                r = super().onecmd(line)
-                result = out.getvalue()[:-1]
-
-            return result
-
+        # TOOD strip trailing '\n'
         return super().onecmd(line)
 
     def onecmd_prehook(self, line):
@@ -203,34 +199,38 @@ def shell(cmd: str):
 def set_cli_args():
     global confirmation_mode
 
-    util.add_default_args()
+    util.set_parser()
+    # util.add_default_args()
     util.parser.add_argument(
         'cmd', nargs='*', help='A comma separated list of commands')
     util.parser.add_argument(
         '-s', '--safe', action='store_true', help='Safe-mode. Ask for confirmation before executing commands')
-    util.parse_args = util.parser.parse_args()
+    # util.parse_args = util.parser.parse_args()
+    util.add_and_parse_args()
 
     if util.parse_args.safe:
         confirmation_mode = True
         util.interactive = True
 
 
-def run_commands(commands=[], shell: Shell = None, delimiter=','):
-    commands = ' '.join(commands)
-
-    run_command(commands, shell, delimiter)
-
-
-def run_command(commands=[], shell: Shell = None, delimiter=','):
+def run_command(command='', shell: Shell = None, delimiters='\n;'):
     if shell is None:
         shell = Shell()
 
-    for line in commands.split(delimiter):
-        if line:
-            result = shell.onecmd(line)
-            if result != 0:
-                print('Abort - No return value (2)', result)
-                return
+    for line in util.split(command, delimiters):
+        if not line:
+            continue
+
+        result = shell.onecmd(line)
+
+        if result != 0:
+            raise RuntimeError(f'Abort - No return value (2): {result}')
+
+
+def read_stdin():
+    if sys.stdin.isatty():
+        return ''
+    yield from sys.__stdin__
 
 
 def run(shell=None):
@@ -239,9 +239,13 @@ def run(shell=None):
     if shell is None:
         shell = Shell()
 
-    if util.parse_args.cmd:
+    # print('parse', util.parse_args.cmd, sys.__stdin__, sys.stdin.isatty())
+
+    logging.info(f'args = {util.parse_args}')
+    commands = ' '.join(util.parse_args.cmd + list(read_stdin()))
+    if commands:
         # compile mode
-        run_commands(util.parse_args.cmd, shell)
+        run_command(commands, shell)
     else:
         # run interactively
         util.interactive = True

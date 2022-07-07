@@ -1,4 +1,4 @@
-from util import concat, infer_signature, infer_synopsis, generate_docs
+from util import concat, infer_signature, infer_synopsis, generate_docs, split
 
 
 def test_concat_empty_container():
@@ -21,6 +21,13 @@ def test_concat():
     assert concat([(1, 2), (2, 3)]) == (1, 2, 2, 3)
 
     assert concat([{'a': 1, 'z': 2}]) == {'a': 1, 'z': 2}
+
+
+def test_split():
+    assert split('1,2,3', ',') == ['1', '2', '3']
+    assert split('1,2,3', '-+=') == ['1,2,3']
+    assert split('1,2;3', ',;') == ['1', '2', '3']
+    assert split('1,2;3', ',;') == ['1', '2', '3']
 
 
 def func(a, b: int, c: str = None) -> tuple:
