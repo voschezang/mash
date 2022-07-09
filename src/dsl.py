@@ -2,6 +2,7 @@
 from contextlib import redirect_stdout
 from copy import deepcopy
 from io import StringIO
+import shlex
 from types import TracebackType
 from typing import Dict, List
 import cmd
@@ -26,11 +27,14 @@ confirmation_mode = False
 description = 'If no arguments are given then an interactive subshell is started.'
 epilog = f"""
 --------------------------------------------------------------------------------
-{bold('Info')}
+{bold('Default Commands')}
 Run shell commands by prefixing them with `!`.
 E.g.
-    ./dsl.py !echo abc # Bash
+    ./dsl.py !echo abc; echo def # Bash
 
+Run multiple Python commands by separating each command with colons or newlines.
+E.g.
+    ./dsl.py 'print abc; print def \n print ghi'
 
 {bold('Interopability')}
 Interopability with Bash can be done with pipes: 
@@ -62,16 +66,19 @@ class Shell(cmd.Cmd):
     def do_shell(self, args):
         """System call
         """
+        logging.info(f'Cmd = !{args}')
         os.system(args)
 
     def do_print(self, args):
         """Mimic Python's print function
         """
+        logging.debug(f'Cmd = print {args}')
         return args
 
     def do_echo(self, args):
         """Mimic Bash's print function
         """
+        logging.debug(f'Cmd = echo {args}')
         return args
 
     def do_export(self, args):
@@ -111,12 +118,15 @@ class Shell(cmd.Cmd):
 
     def onecmd_with_pipe(self, line):
         # TODO escape quotes
+        # TODO properly handle delimiters in quotes
         if '|' in line:
             line, *lines = line.split('|')
         else:
             lines = []
 
+        logging.info(f'Piped cmd = {line}')
         result = self.onecmd_supress_output(line)
+
         if not result:
             self.last_command_has_failed = True
 

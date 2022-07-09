@@ -24,39 +24,47 @@ def test_Function_call():
     assert f() is None
 
 
+def test_multi_commands():
+    assert catch_output('print a; print b\n print c') == 'a\nb\nc'
+
+
 def test_pipe():
-    assert catch_output('echo 100 |> echo') == '100\n'
+    assert catch_output('print 100 |> print') == '100'
 
 
 def test_pipe_unix():
-    b = catch_output('echo 100 | less')
-    assert catch_output('echo 100 | less') == '100\n'
+    assert catch_output('print 100 | less') == '100'
 
 
 def test_pipe_input():
-    catch_output('echo abc | grep abc')
+    catch_output('print abc | grep abc')
 
     with pytest.raises(RuntimeError):
         catch_output('echo abc | grep def')
 
 
 def test_cli():
-    check_output('./src/dsl.py echo 1')
+    check_output('./src/dsl.py print 1')
+
+
+def test_cli_multi_commands():
+    assert check_output(
+        './src/dsl.py "print a; print b\n print c"') == 'a\nb\nc'
 
 
 def test_cli_pipe_input():
-    out = check_output('./src/dsl.py "echo abc | grep abc"')
+    out = check_output('./src/dsl.py "print abc | grep abc"')
     assert out == 'abc'
 
     with pytest.raises(RuntimeError):
-        run('./src/dsl.py "echo abc | grep def"')
+        run('./src/dsl.py "print abc | grep def"')
 
 
 def test_pipe_to_cli():
-    check_output('echo 1 | ./src/dsl.py echo')
+    check_output('echo 1 | ./src/dsl.py print')
     check_output('echo 1 | ./src/dsl.py !echo')
 
-    out = check_output('echo abc | ./src/dsl.py echo')
+    out = check_output('echo abc | ./src/dsl.py print')
     assert 'abc' in out
     out = check_output('echo abc | ./src/dsl.py !echo')
     assert 'abc' in out
@@ -78,7 +86,7 @@ def catch_output(line='', func=run_command) -> str:
         func(line)
         result = out.getvalue()
 
-    return result
+    return result.rstrip('\n')
 
 
 def run(line: str) -> str:

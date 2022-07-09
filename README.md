@@ -104,7 +104,7 @@ curl -X 'POST' 'http://localhost:5000/v1/organizations' \
 
 A tool to generate a [Domain-specific Language](https://en.wikipedia.org/wiki/Domain-specific_language) (DSL).
 
-A client just has to define a mapping between commands and functions.
+A client just has to define a mapping between commands and functions. The corresponding documentation is automatically generated from the docstrings and type annotations.
 
 E.g.
 ```py
