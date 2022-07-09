@@ -178,8 +178,6 @@ def infer_args(func) -> list:
 def infer_synopsis(func, variables=[]) -> str:
     if not variables:
         variables = infer_args(func)
-    # if func.__code__.co_varnames:
-    # return ' '.join([func.__name__] + infer_args(func))
     return ' '.join([func.__name__] + variables)
 
 

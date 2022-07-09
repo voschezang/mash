@@ -74,6 +74,10 @@ class Shell(cmd.Cmd):
         """
         return args
 
+    def do_export(self, args):
+        # TODO set environment variables
+        raise NotImplementedError()
+
     def do_E(self, args):
         """Show the last exception
         """

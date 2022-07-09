@@ -104,9 +104,27 @@ curl -X 'POST' 'http://localhost:5000/v1/organizations' \
 
 A tool to generate a [Domain-specific Language](https://en.wikipedia.org/wiki/Domain-specific_language) (DSL).
 
-## Usage
+A client just has to define a mapping between commands and functions.
 
-Define a mapping between commands and functions.  Both Python functions and System-calls are supported.
+E.g.
+```py
+functions = {'p': print,
+             'sum': sum}
+```
+
+## CLI
+
+Usage: dsl.py [-hsv] [cmd]
+- If no arguments are given then an interactive subshell is started.
+
+Positional arguments:
+  cmd            A comma- or newline-separated list of commands
+
+Optional arguments:
+  -h, --help     show this help message and exit
+  -s, --safe     Safe-mode. Ask for confirmation before executing commands
+  -v, --verbose
+
 
 ## Example
 
