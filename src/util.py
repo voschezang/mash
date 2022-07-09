@@ -1,15 +1,22 @@
-import os
-from typing import Dict, List
-import logging
+
+from argparse import RawTextHelpFormatter
+from collections.abc import Sequence
+from typing import Dict
 import argparse
 import functools
+import logging
+import os
 import sys
-from collections.abc import Sequence
+from termcolor import colored
 
 parse_args: argparse.Namespace = None
 parser: argparse.ArgumentParser = None
 
 interactive = False
+
+
+def bold(text: str):
+    return colored(text, attrs=['bold'])
 
 
 @functools.lru_cache(maxsize=1)
@@ -52,9 +59,10 @@ def debug(*args, **kwds):
         log(*args, **kwds)
 
 
-def set_parser():
+def set_parser(*args, formatter_class=RawTextHelpFormatter, **kwds):
     global parser
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(
+        *args, formatter_class=formatter_class, **kwds)
 
 
 def add_default_args():

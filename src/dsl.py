@@ -12,7 +12,7 @@ import sys
 import traceback
 
 import util
-from util import generate_docs
+from util import generate_docs, bold
 
 # this data is impacts by both the classes Function and Shell, hence it should be global
 exception_hint = '(run `E` for details)'
@@ -22,6 +22,32 @@ last_exception: Exception = None
 last_traceback: TracebackType = None
 
 confirmation_mode = False
+
+description = 'If no arguments are given then an interactive subshell is started.'
+epilog = f"""
+--------------------------------------------------------------------------------
+{bold('Info')}
+Run shell commands by prefixing them with `!`.
+E.g.
+    ./dsl.py !echo abc # Bash
+
+
+{bold('Interopability')}
+Interopability with Bash can be done with pipes: 
+    `|` for Bash 
+    `|>` for Python.
+
+1. To stdin and stdout
+E.g.
+    echo abc | ./dsl.py print
+    ./dsl.py print abc | echo
+
+2. Within the dsl
+E.g.
+    ./dsl.py print abc # Python
+    ./dsl.py 'print abc | echo'
+    ./dsl.py 'print abc |> print'
+"""
 
 
 class Shell(cmd.Cmd):
@@ -38,7 +64,14 @@ class Shell(cmd.Cmd):
         """
         os.system(args)
 
+    def do_print(self, args):
+        """Mimic Python's print function
+        """
+        return args
+
     def do_echo(self, args):
+        """Mimic Bash's print function
+        """
         return args
 
     def do_E(self, args):
@@ -199,13 +232,12 @@ def shell(cmd: str):
 def set_cli_args():
     global confirmation_mode
 
-    util.set_parser()
-    # util.add_default_args()
+    util.set_parser(description=description, epilog=epilog)
+
     util.parser.add_argument(
-        'cmd', nargs='*', help='A comma separated list of commands')
+        'cmd', nargs='*', help='A comma- or newline-separated list of commands')
     util.parser.add_argument(
         '-s', '--safe', action='store_true', help='Safe-mode. Ask for confirmation before executing commands')
-    # util.parse_args = util.parser.parse_args()
     util.add_and_parse_args()
 
     if util.parse_args.safe:

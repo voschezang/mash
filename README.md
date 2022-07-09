@@ -108,7 +108,7 @@ A tool to generate a [Domain-specific Language](https://en.wikipedia.org/wiki/Do
 
 Define a mapping between commands and functions.  Both Python functions and System-calls are supported.
 
-### Example
+## Example
 
 See `src/dsl_example.py`.
 
