@@ -1,10 +1,7 @@
 #!/usr/bin/python3
-from contextlib import redirect_stdout
 from copy import deepcopy
-from io import StringIO
-import shlex
 from types import TracebackType
-from typing import Dict, List
+from typing import Dict
 import cmd
 import logging
 import os
@@ -13,7 +10,7 @@ import sys
 import traceback
 
 import util
-from util import generate_docs, bold
+from util import generate_docs, bold, shell_ready_signal, print_shell_ready_signal, has_output
 
 # this data is impacts by both the classes Function and Shell, hence it should be global
 exception_hint = '(run `E` for details)'
@@ -55,13 +52,18 @@ E.g.
 
 
 class Shell(cmd.Cmd):
-    intro = 'Welcome.  Type help or ? to list commands.\n'
+    intro = 'Welcome.  Type help or ? to list commands.\n' + shell_ready_signal + '\n'
     prompt = '$ '
     exception = None
     shell_result = ''
     suppress_shell_output = False
 
     # TODO save stdout in a tmp file
+
+    def do_exit(self, args):
+        if not args:
+            args = 0
+        sys.exit(int(args))
 
     def do_shell(self, args):
         """System call
@@ -179,7 +181,7 @@ class Shell(cmd.Cmd):
         return 0
 
     def onecmd_supress_output(self, line):
-        # TOOD strip trailing '\n'
+        # TODO strip trailing '\n'
         return super().onecmd(line)
 
     def onecmd_prehook(self, line):
@@ -192,6 +194,10 @@ class Shell(cmd.Cmd):
                 return ''
 
         return line
+
+    def postcmd(self, stop, _):
+        print_shell_ready_signal()
+        return stop
 
 
 class Function:
@@ -251,7 +257,7 @@ def set_cli_args():
     util.parser.add_argument(
         'cmd', nargs='*', help='A comma- or newline-separated list of commands')
     util.parser.add_argument(
-        '-s', '--safe', action='store_true', help='Safe-mode. Ask for confirmation before executing commands')
+        '-s', '--safe', action='store_true', help='Safe-mode. Ask for confirmation before executing commands.')
     util.add_and_parse_args()
 
     if util.parse_args.safe:
@@ -274,9 +280,16 @@ def run_command(command='', shell: Shell = None, delimiters='\n;'):
 
 
 def read_stdin():
-    if sys.stdin.isatty():
+    if not has_output(sys.stdin):
         return ''
-    yield from sys.__stdin__
+
+    try:
+        yield from sys.__stdin__
+
+    except KeyboardInterrupt as e:
+        print()
+        logging.info(e)
+        exit(130)
 
 
 def run(shell=None):
@@ -285,10 +298,9 @@ def run(shell=None):
     if shell is None:
         shell = Shell()
 
-    # print('parse', util.parse_args.cmd, sys.__stdin__, sys.stdin.isatty())
-
     logging.info(f'args = {util.parse_args}')
     commands = ' '.join(util.parse_args.cmd + list(read_stdin()))
+
     if commands:
         # compile mode
         run_command(commands, shell)
@@ -307,4 +319,5 @@ def main(functions: Dict[str, Function] = {}):
 
 
 if __name__ == '__main__':
+    # sys.stdout.flush()
     run()

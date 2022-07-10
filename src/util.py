@@ -1,7 +1,9 @@
 
 from argparse import RawTextHelpFormatter
 from collections.abc import Sequence
+import select
 from typing import Dict
+from io import TextIOBase
 import argparse
 import functools
 import logging
@@ -13,6 +15,8 @@ parse_args: argparse.Namespace = None
 parser: argparse.ArgumentParser = None
 
 interactive = False
+
+shell_ready_signal = '-->'
 
 
 def bold(text: str):
@@ -279,6 +283,24 @@ def terminal_size(default=os.terminal_size((80, 100))):
 
 def has_method(cls, method) -> bool:
     return hasattr(cls, method) and hasattr(getattr(cls, method), '__call__')
+
+
+def print_shell_ready_signal():
+    print(shell_ready_signal)
+    sys.stdout.flush()
+
+
+def has_output(stream: TextIOBase = sys.stdin, timeout=0):
+    rlist, _, _ = select.select([stream], [], [], timeout)
+    return rlist != []
+
+
+def read_line(stream: TextIOBase, timeout=0, default_value=''):
+    if has_output(stream, timeout):
+        return stream.readline().decode()
+
+    return default_value
+
 
 
 set_verbosity()
