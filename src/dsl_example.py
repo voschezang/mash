@@ -1,7 +1,8 @@
 #!/usr/bin/python3
-from dsl import Function, shell, main
-from util import identity
+from dsl import Function, set_functions, shell, main
+import cli
 
+use_shell_with_history = True
 
 def f(x: int): return x
 def g(x: int, y=1): return x + y
@@ -29,4 +30,10 @@ functions = {'f': f,
 
 
 if __name__ == '__main__':
-    main(functions)
+    if use_shell_with_history:
+        set_functions(functions)
+        cli.main()
+
+    else:
+        main(functions)
+

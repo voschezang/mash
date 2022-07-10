@@ -282,7 +282,11 @@ def terminal_size(default=os.terminal_size((80, 100))):
 
 
 def has_method(cls, method) -> bool:
-    return hasattr(cls, method) and hasattr(getattr(cls, method), '__call__')
+    return hasattr(cls, method) and is_callable(getattr(cls, method))
+
+
+def is_callable(method) -> bool:
+    return hasattr(method, '__call__')
 
 
 def print_shell_ready_signal():
@@ -300,7 +304,6 @@ def read_line(stream: TextIOBase, timeout=0, default_value=''):
         return stream.readline().decode()
 
     return default_value
-
 
 
 set_verbosity()

@@ -119,5 +119,5 @@ def handle_user_input(process):
 
 
 if __name__ == '__main__':
-    # args = ['python3', 'src/dsl.py', '-vv'] + sys.argv[1:]
+    # TODO add proper CLI
     main(sys.argv[1:])

@@ -10,7 +10,7 @@ import sys
 import traceback
 
 import util
-from util import generate_docs, bold, shell_ready_signal, print_shell_ready_signal, has_output
+from util import generate_docs, bold, shell_ready_signal, print_shell_ready_signal, has_output, has_method
 
 # this data is impacts by both the classes Function and Shell, hence it should be global
 exception_hint = '(run `E` for details)'
@@ -199,6 +199,12 @@ class Shell(cmd.Cmd):
         print_shell_ready_signal()
         return stop
 
+    @staticmethod
+    def all_commands():
+        for cmd in vars(Shell):
+            if cmd.startswith('do_') and has_method(Shell, cmd):
+                yield cmd.lstrip('do_')
+
 
 class Function:
     def __init__(self, func, func_name=None, synopsis: str = None, args: Dict[str, str] = None, doc: str = None) -> None:
@@ -242,6 +248,8 @@ def set_functions(functions: Dict[str, Function]):
 
 
 def shell(cmd: str):
+    """A wrapper for shell commands
+    """
     def func(*args):
         args = ' '.join(args)
         return os.system(''.join(cmd + ' ' + args))
