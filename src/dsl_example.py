@@ -4,6 +4,7 @@ import cli
 
 use_shell_with_history = True
 
+
 def f(x: int): return x
 def g(x: int, y=1): return x + y
 def h(x: int, y: float, z): return x + y * z
@@ -20,13 +21,16 @@ def example(a: int, b, c: float = 3.):
     return a
 
 
-functions = {'f': f,
-             'g': g,
-             'h': h,
-             'example': example,
-             'ls': Function(shell('ls'), args={'-latr': 'flags', '[file]': ''}),
-             'cat': Function(shell('cat'), args={'file': ''}),
-             'vi': Function(shell('vi'), args={'[file]': ''})}
+functions = {
+    'a_long_function': f,
+    'another_function': f,
+    'f': f,
+    'g': g,
+    'h': h,
+    'example': example,
+    'ls': Function(shell('ls'), args={'-latr': 'flags', '[file]': ''}),
+    'cat': Function(shell('cat'), args={'file': ''}),
+    'vi': Function(shell('vi'), args={'[file]': ''})}
 
 
 if __name__ == '__main__':
@@ -36,4 +40,3 @@ if __name__ == '__main__':
 
     else:
         main(functions)
-

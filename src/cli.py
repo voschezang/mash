@@ -27,6 +27,7 @@ def main():
         vi_mode=True,
         bottom_toolbar=lambda: toolbar(shell)
     )
+    print('Press ctrl-d to exit, ctrl-c to cancel and TAB for word completion')
     while True:
         step(session, shell)
 

@@ -114,6 +114,8 @@ curl -X 'POST' 'http://localhost:5000/v1/organizations' \
 
 A tool to generate a [Domain-specific Language](https://en.wikipedia.org/wiki/Domain-specific_language) (DSL).
 
+<img src="img/shell_dropdown.png" style="max-width: 10%" alt="Example of a shell with a dropdown completion menu">
+
 A client just has to define a mapping between commands and functions. The corresponding documentation is automatically generated from the docstrings and type annotations.
 
 E.g.
