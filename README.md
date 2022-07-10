@@ -1,6 +1,16 @@
-# Template for Data Science
+# Overview
 
-This repository contains a number of computational models which can be used for data science.
+This repository originally contained a number of computational models which can be used for data science.
+
+In addition, there are some utilities.
+
+In `src`:
+- An object parser which converts JSON data to Python classes: `object_parser.py`.
+- An OAS-generator for Python classes: `oas.py`.
+- A parrallelization framework for load testing: `parallel.py`.
+- A domain-specific language generator: `dsl.py`.
+- A subshell wrapper, to redirect the output of shell scripts: `subshell.py`.
+
 
 # Examples
 
