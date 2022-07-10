@@ -51,6 +51,10 @@ E.g.
 """
 
 
+class ShellException(RuntimeError):
+    pass
+
+
 class Shell(cmd.Cmd):
     intro = 'Welcome.  Type help or ? to list commands.\n' + shell_ready_signal + '\n'
     prompt = '$ '
@@ -69,6 +73,7 @@ class Shell(cmd.Cmd):
         """System call
         """
         logging.info(f'Cmd = !{args}')
+        # TODO add option to forward envionrment variables
         os.system(args)
 
     def do_print(self, args):
@@ -159,6 +164,7 @@ class Shell(cmd.Cmd):
                     line = f'echo {result} | {line}'
 
                     logging.info(f'Cmd = {line}')
+                    print(f'Cmd = {line}')
 
                     result = subprocess.run(
                         args=line, capture_output=True, shell=True)
@@ -204,6 +210,31 @@ class Shell(cmd.Cmd):
         for cmd in vars(Shell):
             if cmd.startswith('do_') and has_method(Shell, cmd):
                 yield cmd.lstrip('do_')
+
+    def last_method(self):
+        """Find the method corresponding to the last command run in `shell`.
+        It has the form: do_{cmd}
+
+        Return a the last method if it exists and None otherwise.
+        """
+        # TODO integrate this into Shell and store the last succesful cmd
+
+        if not self.lastcmd:
+            return
+
+        cmd = self.lastcmd.split(' ')[0]
+        method_name = f'do_{cmd}'
+
+        if not has_method(Shell, method_name):
+            return
+
+        method = getattr(Shell, method_name)
+
+        if isinstance(method, Function):
+            # TOOD use method.func.synopsis
+            return method.func
+
+        return method
 
 
 class Function:
@@ -284,7 +315,7 @@ def run_command(command='', shell: Shell = None, delimiters='\n;'):
         result = shell.onecmd(line)
 
         if result != 0:
-            raise RuntimeError(f'Abort - No return value (2): {result}')
+            raise ShellException(f'Abort - No return value (2): {result}')
 
 
 def read_stdin():
@@ -327,5 +358,7 @@ def main(functions: Dict[str, Function] = {}):
 
 
 if __name__ == '__main__':
-    # sys.stdout.flush()
     run()
+
+    # TODO: fix error handling
+    # e.g. `shell ls | grep` is causing two errors
