@@ -164,7 +164,6 @@ class Shell(cmd.Cmd):
                     line = f'echo {result} | {line}'
 
                     logging.info(f'Cmd = {line}')
-                    print(f'Cmd = {line}')
 
                     result = subprocess.run(
                         args=line, capture_output=True, shell=True)
