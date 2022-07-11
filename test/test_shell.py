@@ -5,7 +5,7 @@ from this import d
 import pytest
 import subprocess
 
-from dsl import Function, run_command
+from shell import Function, run_command
 
 
 def test_Function_args():
@@ -44,39 +44,39 @@ def test_pipe_input():
 
 
 def test_cli():
-    check_output('./src/dsl.py print 1')
+    check_output('./src/shell.py print 1')
 
 
 def test_cli_multi_commands():
     assert check_output(
-        './src/dsl.py "print a; print b\n print c"') == 'a\nb\nc'
+        './src/shell.py "print a; print b\n print c"') == 'a\nb\nc'
 
 
 def test_cli_pipe_input():
-    out = check_output('./src/dsl.py "print abc | grep abc"')
+    out = check_output('./src/shell.py "print abc | grep abc"')
     assert out == 'abc'
 
     with pytest.raises(RuntimeError):
-        run('./src/dsl.py "print abc | grep def"')
+        run('./src/shell.py "print abc | grep def"')
 
 
 def test_pipe_to_cli():
-    check_output('echo 1 | ./src/dsl.py print')
-    check_output('echo 1 | ./src/dsl.py !echo')
+    check_output('echo 1 | ./src/shell.py print')
+    check_output('echo 1 | ./src/shell.py !echo')
 
-    out = check_output('echo abc | ./src/dsl.py print')
+    out = check_output('echo abc | ./src/shell.py print')
     assert 'abc' in out
-    out = check_output('echo abc | ./src/dsl.py !echo')
+    out = check_output('echo abc | ./src/shell.py !echo')
     assert 'abc' in out
 
 
 def test_cli_file():
-    out = check_output('./src/dsl.py test/echo_abc.sh')
+    out = check_output('./src/shell.py test/echo_abc.sh')
     assert 'abc' in out
 
 
 def test_cli_pipe_file():
-    out = check_output('cat test/echo_abc.sh | ./src/dsl.py')
+    out = check_output('cat test/echo_abc.sh | ./src/shell.py')
     assert 'abc' in out
 
 

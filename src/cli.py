@@ -1,15 +1,21 @@
 #!/usr/bin/python3
 import sys
+from typing import Tuple
 from quo.completion import NestedCompleter
 from quo.history import MemoryHistory
 from quo.prompt import Prompt
 from quo.text import Text
 
-from dsl import Shell, run_command, Function, ShellException
-from util import has_method, infer_synopsis
+from shell import Shell, run_command, ShellException
+from util import infer_synopsis
 
 
 def main():
+    session, shell = setup()
+    run(session, shell)
+
+
+def setup() -> Tuple[Prompt, Shell]:
     shell = Shell()
 
     # setup a completion-dropdown
@@ -27,6 +33,10 @@ def main():
         vi_mode=True,
         bottom_toolbar=lambda: toolbar(shell)
     )
+    return session, shell
+
+
+def run(session: Prompt, shell: Shell):
     print('Press ctrl-d to exit, ctrl-c to cancel and TAB for word completion')
     while True:
         step(session, shell)

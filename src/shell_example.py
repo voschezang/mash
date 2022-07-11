@@ -1,5 +1,7 @@
 #!/usr/bin/python3
-from dsl import Function, set_functions, shell, main
+import sys
+from shell import Function, set_functions, shell, main
+from util import has_output
 import cli
 
 use_shell_with_history = True
@@ -34,9 +36,9 @@ functions = {
 
 
 if __name__ == '__main__':
-    if use_shell_with_history:
+    if has_output(sys.stdin):
+        main(functions)
+    else:
+        # use_shell_with_history:
         set_functions(functions)
         cli.main()
-
-    else:
-        main(functions)
