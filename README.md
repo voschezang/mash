@@ -8,7 +8,7 @@ In `src`:
 - An object parser which converts JSON data to Python classes: `object_parser.py`.
 - An OAS-generator for Python classes: `oas.py`.
 - A parrallelization framework for load testing: `parallel.py`.
-- A domain-specific language generator: `dsl.py`.
+- A shell that can interpret a domain-specific language: `shell.py`.
 - A subshell wrapper, to redirect the output of shell scripts: `subshell.py`.
 
 
@@ -110,7 +110,7 @@ curl -X 'POST' 'http://localhost:5000/v1/organizations' \
   -d '{ "board": [ "string" ], "ceo": "string", "departments": [ { "manager": "string", "teams": [ { "manager": "string", "members": [ "string" ], "team_type": "A", "active": true, "capacity": 0, "value": 0 } ] } ] }'
 ```
 
-# DSL Generator
+# Shell with DSL Generator
 
 A tool to generate a [Domain-specific Language](https://en.wikipedia.org/wiki/Domain-specific_language) (DSL).
 

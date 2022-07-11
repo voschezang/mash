@@ -1,7 +1,5 @@
 from contextlib import redirect_stdout
 from io import StringIO
-from sys import stderr
-from this import d
 import pytest
 import subprocess
 
