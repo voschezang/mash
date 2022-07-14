@@ -9,6 +9,10 @@ from quo.text import Text
 from shell import Shell, run_command, ShellException
 from util import infer_synopsis
 
+rprompt_init = 'Type any command to continue'
+rprompt_default = ''
+rprompt_error = 'Type `help` or ? for help'
+
 
 def main():
     session, shell = setup()
@@ -17,6 +21,7 @@ def main():
 
 def setup() -> Tuple[Prompt, Shell]:
     shell = Shell()
+    shell.ignore_invalid_syntax = False
 
     # setup a completion-dropdown
     completer = NestedCompleter.add({k: None for k in Shell.all_commands()})
@@ -28,6 +33,7 @@ def setup() -> Tuple[Prompt, Shell]:
     session = Prompt(
         history=MemoryHistory,
         suggest="history",
+        rprompt=Text(rprompt_init),
         enable_history_search=True,
         completer=completer,
         vi_mode=True,
@@ -47,8 +53,10 @@ def step(session, shell):
         cmd = session.prompt('$ ')
         try:
             run_command(cmd, shell)
+            session.rprompt = Text(rprompt_default)
         except ShellException as e:
             print(e)
+            session.rprompt = Text(rprompt_error)
     except KeyboardInterrupt:
         pass
     except EOFError:
