@@ -59,12 +59,15 @@ class Shell(cmd.Cmd):
     intro = 'Welcome.  Type help or ? to list commands.\n' + shell_ready_signal + '\n'
     prompt = '$ '
     exception = None
-    shell_result = ''
-    suppress_shell_output = False
+    ignore_invalid_syntax = True
 
     # TODO save stdout in a tmp file
 
     def do_exit(self, args):
+        """exit [code]
+
+        Wrapper for sys.exit(code) with default code: 0
+        """
         if not args:
             args = 0
         sys.exit(int(args))
@@ -73,7 +76,7 @@ class Shell(cmd.Cmd):
         """System call
         """
         logging.info(f'Cmd = !{args}')
-        # TODO add option to forward envionrment variables
+        # TODO add option to forward environment variables
         os.system(args)
 
     def do_print(self, args):
@@ -90,7 +93,7 @@ class Shell(cmd.Cmd):
 
     def do_export(self, args):
         # TODO set environment variables
-        raise NotImplementedError()
+        raise ShellException('NotImplemented')
 
     def do_E(self, args):
         """Show the last exception
@@ -105,7 +108,11 @@ class Shell(cmd.Cmd):
 
     def default(self, line):
         self.last_command_has_failed = True
-        super().default(line)
+
+        if self.ignore_invalid_syntax:
+            super().default(line)
+        else:
+            raise ShellException(f'Unknown syntax: {line}')
 
     def onecmd(self, line):
         """Parse and run `line`.
@@ -306,6 +313,8 @@ def set_cli_args():
 def run_command(command='', shell: Shell = None, delimiters='\n;'):
     if shell is None:
         shell = Shell()
+
+    print(command)
 
     for line in util.split(command, delimiters):
         if not line:
