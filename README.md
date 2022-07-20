@@ -96,6 +96,8 @@ python3 src/parallel.py -v
 python src/object_parser_example.py
 ```
 
+<img src="https://github.com/voschezang/data-science-templates/blob/main/img/generated_oas.png?raw=true" style="width: 400px" alt="OAS Example">
+
 ### REST API
 
 Server
