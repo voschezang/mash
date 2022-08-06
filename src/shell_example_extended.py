@@ -5,11 +5,8 @@ from pprint import pformat
 import sys
 
 import crud
-from shell import Shell, main, run, set_functions
+from shell import Shell, run, set_functions
 from util import DataClassHelper, decorate, AdjacencyList, find_closest_prefix_match
-from io_util import has_output
-
-import cli
 
 
 # example data with dicts and lists
@@ -52,11 +49,17 @@ class CRUD(crud.CRUD):
 
     def ls(self, obj=None) -> list:
         items = self._ls(obj)
-        return list(items.keys())
+        if hasattr(items, 'keys'):
+            items = items.keys()
+
+        return list(items)
 
     def ll(self, obj=None, delimiter='\n'):
         items = self._ls(obj)
-        return delimiter.join(items.keys())
+        if hasattr(items, 'keys'):
+            items = items.keys()
+
+        return delimiter.join(items)
 
     def tree(self, obj=None):
         items = self._ls(obj)

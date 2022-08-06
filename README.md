@@ -128,7 +128,7 @@ functions = {'p': print,
 
 ## CLI
 
-Usage: dsl.py [-hsv] [cmd]
+Usage: shell.py [-hsv] [cmd]
 - If no arguments are given then an interactive subshell is started.
 
 Positional arguments:
@@ -140,9 +140,9 @@ Optional arguments:
   -v, --verbose
 
 
-## Example
+## Example 1
 
-See `src/dsl_example.py`.
+See `src/shell_example.py`.
 
 
 ```sh
@@ -152,7 +152,7 @@ world
 ```
 
 ```sh
-# py src/dsl_example.py
+# py src/shell_example.py
 Welcome.  Type help or ? to list commands.
 
 $ ?
@@ -168,4 +168,21 @@ g x [y]
 	----------
 		x: int
 		y
+```
+
+## Example 2
+
+See `src/shell_example_extended.py`.
+
+```sh
+$ py src/shell_example_extended.py tree
+{ 'world': { 'animals': { 'aquatic': {'penguins': ['tux']},
+                          'terrestrial': {'snakes': ['python', 'cobra']}}}}
+```
+
+```sh
+# note the autocompletion
+$ py src/shell_example_extended.py 'cd world; cd a; cd t; cd snakes; ll'
+python
+cobra
 ```

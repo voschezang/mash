@@ -30,11 +30,11 @@ epilog = f"""
 {bold('Default Commands')}
 Run shell commands by prefixing them with `!`.
 E.g.
-    ./dsl.py !echo abc; echo def # Bash
+    ./shell.py !echo abc; echo def # Bash
 
 Run multiple Python commands by separating each command with colons or newlines.
 E.g.
-    ./dsl.py 'print abc; print def \n print ghi'
+    ./shell.py 'print abc; print def \n print ghi'
 
 {bold('Interopability')}
 Interopability with Bash can be done with pipes: 
@@ -43,14 +43,14 @@ Interopability with Bash can be done with pipes:
 
 1. To stdin and stdout
 E.g.
-    echo abc | ./dsl.py print
-    ./dsl.py print abc | echo
+    echo abc | ./shell.py print
+    ./shell.py print abc | echo
 
 2. Within the dsl
 E.g.
-    ./dsl.py print abc # Python
-    ./dsl.py 'print abc | echo'
-    ./dsl.py 'print abc |> print'
+    ./shell.py print abc # Python
+    ./shell.py 'print abc | echo'
+    ./shell.py 'print abc |> print'
 """
 
 
