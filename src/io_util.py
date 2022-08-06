@@ -83,16 +83,9 @@ def debug(*args, **kwds):
         log(*args, **kwds)
 
 
-def set_parser(*args, formatter_class=RawTextHelpFormatter, **kwds):
-    global parser
-    parser = argparse.ArgumentParser(
-        *args, formatter_class=formatter_class, **kwds)
-
-
-def add_default_args():
-    global parser
+def add_default_args(parser: ArgumentParser):
     if parser is None:
-        set_parser()
+        raise NotImplementedError
 
     parser.add_argument('-v', '--verbose', default=0, action='count')
 
@@ -100,27 +93,14 @@ def add_default_args():
         parser.add_argument('*', nargs='*')
 
 
-def add_and_parse_args():
-    add_default_args()
-
-    global parser, parse_args
-    if parse_args is None:
-        parse_args = parser.parse_args()
-
-        # Note that verbosity will also be set at the end of this file
-        set_verbosity()
-
-
-# @dataclass
 class ArgparseWrapper:
-    # parser: ArgumentParser = None
-    # parse_args: argparse.Namespace = None
-
     def __init__(self, *args, formatter_class=RawTextHelpFormatter, **kwds):
         global parser
         if parser is None:
             parser = ArgumentParser(
                 *args, formatter_class=formatter_class, **kwds)
+
+            add_default_args(parser)
 
         self.parser = parser
 
@@ -128,10 +108,12 @@ class ArgparseWrapper:
         return self.parser
 
     def __exit__(self, *_):
-        add_and_parse_args()
-
         global parse_args
+        parse_args = parser.parse_args()
         self.parse_args = parse_args
+
+        # Note that verbosity will also be set at the end of this file
+        set_verbosity()
 
 
 def has_output(stream: TextIOBase = sys.stdin, timeout=0):
