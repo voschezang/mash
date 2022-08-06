@@ -7,20 +7,22 @@ from quo.prompt import Prompt
 from quo.text import Text
 
 from shell import Shell, run_command, ShellException
-from util import infer_synopsis
+from doc_inference import infer_synopsis
 
 rprompt_init = 'Type any command to continue'
 rprompt_default = ''
 rprompt_error = 'Type `help` or ? for help'
 
 
-def main():
-    session, shell = setup()
+def main(shell: Shell = None):
+    session, shell = setup(shell)
     run(session, shell)
 
 
-def setup() -> Tuple[Prompt, Shell]:
-    shell = Shell()
+def setup(shell: Shell = None) -> Tuple[Prompt, Shell]:
+    if shell is None:
+        shell = Shell()
+
     shell.ignore_invalid_syntax = False
 
     # setup a completion-dropdown
@@ -50,7 +52,7 @@ def run(session: Prompt, shell: Shell):
 
 def step(session, shell):
     try:
-        cmd = session.prompt('$ ')
+        cmd = session.prompt(shell.prompt)
         try:
             run_command(cmd, shell)
             session.rprompt = Text(rprompt_default)

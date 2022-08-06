@@ -10,6 +10,40 @@ from io_util import parse_args, parser, debug, interactive
 AdjacencyList = Dict[str, List[str]]
 
 
+class DataClassHelper:
+    """Methods that mutate dataclass fields.
+    """
+
+    def __init__(self, data: dataclass):
+        self._context = data
+
+    def ensure_field(self, key: str):
+        self.verify_context_key(key)
+
+        # first infer dependencies
+        if self._context.direct_dependencies:
+            deps = infer_dependencies(self._context.direct_dependencies, key)
+            for dependency in set(deps):
+                self.ensure_field(dependency)
+
+        if getattr(self._context, key) is None:
+            self.set_field(key)
+
+    def set_field(self, key: str):
+        self.verify_context_key(key)
+        msg = f'Missing context: {key}'
+
+        if not interactive:
+            raise ValueError(msg)
+
+        print(msg)
+        value = input(f'--> set {key} ')
+        setattr(self._context, key, value)
+
+    def verify_context_key(self, key):
+        assert key in self._context.__dataclass_fields__
+
+
 def decorate(decoratee: dataclass, cls: object):
     # Adapt a class instance to have an hasA and isA relationships with `cls`.
     # See https://en.wikipedia.org/wiki/Decorator_pattern
@@ -128,6 +162,18 @@ def extend(q, items):
         q.put_nowait(item)
 
 
+def find_closest_prefix_match(element: str, elements: List[str]):
+    """Returns an element which is equal to prefix of `element`.
+    In case of multiple matches the longest match is chosen.
+    """
+    for i in range(len(element), 0, -1):
+        prefix = element[:i]
+        for other in elements:
+            if other.startswith(prefix):
+                return other
+    raise ValueError(f'{element} is not a prefix of any item in list')
+
+
 ################################################################################
 # Inspection helpers
 ################################################################################
@@ -160,3 +206,9 @@ def constant(value):
     def K(*args):
         return value
     return K
+
+
+def none():
+    """Do nothing
+    """
+    pass

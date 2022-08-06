@@ -6,8 +6,6 @@ from shell import Function, Shell, set_functions, shell, main
 from io_util import has_output
 import cli
 
-use_shell_with_history = True
-
 
 def f(x: int): return x
 def g(x: int, y=1): return x + y

@@ -130,7 +130,8 @@ class Shell(cmd.Cmd):
             return self.onecmd_with_pipe(line)
 
         result = super().onecmd(line)
-        print(result)
+        if result is not None:
+            print(result)
         return 0
 
     def onecmd_with_pipe(self, line):
@@ -257,10 +258,11 @@ class Function:
         self.func = deepcopy(func)
 
         if func_name is not None:
-            rename(self.func, func_name)
+            util.rename(self.func, func_name)
 
     def __call__(self, args: str = ''):
         args = args.split(' ')
+        args = [arg for arg in args if arg != '']
 
         try:
             result = self.func(*args)
@@ -276,7 +278,8 @@ class Function:
         etype, last_exception, last_traceback = sys.exc_info()
 
         print(etype.__name__, exception_hint)
-        print('\t', last_exception)
+        if str(last_exception):
+            print('\t', last_exception)
 
 
 def set_functions(functions: Dict[str, Function]):
