@@ -1,7 +1,9 @@
 #!/usr/bin/python3
 import sys
-from shell import Function, set_functions, shell, main
-from util import has_output
+import rich
+
+from shell import Function, Shell, set_functions, shell, main
+from io_util import has_output
 import cli
 
 use_shell_with_history = True
@@ -23,6 +25,17 @@ def example(a: int, b, c: float = 3.):
     return a
 
 
+def inspect(func_name):
+    """Inspect a function
+    based on rich.inspect
+    """
+    func = Shell.get_method(func_name)
+    if func is None:
+        return
+
+    rich.inspect(func)
+
+
 functions = {
     'a_long_function': f,
     'another_function': f,
@@ -30,10 +43,10 @@ functions = {
     'g': g,
     'h': h,
     'example': example,
+    'inspect': inspect,
     'ls': Function(shell('ls'), args={'-latr': 'flags', '[file]': ''}),
     'cat': Function(shell('cat'), args={'file': ''}),
     'vi': Function(shell('vi'), args={'[file]': ''})}
-
 
 if __name__ == '__main__':
     if has_output(sys.stdin):

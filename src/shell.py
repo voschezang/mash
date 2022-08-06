@@ -1,4 +1,5 @@
 #!/usr/bin/python3
+from argparse import ArgumentParser
 from copy import deepcopy
 from types import TracebackType
 from typing import Dict
@@ -8,9 +9,11 @@ import os
 import subprocess
 import sys
 import traceback
+from doc_inference import generate_docs
 
+import io_util
+from io_util import ArgparseWrapper, bold, shell_ready_signal, print_shell_ready_signal, has_output
 import util
-from util import generate_docs, bold, shell_ready_signal, print_shell_ready_signal, has_output, has_method
 
 # this data is impacts by both the classes Function and Shell, hence it should be global
 exception_hint = '(run `E` for details)'
@@ -200,9 +203,9 @@ class Shell(cmd.Cmd):
         """Similar to cmd.precmd but executed before cmd.onecmd
         """
         if confirmation_mode:
-            assert util.interactive
+            assert io_util.interactive
             print('Command:', line)
-            if not util.confirm():
+            if not io_util.confirm():
                 return ''
 
         return line
@@ -214,7 +217,7 @@ class Shell(cmd.Cmd):
     @staticmethod
     def all_commands():
         for cmd in vars(Shell):
-            if cmd.startswith('do_') and has_method(Shell, cmd):
+            if cmd.startswith('do_') and util.has_method(Shell, cmd):
                 yield cmd.lstrip('do_')
 
     def last_method(self):
@@ -229,9 +232,12 @@ class Shell(cmd.Cmd):
             return
 
         cmd = self.lastcmd.split(' ')[0]
-        method_name = f'do_{cmd}'
+        return Shell.get_method(cmd)
 
-        if not has_method(Shell, method_name):
+    @staticmethod
+    def get_method(method_suffix: str):
+        method_name = f'do_{method_suffix}'
+        if not util.has_method(Shell, method_name):
             return
 
         method = getattr(Shell, method_name)
@@ -251,7 +257,7 @@ class Function:
         self.func = deepcopy(func)
 
         if func_name is not None:
-            util.rename(self.func, func_name)
+            rename(self.func, func_name)
 
     def __call__(self, args: str = ''):
         args = args.split(' ')
@@ -294,27 +300,27 @@ def shell(cmd: str):
     return func
 
 
+def add_cli_args(parser: ArgumentParser):
+    parser.add_argument('cmd', nargs='*',
+                        help='A comma- or newline-separated list of commands')
+    parser.add_argument('-s', '--safe', action='store_true',
+                        help='Safe-mode. Ask for confirmation before executing commands.')
+
+
 def set_cli_args():
     global confirmation_mode
 
-    util.set_parser(description=description, epilog=epilog)
+    with ArgparseWrapper() as parser:
+        add_cli_args(parser)
 
-    util.parser.add_argument(
-        'cmd', nargs='*', help='A comma- or newline-separated list of commands')
-    util.parser.add_argument(
-        '-s', '--safe', action='store_true', help='Safe-mode. Ask for confirmation before executing commands.')
-    util.add_and_parse_args()
-
-    if util.parse_args.safe:
+    if io_util.parse_args.safe:
         confirmation_mode = True
-        util.interactive = True
+        io_util.interactive = True
 
 
 def run_command(command='', shell: Shell = None, delimiters='\n;'):
     if shell is None:
         shell = Shell()
-
-    print(command)
 
     for line in util.split(command, delimiters):
         if not line:
@@ -345,8 +351,8 @@ def run(shell=None):
     if shell is None:
         shell = Shell()
 
-    logging.info(f'args = {util.parse_args}')
-    commands = ' '.join(util.parse_args.cmd + list(read_stdin()))
+    logging.info(f'args = {io_util.parse_args}')
+    commands = ' '.join(io_util.parse_args.cmd + list(read_stdin()))
 
     if commands:
         # compile mode

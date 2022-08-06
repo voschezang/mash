@@ -107,6 +107,21 @@ def test_document_del():
     assert fn not in os.listdir(server.UPLOAD_FOLDER)
 
 
+def test_route_verify_server():
+    client = init()
+
+    host = 'www.python.org'
+    response = client.post(basepath + 'server/verify?hostname={host}')
+    assert response.status_code == 200
+    assert response['success']
+    assert response['msg'] == ''
+
+    host = 'www.never.python.org'
+    response = client.post(basepath + 'server/verify?hostname={host}')
+    assert response.status_code == 200
+    assert not response['success']
+
+
 def assert_response(response, expected_data=b'ok'):
     assert response.status_code == HTTPStatus.OK
     assert response.get_data() == expected_data

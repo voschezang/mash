@@ -1,94 +1,49 @@
-
-from argparse import RawTextHelpFormatter
 from collections.abc import Sequence
-import select
-from typing import Dict
-from io import TextIOBase
-import argparse
-import functools
-import logging
-import os
-import sys
-from termcolor import colored
-
-parse_args: argparse.Namespace = None
-parser: argparse.ArgumentParser = None
-
-interactive = False
-
-shell_ready_signal = '-->'
+from dataclasses import dataclass
+from typing import Dict, List
 
 
-def bold(text: str):
-    return colored(text, attrs=['bold'])
+# backwards compatibility
+from io_util import parse_args, parser, debug, interactive
 
 
-@functools.lru_cache(maxsize=1)
-def verbosity():
-    global parse_args
-    if parse_args is not None and 'verbose' in parse_args:
-        return parse_args.verbose
-
-    if '-vvv' in sys.argv:
-        return 3
-    elif '-vv' in sys.argv:
-        return 2
-    elif '-v' in sys.argv:
-        return 1
-
-    return 0
+AdjacencyList = Dict[str, List[str]]
 
 
-def set_verbosity():
-    verbosity.cache_clear()
-    v = verbosity()
+def decorate(decoratee: dataclass, cls: object):
+    # Adapt an instance of `ContextWrapper` to have hasA & isA relationships with `context`.
+    # See https://en.wikipedia.org/wiki/Decorator_pattern
 
-    default_verbosity_level = 30
-    verbosity_level = default_verbosity_level - v * 10
+    setattr(decoratee, 'decorated_' + type(cls).__name__, cls)
 
-    logger = logging.getLogger()
-    logger.setLevel(verbosity_level)
+    # add aliassed methods of decoratee to context
+    for key in dir(cls):
+        if key.startswith('_'):
+            continue
 
+        if hasattr(decoratee, key):
+            a, b = type(decoratee).__name__, type(cls).__name__
+            raise NotImplementedError(
+                f'Name conflict for key {key} in classes {a}, and {b}')
 
-def log(*args, file=sys.stderr, **kwds):
-    """Print to stderr
-    """
-    print(*args, file=file, **kwds)
+        attr = getattr(cls, key)
+        setattr(decoratee, key, attr)
 
-
-def debug(*args, **kwds):
-    """Similar to logging.debug, but without custom string formatting
-    """
-    if verbosity():
-        log(*args, **kwds)
+    return decoratee
 
 
-def set_parser(*args, formatter_class=RawTextHelpFormatter, **kwds):
-    global parser
-    parser = argparse.ArgumentParser(
-        *args, formatter_class=formatter_class, **kwds)
+def infer_dependencies(known_deps: AdjacencyList, key: str):
+    if key not in known_deps:
+        return
 
+    # yield direct dependencies
+    if key in known_deps:
+        yield from known_deps[key]
 
-def add_default_args():
-    global parser
-    if parser is None:
-        set_parser()
-
-    parser.add_argument('-v', '--verbose', default=0, action='count')
-
-    if 'unittest' in sys.modules.keys() or 'pytest' in sys.modules.keys():
-        parser.add_argument('*', nargs='*')
-
-
-def add_and_parse_args():
-    add_default_args()
-
-    global parser, parse_args
-    if parse_args is None:
-        parse_args = parser.parse_args()
-
-        # Note that verbosity will also set at the end of this file
-        set_verbosity()
+    # yield indirect dependencies
+        for other_key in known_deps[key]:
+            direct_dependencies = infer_dependencies(known_deps, other_key)
+            yield from direct_dependencies
 
 
 def concat(items: Sequence = []):
@@ -142,17 +97,6 @@ def split(line: str, delimiters=',.'):
     return [line for line in lines if line]
 
 
-def confirm(msg='Continue [Y/n]? '):
-    """Ask user for confirmation
-    Default to yes
-    """
-    if not interactive:
-        return True
-
-    res = input(msg).lower()
-    return 'n' not in res
-
-
 def identity(value):
     return value
 
@@ -163,84 +107,6 @@ def constant(value):
     def K(*args):
         return value
     return K
-
-
-def infer_default_and_non_default_args(func):
-    args = list(func.__code__.co_varnames)
-    n_default_args = len(func.__defaults__) if func.__defaults__ else 0
-    n_non_default_args = len(args) - n_default_args
-    non_default_args = args[:n_non_default_args]
-    default_args = args[n_non_default_args:]
-    return non_default_args, default_args
-
-
-def infer_args(func) -> list:
-    non_default_args, default_args = infer_default_and_non_default_args(func)
-    return non_default_args + [f'[{a}]' for a in default_args]
-
-
-def infer_synopsis(func, variables=[]) -> str:
-    if not variables:
-        variables = infer_args(func)
-    return ' '.join([func.__name__] + variables)
-
-
-def infer_signature(func) -> dict:
-    _, default_args = infer_default_and_non_default_args(func)
-
-    def format(k):
-        key = k
-        if k in default_args:
-            key = f'[{k}]'
-
-        if k in func.__annotations__:
-            v = func.__annotations__[k].__name__
-            return key, f': {v}'
-
-        return key, ''
-
-    pairs = [format(var) for var in func.__code__.co_varnames]
-    return {k: v for k, v in pairs}
-
-
-def generate_parameter_docs(parameters) -> str:
-    # explicitly define a tab to allow custom tab-widths
-    tab = """
-    """[1:]
-
-    # transform dict to a multline string
-    lines = (''.join(v) for v in parameters.items())
-    parameters = f'\n{tab}{tab}'.join(lines)
-
-    doc = f"""
-    Parameters
-    ----------
-        {parameters}
-    """
-
-    # rm first newline
-    return doc[1:]
-
-
-def generate_docs(func, synopsis: str = None, args: Dict[str, str] = None, doc: str = None) -> str:
-    if not hasattr(func, '__code__'):
-        if synopsis is None and args is None:
-            raise NotImplementedError('Cannot infer function signature')
-
-    if args is None:
-        args = infer_signature(func)
-    if synopsis is None:
-        synopsis = infer_synopsis(func, list(args.keys()))
-    if doc is None:
-        if func.__doc__:
-            doc = func.__doc__
-        elif args:
-            doc = generate_parameter_docs(args)
-
-    # only use doc when non-empty
-    if doc:
-        return synopsis + '\n\n' + doc
-    return synopsis
 
 
 def group(items, n):
@@ -274,36 +140,9 @@ def rename(func, new_name: str):
     func.__qualname__ = new_name
 
 
-def terminal_size(default=os.terminal_size((80, 100))):
-    try:
-        return os.get_terminal_size()
-    except OSError:
-        return default
-
-
 def has_method(cls, method) -> bool:
     return hasattr(cls, method) and is_callable(getattr(cls, method))
 
 
 def is_callable(method) -> bool:
     return hasattr(method, '__call__')
-
-
-def print_shell_ready_signal():
-    print(shell_ready_signal)
-    sys.stdout.flush()
-
-
-def has_output(stream: TextIOBase = sys.stdin, timeout=0):
-    rlist, _, _ = select.select([stream], [], [], timeout)
-    return rlist != []
-
-
-def read_line(stream: TextIOBase, timeout=0, default_value=''):
-    if has_output(stream, timeout):
-        return stream.readline().decode()
-
-    return default_value
-
-
-set_verbosity()

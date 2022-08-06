@@ -27,6 +27,7 @@ def test_multi_commands():
 
 
 def test_pipe():
+    x = catch_output('print 100 |> print')
     assert catch_output('print 100 |> print') == '100'
 
 
