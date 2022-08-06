@@ -11,7 +11,7 @@ AdjacencyList = Dict[str, List[str]]
 
 
 def decorate(decoratee: dataclass, cls: object):
-    # Adapt an instance of `ContextWrapper` to have hasA & isA relationships with `context`.
+    # Adapt a class instance to have an hasA and isA relationships with `cls`.
     # See https://en.wikipedia.org/wiki/Decorator_pattern
 
     setattr(decoratee, 'decorated_' + type(cls).__name__, cls)
@@ -44,6 +44,11 @@ def infer_dependencies(known_deps: AdjacencyList, key: str):
         for other_key in known_deps[key]:
             direct_dependencies = infer_dependencies(known_deps, other_key)
             yield from direct_dependencies
+
+
+################################################################################
+# Operations for lists and sequences
+################################################################################
 
 
 def concat(items: Sequence = []):
@@ -97,18 +102,6 @@ def split(line: str, delimiters=',.'):
     return [line for line in lines if line]
 
 
-def identity(value):
-    return value
-
-
-def constant(value):
-    """Returns a constant function
-    """
-    def K(*args):
-        return value
-    return K
-
-
 def group(items, n):
     """Group items by chunks of size n.
     I.e. a lazy version of itertools.pairwise with variable groupsize.
@@ -124,7 +117,7 @@ def group(items, n):
 
 
 def extend(q, items):
-    """Fill queue with items, similar to list.extend
+    """Fill queue `q` with items, similar to list.extend
 
     Parameters
     ----------
@@ -133,6 +126,11 @@ def extend(q, items):
     for item in items:
         # Note that put_nowait is compatible with threading.Queue and asyncio.Queue
         q.put_nowait(item)
+
+
+################################################################################
+# Inspection helpers
+################################################################################
 
 
 def rename(func, new_name: str):
@@ -146,3 +144,19 @@ def has_method(cls, method) -> bool:
 
 def is_callable(method) -> bool:
     return hasattr(method, '__call__')
+
+################################################################################
+# Pure functions
+################################################################################
+
+
+def identity(value):
+    return value
+
+
+def constant(value):
+    """Returns a constant function
+    """
+    def K(*args):
+        return value
+    return K
