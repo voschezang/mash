@@ -19,7 +19,7 @@ def test_Function_call():
     f = Function(int, args=[], synopsis='')
 
     assert f(value) in [int(value), value + '\n']
-    assert f() is None
+    assert f() is 0
 
 
 def test_multi_commands():

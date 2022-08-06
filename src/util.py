@@ -1,5 +1,6 @@
 from collections.abc import Sequence
 from dataclasses import dataclass
+from functools import lru_cache
 from typing import Dict, List
 
 
@@ -162,16 +163,27 @@ def extend(q, items):
         q.put_nowait(item)
 
 
-def find_closest_prefix_match(element: str, elements: List[str]):
-    """Returns an element which is equal to prefix of `element`.
-    In case of multiple matches the longest match is chosen.
+def find_prefix_matches(element: str, elements: List[str]):
+    """Yields all elements that are equal to a prefix of `element`.
+    Elements with better matches are chosen first. 
     """
+    matches = set()
     for i in range(len(element), 0, -1):
         prefix = element[:i]
         for other in elements:
+            if other in matches:
+                continue
+
             if other.startswith(prefix):
-                return other
-    raise ValueError(f'{element} is not a prefix of any item in list')
+                matches |= {other}
+                yield other
+
+    if matches:
+        return
+
+    preview = ', '.join(elements[:3])
+    raise ValueError(
+        f'{element} is not a prefix of any of the given items [{preview}, ..]')
 
 
 ################################################################################

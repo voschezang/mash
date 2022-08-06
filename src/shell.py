@@ -265,12 +265,11 @@ class Function:
         args = [arg for arg in args if arg != '']
 
         try:
-            result = self.func(*args)
+            return self.func(*args)
         except Exception:
             self.handle_exception()
             return
 
-        return result
 
     def handle_exception(self):
         global last_exception, last_traceback

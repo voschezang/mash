@@ -4,7 +4,7 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 import logging
 from typing import Callable, Dict, Tuple
-from util import find_closest_prefix_match, is_callable, none
+from util import find_prefix_matches, is_callable, none
 
 
 class CRUD(ABC):
@@ -71,7 +71,8 @@ class CRUD(ABC):
 
         if directory not in available_dirs:
             old_value = directory
-            directory = find_closest_prefix_match(directory, available_dirs)
+            directory = next(find_prefix_matches(
+                directory, available_dirs))
             logging.debug(f'expandig {old_value} into {directory}')
             logging.info((f'cd {directory}'))
 
@@ -86,7 +87,7 @@ class CRUD(ABC):
             return
 
         if self.autocomplete:
-            if find_closest_prefix_match(directory, allowed_dirs):
+            if next(find_prefix_matches(directory, allowed_dirs)):
                 return
 
         if directory not in allowed_dirs:

@@ -6,7 +6,7 @@ import sys
 
 import crud
 from shell import Shell, run, set_functions
-from util import DataClassHelper, decorate, AdjacencyList, find_closest_prefix_match
+from util import DataClassHelper, decorate, AdjacencyList, find_prefix_matches
 
 
 # example data with dicts and lists
@@ -71,7 +71,7 @@ class CRUD(crud.CRUD):
             return cwd
 
         if self.autocomplete and obj not in cwd:
-            obj = find_closest_prefix_match(obj, cwd.keys())
+            obj = next(find_prefix_matches(obj, cwd.keys()))
 
         if obj in cwd:
             return cwd[obj]
