@@ -43,7 +43,8 @@ def test_pipe_input():
 
 
 def test_cli():
-    check_output('./src/shell.py print 1')
+    assert check_output('./src/shell.py print 3') == '3'
+    assert check_output('./src/shell.py "print 3"') == '3'
 
 
 def test_cli_multi_commands():
@@ -57,6 +58,12 @@ def test_cli_pipe_input():
 
     with raises(RuntimeError):
         run('./src/shell.py "print abc | grep def"')
+
+
+def test_cli_pipe_interop():
+    cmd = 'print abc | grep abc |> print'
+    assert catch_output(cmd) == 'abc'
+    assert check_output(f'./src/shell.py "{cmd}"') == 'abc'
 
 
 def test_pipe_to_cli():

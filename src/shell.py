@@ -12,7 +12,7 @@ import traceback
 from doc_inference import generate_docs
 
 import io_util
-from io_util import ArgparseWrapper, bold, has_argument, shell_ready_signal, print_shell_ready_signal, has_output
+from io_util import ArgparseWrapper, bold, has_argument, log, shell_ready_signal, print_shell_ready_signal, has_output
 import util
 
 # this data is impacts by both the classes Function and Shell, hence it should be global
@@ -37,8 +37,8 @@ E.g.
     ./shell.py 'print abc; print def \n print ghi'
 
 {bold('Interopability')}
-Interopability with Bash can be done with pipes: 
-    `|` for Bash 
+Interopability with Bash can be done with pipes:
+    `|` for Bash
     `|>` for Python.
 
 1. To stdin and stdout
@@ -149,52 +149,68 @@ class Shell(cmd.Cmd):
             self.last_command_has_failed = True
 
         if self.last_command_has_failed:
-            print('Abort - No return value (3)')
+            log('Abort - No return value')
             return
 
-        # TODO pipe shell output back to Python after |>
-
         elif lines:
-            for line in lines:
-                if line[0] == '>':
-                    # use Python
+            try:
+                result = self.run_cmd_sequence(lines, result)
+            except subprocess.CalledProcessError:
+                return
 
-                    # rm first '>'
-                    line = line[1:]
-
-                    # append arguments
-                    line = f'{line} {result}'
-
-                    # result = super().onecmd(line)
-                    result = self.onecmd_supress_output(line)
-
-                else:
-                    # use shell
-
-                    # pass last result to stdin
-                    line = f'echo {result} | {line}'
-
-                    logging.info(f'Cmd = {line}')
-
-                    result = subprocess.run(
-                        args=line, capture_output=True, shell=True)
-
-                    if result.returncode != 0:
-                        print(
-                            f'Shell exited with {result.returncode}: {result.stderr.decode()}')
-                        return
-
-                    # self.stderr.append(f'stderr: {result.stderr.decode()}')
-
-                    # TODO don't ignore stderr
-                    result = result.stdout.decode().rstrip('\n')
-
-                if result is None:
-                    print('Abort - No return value')
-                    return
+            if result is None:
+                return
 
         print(result)
         return 0
+
+    def run_cmd_sequence(self, lines: list, result: str):
+        # TODO pipe shell output back to Python after |>
+        for line in lines:
+            if line[0] == '>':
+                result = self.pipe_cmd_py(line[1:], result)
+            else:
+                result = self.pipe_cmd_sh(line, result)
+
+            if result is None:
+                log('Abort - No return value in sequence')
+                return
+
+        return result
+
+    def pipe_cmd_py(self, line: str, result: str):
+        line = line.lstrip()
+
+        # append arguments
+        line = f'{line} {result}'
+
+        # result = super().onecmd(line)
+        res = self.onecmd_supress_output(line)
+        return self.onecmd_supress_output(line)
+
+    def pipe_cmd_sh(self, line: str, result: str) -> str:
+        line = line.lstrip()
+
+        # pass last result to stdin
+        line = f'echo {result} | {line}'
+
+        logging.info(f'Cmd = {line}')
+
+        try:
+            result = subprocess.run(args=line,
+                                    capture_output=True,
+                                    check=True,
+                                    shell=True)
+        except subprocess.CalledProcessError as e:
+            returncode, stderr = e.args
+            log(f'Shell exited with {returncode}: {stderr}')
+            raise
+
+        stdout = result.stdout.decode().rstrip('\n')
+        stderr = result.stdout.decode().rstrip('\n')
+
+        log(stderr)
+        return stdout
 
     def onecmd_supress_output(self, line):
         # TODO strip trailing '\n'
@@ -205,7 +221,7 @@ class Shell(cmd.Cmd):
         """
         if confirmation_mode:
             assert io_util.interactive
-            print('Command:', line)
+            log('Command:', line)
             if not io_util.confirm():
                 return ''
 
@@ -275,9 +291,9 @@ class Function:
 
         etype, last_exception, last_traceback = sys.exc_info()
 
-        print(etype.__name__, exception_hint)
+        log(etype.__name__, exception_hint)
         if str(last_exception):
-            print('\t', last_exception)
+            log('\t', last_exception)
 
 
 def set_functions(functions: Dict[str, Function]):
