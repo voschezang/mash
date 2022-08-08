@@ -143,7 +143,7 @@ class Shell(cmd.Cmd):
             lines = []
 
         logging.info(f'Piped cmd = {line}')
-        result = self.onecmd_supress_output(line)
+        result = super().onecmd(line)
 
         if not result:
             self.last_command_has_failed = True
@@ -165,7 +165,6 @@ class Shell(cmd.Cmd):
         return 0
 
     def run_cmd_sequence(self, lines: list, result: str):
-        # TODO pipe shell output back to Python after |>
         for line in lines:
             if line[0] == '>':
                 result = self.pipe_cmd_py(line[1:], result)
@@ -184,9 +183,7 @@ class Shell(cmd.Cmd):
         # append arguments
         line = f'{line} {result}'
 
-        # result = super().onecmd(line)
-        res = self.onecmd_supress_output(line)
-        return self.onecmd_supress_output(line)
+        return super().onecmd(line)
 
     def pipe_cmd_sh(self, line: str, result: str) -> str:
         line = line.lstrip()
@@ -211,10 +208,6 @@ class Shell(cmd.Cmd):
 
         log(stderr)
         return stdout
-
-    def onecmd_supress_output(self, line):
-        # TODO strip trailing '\n'
-        return super().onecmd(line)
 
     def onecmd_prehook(self, line):
         """Similar to cmd.precmd but executed before cmd.onecmd
