@@ -16,7 +16,7 @@ import sys
 
 
 shell_ready_signal = '-->'
-
+colored_output = True
 interactive = False
 
 parse_args: argparse.Namespace = None
@@ -25,6 +25,10 @@ parser: argparse.ArgumentParser = None
 
 def bold(text: str):
     return colored(text, attrs=['bold'])
+
+
+def warn(text: str):
+    return colored(text, 'yellow')
 
 
 def confirm(msg='Continue [Y/n]? '):
@@ -73,7 +77,8 @@ def set_verbosity():
 def log(*args, file=sys.stderr, **kwds):
     """Print to stderr
     """
-    print(*args, file=file, **kwds)
+    prefix = warn('···')
+    print(prefix, *args, file=file, **kwds)
 
 
 def debug(*args, **kwds):

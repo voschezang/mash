@@ -36,7 +36,7 @@ def test_pipe_unix():
 
 
 def test_pipe_input():
-    catch_output('print abc | grep abc')
+    assert catch_output('print abc | grep abc') == 'abc'
 
     with raises(RuntimeError):
         catch_output('echo abc | grep def')
