@@ -12,7 +12,7 @@ import traceback
 from doc_inference import generate_docs
 
 import io_util
-from io_util import ArgparseWrapper, bold, shell_ready_signal, print_shell_ready_signal, has_output
+from io_util import ArgparseWrapper, bold, has_argument, shell_ready_signal, print_shell_ready_signal, has_output
 import util
 
 # this data is impacts by both the classes Function and Shell, hence it should be global
@@ -270,7 +270,6 @@ class Function:
             self.handle_exception()
             return
 
-
     def handle_exception(self):
         global last_exception, last_traceback
 
@@ -292,21 +291,24 @@ def set_functions(functions: Dict[str, Function]):
         setattr(getattr(Shell, f'do_{key}'), '__doc__', func.help)
 
 
-def shell(cmd: str):
+def sh_to_py(cmd: str):
     """A wrapper for shell commands
     """
     def func(*args):
         args = ' '.join(args)
         return os.system(''.join(cmd + ' ' + args))
+
     func.__name__ = cmd
     return func
 
 
 def add_cli_args(parser: ArgumentParser):
-    parser.add_argument('cmd', nargs='*',
-                        help='A comma- or newline-separated list of commands')
-    parser.add_argument('-s', '--safe', action='store_true',
-                        help='Safe-mode. Ask for confirmation before executing commands.')
+    if not has_argument(parser, 'cmd'):
+        parser.add_argument('cmd', nargs='*',
+                            help='A comma- or newline-separated list of commands')
+    if not has_argument(parser, 'safe'):
+        parser.add_argument('-s', '--safe', action='store_true',
+                            help='Safe-mode. Ask for confirmation before executing commands.')
 
 
 def set_cli_args():
@@ -318,6 +320,14 @@ def set_cli_args():
     if io_util.parse_args.safe:
         confirmation_mode = True
         io_util.interactive = True
+
+
+def has_input():
+    # ensure argparse has been called
+    with ArgparseWrapper():
+        pass
+
+    return io_util.parse_args.cmd != []
 
 
 def run_command(command='', shell: Shell = None, delimiters='\n;'):
@@ -375,6 +385,3 @@ def main(functions: Dict[str, Function] = {}):
 
 if __name__ == '__main__':
     run()
-
-    # TODO: fix error handling
-    # e.g. `shell ls | grep` is causing two errors

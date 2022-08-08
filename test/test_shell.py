@@ -1,6 +1,6 @@
 from contextlib import redirect_stdout
 from io import StringIO
-import pytest
+from pytest import raises
 import subprocess
 
 from shell import Function, run_command
@@ -19,7 +19,7 @@ def test_Function_call():
     f = Function(int, args=[], synopsis='')
 
     assert f(value) in [int(value), value + '\n']
-    assert f() is 0
+    assert f() == 0
 
 
 def test_multi_commands():
@@ -38,7 +38,7 @@ def test_pipe_unix():
 def test_pipe_input():
     catch_output('print abc | grep abc')
 
-    with pytest.raises(RuntimeError):
+    with raises(RuntimeError):
         catch_output('echo abc | grep def')
 
 
@@ -55,7 +55,7 @@ def test_cli_pipe_input():
     out = check_output('./src/shell.py "print abc | grep abc"')
     assert out == 'abc'
 
-    with pytest.raises(RuntimeError):
+    with raises(RuntimeError):
         run('./src/shell.py "print abc | grep def"')
 
 

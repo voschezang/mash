@@ -2,7 +2,8 @@
 import sys
 import rich
 
-from shell import Function, Shell, set_functions, shell, main
+import shell
+from shell import Function, Shell, set_cli_args, set_functions, sh_to_py, main
 from io_util import has_output
 import cli
 
@@ -42,12 +43,14 @@ functions = {
     'h': h,
     'example': example,
     'inspect': inspect,
-    'ls': Function(shell('ls'), args={'-latr': 'flags', '[file]': ''}),
-    'cat': Function(shell('cat'), args={'file': ''}),
-    'vi': Function(shell('vi'), args={'[file]': ''})}
+    'ls': Function(sh_to_py('ls'), args={'-latr': 'flags', '[file]': ''}),
+    'cat': Function(sh_to_py('cat'), args={'file': ''}),
+    'vi': Function(sh_to_py('vi'), args={'[file]': ''})}
 
 if __name__ == '__main__':
-    if has_output(sys.stdin):
+    set_cli_args()
+
+    if has_output(sys.stdin) or shell.has_input():
         main(functions)
     else:
         # use_shell_with_history:

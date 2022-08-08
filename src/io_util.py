@@ -2,17 +2,17 @@
 - printing
 - parsing cli args
 """
-import argparse
-from dataclasses import dataclass
+from argparse import ArgumentParser, RawTextHelpFormatter
+from io import TextIOBase
+from typing import List
 from termcolor import colored
+import argparse
 import argparse
 import functools
 import logging
 import os
-import sys
 import select
-from argparse import ArgumentParser, RawTextHelpFormatter
-from io import TextIOBase
+import sys
 
 
 shell_ready_signal = '-->'
@@ -94,11 +94,14 @@ def add_default_args(parser: ArgumentParser):
 
 
 class ArgparseWrapper:
-    def __init__(self, *args, formatter_class=RawTextHelpFormatter, **kwds):
+    def __init__(self, *args,
+                 conflict_handler='resolve',
+                 formatter_class=RawTextHelpFormatter, **kwds):
         global parser
         if parser is None:
-            parser = ArgumentParser(
-                *args, formatter_class=formatter_class, **kwds)
+            parser = ArgumentParser(*args,
+                                    conflict_handler=conflict_handler,
+                                    formatter_class=formatter_class, **kwds)
 
             add_default_args(parser)
 
@@ -108,12 +111,29 @@ class ArgparseWrapper:
         return self.parser
 
     def __exit__(self, *_):
+        # re-raise any exception thrown during setup
+        _, exc, _ = sys.exc_info()
+        if exc:
+            raise
+
         global parse_args
         parse_args = parser.parse_args()
         self.parse_args = parse_args
 
         # Note that verbosity will also be set at the end of this file
         set_verbosity()
+
+
+def has_argument(parser: ArgumentParser, arg='arg_name') -> bool:
+    return find_argument(parser, arg) is not None
+
+
+def find_argument(parser: ArgumentParser, arg='arg_name'):
+    for action in parser._actions:
+        if action.dest == arg:
+            return action
+
+    return None
 
 
 def has_output(stream: TextIOBase = sys.stdin, timeout=0):
