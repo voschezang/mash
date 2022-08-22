@@ -1,9 +1,8 @@
-
 #!/usr/bin/python3
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
+from enum import Enum
 import logging
-from typing import Callable, Dict, Tuple
+from typing import Callable, Tuple
 from util import find_prefix_matches, is_callable, none
 
 
@@ -14,6 +13,7 @@ class CRUD(ABC):
 
     def __init__(self, path=[], autocomplete=True, cd_hooks: Tuple[Callable, Callable] = None):
         self.path = path
+        self.prev_path = []
         self.autocomplete = autocomplete
 
         self.pre_cd_hook = none
@@ -46,6 +46,10 @@ class CRUD(ABC):
         """
         self.pre_cd_hook()
 
+        # handle empty args
+        if dirs == ():
+            dirs = ('',)
+
         available_dirs = self.ls()
         self.verify_cd_args(dirs, available_dirs)
 
@@ -62,11 +66,17 @@ class CRUD(ABC):
         """Inner version of `self.cd`
         """
         if directory is None or directory == '':
+            self.prev_path = self.path.copy()
+            self.path = []
             return
         if directory == '.':
             return
         elif directory == '..':
+            self.prev_path = self.path.copy()
             self.path.pop()
+            return
+        elif directory == '-':
+            self.path, self.prev_path = self.prev_path, self.path
             return
 
         if directory not in available_dirs:
@@ -76,6 +86,7 @@ class CRUD(ABC):
             logging.debug(f'expandig {old_value} into {directory}')
             logging.info((f'cd {directory}'))
 
+        self.prev_path = self.path.copy()
         self.path.append(directory)
 
     def verify_cd_args(self, dirs, allowed_dirs):
@@ -83,7 +94,7 @@ class CRUD(ABC):
             return
 
         directory = dirs[0]
-        if directory in ['..'] or directory in allowed_dirs:
+        if directory in ['-', '.', '..'] or directory in allowed_dirs:
             return
 
         if self.autocomplete:
