@@ -4,6 +4,9 @@ items = ['a', 'b', 'c']
 
 
 class CRUD(src.crud.CRUD):
+    def __init__(self, **kwds):
+        super().__init__(**kwds)
+
     def ls(self):
         return items
 
