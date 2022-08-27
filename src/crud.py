@@ -15,6 +15,9 @@ class Option(Enum):
     up = '..'
 
 
+Options = [o.value for o in Option]
+
+
 class CRUD(ABC):
     """CRUD operations that mimics a directory hierarchy.
     A directory (object) can consists folders and files (objects).
@@ -139,7 +142,10 @@ class CRUD(ABC):
 
         elif option == self.options.up:
             self.prev_path = self.path.copy()
-            self.path.pop()
+            try:
+                self.path.pop()
+            except IndexError:
+                pass
 
         elif option == self.options.switch:
             self.path, self.prev_path = self.prev_path, self.path

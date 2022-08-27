@@ -63,8 +63,17 @@ class Shell(cmd.Cmd):
     prompt = '$ '
     exception = None
     ignore_invalid_syntax = True
+    do_char_method = None
+    chars_allowed_for_char_method = []
 
     # TODO save stdout in a tmp file
+
+    def set_do_char_method(self, method, chars: List[str]):
+        """Allow special chars to be used as commands. 
+        E.g. transform `do_$` into `do_f $`
+        """
+        self.do_char_method = method
+        self.chars_allowed_for_char_method = chars
 
     def do_exit(self, args):
         """exit [code]
@@ -110,6 +119,9 @@ class Shell(cmd.Cmd):
         pass
 
     def default(self, line):
+        if line in self.chars_allowed_for_char_method and self.do_char_method:
+            return self.do_char_method(line)
+
         self.last_command_has_failed = True
 
         if self.ignore_invalid_syntax:
