@@ -45,7 +45,12 @@ def test_list_prefix_matches_eager():
     assert next(list_prefix_matches('ab', ['a', 'ab', 'abc'])) == 'ab'
 
 
-def text_find_prefix_matches_all():
+def test_list_prefix_matches_fuzzy():
+    assert list(list_prefix_matches('ab', ['abc'])) == ['abc']
+    assert list(list_prefix_matches('ba', ['abc'])) == []
+
+
+def test_find_prefix_matches_all():
     assert list(find_prefix_matches('a', ['c', 'b', 'a'])) == ['a']
     assert list(find_prefix_matches('a', ['aa', 'ai'])) == ['aa', 'ai']
     assert list(find_prefix_matches('ab', ['aa', 'ab'])) == ['ab', 'aa']
