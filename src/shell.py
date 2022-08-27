@@ -2,7 +2,7 @@
 from argparse import ArgumentParser
 from copy import deepcopy
 from types import TracebackType
-from typing import Dict
+from typing import Dict, List
 import cmd
 import logging
 import os
@@ -116,6 +116,14 @@ class Shell(cmd.Cmd):
             super().default(line)
         else:
             raise ShellException(f'Unknown syntax: {line}')
+
+    # TODO temporarily override completenames, based on the current state
+    # def completenames(self, text, *ignored):
+    #     self.state_specific_complete_names = ['abc', 'dev']
+    #     if self.state_specific_complete_names:
+    #         return [a for a in self.state_specific_complete_names if a.startswith(text)]
+
+    #     return super().completenames(text, *ignored)
 
     def onecmd(self, line):
         """Parse and run `line`.
@@ -393,4 +401,10 @@ def main(functions: Dict[str, Function] = {}):
 
 
 if __name__ == '__main__':
+    # readline.set_auto_history(0)
+    # readline.add_history('abc')
+    # readline.add_history('def')
+    # for i in range(readline.get_current_history_length()):
+    #     print('history[i]', readline.get_history_item(i+1))
+
     run()
