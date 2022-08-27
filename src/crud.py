@@ -1,9 +1,17 @@
 #!/usr/bin/python3
 from abc import ABC, abstractmethod
+from dataclasses import dataclass
 from enum import Enum
 import logging
-from typing import Callable, Tuple
+from typing import Callable, List, Tuple, Union
 from util import find_prefix_matches, is_callable, none
+
+
+@dataclass
+class Item:
+    # name: Union[int, str]  # an index or key
+    name: str
+    value: object
 
 
 class Option(Enum):
@@ -43,7 +51,7 @@ class CRUD(ABC):
             self.post_cd_hook = post
 
     @abstractmethod
-    def ls(self, obj: str) -> list:
+    def ls(self, obj: str) -> List[Item]:
         """List all properties of an object
         """
         pass
@@ -64,7 +72,8 @@ class CRUD(ABC):
         if dirs == ():
             dirs = (self.options.default.value,)
 
-        available_dirs = self.ls()
+        available_dirs = [item.name for item in self.ls()]
+
         self.verify_cd_args(dirs, available_dirs)
 
         if len(dirs) > 0:
@@ -89,7 +98,12 @@ class CRUD(ABC):
         except ValueError:
             pass
 
-        if directory not in available_dirs:
+        # TODO if data = array, but directory = str, then infer the index
+
+        if isinstance(directory, int):
+            pass
+
+        elif directory not in available_dirs:
             old_value = directory
             directory = next(find_prefix_matches(
                 directory, available_dirs))
@@ -104,6 +118,11 @@ class CRUD(ABC):
             return
 
         directory = dirs[0]
+
+        if isinstance(dirs[0], int):
+            i = dirs[0]
+            assert i < len(allowed_dirs)
+            return
 
         if directory in allowed_dirs:
             return
@@ -150,4 +169,4 @@ class CRUD(ABC):
         elif option == self.options.switch:
             self.path, self.prev_path = self.prev_path, self.path
 
-        # elif options.stay: pass
+        # otherwise, pass

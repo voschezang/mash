@@ -2,21 +2,24 @@
 from copy import deepcopy
 from dataclasses import dataclass
 from pprint import pformat
+from typing import List
 
 import crud
+from crud import Item, Options
 from shell import Shell, run, set_completions, set_functions
 from util import DataClassHelper, decorate, AdjacencyList, find_prefix_matches, list_prefix_matches
 
 
 # example data with dicts and lists
-# free format
-repository = {'world': {'animals': {'terrestrial':
-                                    {'snakes':
-                                     ['python', 'cobra']},
-                                    'aquatic': {'penguins':
-                                                ['tux']}
-                                    },
-                        }}
+repository = {'worlds': [
+    {'name': 'earth',
+     'animals': [
+         {'name': 'terrestrial',
+          'snakes': [{'name': 'python'},
+                     {'name': 'cobra'}]},
+         {'name': 'aquatic',
+          'penquins': [{'name': 'tux'}]}
+     ]}]}
 
 
 @dataclass
@@ -47,19 +50,14 @@ class CRUD(crud.CRUD):
         self.context = decorate(deepcopy(context),
                                 DataClassHelper(context))
 
-    def ls(self, obj=None) -> list:
+    def ls(self, obj=None) -> List[Item]:
         items = self._ls(obj)
-        if hasattr(items, 'keys'):
-            items = items.keys()
-
-        return list(items)
+        return self.wrap_list_items(items)
 
     def ll(self, obj=None, delimiter='\n'):
-        items = self._ls(obj)
-        if hasattr(items, 'keys'):
-            items = items.keys()
-
-        return delimiter.join(items)
+        # items = self.ls(obj)
+        items = self.infer_item_names(self.ls(obj))
+        return delimiter.join([str(item.name) for item in items])
 
     def tree(self, obj=None):
         items = self._ls(obj)
@@ -88,11 +86,34 @@ class CRUD(crud.CRUD):
         global repository
         cwd = repository
         for directory in self.path:
-            if not directory in cwd:
+            try:
+                if isinstance(cwd, list):
+                    directory = int(directory)
+                cwd = cwd[directory]
+            except (IndexError, KeyError):
                 raise ValueError(f'Dir {directory} not in cwd ({cwd})')
 
-            cwd = cwd[directory]
         return cwd
+
+    def wrap_list_items(self, items) -> List[Item]:
+        if hasattr(items, 'keys'):
+            items = [Item(k, v) for k, v in items.items()]
+
+        elif isinstance(items, list):
+            # if items and 'name' in items[0]:
+            #     items = [Item(item['name'], item) for i, item in enumerate(items)]
+            # else:
+            items = [Item(str(i), item) for i, item in enumerate(items)]
+
+        else:
+            raise NotImplementedError()
+
+        return items
+
+    def infer_item_names(self, items) -> List[Item]:
+        if items and isinstance(items[0].name, int) and 'name' in items[0].value:
+            items = [Item(item.value['name'], item) for item in items]
+        return items
 
     def update_prompt(self):
         if self.shell:
@@ -109,7 +130,7 @@ def cd(*args):
 
 
 def ls(*args):
-    return obj.ls(*args)
+    return [item.name for item in obj.ls(*args)]
 
 
 def ll(*args):
@@ -135,8 +156,7 @@ if __name__ == '__main__':
     set_functions(functions)
     set_completions(completions)
 
-    # Shell.complete_cd = complete_cd
     obj.shell = Shell()
-    obj.shell.set_do_char_method(obj.shell.do_cd, crud.Options)
+    obj.shell.set_do_char_method(obj.shell.do_cd, Options)
 
     run(obj.shell)

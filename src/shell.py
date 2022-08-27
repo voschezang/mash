@@ -2,7 +2,7 @@
 from argparse import ArgumentParser
 from copy import deepcopy
 from types import TracebackType
-from typing import Dict, List
+from typing import Callable, Dict, List
 import cmd
 import logging
 import os
@@ -68,7 +68,7 @@ class Shell(cmd.Cmd):
 
     # TODO save stdout in a tmp file
 
-    def set_do_char_method(self, method, chars: List[str]):
+    def set_do_char_method(self, method: Callable, chars: List[str]):
         """Allow special chars to be used as commands. 
         E.g. transform `do_$` into `do_f $`
         """
@@ -134,7 +134,6 @@ class Shell(cmd.Cmd):
     #     self.state_specific_complete_names = ['abc', 'dev']
     #     if self.state_specific_complete_names:
     #         return [a for a in self.state_specific_complete_names if a.startswith(text)]
-
     #     return super().completenames(text, *ignored)
 
     def onecmd(self, line):
@@ -311,6 +310,7 @@ class Function:
 
 def set_functions(functions: Dict[str, Function]):
     """Extend `Shell` with a set of functions
+    Note that this modifies the class Shell directly, rather than an instance.
     """
     for key, func in functions.items():
         if not isinstance(func, Function):
@@ -318,6 +318,11 @@ def set_functions(functions: Dict[str, Function]):
 
         setattr(Shell, f'do_{key}', func)
         setattr(getattr(Shell, f'do_{key}'), '__doc__', func.help)
+
+
+def set_completions(functions: Dict[str, Callable]):
+    for key, func in functions.items():
+        setattr(Shell, f'complete_{key}', func)
 
 
 def sh_to_py(cmd: str):
