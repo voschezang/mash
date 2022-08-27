@@ -2,14 +2,14 @@
 from copy import deepcopy
 from dataclasses import dataclass
 from pprint import pformat
-import sys
 
 import crud
-from shell import Shell, run, set_functions
-from util import DataClassHelper, decorate, AdjacencyList, find_prefix_matches
+from shell import Shell, run, set_completions, set_functions
+from util import DataClassHelper, decorate, AdjacencyList, find_prefix_matches, list_prefix_matches
 
 
 # example data with dicts and lists
+# free format
 repository = {'world': {'animals': {'terrestrial':
                                     {'snakes':
                                      ['python', 'cobra']},
@@ -116,18 +116,27 @@ def ll(*args):
     return obj.ll(*args)
 
 
+def complete_cd(self, text, line, begidx, endidx):
+    candidates = ls()
+    return list(list_prefix_matches(text, candidates))
+
+
 functions = {
     'cd': cd,
     'ls': ls,
     'll': ll,
-    'tree': obj.tree,
+    'tree': obj.tree
+}
+completions = {
+    'cd': complete_cd
 }
 
-
 if __name__ == '__main__':
-    if functions:
-        set_functions(functions)
+    set_functions(functions)
+    set_completions(completions)
 
+    # Shell.complete_cd = complete_cd
     obj.shell = Shell()
-    run(obj.shell)
+    obj.shell.set_do_char_method(obj.shell.do_cd, crud.Options)
 
+    run(obj.shell)
