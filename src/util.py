@@ -163,27 +163,38 @@ def extend(q, items):
         q.put_nowait(item)
 
 
-def find_prefix_matches(element: str, elements: List[str]):
+def list_prefix_matches(element: str, elements: List[str]):
     """Yields all elements that are equal to a prefix of `element`.
     Elements with better matches are chosen first. 
     """
-    matches = set()
-    for i in range(len(element), 0, -1):
+    prev_matches = set()
+    for i in range(max(1, len(element)), 0, -1):
         prefix = element[:i]
         for other in elements:
-            if other in matches:
+            if other in prev_matches:
                 continue
 
             if other.startswith(prefix):
-                matches |= {other}
+                prev_matches |= {other}
                 yield other
 
-    if matches:
-        return
 
-    preview = ', '.join(elements[:3])
-    raise ValueError(
-        f'{element} is not a prefix of any of the given items [{preview}, ..]')
+def find_prefix_matches(element: str, elements: List[str]):
+    """Yields all elements that are equal to a prefix of `element`.
+    Elements with better matches are chosen first. 
+
+    Raise a ValueError when no matches are found.
+    """
+    # TODO rm this cache and the corresponding ValueError
+    iter = list_prefix_matches(element, elements)
+    i = 0
+    for i, match in enumerate(iter):
+        yield match
+
+    if i == 0:
+        preview = ', '.join(elements[:3])
+        raise ValueError(
+            f'{element} is not a prefix of any of the given items [{preview}, ..]')
 
 
 ################################################################################
