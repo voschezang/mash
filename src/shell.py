@@ -418,10 +418,4 @@ def main(functions: Dict[str, Function] = {}):
 
 
 if __name__ == '__main__':
-    # readline.set_auto_history(0)
-    # readline.add_history('abc')
-    # readline.add_history('def')
-    # for i in range(readline.get_current_history_length()):
-    #     print('history[i]', readline.get_history_item(i+1))
-
     run()

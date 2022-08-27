@@ -4,12 +4,11 @@ from dataclasses import dataclass
 from enum import Enum
 import logging
 from typing import Callable, List, Tuple, Union
-from util import find_prefix_matches, is_callable, none
+from util import find_prefix_matches, identity, is_callable, none
 
 
 @dataclass
 class Item:
-    # name: Union[int, str]  # an index or key
     name: str
     value: object
 
@@ -38,7 +37,7 @@ class CRUD(ABC):
         self.autocomplete = autocomplete
         self.options = options
 
-        self.pre_cd_hook = none
+        self.pre_cd_hook = identity
         self.post_cd_hook = none
 
         if cd_hooks:
@@ -66,7 +65,7 @@ class CRUD(ABC):
         """Change the current working environment.
         E.g. cd(a,b,c) == cd a/b/c
         """
-        self.pre_cd_hook()
+        dirs = self.pre_cd_hook(dirs)
 
         # handle empty args
         if dirs == ():
@@ -81,7 +80,9 @@ class CRUD(ABC):
             self._cd(directory, available_dirs)
 
         if len(dirs) > 1:
-            self.cd(dirs[1:])
+            # dirs = dirs[1:]
+            # dirs = self.pre_cd_hook(dirs)
+            self.cd(*dirs[1:])
 
         self.post_cd_hook()
 
@@ -120,8 +121,7 @@ class CRUD(ABC):
         directory = dirs[0]
 
         if isinstance(dirs[0], int):
-            i = dirs[0]
-            assert i < len(allowed_dirs)
+            assert dirs[0] < len(allowed_dirs)
             return
 
         if directory in allowed_dirs:

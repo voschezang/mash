@@ -1,11 +1,12 @@
 #!/usr/bin/python3
 from copy import deepcopy
 from dataclasses import dataclass
+import logging
 from pprint import pformat
 from typing import List
 
 import crud
-from crud import Item, Options
+from crud import Item, Option, Options
 from shell import Shell, run, set_completions, set_functions
 from util import DataClassHelper, decorate, AdjacencyList, find_prefix_matches, list_prefix_matches
 
@@ -42,6 +43,7 @@ class CRUD(crud.CRUD):
         self.init__context(context)
         self.shell = shell
 
+        self.pre_cd_hook = self.fix_directory_type
         self.post_cd_hook = self.update_prompt
 
     def init__context(self, context):
@@ -64,7 +66,7 @@ class CRUD(crud.CRUD):
         return pformat(repository, indent=2)
 
     def _ls(self, obj):
-        cwd = self.infer_cwd()
+        cwd = self.cwd
         if obj is None:
             return cwd
 
@@ -79,7 +81,8 @@ class CRUD(crud.CRUD):
         print(msg)
         raise ValueError(msg)
 
-    def infer_cwd(self):
+    @property
+    def cwd(self):
         """Infer the current working directory
         """
         # mock a repository
@@ -100,13 +103,15 @@ class CRUD(crud.CRUD):
             items = [Item(k, v) for k, v in items.items()]
 
         elif isinstance(items, list):
-            # if items and 'name' in items[0]:
-            #     items = [Item(item['name'], item) for i, item in enumerate(items)]
-            # else:
-            items = [Item(str(i), item) for i, item in enumerate(items)]
+            if items and 'name' in items[0]:
+                items = [Item(item['name'], item)
+                         for i, item in enumerate(items)]
+            else:
+                items = [Item(str(i), item) for i, item in enumerate(items)]
 
         else:
-            raise NotImplementedError()
+            logging.warning(f'Error, NotImplementedError for {type(items)}')
+            return []
 
         return items
 
@@ -115,9 +120,40 @@ class CRUD(crud.CRUD):
             items = [Item(item.value['name'], item) for item in items]
         return items
 
+    def fix_directory_type(self, dirs):
+        """
+        if cwd is a list, convert args to indices
+        if cwd is a dict, do nothing
+        """
+        if len(dirs) == 0:
+            return dirs
+
+        try:
+            option = Option(dirs[0])
+            # never convert options
+            return dirs
+        except ValueError:
+            pass
+
+        directory = dirs[0]
+        if isinstance(self.cwd, list):
+            if directory.isdigit():
+                directory = int(directory)
+            else:
+                directory = self.infer_index(directory)
+
+        return (directory,) + dirs[1:]
+
+    def infer_index(self, directory):
+        names = [item.name for item in self.ls()]
+        match = next(find_prefix_matches(directory, names))
+        return names.index(match)
+
     def update_prompt(self):
+        # TODO ensure that this method is run after an exception
+        # e.g. after cd fails
         if self.shell:
-            path = '/'.join(self.path)
+            path = '/'.join([str(a) for a in self.path])
             prompt = [item for item in (path, '$ ') if item]
             self.shell.prompt = ' '.join(prompt)
 
