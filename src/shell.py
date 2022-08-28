@@ -12,7 +12,7 @@ import traceback
 from doc_inference import generate_docs
 
 import io_util
-from io_util import ArgparseWrapper, bold, has_argument, log, shell_ready_signal, print_shell_ready_signal, has_output
+from io_util import ArgparseWrapper, bold, has_argument, log, shell_ready_signal, print_shell_ready_signal, has_output, read_file
 import util
 
 # this data is impacts by both the classes Function and Shell, hence it should be global
@@ -347,6 +347,9 @@ def add_cli_args(parser: ArgumentParser):
     if not has_argument(parser, 'safe'):
         parser.add_argument('-s', '--safe', action='store_true',
                             help='Safe-mode. Ask for confirmation before executing commands.')
+    if not has_argument(parser, 'file'):
+        parser.add_argument('-f', '--file',
+                            help='Read and run FILE as a commands')
 
 
 def set_cli_args():
@@ -368,9 +371,12 @@ def has_input():
     return io_util.parse_args.cmd != []
 
 
-def run_command(command='', shell: Shell = None, delimiters='\n;'):
+def run_command(command='', shell: Shell = None, delimiters='\n;', strict=None):
     if shell is None:
         shell = Shell()
+
+    if strict is not None:
+        shell.ignore_invalid_syntax = not strict
 
     for line in util.split(command, delimiters):
         if not line:
@@ -402,15 +408,28 @@ def run(shell=None):
         shell = Shell()
 
     logging.info(f'args = {io_util.parse_args}')
-    commands = ' '.join(io_util.parse_args.cmd + list(read_stdin()))
 
-    if commands:
-        # compile mode
-        run_command(commands, shell)
-    else:
+    commands = ' '.join(io_util.parse_args.cmd + list(read_stdin()))
+    filename = io_util.parse_args.file
+
+    if not commands and filename is None:
         # run interactively
         util.interactive = True
         shell.cmdloop()
+        return
+
+    if filename is not None:
+        # compile mode
+        run_commands_from_file(filename, shell)
+
+    if commands:
+        # compile mode
+        run_command(commands, shell, strict=True)
+
+
+def run_commands_from_file(filename: str, shell: Shell):
+    command = read_file(filename)
+    run_command(command, shell, strict=True)
 
 
 def main(functions: Dict[str, Function] = {}):

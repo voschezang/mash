@@ -2,7 +2,7 @@ from pytest import raises
 
 import io_util
 from io_util import check_output, run_subprocess
-from shell import Function, run_command
+from shell import Function, Shell, ShellException, run_command
 
 
 def catch_output(line='', func=run_command) -> str:
@@ -25,6 +25,24 @@ def test_Function_call():
     assert f() == 0
 
 
+def test_run_command():
+    Shell.ignore_invalid_syntax = False
+    run_command('print a')
+
+    with raises(ShellException):
+        run_command('echoooo a')
+
+
+def test_simple():
+    Shell.ignore_invalid_syntax = True
+    assert catch_output('print a') == 'a'
+    assert 'Unknown syntax' in catch_output('aaaa a')
+
+    Shell.ignore_invalid_syntax = False
+    with raises(ShellException):
+        catch_output('aaaa a')
+
+
 def test_multi_commands():
     assert catch_output('print a; print b\n print c') == 'a\nb\nc'
 
@@ -41,7 +59,7 @@ def test_pipe_unix():
 def test_pipe_input():
     assert catch_output('print abc | grep abc') == 'abc'
 
-    with raises(RuntimeError):
+    with raises(ShellException):
         catch_output('echo abc | grep def')
 
 
@@ -85,8 +103,27 @@ def test_pipe_to_cli():
 
 
 def test_cli_file():
-    out = check_output('./src/shell.py test/echo_abc.sh')
+    out = check_output('./src/shell.py -f test/echo_abc.sh')
     assert 'abc' in out
+
+    # multiple files
+    out = check_output('./src/shell.py -f test/echo_abc.sh')
+    assert 'abc' in out
+
+    # commands and files
+    key = '238u3r'
+    out = check_output(
+        f'./src/shell.py echo {key} -f test/echo_abc.sh')
+
+    assert 'abc' in out
+    assert key in out
+
+    # files and commands
+    out = check_output(
+        f'./src/shell.py -f test/echo_abc.sh echo {key} ')
+
+    assert 'abc' in out
+    assert key in out
 
 
 def test_cli_pipe_file():
