@@ -158,41 +158,42 @@ class CRUD(crud.CRUD):
             self.shell.prompt = ' '.join(prompt)
 
 
-obj = CRUD(ExampleContext)
+def init() -> CRUD:
+    # TODO investigate why calling this function "setup" causes side-effects
 
+    obj = CRUD(ExampleContext)
 
-def cd(*args):
-    return obj.cd(*args)
+    def cd(*args):
+        return obj.cd(*args)
 
+    def ls(*args):
+        return [item.name for item in obj.ls(*args)]
 
-def ls(*args):
-    return [item.name for item in obj.ls(*args)]
+    def ll(*args):
+        return obj.ll(*args)
 
+    def complete_cd(self, text, line, begidx, endidx):
+        candidates = ls()
+        return list(list_prefix_matches(text, candidates))
 
-def ll(*args):
-    return obj.ll(*args)
+    functions = {
+        'cd': cd,
+        'ls': ls,
+        'll': ll,
+        'tree': obj.tree
+    }
+    completions = {
+        'cd': complete_cd
+    }
 
-
-def complete_cd(self, text, line, begidx, endidx):
-    candidates = ls()
-    return list(list_prefix_matches(text, candidates))
-
-
-functions = {
-    'cd': cd,
-    'ls': ls,
-    'll': ll,
-    'tree': obj.tree
-}
-completions = {
-    'cd': complete_cd
-}
-
-if __name__ == '__main__':
     set_functions(functions)
     set_completions(completions)
 
     obj.shell = Shell()
     obj.shell.set_do_char_method(obj.shell.do_cd, Options)
+    return obj
 
+
+if __name__ == '__main__':
+    obj = init()
     run(obj.shell)

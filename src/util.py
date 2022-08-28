@@ -46,8 +46,9 @@ class DataClassHelper:
 
 
 def decorate(decoratee: dataclass, cls: object):
-    # Adapt a class instance to have an hasA and isA relationships with `cls`.
-    # See https://en.wikipedia.org/wiki/Decorator_pattern
+    """Adapt a class instance to have an hasA and isA relationships with `cls`.
+    See https://en.wikipedia.org/wiki/Decorator_pattern
+    """
 
     setattr(decoratee, 'decorated_' + type(cls).__name__, cls)
 
@@ -57,9 +58,11 @@ def decorate(decoratee: dataclass, cls: object):
             continue
 
         if hasattr(decoratee, key):
-            a, b = type(decoratee).__name__, type(cls).__name__
+            a = decoratee.__name__ if hasattr(decoratee, '__name__') else \
+                type(decoratee).__name__
+            b = type(cls).__name__
             raise NotImplementedError(
-                f'Name conflict for key {key} in classes {a}, and {b}')
+                f'Name conflict for key `{key}` in classes: {a}, {b}')
 
         attr = getattr(cls, key)
         setattr(decoratee, key, attr)

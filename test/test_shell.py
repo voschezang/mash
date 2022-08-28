@@ -1,9 +1,12 @@
-from contextlib import redirect_stdout
-from io import StringIO
 from pytest import raises
-import subprocess
 
+import io_util
+from io_util import check_output, run_subprocess
 from shell import Function, run_command
+
+
+def catch_output(line='', func=run_command) -> str:
+    return io_util.catch_output(line, func)
 
 
 def test_Function_args():
@@ -47,6 +50,11 @@ def test_cli():
     assert check_output('./src/shell.py "print 3"') == '3'
 
 
+def test_cli_unhappy():
+    with raises(RuntimeError):
+        run_subprocess('./src/shell.py "printnumber 123"')
+
+
 def test_cli_multi_commands():
     assert check_output(
         './src/shell.py "print a; print b\n print c"') == 'a\nb\nc'
@@ -57,7 +65,7 @@ def test_cli_pipe_input():
     assert out == 'abc'
 
     with raises(RuntimeError):
-        run('./src/shell.py "print abc | grep def"')
+        run_subprocess('./src/shell.py "print abc | grep def"')
 
 
 def test_cli_pipe_interop():
@@ -84,29 +92,3 @@ def test_cli_file():
 def test_cli_pipe_file():
     out = check_output('cat test/echo_abc.sh | ./src/shell.py')
     assert 'abc' in out
-
-
-def catch_output(line='', func=run_command) -> str:
-    out = StringIO()
-    with redirect_stdout(out):
-        func(line)
-        result = out.getvalue()
-
-    return result.rstrip('\n')
-
-
-def run(line: str) -> str:
-    result = subprocess.run(line, capture_output=True, shell=True)
-    if result.returncode != 0:
-        raise RuntimeError(result)
-
-
-def check_output(line: str) -> str:
-    """Similar to subprocess.check_output, but with more detailed error messages 
-    """
-    result = subprocess.run(line, capture_output=True, shell=True)
-
-    msg = result.stdout.decode(), result.stderr.decode()
-    assert result.returncode == 0, msg
-
-    return result.stdout.decode().rstrip('\n')

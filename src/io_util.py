@@ -3,15 +3,16 @@
 - parsing cli args
 """
 from argparse import ArgumentParser, RawTextHelpFormatter
-from io import TextIOBase
-from typing import List
+from contextlib import redirect_stdout
+from io import StringIO, TextIOBase
 from termcolor import colored
-import argparse
+from typing import Callable, List
 import argparse
 import functools
 import logging
 import os
 import select
+import subprocess
 import sys
 
 
@@ -158,6 +159,38 @@ def terminal_size(default=os.terminal_size((80, 100))):
         return os.get_terminal_size()
     except OSError:
         return default
+
+
+def catch_output(line: str, func: Callable, **func_kwds) -> str:
+    """Run func while temporarily redirecting stdout.
+    Then return the result from stdout.
+    """
+    out = StringIO()
+    with redirect_stdout(out):
+        func(line, **func_kwds)
+        result = out.getvalue()
+
+    return result.rstrip('\n')
+
+
+def run_subprocess(line: str) -> str:
+    """Wrapper for subprocess.run
+    Raise a RuntimeError on a non-zero exit status.
+    """
+    result = subprocess.run(line, capture_output=True, shell=True)
+    if result.returncode != 0:
+        raise RuntimeError(result)
+
+
+def check_output(line: str) -> str:
+    """Similar to subprocess.check_output, but with more detailed error messages 
+    """
+    result = subprocess.run(line, capture_output=True, shell=True)
+
+    msg = result.stdout.decode(), result.stderr.decode()
+    assert result.returncode == 0, msg
+
+    return result.stdout.decode().rstrip('\n')
 
 
 set_verbosity()
