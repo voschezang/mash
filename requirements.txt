@@ -2,6 +2,7 @@ aiohttp
 autopep8
 flake8
 matplotlib
+nltk
 numpy
 pytest
 pytest-xdist

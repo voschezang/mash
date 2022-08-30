@@ -1,8 +1,7 @@
 from collections.abc import Sequence
 from dataclasses import dataclass
-from functools import lru_cache
-from typing import Dict, List
-
+from nltk.metrics.distance import edit_distance
+from typing import Dict, List, Tuple
 
 # backwards compatibility
 from io_util import parse_args, parser, debug, interactive
@@ -166,9 +165,29 @@ def extend(q, items):
         q.put_nowait(item)
 
 
+def find_fuzzy_matches(element: str, elements: List[str]):
+    """Yield elements that are most similar.
+    Similarity is based on the Levenshtein edit-distance.
+    """
+    if element in elements:
+        # yield eagerly
+        yield element
+        elements.remove(element)
+
+    scores: List[Tuple[str]] = []
+
+    for i, other in enumerate(elements):
+        score = edit_distance(element, other)
+        scores.append((score, other))
+
+    s = sorted(scores)
+    ordered = [value for _, value in sorted(scores)]
+    yield from ordered
+
+
 def list_prefix_matches(element: str, elements: List[str]):
     """Yields all elements that are equal to a prefix of `element`.
-    Elements with better matches are chosen first. 
+    Elements with better matches are chosen first.
     """
     prev_matches = set()
     for i in range(max(1, len(element)), 0, -1):
@@ -184,7 +203,7 @@ def list_prefix_matches(element: str, elements: List[str]):
 
 def find_prefix_matches(element: str, elements: List[str]):
     """Yields all elements that are equal to a prefix of `element`.
-    Elements with better matches are chosen first. 
+    Elements with better matches are chosen first.
 
     Raise a ValueError when no matches are found.
     """

@@ -1,6 +1,6 @@
 from pytest import raises
 
-from util import concat, find_prefix_matches, list_prefix_matches, split
+from util import concat, find_prefix_matches, find_fuzzy_matches, list_prefix_matches, split
 
 
 def test_concat_empty_container():
@@ -30,6 +30,15 @@ def test_split():
     assert split('1,2,3', '-+=') == ['1,2,3']
     assert split('1,2;3', ',;') == ['1', '2', '3']
     assert split('1,2;3', ',;') == ['1', '2', '3']
+
+
+def test_find_fuzzy_matches():
+    assert list(find_fuzzy_matches('', [])) == []
+    assert list(find_fuzzy_matches('', [''])) == ['']
+    assert list(find_fuzzy_matches('b', ['a', 'b'])) == ['b', 'a']
+    assert list(find_fuzzy_matches('aa', ['bb'])) == ['bb']
+    assert list(find_fuzzy_matches('abcd', ['abbb', 'abcc', 'dcba'])) == [
+        'abcc', 'abbb', 'dcba']
 
 
 def test_list_prefix_matches_no_input():
