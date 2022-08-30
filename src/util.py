@@ -180,7 +180,6 @@ def find_fuzzy_matches(element: str, elements: List[str]):
         score = edit_distance(element, other)
         scores.append((score, other))
 
-    s = sorted(scores)
     ordered = [value for _, value in sorted(scores)]
     yield from ordered
 

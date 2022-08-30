@@ -33,12 +33,18 @@ def test_split():
 
 
 def test_find_fuzzy_matches():
+    # empty inputs
     assert list(find_fuzzy_matches('', [])) == []
     assert list(find_fuzzy_matches('', [''])) == ['']
+
+    # approximations
     assert list(find_fuzzy_matches('b', ['a', 'b'])) == ['b', 'a']
     assert list(find_fuzzy_matches('aa', ['bb'])) == ['bb']
     assert list(find_fuzzy_matches('abcd', ['abbb', 'abcc', 'dcba'])) == [
         'abcc', 'abbb', 'dcba']
+
+    # casing
+    assert list(find_fuzzy_matches('a', ['A', 'a'])) == ['a', 'A']
 
 
 def test_list_prefix_matches_no_input():

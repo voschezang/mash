@@ -126,8 +126,11 @@ functions = {'p': print,
              'sum': sum}
 ```
 
-## CLI
+## CLI and Subshells
 
+**Summary**
+
+```
 Usage: shell.py [-hsv] [cmd]
 - If no arguments are given then an interactive subshell is started.
 
@@ -136,14 +139,15 @@ Positional arguments:
 
 Optional arguments:
   -h, --help     show this help message and exit
-  -s, --safe     Safe-mode. Ask for confirmation before executing commands
   -v, --verbose
-
+  -s, --safe            Safe-mode. Ask for confirmation before executing commands.
+  -f FILE, --file FILE  Read and run FILE as a commands
+```
 
 ## Example 1
 
-See `src/shell_example.py`.
-
+See `src/shell_example.py`. It shows how to use a user-definnable mapping of custom functions.
+It uses the library `quo` to create a user-friendly subshell with autocompletion prompts.
 
 ```sh
 # py src/dsl_example.py echo hello, echo world
@@ -170,14 +174,23 @@ g x [y]
 		y
 ```
 
-## Example 2
+## Example 2: Directory
 
-See `src/shell_example_extended.py`.
+See `src/crud_implementation.py`. This simulates a REST resources with a directory hierarchy.
+In addition, it provides fuzzy name completion.
 
 ```sh
-$ py src/shell_example_extended.py tree
-{ 'world': { 'animals': { 'aquatic': {'penguins': ['tux']},
-                          'terrestrial': {'snakes': ['python', 'cobra']}}}}
+$ py src/crud_implementation.py tree
+# example data with dicts and lists
+repository = {'worlds': [
+    {'name': 'earth',
+     'animals': [
+         {'name': 'terrestrial',
+          'snakes': [{'name': 'python'},
+                     {'name': 'cobra'}]},
+         {'name': 'aquatic',
+          'penquins': [{'name': 'tux'}]}
+     ]}]}
 ```
 
 ```sh

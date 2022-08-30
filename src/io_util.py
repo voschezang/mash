@@ -122,6 +122,8 @@ class ArgparseWrapper:
         if exc:
             raise
 
+        logging.debug('sys.argv' + str(sys.argv))
+
         global parse_args
         parse_args = parser.parse_args()
         self.parse_args = parse_args
@@ -153,14 +155,17 @@ def read_line(stream: TextIOBase, timeout=0, default_value=''):
 
     return default_value
 
+
 def read_file(filename: str):
     return next(read_files([filename]))
+
 
 def read_files(filenames: List[str]):
     for fn in filenames:
         with open(fn) as f:
             result = f.read()
         yield result
+
 
 def terminal_size(default=os.terminal_size((80, 100))):
     try:

@@ -1,8 +1,9 @@
+from argparse import ArgumentParser, RawTextHelpFormatter
 from pytest import raises
 
 import io_util
-from io_util import check_output, run_subprocess
-from shell import Function, Shell, ShellException, run_command
+from io_util import ArgparseWrapper, check_output, run_subprocess
+from shell import Function, Shell, ShellException, add_cli_args, run_command
 
 
 def catch_output(line='', func=run_command) -> str:
@@ -61,6 +62,22 @@ def test_pipe_input():
 
     with raises(ShellException):
         catch_output('echo abc | grep def')
+
+
+def test_add_cli_args():
+    parser = ArgumentParser(conflict_handler='resolve',
+                            formatter_class=RawTextHelpFormatter)
+    add_cli_args(parser)
+
+    fn = 'myfile'
+    parse_args = parser.parse_args(['-f', fn])
+    assert parse_args.file == fn
+    assert parse_args.safe == False
+
+    cmds = 'echo 2'
+    parse_args = parser.parse_args(cmds.split(' ') + ['-s'])
+    assert parse_args.cmd == cmds.split(' ')
+    assert parse_args.safe
 
 
 def test_cli():

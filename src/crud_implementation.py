@@ -8,7 +8,7 @@ from typing import List
 import crud
 from crud import Item, Option, Options
 from shell import Shell, run, set_completions, set_functions
-from util import DataClassHelper, decorate, AdjacencyList, find_prefix_matches, list_prefix_matches
+from util import DataClassHelper, decorate, AdjacencyList, find_fuzzy_matches, find_prefix_matches, list_prefix_matches
 
 
 # example data with dicts and lists
@@ -25,9 +25,9 @@ repository = {'worlds': [
 
 @dataclass
 class ExampleContext:
-    root: str
-    attr1: int
-    attr2: str
+    root: str = ''
+    attr1: int = 1
+    attr2: str = ''
 
     curent_object = None
 
@@ -38,7 +38,7 @@ class ExampleContext:
 
 
 class CRUD(crud.CRUD):
-    def __init__(self, context, shell: Shell = None, **kwds):
+    def __init__(self, context: dataclass, shell: Shell = None, **kwds):
         super().__init__(**kwds)
         self.init__context(context)
         self.shell = shell
@@ -46,8 +46,8 @@ class CRUD(crud.CRUD):
         self.pre_cd_hook = self.fix_directory_type
         self.post_cd_hook = self.update_prompt
 
-    def init__context(self, context):
-        # add helper methodsw
+    def init__context(self, context: dataclass):
+        # add helper methods
         self.original_context = context
         self.context = decorate(deepcopy(context),
                                 DataClassHelper(context))
@@ -120,7 +120,7 @@ class CRUD(crud.CRUD):
             items = [Item(item.value['name'], item) for item in items]
         return items
 
-    def fix_directory_type(self, dirs):
+    def fix_directory_type(self, dirs: List[str]):
         """
         if cwd is a list, convert args to indices
         if cwd is a dict, do nothing
@@ -144,9 +144,13 @@ class CRUD(crud.CRUD):
 
         return (directory,) + dirs[1:]
 
-    def infer_index(self, directory):
+    def infer_index(self, directory: str):
         names = [item.name for item in self.ls()]
-        match = next(find_prefix_matches(directory, names))
+
+        if directory not in names:
+            logging.debug(f'Dir {directory} is not present in `ls()`')
+
+        match = next(find_fuzzy_matches(directory, names))
         return names.index(match)
 
     def update_prompt(self):
@@ -161,7 +165,7 @@ class CRUD(crud.CRUD):
 def init() -> CRUD:
     # TODO investigate why calling this function "setup" causes side-effects
 
-    obj = CRUD(ExampleContext)
+    obj = CRUD(ExampleContext())
 
     def cd(*args):
         return obj.cd(*args)
@@ -174,7 +178,7 @@ def init() -> CRUD:
 
     def complete_cd(self, text, line, begidx, endidx):
         candidates = ls()
-        return list(list_prefix_matches(text, candidates))
+        return list(find_fuzzy_matches(text, candidates))
 
     functions = {
         'cd': cd,
