@@ -95,8 +95,17 @@ def add_default_args(parser: ArgumentParser):
 
     parser.add_argument('-v', '--verbose', default=0, action='count')
 
-    if 'unittest' in sys.modules.keys() or 'pytest' in sys.modules.keys():
-        parser.add_argument('*', nargs='*')
+    if python_is_run_in_test_mode():
+        allow_all_args()
+
+
+def allow_all_args():
+    parser.add_argument('*', nargs='*')
+
+
+def python_is_run_in_test_mode() -> bool:
+    return 'pytest' in sys.modules.keys() or \
+        ('unittest' in sys.modules.keys() and 'nltk' not in sys.modules.keys())
 
 
 class ArgparseWrapper:

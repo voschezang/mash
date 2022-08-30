@@ -81,6 +81,7 @@ def test_add_cli_args():
 
 
 def test_cli():
+    # Note that this may be run with a different python version
     assert check_output('./src/shell.py print 3') == '3'
     assert check_output('./src/shell.py "print 3"') == '3'
 

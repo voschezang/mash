@@ -1,5 +1,6 @@
 from collections.abc import Sequence
 from dataclasses import dataclass
+import nltk
 from nltk.metrics.distance import edit_distance
 from typing import Dict, List, Tuple
 
