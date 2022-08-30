@@ -1,3 +1,4 @@
+import json
 import flask
 from flask.testing import FlaskClient
 import pytest
@@ -111,15 +112,17 @@ def test_route_verify_server():
     client = init()
 
     host = 'www.python.org'
-    response = client.post(basepath + 'server/verify?hostname={host}')
+    response = client.post(basepath + f'server/verify?URL={host}')
+    result = json.loads(response.data.decode())
     assert response.status_code == 200
-    assert response['success']
-    assert response['msg'] == ''
+    assert result['success']
+    assert result['msg'] == ''
 
     host = 'www.never.python.org'
-    response = client.post(basepath + 'server/verify?hostname={host}')
+    response = client.post(basepath + f'server/verify?URL={host}')
+    result = json.loads(response.data.decode())
     assert response.status_code == 200
-    assert not response['success']
+    assert not result['success']
 
 
 def assert_response(response, expected_data=b'ok'):
