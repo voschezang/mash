@@ -40,8 +40,11 @@ def test_crud_cd_dict():
 
 
 def test_crud_cd_list():
+    # TODO this testcase fails when tests are run in parallel
+
     obj = init()
     shell = obj.shell
+    assert '0' not in shell.prompt
 
     run_command('cd w', obj.shell)
 

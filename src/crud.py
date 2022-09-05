@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from enum import Enum
 import logging
-from typing import Callable, List, Tuple, Union
+from typing import Callable, List, Tuple
 from util import find_prefix_matches, identity, is_callable, none
 
 

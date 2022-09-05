@@ -190,10 +190,11 @@ def init() -> CRUD:
         'cd': complete_cd
     }
 
-    set_functions(functions)
-    set_completions(completions)
+    cls = deepcopy(Shell)
+    set_functions(functions, cls)
+    set_completions(completions, cls)
 
-    obj.shell = Shell()
+    obj.shell = cls()
     obj.shell.set_do_char_method(obj.shell.do_cd, Options)
     return obj
 
