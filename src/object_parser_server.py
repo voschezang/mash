@@ -1,8 +1,5 @@
-from flask import Flask, request, jsonify
-import numpy as np
-import time
-from http import HTTPStatus
-from object_parser_example import *
+from flask import Flask, request
+from object_parser_example import Organization
 
 basepath = '/v1/'
 
@@ -23,6 +20,7 @@ def init_routes(app):
     def department():
         json = request.get_json()
         return str(organization(json))
+
 
 if __name__ == "__main__":
     app = init()

@@ -3,7 +3,7 @@ from copy import deepcopy
 from dataclasses import dataclass
 import logging
 from pprint import pformat
-from typing import List
+from typing import Any, Dict, List
 
 import crud
 from crud import Item, Option, Options
@@ -12,7 +12,8 @@ from util import DataClassHelper, decorate, AdjacencyList, find_fuzzy_matches, f
 
 
 # example data with dicts and lists
-repository = {'worlds': [
+Data = Dict[str, Any]
+repository: Data = {'worlds': [
     {'name': 'earth',
      'animals': [
          {'name': 'terrestrial',
@@ -63,9 +64,9 @@ class CRUD(crud.CRUD):
 
     def tree(self, obj=None):
         items = self._ls(obj)
-        return pformat(repository, indent=2)
+        return pformat(items, indent=2)
 
-    def _ls(self, obj):
+    def _ls(self, obj) -> Data:
         cwd = self.cwd
         if obj is None:
             return cwd
@@ -78,11 +79,10 @@ class CRUD(crud.CRUD):
 
         values = cwd.keys()
         msg = f'Error, {obj} is not in cwd ({values})'
-        print(msg)
         raise ValueError(msg)
 
     @property
-    def cwd(self):
+    def cwd(self) -> Data:
         """Infer the current working directory
         """
         # mock a repository

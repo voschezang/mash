@@ -38,7 +38,7 @@ def run(args, timeout=0.3):
     args: list
         arguments for subprocess.Popen
     timeout: float
-        timeout between 
+        timeout between
     """
     # Use subprocess to allow stdout to be used directly
     process = subprocess.Popen(

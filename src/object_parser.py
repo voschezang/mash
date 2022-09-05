@@ -35,7 +35,7 @@ class ErrorMessages:
 
 
 class Factory(ABC):
-    """An interface for instantiating objects from json-like data. 
+    """An interface for instantiating objects from json-like data.
     """
 
     def __init__(self, cls: type, errors=ErrorMessages):
@@ -118,7 +118,7 @@ class Factory(ABC):
 
     def verify_key_format(self, key: str):
         """Verify key format.
-        Either using the optional method "parse_value" in `cls`, or otherwise 
+        Either using the optional method "parse_value" in `cls`, or otherwise
         using a default verification.
         """
         if has_method(self.cls, 'verify_key_format'):
@@ -132,7 +132,7 @@ class Factory(ABC):
 
 class JSONFactory(Factory):
     def build_instance(self, data) -> object:
-        """Init either a `dataclass, list, Enum` or custom class. 
+        """Init either a `dataclass, list, Enum` or custom class.
         """
         if has_method(data, 'items'):
             fields = self.build_fields(data)

@@ -205,7 +205,7 @@ def run_subprocess(line: str) -> str:
 
 
 def check_output(line: str) -> str:
-    """Similar to subprocess.check_output, but with more detailed error messages 
+    """Similar to subprocess.check_output, but with more detailed error messages
     """
     result = subprocess.run(line, capture_output=True, shell=True)
 

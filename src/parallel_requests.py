@@ -1,4 +1,3 @@
-
 from pipeline import Strategy
 from multiprocessing.sharedctypes import Value
 import aiohttp
@@ -9,7 +8,7 @@ import random
 import util
 from server import basepath
 from parallel import asynchronous
-from pipeline import Processor, PushPull, Pipeline, identity, constant, duplicate
+from pipeline import Processor, PushPull, identity, constant, duplicate
 
 url = 'http://localhost:5000' + basepath
 
@@ -97,14 +96,13 @@ def sleep(seconds, n_calls=1):
 
 def test_compute_pipeline():
     items = [str(i) for i in range(10)]
-    results = []
 
     # processors = [Processor.from_function(echo_offline)]
     processors = [Processor.from_function(echo)]
     with PushPull(processors=processors) as pipeline:
 
         for item in items:
-            r, errors = pipeline.process(item)
+            r, _ = pipeline.process(item)
             _, result = r[0]
             assert result == item
 

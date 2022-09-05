@@ -82,7 +82,7 @@ def init_routes(app):
         for fn in os.listdir(UPLOAD_FOLDER):
             try:
                 os.remove(UPLOAD_FOLDER + '/' + fn)
-            except (IsADirectoryError, PermissionError) as e:
+            except (IsADirectoryError, PermissionError):
                 # ignore folders
                 continue
 

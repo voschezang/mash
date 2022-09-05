@@ -2,16 +2,10 @@ from dataclasses import dataclass
 from time import sleep
 from typing import List, Tuple
 from functools import update_wrapper
-from itertools import repeat
-import sys
 import copy
 from enum import Enum, auto
-import logging
 import multiprocessing as mp
 import queue
-
-import util
-from util import debug
 
 
 class Processor:
@@ -123,7 +117,7 @@ class Combiner(Buffer):
 
     def process_item(self, item):
         if not self.ready_to_process():
-            raise IndexError(f'Not enought item to process')
+            raise IndexError('Not enought item to process')
 
         selection = self.items[:self.n]
         self.items = self.items[self.n:]
@@ -271,8 +265,8 @@ class PushPull(Pipeline):
         for q, processor in enumerate(self.processors):
             for p in range(PushPull.n_processors):
                 resource = Resource(processor,
-                                    self.queues[q: q+2],
-                                    self.demand_queues[q: q+2],
+                                    self.queues[q: q + 2],
+                                    self.demand_queues[q: q + 2],
                                     strategy)
                 process = mp.Process(target=resource.start)
                 self.resources.append(process)

@@ -13,7 +13,7 @@ def resolve(hostname: str):
     try:
         return socket.gethostbyname(hostname)
     # except socket.gaierror as e:
-    except socket.error as e:
+    except socket.error:
         raise VerificationException(f'Failed to resolve hostname: {hostname}')
 
     raise NotImplementedError()
