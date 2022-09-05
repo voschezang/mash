@@ -1,6 +1,7 @@
 aiohttp
 autopep8
 flake8
+flask
 matplotlib
 nltk
 numpy
