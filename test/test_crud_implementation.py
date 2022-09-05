@@ -44,6 +44,8 @@ def test_crud_cd_list():
 
     obj = init()
     shell = obj.shell
+
+    assert 'w' not in shell.prompt
     assert '0' not in shell.prompt
 
     run_command('cd w', obj.shell)

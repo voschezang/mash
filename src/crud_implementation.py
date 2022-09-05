@@ -196,6 +196,11 @@ def init() -> CRUD:
 
     obj.shell = cls()
     obj.shell.set_do_char_method(obj.shell.do_cd, Options)
+
+    # reset path
+    # TODO fix side-effects that require this hack
+    obj.shell.do_cd()
+
     return obj
 
 
