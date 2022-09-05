@@ -1,5 +1,6 @@
 aiohttp
 autopep8
+django
 flake8
 flask
 matplotlib
