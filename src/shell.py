@@ -243,12 +243,6 @@ class Shell(cmd.Cmd):
         print_shell_ready_signal()
         return stop
 
-    @staticmethod
-    def all_commands():
-        for cmd in vars(Shell):
-            if cmd.startswith('do_') and util.has_method(Shell, cmd):
-                yield cmd.lstrip('do_')
-
     def last_method(self):
         """Find the method corresponding to the last command run in `shell`.
         It has the form: do_{cmd}
@@ -276,6 +270,12 @@ class Shell(cmd.Cmd):
             return method.func
 
         return method
+
+
+def all_commands(cls=Shell):
+    for cmd in vars(cls):
+        if cmd.startswith('do_') and util.has_method(cls, cmd):
+            yield cmd.lstrip('do_')
 
 
 class Function:
@@ -312,7 +312,7 @@ class Function:
             log('\t', last_exception)
 
 
-def set_functions(functions: Dict[str, Function]):
+def set_functions(functions: Dict[str, Function], cls=Shell):
     """Extend `Shell` with a set of functions
     Note that this modifies the class Shell directly, rather than an instance.
     """
@@ -320,13 +320,13 @@ def set_functions(functions: Dict[str, Function]):
         if not isinstance(func, Function):
             func = Function(func)
 
-        setattr(Shell, f'do_{key}', func)
-        setattr(getattr(Shell, f'do_{key}'), '__doc__', func.help)
+        setattr(cls, f'do_{key}', func)
+        setattr(getattr(cls, f'do_{key}'), '__doc__', func.help)
 
 
-def set_completions(functions: Dict[str, Callable]):
+def set_completions(functions: Dict[str, Callable], shell=Shell):
     for key, func in functions.items():
-        setattr(Shell, f'complete_{key}', func)
+        setattr(shell, f'complete_{key}', func)
 
 
 def sh_to_py(cmd: str):

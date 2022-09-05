@@ -6,7 +6,7 @@ from quo.history import MemoryHistory
 from quo.prompt import Prompt
 from quo.text import Text
 
-from shell import Shell, run_command, ShellException
+from shell import Shell, all_commands, run_command, ShellException
 from doc_inference import infer_synopsis
 
 rprompt_init = 'Type any command to continue'
@@ -26,10 +26,10 @@ def setup(shell: Shell = None) -> Tuple[Prompt, Shell]:
     shell.ignore_invalid_syntax = False
 
     # setup a completion-dropdown
-    completer = NestedCompleter.add({k: None for k in Shell.all_commands()})
+    completer = NestedCompleter.add({k: None for k in all_commands(Shell)})
 
     # setup a history-completion
-    for cmd in Shell.all_commands():
+    for cmd in all_commands(Shell):
         MemoryHistory.append(cmd)
 
     session = Prompt(
