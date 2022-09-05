@@ -6,6 +6,9 @@ from io_util import ArgparseWrapper, check_output, run_subprocess
 from shell import Function, Shell, ShellException, add_cli_args, run_command
 
 
+run = 'python src/shell.py '
+
+
 def catch_output(line='', func=run_command) -> str:
     return io_util.catch_output(line, func)
 
@@ -82,68 +85,67 @@ def test_add_cli_args():
 
 def test_cli():
     # Note that this may be run with a different python version
-    assert check_output('./src/shell.py print 3') == '3'
-    assert check_output('./src/shell.py "print 3"') == '3'
+    assert check_output(run + 'print 3') == '3'
+    assert check_output(run + '"print 3"') == '3'
 
 
 def test_cli_unhappy():
     with raises(RuntimeError):
-        run_subprocess('./src/shell.py "printnumber 123"')
+        run_subprocess(run + '"printnumber 123"')
 
 
 def test_cli_multi_commands():
-    assert check_output(
-        './src/shell.py "print a; print b\n print c"') == 'a\nb\nc'
+    assert check_output(run +
+                        '"print a; print b\n print c"') == 'a\nb\nc'
 
 
 def test_cli_pipe_input():
-    out = check_output('./src/shell.py "print abc | grep abc"')
+    out = check_output(run + '"print abc | grep abc"')
     assert out == 'abc'
 
     with raises(RuntimeError):
-        run_subprocess('./src/shell.py "print abc | grep def"')
+        run_subprocess(run + '"print abc | grep def"')
 
 
 def test_cli_pipe_interop():
     cmd = 'print abc | grep abc |> print'
     assert catch_output(cmd) == 'abc'
-    assert check_output(f'./src/shell.py "{cmd}"') == 'abc'
+    assert check_output(f'{run} "{cmd}"') == 'abc'
 
 
 def test_pipe_to_cli():
-    check_output('echo 1 | ./src/shell.py print')
-    check_output('echo 1 | ./src/shell.py !echo')
+    check_output(f'echo 1 | {run} print')
+    check_output(f'echo 1 | {run} !echo')
 
-    out = check_output('echo abc | ./src/shell.py print')
+    out = check_output(f'echo abc | {run} print')
     assert 'abc' in out
-    out = check_output('echo abc | ./src/shell.py !echo')
+    out = check_output(f'echo abc | {run} !echo')
     assert 'abc' in out
 
 
 def test_cli_file():
-    out = check_output('./src/shell.py -f test/echo_abc.sh')
+    out = check_output(run + '-f test/echo_abc.sh')
     assert 'abc' in out
 
     # multiple files
-    out = check_output('./src/shell.py -f test/echo_abc.sh')
+    out = check_output(run + '-f test/echo_abc.sh')
     assert 'abc' in out
 
     # commands and files
     key = '238u3r'
-    out = check_output(
-        f'./src/shell.py echo {key} -f test/echo_abc.sh')
+    out = check_output(f'{run} echo {key} -f test/echo_abc.sh')
 
     assert 'abc' in out
     assert key in out
 
     # files and commands
     out = check_output(
-        f'./src/shell.py -f test/echo_abc.sh echo {key} ')
+        f'{run} -f test/echo_abc.sh echo {key} ')
 
     assert 'abc' in out
     assert key in out
 
 
 def test_cli_pipe_file():
-    out = check_output('cat test/echo_abc.sh | ./src/shell.py')
+    out = check_output('cat test/echo_abc.sh | ' + run)
     assert 'abc' in out
