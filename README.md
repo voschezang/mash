@@ -1,3 +1,5 @@
+![workflow-badge](https://github.com/voschezang/data-science-templates/actions/workflows/python-app.yml/badge.svg)
+
 # Overview
 
 This repository originally contained a number of computational models which can be used for data science.
