@@ -1,6 +1,1 @@
-.DS_Store
-*.png
-*.pyc
-*__pycache__
-tmp*
-templates
+test-results-*.xml
