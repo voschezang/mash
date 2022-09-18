@@ -65,6 +65,7 @@ class Shell(cmd.Cmd):
     ignore_invalid_syntax = True
     do_char_method = None
     chars_allowed_for_char_method = []
+    completenames_options = []
 
     # TODO save stdout in a tmp file
 
@@ -129,12 +130,10 @@ class Shell(cmd.Cmd):
         else:
             raise ShellException(f'Unknown syntax: {line}')
 
-    # TODO temporarily override completenames, based on the current state
-    # def completenames(self, text, *ignored):
-    #     self.state_specific_complete_names = ['abc', 'dev']
-    #     if self.state_specific_complete_names:
-    #         return [a for a in self.state_specific_complete_names if a.startswith(text)]
-    #     return super().completenames(text, *ignored)
+    def completenames(self, text, *ignored):
+        if self.completenames_options:
+            return [a for a in self.completenames_options if a.startswith(text)]
+        return super().completenames(text, *ignored)
 
     def onecmd(self, line):
         """Parse and run `line`.
