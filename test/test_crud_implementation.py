@@ -1,3 +1,5 @@
+from pytest import raises
+
 import io_util
 from shell import run_command
 from crud_implementation import init
@@ -60,3 +62,28 @@ def test_crud_cd_list():
     # valid index
     run_command('cd 0', obj.shell)
     assert '0' in shell.prompt
+
+
+def test_set_cd_aliasses():
+    obj = init()
+    shell = obj.shell
+
+    parent = 'worlds'
+    child = 'earth'
+
+    assert parent not in shell.prompt
+    assert child not in shell.prompt
+
+    # this should fail silently
+    run_command(child, obj.shell)
+    assert child not in shell.prompt
+
+    run_command(parent, obj.shell)
+    assert parent in shell.prompt
+
+    run_command(child, obj.shell)
+    # the child-dir is translated into an index
+    assert '0' in shell.prompt
+
+    run_command('animals', obj.shell)
+    assert 'animals' in shell.prompt

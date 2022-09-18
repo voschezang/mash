@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 from copy import deepcopy
 from dataclasses import dataclass
+from functools import partial
 import logging
 from pprint import pformat
 from typing import Any, Dict, List
@@ -8,7 +9,7 @@ from typing import Any, Dict, List
 import crud
 from crud import Item, Option, Options
 from shell import Shell, run, set_completions, set_functions
-from util import DataClassHelper, decorate, AdjacencyList, find_fuzzy_matches, find_prefix_matches, list_prefix_matches
+from util import DataClassHelper, call, decorate, AdjacencyList, find_fuzzy_matches, find_prefix_matches, has_method
 
 
 # example data with dicts and lists
@@ -43,6 +44,7 @@ class CRUD(crud.CRUD):
         super().__init__(**kwds)
         self.init__context(context)
         self.shell = shell
+        self._cd_aliasses = []
 
         self.pre_cd_hook = self.fix_directory_type
         self.post_cd_hook = self.update_prompt
@@ -69,6 +71,7 @@ class CRUD(crud.CRUD):
     def _ls(self, obj) -> Data:
         cwd = self.cwd
         if obj is None:
+            # TODO this may return a list instead of `Data`
             return cwd
 
         if self.autocomplete and obj not in cwd:
@@ -153,6 +156,36 @@ class CRUD(crud.CRUD):
         match = next(find_fuzzy_matches(directory, names))
         return names.index(match)
 
+    def unset_cd_aliases(self):
+        """Remove all custom do_{dirname} methods from self.shell.
+        """
+        for alias in self._cd_aliasses:
+            delattr(self.shell, alias)
+
+        self._cd_aliasses = []
+
+    def set_cd_aliases(self):
+        """Add do_{dirname} methods to self.shell for each sub-directory.
+        """
+        self.unset_cd_aliases()
+
+        dirs = [item.name for item in self.ls()]
+        self.shell.completenames_options = dirs
+
+        for dirname in dirs:
+
+            method_name = f'do_{dirname}'
+            if has_method(self.shell, method_name):
+                continue
+
+            # TODO remove the double usage of `partial`
+            cd = partial(call, partial(self.cd, dirname))
+
+            # Add the method to an instance of Shell
+            # This prevents the method from showing up in the help view
+            setattr(self.shell, method_name, cd)
+            self._cd_aliasses.append(method_name)
+
     def update_prompt(self):
         # TODO ensure that this method is run after an exception
         # e.g. after cd fails
@@ -160,6 +193,8 @@ class CRUD(crud.CRUD):
             path = '/'.join([str(a) for a in self.path])
             prompt = [item for item in (path, '$ ') if item]
             self.shell.prompt = ' '.join(prompt)
+
+        self.set_cd_aliases()
 
 
 def init() -> CRUD:

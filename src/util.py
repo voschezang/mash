@@ -245,6 +245,12 @@ def identity(value):
     return value
 
 
+def call(f, *_):
+    """Call f and ignore all other arguments
+    """
+    return f()
+
+
 def constant(value):
     """Returns a constant function
     """
