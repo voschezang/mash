@@ -4,7 +4,6 @@ from pytest import raises
 import io_util
 from io_util import check_output, run_subprocess
 from shell import Shell, ShellException, add_cli_args, run_command
-from util import identity
 
 # TODO split up testcases for BaseShell and Shell
 
@@ -138,7 +137,9 @@ def test_cli_pipe_file():
 
 
 def test_add_functions():
+    Shell.ignore_invalid_syntax = True
     shell = Shell()
+
     key = 'test_add_functions'
 
     out = catch_output('id 10')
