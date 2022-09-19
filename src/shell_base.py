@@ -35,17 +35,13 @@ class BaseShell(Cmd):
 
     # TODO save stdout in a tmp file
 
-    def set_do_char_method(self, method: Callable[[str], Any], chars: List[str]):
-        """Allow special chars to be used as commands. 
-        E.g. transform `do_$` into `do_f $`
+    def completenames(self, text, *ignored):
+        """Conditionally override CMD.completenames
         """
-        self.do_char_method = method
-        self.chars_allowed_for_char_method = chars
+        if self.completenames_options:
+            return [a for a in self.completenames_options if a.startswith(text)]
 
-    def emptyline(self):
-        # this supresses the default behaviour of repeating the previous command
-        # TODO fixme
-        pass
+        return super().completenames(text, *ignored)
 
     def default(self, line):
         if line in self.chars_allowed_for_char_method and self.do_char_method:
@@ -58,13 +54,27 @@ class BaseShell(Cmd):
         else:
             raise ShellException(f'Unknown syntax: {line}')
 
-    def completenames(self, text, *ignored):
-        """Conditionally override CMD.completenames
-        """
-        if self.completenames_options:
-            return [a for a in self.completenames_options if a.startswith(text)]
+    def emptyline(self):
+        # this supresses the default behaviour of repeating the previous command
+        # TODO fixme
+        pass
 
-        return super().completenames(text, *ignored)
+    def set_do_char_method(self, method: Callable[[str], Any], chars: List[str]):
+        """Allow special chars to be used as commands. 
+        E.g. transform `do_$` into `do_f $`
+        """
+        self.do_char_method = method
+        self.chars_allowed_for_char_method = chars
+
+    def postcmd(self, stop, _):
+        """Display the shell_ready_signal to indicate termination to a parent process.
+        """
+        print_shell_ready_signal()
+        return stop
+
+    ############################################################################
+    # Pipes
+    ############################################################################
 
     def onecmd(self, line):
         """Parse and run `line`.
@@ -168,9 +178,3 @@ class BaseShell(Cmd):
                 return ''
 
         return line
-
-    def postcmd(self, stop, _):
-        """Display the shell_ready_signal to indicate termination to a parent process.
-        """
-        print_shell_ready_signal()
-        return stop

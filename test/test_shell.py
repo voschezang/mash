@@ -72,11 +72,17 @@ def test_cli():
     # Note that this may be run with a different python version
     assert check_output(run + 'print 3') == '3'
     assert check_output(run + '"print 3"') == '3'
+    assert check_output(run + '\"print 3\"') == '3'
+    assert check_output(run + '"print ( \' ) "') == "( \' )"
 
 
 def test_cli_unhappy():
     with raises(RuntimeError):
         run_subprocess(run + '"printnumber 123"')
+
+    # invalid quotes
+    with raises(AssertionError):
+        check_output(run + '"print \" "')
 
 
 def test_cli_multi_commands():
@@ -84,9 +90,9 @@ def test_cli_multi_commands():
                         '"print a; print b\n print c"') == 'a\nb\nc'
 
 
-def test_cli_pipe_input():
-    out = check_output(run + '"print abc | grep abc"')
-    assert out == 'abc'
+# def test_cli_pipe_input():
+    assert check_output(run + '"print abc | grep abc"') == 'abc'
+    assert check_output(run + '"print abc |> print "') == 'abc'
 
     with raises(RuntimeError):
         run_subprocess(run + '"print abc | grep def"')
