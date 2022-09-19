@@ -1,12 +1,14 @@
-from collections.abc import Sequence
 from dataclasses import dataclass
+from functools import lru_cache, partial
+from itertools import takewhile
 import nltk
 from nltk.metrics.distance import edit_distance
-from typing import Dict, List, Tuple
+from typing import Any, Dict, Iterable, List, Sequence, Tuple, TypeVar
 
 # backwards compatibility
 from io_util import parse_args, parser, debug, interactive
 
+T = TypeVar('T')
 
 AdjacencyList = Dict[str, List[str]]
 
@@ -140,6 +142,57 @@ def split(line: str, delimiters=',.'):
     return [line for line in lines if line]
 
 
+def split_sequence(items: Sequence[T], delimiters: Sequence[T] = ['\n', ';'], return_delimiters=False) -> Iterable[T]:
+    """An abstraction of list.split.
+    Multiple delimiters are supported.
+
+    Returns
+    -------
+    return_delimiters: bool
+        prefix yielded items with the original delimiters that were found
+    """
+    delim = delimiters[0]
+    there_are_other_delimiters = len(delimiters) > 1
+
+    # cache to avoid unnecessary computation
+    @lru_cache(1)
+    def delim_is_present():
+        return delim in items
+
+    # use an exhaustible iterable
+    tail = iter(items)
+
+    not_equal = partial(not_equals, delim)
+    try:
+
+        first = True
+        while True:
+            results = takewhile(not_equal, tail)
+
+            if return_delimiters and not first and delim_is_present():
+                # prefix results with the current delim
+
+                if there_are_other_delimiters:
+                    # add the prefix to all results
+                    for result in results:
+                        yield delim + result
+                else:
+                    # add the prefix once
+                    yield delim + list(results)
+
+            else:
+                # yield results
+                if there_are_other_delimiters:
+                    yield from results
+                else:
+                    yield list(results)
+
+            first = False
+
+    except StopIteration:
+        return
+
+
 def group(items, n):
     """Group items by chunks of size n.
     I.e. a lazy version of itertools.pairwise with variable groupsize.
@@ -245,12 +298,6 @@ def identity(value):
     return value
 
 
-def call(f, *_):
-    """Call f and ignore all other arguments
-    """
-    return f()
-
-
 def constant(value):
     """Returns a constant function
     """
@@ -263,3 +310,24 @@ def none():
     """Do nothing
     """
     pass
+
+
+def call(f, *_):
+    """Call f and ignore all other arguments
+    """
+    return f()
+
+
+def equals(*args):
+    """Return True if args are equal to each other.
+    """
+    if len(args) <= 1:
+        return True
+
+    return all(args[0] == arg for arg in args)
+
+
+def not_equals(*args):
+    """Return True if not all args are equal to each other.
+    """
+    return not equals(*args)
