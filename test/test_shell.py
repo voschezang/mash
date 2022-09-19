@@ -2,7 +2,7 @@ from argparse import ArgumentParser, RawTextHelpFormatter
 from pytest import raises
 
 import io_util
-from io_util import ArgparseWrapper, check_output, run_subprocess
+from io_util import check_output, run_subprocess
 from shell import Function, Shell, ShellException, add_cli_args, run_command
 
 

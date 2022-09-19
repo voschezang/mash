@@ -71,7 +71,7 @@ class CRUD(crud.CRUD):
     def _ls(self, obj) -> Data:
         cwd = self.cwd
         if obj is None:
-            # TODO this may return a list instead of `Data`
+            # TODO fixme this may return a list instead of `Data`
             return cwd
 
         if self.autocomplete and obj not in cwd:
