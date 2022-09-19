@@ -74,6 +74,8 @@ def test_cli():
     assert check_output(run + '"print 3"') == '3'
     assert check_output(run + '\"print 3\"') == '3'
     assert check_output(run + '"print ( \' ) "') == "( \' )"
+    # assert check_output(run + 'print "|" ') == '|'
+    # assert check_output(run + 'print "\n" ') == '|'
 
 
 def test_cli_unhappy():
@@ -86,11 +88,10 @@ def test_cli_unhappy():
 
 
 def test_cli_multi_commands():
-    assert check_output(run +
-                        '"print a; print b\n print c"') == 'a\nb\nc'
+    assert check_output(run + '"print a; print b\n print c"') == 'a\nb\nc'
 
 
-# def test_cli_pipe_input():
+def test_cli_pipe_input():
     assert check_output(run + '"print abc | grep abc"') == 'abc'
     assert check_output(run + '"print abc |> print "') == 'abc'
 
