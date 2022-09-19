@@ -3,30 +3,16 @@ from pytest import raises
 
 import io_util
 from io_util import check_output, run_subprocess
-from shell import Function, Shell, ShellException, add_cli_args, run_command
+from shell import Shell, ShellException, add_cli_args, run_command
+from util import identity
 
+# TODO split up testcases for BaseShell and Shell
 
 run = 'python src/shell.py '
 
 
 def catch_output(line='', func=run_command) -> str:
     return io_util.catch_output(line, func)
-
-
-def test_Function_args():
-    synopsis = 'list'
-    func = Function(list, args=[], synopsis=synopsis, doc='')
-    assert func.func == list
-    assert func.help == synopsis
-
-
-def test_Function_call():
-    value = '1'
-
-    f = Function(int, args=[], synopsis='')
-
-    assert f(value) in [int(value), value + '\n']
-    assert f() == 0
 
 
 def test_run_command():
@@ -149,3 +135,24 @@ def test_cli_file():
 def test_cli_pipe_file():
     out = check_output('cat test/echo_abc.sh | ' + run)
     assert 'abc' in out
+
+
+def test_add_functions():
+    shell = Shell()
+    key = 'test_add_functions'
+
+    out = catch_output('id 10')
+    assert 'Unknown syntax: id' in out
+
+    shell.add_functions({'id': print}, group_key=key)
+    run_command('id 10')
+    out = catch_output('id 10')
+    assert '10' in out
+
+    # removing another key should have no impact
+    shell.remove_functions('another key')
+    out = catch_output('id 10')
+    assert '10' in out
+
+    shell.remove_functions(key)
+    assert 'Unknown syntax: id' in out

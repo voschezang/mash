@@ -1,25 +1,18 @@
 #!/usr/bin/python3
 from argparse import ArgumentParser
-from copy import deepcopy
-from types import TracebackType
+from collections import defaultdict
 from typing import Any, Callable, Dict, List
 import logging
 import os
 import sys
 import traceback
-from doc_inference import generate_docs
 
 import io_util
 from shell_base import BaseShell, ShellException
-from io_util import ArgparseWrapper, bold, has_argument, log, has_output, read_file
+import shell_function as func
+from shell_function import ShellFunction as Function
+from io_util import ArgparseWrapper, bold, has_argument, has_output, read_file
 import util
-
-# this data is impacts by both the classes Function and Shell, hence it should be global
-exception_hint = '(run `E` for details)'
-
-# global cache: sys.last_value and sys.last_traceback don't store exceptions raised in cmd.Cmd
-last_exception: Exception = None
-last_traceback: TracebackType = None
 
 
 description = 'If no arguments are given then an interactive subshell is started.'
@@ -55,6 +48,12 @@ E.g.
 class Shell(BaseShell):
     """Add custom functions to ExtendedCmd.
     """
+
+    default_function_group_key = '_'
+
+    def __init__(self, *args, **kwds):
+        super().__init__(*args, **kwds)
+        self.functions: Dict[str, List[str, Function]] = defaultdict(list)
 
     def do_exit(self, args):
         """exit [code]
@@ -93,7 +92,7 @@ class Shell(BaseShell):
         """Show the last exception
         """
         traceback.print_exception(
-            type(last_exception), last_exception, last_traceback)
+            type(func.last_exception), func.last_exception, func.last_traceback)
 
     def last_method(self):
         """Find the method corresponding to the last command run in `shell`.
@@ -123,45 +122,32 @@ class Shell(BaseShell):
 
         return method
 
+    def add_functions(self, functions: Dict[str, Function], group_key=None):
+        """Add commands to this instance of CMD.
+        These will be hidden from the help view, unlike shell.set_functions.
+        Use a key to select a group of functions
+        """
+        if group_key is None:
+            group_key = Shell.default_function_group_key
+
+        for key, func in functions.items():
+            set_functions({key: func}, self)
+            self.functions[group_key].append(key)
+
+    def remove_functions(self, group_key=None):
+        if group_key is None:
+            group_key = Shell.default_function_group_key
+
+        for key in self.functions[group_key]:
+            delattr(self, f'do_{key}')
+
+        del self.functions[group_key]
+
 
 def all_commands(cls=Shell):
     for cmd in vars(cls):
         if cmd.startswith('do_') and util.has_method(cls, cmd):
             yield cmd.lstrip('do_')
-
-
-class Function:
-    def __init__(self, func, func_name=None, synopsis: str = None, args: Dict[str, str] = None, doc: str = None) -> None:
-        help = generate_docs(func, synopsis, args, doc)
-
-        self.help = help
-        try:
-            self.func = deepcopy(func)
-        except TypeError as e:
-            logging.warning('Cannot deepcopy func:' + e.args[0])
-            self.func = func
-
-        if func_name is not None:
-            util.rename(self.func, func_name)
-
-    def __call__(self, args: str = ''):
-        args = args.split(' ')
-        args = [arg for arg in args if arg != '']
-
-        try:
-            return self.func(*args)
-        except Exception:
-            self.handle_exception()
-            return
-
-    def handle_exception(self):
-        global last_exception, last_traceback
-
-        etype, last_exception, last_traceback = sys.exc_info()
-
-        log(etype.__name__, exception_hint)
-        if str(last_exception):
-            log('\t', last_exception)
 
 
 def set_functions(functions: Dict[str, Function], cls=Shell):

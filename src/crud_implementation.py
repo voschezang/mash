@@ -44,7 +44,6 @@ class CRUD(crud.CRUD):
         super().__init__(**kwds)
         self.init__context(context)
         self.shell = shell
-        self._cd_aliasses = []
 
         self.pre_cd_hook = self.fix_directory_type
         self.post_cd_hook = self.update_prompt
@@ -159,10 +158,7 @@ class CRUD(crud.CRUD):
     def unset_cd_aliases(self):
         """Remove all custom do_{dirname} methods from self.shell.
         """
-        for alias in self._cd_aliasses:
-            delattr(self.shell, alias)
-
-        self._cd_aliasses = []
+        self.shell.remove_functions('cd_aliasses')
 
     def set_cd_aliases(self):
         """Add do_{dirname} methods to self.shell for each sub-directory.
@@ -181,10 +177,7 @@ class CRUD(crud.CRUD):
             # TODO remove the double usage of `partial`
             cd = partial(call, partial(self.cd, dirname))
 
-            # Add the method to an instance of Shell
-            # This prevents the method from showing up in the help view
-            setattr(self.shell, method_name, cd)
-            self._cd_aliasses.append(method_name)
+            self.shell.add_functions({dirname: cd}, group_key='cd_aliasses')
 
     def update_prompt(self):
         # TODO ensure that this method is run after an exception
