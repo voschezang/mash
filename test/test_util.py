@@ -34,12 +34,14 @@ def test_split():
 
 
 def test_split_sequence():
-    assert 0
+    # assert 0
     d = ',;'
     assert list(split_sequence([], d)) == []
+    assert list(split_sequence([1], d)) == [1]
+    assert list(split_sequence([1, 2], d)) == [1, 2]
     assert list(split_sequence(['a'], d)) == ['a']
-    assert list(split_sequence('ab', d)) == 'ab'
-    assert list(split_sequence('a,b', d)) == ['a', 'b']
+    assert list(split_sequence('ab', d)) == ['a', 'b']
+    assert list(split_sequence('a,b', ',')) == ['a', 'b']
     assert list(split_sequence('a,;b', d)) == ['a', 'b']
     assert list(split_sequence(';a,b;', d)) == ['a', 'b']
     assert list(split_sequence(';a,b;', d)) == ['a', 'b']

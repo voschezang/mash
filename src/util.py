@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from functools import lru_cache, partial
-from itertools import takewhile
+from itertools import chain
 import nltk
 from nltk.metrics.distance import edit_distance
 from typing import Any, Dict, Iterable, List, Sequence, Tuple, TypeVar
@@ -142,7 +142,8 @@ def split(line: str, delimiters=',.'):
     return [line for line in lines if line]
 
 
-def split_sequence(items: Sequence[T], delimiters: Sequence[T] = ['\n', ';'], return_delimiters=False) -> Iterable[T]:
+def split_sequence(items: Sequence[T], delimiters: Sequence[T] = ['\n', ';'],
+                   return_delimiters=False, prefixes=[]) -> Iterable[T]:
     """An abstraction of list.split.
     Multiple delimiters are supported.
 
@@ -154,43 +155,76 @@ def split_sequence(items: Sequence[T], delimiters: Sequence[T] = ['\n', ';'], re
     delim = delimiters[0]
     there_are_other_delimiters = len(delimiters) > 1
 
-    # cache to avoid unnecessary computation
+    # use cache to avoid unnecessary iterations
     @lru_cache(1)
     def delim_is_present():
         return delim in items
 
-    # use an exhaustible iterable
-    tail = iter(items)
+    n = 0
+    for item in items:
+        results = []
 
-    not_equal = partial(not_equals, delim)
-    try:
+        # extend prefix after encountering the first delimiter
+        if n == 1 and delim_is_present():
+            prefixes.append(delim)
 
-        first = True
-        while True:
-            results = takewhile(not_equal, tail)
+        if item != delim:
+            results.append(item)
+            continue
 
-            if return_delimiters and not first and delim_is_present():
-                # prefix results with the current delim
+        if there_are_other_delimiters:
+            yield from split_sequence(results, delimiters[1:], return_delimiters, prefixes)
+        else:
+            yield prefixes + results
 
-                if there_are_other_delimiters:
-                    # add the prefix to all results
-                    for result in results:
-                        yield delim + result
-                else:
-                    # add the prefix once
-                    yield delim + list(results)
+        n += 1
 
-            else:
-                # yield results
-                if there_are_other_delimiters:
-                    yield from results
-                else:
-                    yield list(results)
+    # try:
+    #     while True:
+    #         results = list(takewhile(not_equal, tail))
 
-            first = False
+    #         if return_delimiters and not first and delim_is_present():
+    #             # prefix results with the current delim
 
-    except StopIteration:
-        return
+    #             if there_are_other_delimiters:
+
+    #                 results = split_sequence(results, delimiters[1:])
+    #                 results = concat(results)
+
+    #                 # add the prefix to all results
+    #                 for result in results:
+    #                     yield delim + result
+    #             else:
+    #                 # add the prefix once
+    #                 yield delim + results
+
+    #         else:
+    #             # yield results
+    #             if there_are_other_delimiters:
+
+    #                 results = split_sequence(results, delimiters[1:])
+    #                 results = concat(results)
+    #                 yield from results
+
+    #             else:
+    #                 yield results
+
+    #         first = False
+
+    # except StopIteration:
+    #     return
+
+
+# def takewhile(predicate, iterable):
+#     """Similar to itertools.takewhile, but raises StopIteration.
+#     """
+#     for x in iterable:
+#         if predicate(x):
+#             yield x
+#         else:
+#             return
+
+#     raise StopIteration()
 
 
 def group(items, n):
