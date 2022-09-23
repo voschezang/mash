@@ -143,7 +143,7 @@ def split(line: str, delimiters=',.'):
 
 
 def split_sequence(items: Sequence[T], delimiters: Sequence[T] = ['\n', ';'],
-                   return_delimiters=False, prefixes=[]) -> Iterable[T]:
+                   return_delimiters=False, prefixes=[]) -> List[List[T]]:
     """An abstraction of list.split.
     Multiple delimiters are supported.
 
@@ -151,80 +151,41 @@ def split_sequence(items: Sequence[T], delimiters: Sequence[T] = ['\n', ';'],
     -------
     return_delimiters: bool
         prefix yielded items with the original delimiters that were found
+        See [polish notation](https://en.wikipedia.org/wiki/Polish_notation)
     """
-    delim = delimiters[0]
+    if not delimiters:
+        yield from items
+        return
+
     there_are_other_delimiters = len(delimiters) > 1
+    delim = delimiters[0]
 
-    # use cache to avoid unnecessary iterations
-    @lru_cache(1)
-    def delim_is_present():
-        return delim in items
+    if return_delimiters:
+        delim_is_present = delim in items
 
-    n = 0
-    for item in items:
-        results = []
-
-        # extend prefix after encountering the first delimiter
-        if n == 1 and delim_is_present():
-            prefixes.append(delim)
+    prefix_added = False
+    results = []
+    for i, item in enumerate(items):
 
         if item != delim:
             results.append(item)
+            if i < len(items) - 1:
+                continue
+
+        if not results:
             continue
+
+        if return_delimiters and not prefix_added and delim_is_present:
+            # extend a copy of prefixes
+            prefixes = prefixes + [delim]
+            prefix_added = True
 
         if there_are_other_delimiters:
             yield from split_sequence(results, delimiters[1:], return_delimiters, prefixes)
         else:
             yield prefixes + results
 
-        n += 1
-
-    # try:
-    #     while True:
-    #         results = list(takewhile(not_equal, tail))
-
-    #         if return_delimiters and not first and delim_is_present():
-    #             # prefix results with the current delim
-
-    #             if there_are_other_delimiters:
-
-    #                 results = split_sequence(results, delimiters[1:])
-    #                 results = concat(results)
-
-    #                 # add the prefix to all results
-    #                 for result in results:
-    #                     yield delim + result
-    #             else:
-    #                 # add the prefix once
-    #                 yield delim + results
-
-    #         else:
-    #             # yield results
-    #             if there_are_other_delimiters:
-
-    #                 results = split_sequence(results, delimiters[1:])
-    #                 results = concat(results)
-    #                 yield from results
-
-    #             else:
-    #                 yield results
-
-    #         first = False
-
-    # except StopIteration:
-    #     return
-
-
-# def takewhile(predicate, iterable):
-#     """Similar to itertools.takewhile, but raises StopIteration.
-#     """
-#     for x in iterable:
-#         if predicate(x):
-#             yield x
-#         else:
-#             return
-
-#     raise StopIteration()
+        results = []
 
 
 def group(items, n):

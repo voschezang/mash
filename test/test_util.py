@@ -26,7 +26,6 @@ def test_concat():
 
 
 def test_split():
-    assert 0
     assert split('1,2,3', ',') == ['1', '2', '3']
     assert split('1,2,3', '-+=') == ['1,2,3']
     assert split('1,2;3', ',;') == ['1', '2', '3']
@@ -34,26 +33,50 @@ def test_split():
 
 
 def test_split_sequence():
-    # assert 0
-    d = ',;'
+    d = ';,'
     assert list(split_sequence([], d)) == []
-    assert list(split_sequence([1], d)) == [1]
-    assert list(split_sequence([1, 2], d)) == [1, 2]
-    assert list(split_sequence(['a'], d)) == ['a']
-    assert list(split_sequence('ab', d)) == ['a', 'b']
-    assert list(split_sequence('a,b', ',')) == ['a', 'b']
-    assert list(split_sequence('a,;b', d)) == ['a', 'b']
-    assert list(split_sequence(';a,b;', d)) == ['a', 'b']
-    assert list(split_sequence(';a,b;', d)) == ['a', 'b']
+    assert list(split_sequence(',', d)) == []
+    assert list(split_sequence(',;;', d)) == []
+    assert list(split_sequence([1], ',')) == [[1]]
+    assert list(split_sequence([1], d)) == [[1]]
+    assert list(split_sequence([1, 2], ',')) == [[1, 2]]
+    assert list(split_sequence([1, 2], d)) == [[1, 2]]
+    assert list(split_sequence(['a'], d)) == [['a']]
+    assert list(split_sequence('ab', d)) == [['a', 'b']]
+    assert list(split_sequence('a,b', ',')) == [['a'], ['b']]
+    assert list(split_sequence('a,;b', d)) == [['a'], ['b']]
+    assert list(split_sequence(';a,b;', d)) == [['a'], ['b']]
 
 
-def test_split_sequence_with_return():
-    d = ',;'
-    assert list(split_sequence('a', d)) == [';,a']
-    assert list(split_sequence('a,b', d)) == [',a', ',b']
-    assert list(split_sequence('a,b,', d)) == [';,a', ';,b']
-    assert list(split_sequence('a,b;c', d)) == [';,a', ';,b']
-    assert list(split_sequence('a;b,c', d)) == [';a', ';,b']
+def test_split_sequence_no_delim():
+    assert list(split_sequence([], '')) == []
+    assert list(split_sequence('ab', '')) == ['a', 'b']
+
+
+def test_split_sequence_with_return_single_items():
+    d = ';,'
+    assert list(split_sequence(',', d, True)) == []
+    assert list(split_sequence('a', d, True)) == [['a']]
+    assert list(split_sequence('a,', d, True)) == [[',', 'a']]
+    assert list(split_sequence('a,;;;,,', d, True)) == [[';', ',', 'a']]
+    assert list(split_sequence('a;,,,', d, True)) == [[';', 'a']]
+    assert list(split_sequence(';a', d, True)) == [[';', 'a']]
+    assert list(split_sequence(',a', d, True)) == [[',', 'a']]
+    assert list(split_sequence(',,a,,', d, True)) == [[',', 'a']]
+    assert list(split_sequence(';,a', d, True)) == [[';', ',', 'a']]
+    assert list(split_sequence(',;a', d, True)) == [[';', 'a']]
+
+
+def test_split_sequence_with_return_multiple_items():
+    d = ';,'
+    assert list(split_sequence('a,b', d, True)) == [[',', 'a'], [',', 'b']]
+    assert list(split_sequence(',a,b,', d, True)) == [[',', 'a'], [',', 'b']]
+    assert list(split_sequence('a,b;c', d, True)) == [[';', ',', 'a'],
+                                                      [';', ',', 'b'],
+                                                      [';', 'c']]
+    assert list(split_sequence('a;b,c', d, True)) == [[';', 'a'],
+                                                      [';', ',', 'b'],
+                                                      [';', ',', 'c']]
 
 
 def test_find_fuzzy_matches():
