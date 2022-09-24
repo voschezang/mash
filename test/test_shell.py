@@ -261,3 +261,11 @@ def test_do_export_unset():
     shell.env['k'] = '1'
     run_command('export k', shell)
     assert 'k' not in shell.env
+
+
+def test_variable_expansion():
+    shell = Shell()
+    assert catch_output('a = 2', shell=shell) == 'a'
+    assert shell.env['a'] == '2'
+
+    assert catch_output('print $a', shell=shell) == '2'

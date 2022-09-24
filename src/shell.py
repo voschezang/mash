@@ -118,8 +118,8 @@ class Shell(BaseShell):
         elif len(v) == 1:
             v = v[0]
 
+        log(f'set {k}')
         self.set_env_variable(k, v)
-        log('set k')
 
     def do_E(self, args):
         """Show the last exception

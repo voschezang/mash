@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 from asyncio import CancelledError
 from cmd import Cmd
+from itertools import chain
 from operator import contains
 from typing import Any, Callable, Dict, Iterable, List, Literal, Sequence, Union
 import logging
@@ -37,6 +38,7 @@ class BaseShell(Cmd):
     prompt = '$ '
 
     # TODO save stdout in a tmp file
+    # TODO store/recover sessions using self.env
 
     def __init__(self, *args, **kwds):
         super().__init__(*args, **kwds)
@@ -49,6 +51,7 @@ class BaseShell(Cmd):
         self.do_char_method = None
 
         self.infix_operators = {'=': self.set_env_variable}
+        self.variable_prefix = '$'
 
         self.env = {}
 
@@ -86,7 +89,7 @@ class BaseShell(Cmd):
 
     def set_env_variable(self, k, v):
         self.env[k] = v
-        return v
+        return k
 
     def postcmd(self, stop, _):
         """Display the shell_ready_signal to indicate termination to a parent process.
@@ -188,16 +191,19 @@ class BaseShell(Cmd):
         prefixes = list(split_prefixes(command_and_args, delimiters))
         use_sh = prefixes and prefixes[-1] in bash_delimiters
 
-        without_delimiters = list(omit_prefixes(command_and_args, delimiters))
-        cmd = ' '.join(without_delimiters).lstrip()
-        there_is_an_infix_operator = for_any(self.infix_operators,
-                                             contains, without_delimiters)
+        f, *args = list(omit_prefixes(command_and_args, delimiters))
+        args = list(self.expand_variables(args))
+        cmd = ' '.join(chain.from_iterable(([f], args)))
+
+        # TODO make this check quote-aware
+        there_is_an_infix_operator = for_any(
+            self.infix_operators, contains, args)
 
         if use_sh:
             return self.pipe_cmd_sh(cmd, result, prefixes[-1])
 
         if there_is_an_infix_operator:
-            return self.infix_command(without_delimiters)
+            return self.infix_command(f, *args)
 
         return self.pipe_cmd_py(cmd, result)
 
@@ -229,12 +235,38 @@ class BaseShell(Cmd):
         log(stderr)
         return stdout
 
-    def infix_command(self, args):
+    def infix_command(self, *args):
         for op, method in self.infix_operators.items():
             if op not in args:
                 continue
 
-            lhs, _, rhs = args
+            try:
+                lhs, _, rhs = args
+            except ValueError:
+                msg = f'Invalid syntax for infix operator {op}'
+                if self.ignore_invalid_syntax:
+                    log(msg)
+                    return
+                raise ShellException(msg)
+
             return method(lhs, rhs)
 
         raise NotImplementedError()
+
+    def expand_variables(self, variables: List[str]) -> Iterable[str]:
+        """Replace variables with their values. 
+        E.g.
+        ```sh
+        a = 1
+        print $a # gets converted to `print 1`
+        ```
+        """
+        for v in variables:
+            if len(v) > 1 and v[0] == self.variable_prefix:
+                k = v[1:]
+                if k in self.env:
+                    yield self.env[k]
+                    continue
+                else:
+                    raise ShellException('Variable `{v}` is not set')
+            yield v
