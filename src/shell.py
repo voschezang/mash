@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 from argparse import ArgumentParser
 from collections import defaultdict
+from pathlib import Path
 from typing import Any, Callable, Dict, List
 import logging
 import os
@@ -71,6 +72,11 @@ class Shell(BaseShell):
         logging.info(f'Cmd = !{args}')
         # TODO add option to forward environment variables
         os.system(args)
+
+    def do_cat(self, filename):
+        """Concatenate and print files
+        """
+        return ''.join((Path(f).read_text() for f in filename.split(' ')))
 
     def do_print(self, args):
         """Mimic Python's print function

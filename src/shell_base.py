@@ -1,8 +1,6 @@
 #!/usr/bin/python3
 from asyncio import CancelledError
 from cmd import Cmd
-from codecs import ignore_errors
-from copy import deepcopy
 from typing import Any, Callable, Dict, Iterable, List, Literal, Sequence, Union
 import logging
 import shlex
@@ -35,7 +33,6 @@ class BaseShell(Cmd):
     - error handling
     - confirmation mode to allow a user to accept or decline commands
     """
-    # exception = None
     intro = 'Welcome.  Type help or ? to list commands.\n' + shell_ready_signal + '\n'
     prompt = '$ '
 
@@ -203,7 +200,7 @@ class BaseShell(Cmd):
         assert delimiter in bash_delimiters
 
         # pass last result to stdin
-        line = f'echo {prev_result} {delimiter} {line}'
+        line = f'echo {shlex.quote(prev_result)} {delimiter} {line}'
 
         logging.info(f'Cmd = {line}')
 
@@ -216,9 +213,4 @@ class BaseShell(Cmd):
         stderr = result.stderr.decode().rstrip('\n')
 
         log(stderr)
-        if delimiter != '|':
-            # re-use the previous result
-            # this allows e.g. `echo a 1> `
-            return prev_result
-
         return stdout

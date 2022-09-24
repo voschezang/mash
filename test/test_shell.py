@@ -1,4 +1,5 @@
 from argparse import ArgumentParser, RawTextHelpFormatter
+from time import perf_counter
 from pathlib import Path
 from pytest import raises
 
@@ -48,12 +49,14 @@ def test_multi_commands():
 
 
 def test_pipe():
-    # x = catch_output('print 100 |> print')
     assert catch_output('print 100 |> print') == '100'
 
 
 def test_pipe_unix():
     assert catch_output('print 100 | less') == '100'
+
+    # with quotes
+    assert catch_output('print "2; echo 12" | grep 2') == '2; echo 12'
 
 
 def test_pipe_input():
@@ -126,9 +129,9 @@ def test_cli_pipe_interop():
     assert check_output(f'{run} "{cmd}"') == 'def abc'
 
 
-def test_cli_pipe_to_file():
+def test_pipe_to_file():
     text = 'abc'
-    filename = 'pytest_tmp_out.txt'
+    filename = '.pytest_tmp_out.txt'
 
     # clear file content
     f = Path(filename)
@@ -141,6 +144,14 @@ def test_cli_pipe_to_file():
 
     # verify output file
     assert f.read_text().rstrip() == text
+
+
+def test_pipe_to_file_with_interop():
+    t = str(perf_counter())
+    f = '.pytest_time'
+    cmd = f'print {t} > {f} ; cat {f}'
+
+    assert catch_output(cmd).strip() == t, cmd
 
 
 def test_pipe_to_cli():
