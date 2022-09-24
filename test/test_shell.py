@@ -6,6 +6,7 @@ from pytest import raises
 import io_util
 from io_util import check_output, read_file, run_subprocess
 from shell import Shell, ShellException, add_cli_args, run_command
+from util import identity
 
 # TODO split up testcases for BaseShell and Shell
 
@@ -120,13 +121,15 @@ def test_cli_pipe_interop():
     assert catch_output(cmd) == 'abc'
     assert check_output(f'{run} "{cmd}"') == 'abc'
 
-    cmd = 'print abc | grep abc | ls & print'
-    with raises(ShellException):
-        catch_output(cmd)
-
     cmd = 'print abc | grep ab |> print | grep abc |> print def'
     assert catch_output(cmd) == 'def abc'
     assert check_output(f'{run} "{cmd}"') == 'def abc'
+
+    shell = Shell()
+    shell.add_functions({'custom_func': identity})
+    cmd = 'print abc | grep abc | custom_func'
+    with raises(ShellException):
+        catch_output(cmd)
 
 
 def test_pipe_to_file():
