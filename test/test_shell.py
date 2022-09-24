@@ -115,22 +115,12 @@ def test_cli_pipe_input():
         run_subprocess(run + '"print abc | grep def"')
 
 
-def test_subprocess_run():
-    import subprocess
-    cmd = 'echo abc | print'
-    result = subprocess.run(
-        args=cmd, capture_output=True, shell=True)
-    print(result)
-    assert result.returncode != 0
-    assert result.returncode == 127
-
-
 def test_cli_pipe_interop():
-    # cmd = 'print abc | grep abc |> print'
-    # assert catch_output(cmd) == 'abc'
-    # assert check_output(f'{run} "{cmd}"') == 'abc'
+    cmd = 'print abc | grep abc |> print'
+    assert catch_output(cmd) == 'abc'
+    assert check_output(f'{run} "{cmd}"') == 'abc'
 
-    cmd = 'print abc | grep abc | print'
+    cmd = 'print abc | grep abc | ls & print'
     with raises(ShellException):
         catch_output(cmd)
 
