@@ -3,7 +3,6 @@ from asyncio import CancelledError
 from cmd import Cmd
 from codecs import ignore_errors
 from copy import deepcopy
-from itertools import chain
 from typing import Any, Callable, Dict, Iterable, List, Literal, Sequence, Union
 import logging
 import shlex
@@ -11,10 +10,12 @@ import subprocess
 
 import io_util
 from io_util import log, shell_ready_signal, print_shell_ready_signal
-from util import omit_prefixes, split_sequence, split_tips
+from util import omit_prefixes, split_prefixes, split_sequence, split_tips
 
 confirmation_mode = False
-delimiters = ['|', '|>', ';']
+bash_delimiters = ['|', '>', '>>', '1>', '1>>', '2>', '2>>']
+py_delimiters = [';', '|>']
+delimiters = py_delimiters + bash_delimiters
 
 Error = None
 Success = 0
@@ -176,13 +177,14 @@ class BaseShell(Cmd):
             raise ShellException('Last return value was absent')
 
         # assume there is at most 1 delimiter
-        use_sh = '|' in command_and_args and '|>' not in command_and_args
+        prefixes = list(split_prefixes(command_and_args, delimiters))
+        use_sh = prefixes and prefixes[-1] in bash_delimiters
 
         without_delimiters = omit_prefixes(command_and_args, delimiters)
         cmd = ' '.join(without_delimiters).lstrip()
 
         if use_sh:
-            result = self.pipe_cmd_sh(cmd, result)
+            result = self.pipe_cmd_sh(cmd, result, prefixes[-1])
         else:
             result = self.pipe_cmd_py(cmd, result)
 
@@ -194,12 +196,14 @@ class BaseShell(Cmd):
 
         return super().onecmd(line)
 
-    def pipe_cmd_sh(self, line: str, result: str) -> str:
+    def pipe_cmd_sh(self, line: str, prev_result: str, delimiter='|') -> str:
         """
         May raise subprocess.CalledProcessError
         """
+        assert delimiter in bash_delimiters
+
         # pass last result to stdin
-        line = f'echo {result} | {line}'
+        line = f'echo {prev_result} {delimiter} {line}'
 
         logging.info(f'Cmd = {line}')
 
@@ -209,7 +213,12 @@ class BaseShell(Cmd):
                                 shell=True)
 
         stdout = result.stdout.decode().rstrip('\n')
-        stderr = result.stdout.decode().rstrip('\n')
+        stderr = result.stderr.decode().rstrip('\n')
 
         log(stderr)
+        if delimiter != '|':
+            # re-use the previous result
+            # this allows e.g. `echo a 1> `
+            return prev_result
+
         return stdout

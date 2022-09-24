@@ -1,4 +1,5 @@
 from argparse import ArgumentParser, RawTextHelpFormatter
+from pathlib import Path
 from pytest import raises
 
 import io_util
@@ -115,6 +116,31 @@ def test_cli_pipe_interop():
     cmd = 'print abc | grep abc |> print'
     assert catch_output(cmd) == 'abc'
     assert check_output(f'{run} "{cmd}"') == 'abc'
+
+    cmd = 'print abc | grep abc | print'
+    with raises(ShellException):
+        catch_output(cmd)
+
+    cmd = 'print abc | grep ab |> print | grep abc |> print def'
+    assert catch_output(cmd) == 'def abc'
+    assert check_output(f'{run} "{cmd}"') == 'def abc'
+
+
+def test_cli_pipe_to_file():
+    text = 'abc'
+    filename = 'pytest_tmp_out.txt'
+
+    # clear file content
+    f = Path(filename)
+    f.write_text('')
+
+    result = catch_output(f'print {text} > {filename}')
+
+    # the operator `>` should be transparant
+    assert result.rstrip() == text
+
+    # verify output file
+    assert f.read_text().rstrip() == text
 
 
 def test_pipe_to_cli():

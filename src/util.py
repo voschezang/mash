@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from itertools import dropwhile
+from itertools import dropwhile, takewhile
 from queue import Queue
 from nltk.metrics.distance import edit_distance
 from typing import Any, Dict, Iterable, List, Literal, Sequence, Tuple, TypeVar, Union
@@ -240,6 +240,13 @@ def group(items, n):
             buffer = []
 
     yield buffer
+
+
+def split_prefixes(items: Sequence[T], prefixes: Sequence[T]) -> Sequence[T]:
+    def predicate(item):
+        return item in prefixes
+
+    return takewhile(predicate, items)
 
 
 def omit_prefixes(items: Sequence[T], prefixes: Sequence[T]) -> Sequence[T]:
