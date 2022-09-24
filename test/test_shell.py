@@ -58,11 +58,8 @@ def test_pipe_unix():
 def test_pipe_input():
     assert catch_output('print abc | grep abc') == 'abc'
 
-    # fail silently
-    run_command('echo abc | grep def', strict=False)
-
     with raises(ShellException):
-        catch_output('echo abc | grep def', strict=True)
+        catch_output('echo abc | grep def', strict=False)
 
 
 def test_add_cli_args():
