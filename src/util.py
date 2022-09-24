@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from functools import lru_cache, partial
-from itertools import chain
+from itertools import chain, dropwhile
+from queue import Queue
 import nltk
 from nltk.metrics.distance import edit_distance
 from typing import Any, Dict, Iterable, List, Sequence, Tuple, TypeVar
@@ -142,8 +143,38 @@ def split(line: str, delimiters=',.'):
     return [line for line in lines if line]
 
 
+def split_tips(line: Sequence[T], delimiters: Sequence[T] = ',.') -> Iterable[List[T]]:
+    if not line:
+        yield line
+        return
+
+    i = 0
+    for i, char in enumerate(line):
+        if char in delimiters:
+            yield char
+        else:
+            break
+    else:
+        # patch index iff iter is exhausted
+        i += 1
+
+    suffixes = []
+    j = len(line)
+    for j in range(len(line)-1, i, -1):
+        char = line[j]
+        if char in delimiters:
+            suffixes.append(char)
+        else:
+            break
+
+    middle = line[i:j+1]
+    if middle:
+        yield middle
+    yield from suffixes
+
+
 def split_sequence(items: Sequence[T], delimiters: Sequence[T] = ['\n', ';'],
-                   return_delimiters=False, prefixes=[]) -> List[List[T]]:
+                   return_delimiters=False, prefixes=[]) -> Iterable[List[T]]:
     """An abstraction of list.split.
     Multiple delimiters are supported.
 
@@ -202,7 +233,14 @@ def group(items, n):
     yield buffer
 
 
-def extend(q, items):
+def omit_prefixes(items: Sequence[T], prefixes: Sequence[T]) -> Sequence[T]:
+    def predicate(item):
+        return item in prefixes
+
+    return dropwhile(predicate, items)
+
+
+def extend(q: Queue, items: Sequence):
     """Fill queue `q` with items, similar to list.extend
 
     Parameters

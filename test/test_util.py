@@ -1,6 +1,6 @@
 from pytest import raises
 
-from util import concat, equals, find_prefix_matches, find_fuzzy_matches, list_prefix_matches, not_equals, split, split_sequence
+from util import concat, equals, find_prefix_matches, find_fuzzy_matches, list_prefix_matches, not_equals, split, split_sequence, split_tips
 
 
 def test_concat_empty_container():
@@ -30,6 +30,20 @@ def test_split():
     assert split('1,2,3', '-+=') == ['1,2,3']
     assert split('1,2;3', ',;') == ['1', '2', '3']
     assert split('1,2;3', ',;') == ['1', '2', '3']
+
+
+def test_split_tips():
+    d = ';'
+    assert list(split_tips([], d)) == [[]]
+    assert list(split_tips(';', d)) == [';']
+    assert list(split_tips(';;', d)) == [';', ';']
+    assert list(split_tips('az', d)) == ['az']
+    assert list(split_tips(';az', d)) == [';', 'az']
+    assert list(split_tips('az;', d)) == ['az', ';']
+    assert list(split_tips(';az;', d)) == [';', 'az', ';']
+    assert list(split_tips('..az.;.', '.;')) == ['.', '.', 'az', '.', ';', '.']
+    assert list(split_tips(';a;;z;', d)) == [';', 'a;;z', ';']
+    assert list(split_tips(';a ; z;', d)) == [';', 'a ; z', ';']
 
 
 def test_split_sequence():
