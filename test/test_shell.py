@@ -1,14 +1,14 @@
 from argparse import ArgumentParser, RawTextHelpFormatter
-from time import perf_counter
+from multiprocessing.sharedctypes import Value
 from pathlib import Path
 from pytest import raises
+from time import perf_counter
 
 import io_util
 from io_util import check_output, read_file, run_subprocess
 from shell import Shell, ShellException, add_cli_args, run_command
 from util import identity
 
-# TODO split up testcases for BaseShell and Shell
 
 run = 'python src/shell.py '
 
@@ -90,9 +90,6 @@ def test_cli():
     assert check_output(run + 'print 3') == '3'
     assert check_output(run + '"print 3"') == '3'
     assert check_output(run + '\"print 3\"') == '3'
-    ## assert check_output(run + '"print ( \' ) "') == "( \' )"
-    # assert check_output(run + 'print "|" ') == '|'
-    # assert check_output(run + 'print "\n" ') == '|'
 
 
 def test_cli_unhappy():
@@ -138,13 +135,15 @@ def test_pipe_to_file():
 
     # clear file content
     f = Path(filename)
-    f.write_text('')
+    f.unlink()
 
     result = catch_output(f'print {text} > {filename}')
     assert result == ''
 
     # verify output file
     assert f.read_text().rstrip() == text
+
+    f.unlink()
 
 
 def test_pipe_to_file_with_interop():
@@ -153,6 +152,8 @@ def test_pipe_to_file_with_interop():
     cmd = f'print {t} > {f} ; cat {f}'
 
     assert catch_output(cmd).strip() == t, cmd
+
+    Path(f).unlink()
 
 
 def test_pipe_to_cli():
@@ -217,3 +218,46 @@ def test_add_functions():
 
     shell.remove_functions(key)
     assert 'Unknown syntax: id' in out
+
+
+def test_set_variable_infix():
+    k = 'some_key'
+    v = '| ; 1 2   '
+    shell = Shell()
+
+    assert catch_output(f'{k} = "{v}"', shell=shell) == v
+    assert k in shell.env
+    assert shell.env[k] == v
+
+
+def test_do_export():
+    k = 'some_key'
+    shell = Shell()
+    shell.ignore_invalid_syntax = False
+
+    v = '123'
+    for cmd in [f'export {k} {v}',
+                f'export {k} "{v}"']:
+
+        run_command(cmd, shell)
+        assert k in shell.env
+        assert shell.env[k] == v
+
+    v = '1 2'
+    for cmd in [f'export {k} {v}',
+                f'export {k} "{v}"']:
+        run_command(f'export {k} "1 2"', shell)
+        assert shell.env[k] == ['1', '2']
+
+    v = '| ; 2'
+    run_command(f'export {k} "{v}"', shell)
+    assert shell.env[k] == ['|', ';', '2']
+
+
+def test_do_export_unset():
+    shell = Shell()
+
+    # unset var when no values are given
+    shell.env['k'] = '1'
+    run_command('export k', shell)
+    assert 'k' not in shell.env

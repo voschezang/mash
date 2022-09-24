@@ -1,8 +1,10 @@
 from dataclasses import dataclass
+from functools import partial
 from itertools import dropwhile, takewhile
+from operator import contains
 from queue import Queue
 from nltk.metrics.distance import edit_distance
-from typing import Any, Dict, Iterable, List, Literal, Sequence, Tuple, TypeVar, Union
+from typing import Any, Callable, Dict, Iterable, List, Literal, Sequence, Tuple, TypeVar, Union
 
 # backwards compatibility
 from io_util import interactive
@@ -243,16 +245,12 @@ def group(items, n):
 
 
 def split_prefixes(items: Sequence[T], prefixes: Sequence[T]) -> Sequence[T]:
-    def predicate(item):
-        return item in prefixes
-
+    predicate = partial(contains, prefixes)
     return takewhile(predicate, items)
 
 
 def omit_prefixes(items: Sequence[T], prefixes: Sequence[T]) -> Sequence[T]:
-    def predicate(item):
-        return item in prefixes
-
+    predicate = partial(contains, prefixes)
     return dropwhile(predicate, items)
 
 
@@ -365,6 +363,22 @@ def call(f, *_):
     """Call f and ignore all other arguments
     """
     return f()
+
+
+def for_any(foreach_items: Sequence, predicate: Callable, *args, **kwds) -> bool:
+    """Evaluate whether any item satisfies predicate(.., item)
+    """
+    return any(for_each(foreach_items, predicate, *args, **kwds))
+
+
+def for_all(foreach_items: Sequence, predicate: Callable, *args, **kwds) -> bool:
+    """Evaluate whether all item satisfy predicate(.., item)
+    """
+    return all(for_each(foreach_items, predicate, *args, **kwds))
+
+
+def for_each(foreach_items: Sequence, predicate: Callable, *args, **kwds) -> bool:
+    return (predicate(*args, i, **kwds) for i in foreach_items)
 
 
 def equals(*args):

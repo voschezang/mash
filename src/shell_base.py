@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 from asyncio import CancelledError
 from cmd import Cmd
+from operator import contains
 from typing import Any, Callable, Dict, Iterable, List, Literal, Sequence, Union
 import logging
 import shlex
@@ -8,7 +9,7 @@ import subprocess
 
 import io_util
 from io_util import log, shell_ready_signal, print_shell_ready_signal
-from util import omit_prefixes, split_prefixes, split_sequence, split_tips
+from util import for_any, omit_prefixes, split_prefixes, split_sequence, split_tips
 
 confirmation_mode = False
 bash_delimiters = ['|', '>', '>>', '1>', '1>>', '2>', '2>>']
@@ -47,6 +48,10 @@ class BaseShell(Cmd):
 
         self.do_char_method = None
 
+        self.infix_operators = {'=': self.set_env_variable}
+
+        self.env = {}
+
     def completenames(self, text, *ignored):
         """Conditionally override CMD.completenames
         """
@@ -58,6 +63,9 @@ class BaseShell(Cmd):
     def default(self, line):
         if line in self.chars_allowed_for_char_method and self.do_char_method:
             return self.do_char_method(line)
+
+        else:
+            print('line', line)
 
         if self.ignore_invalid_syntax:
             super().default(line)
@@ -75,6 +83,10 @@ class BaseShell(Cmd):
         """
         self.do_char_method = method
         self.chars_allowed_for_char_method = chars
+
+    def set_env_variable(self, k, v):
+        self.env[k] = v
+        return v
 
     def postcmd(self, stop, _):
         """Display the shell_ready_signal to indicate termination to a parent process.
@@ -176,15 +188,18 @@ class BaseShell(Cmd):
         prefixes = list(split_prefixes(command_and_args, delimiters))
         use_sh = prefixes and prefixes[-1] in bash_delimiters
 
-        without_delimiters = omit_prefixes(command_and_args, delimiters)
+        without_delimiters = list(omit_prefixes(command_and_args, delimiters))
         cmd = ' '.join(without_delimiters).lstrip()
+        there_is_an_infix_operator = for_any(self.infix_operators,
+                                             contains, without_delimiters)
 
         if use_sh:
-            result = self.pipe_cmd_sh(cmd, result, prefixes[-1])
-        else:
-            result = self.pipe_cmd_py(cmd, result)
+            return self.pipe_cmd_sh(cmd, result, prefixes[-1])
 
-        return result
+        if there_is_an_infix_operator:
+            return self.infix_command(without_delimiters)
+
+        return self.pipe_cmd_py(cmd, result)
 
     def pipe_cmd_py(self, line: str, result: str):
         # append arguments
@@ -213,3 +228,13 @@ class BaseShell(Cmd):
 
         log(stderr)
         return stdout
+
+    def infix_command(self, args):
+        for op, method in self.infix_operators.items():
+            if op not in args:
+                continue
+
+            lhs, _, rhs = args
+            return method(lhs, rhs)
+
+        raise NotImplementedError()

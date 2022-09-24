@@ -12,7 +12,7 @@ import io_util
 from shell_base import BaseShell, ShellException
 import shell_function as func
 from shell_function import ShellFunction as Function
-from io_util import ArgparseWrapper, bold, has_argument, has_output, read_file
+from io_util import ArgparseWrapper, bold, has_argument, has_output, log, read_file
 import util
 
 
@@ -73,7 +73,7 @@ class Shell(BaseShell):
     def do_cat(self, filename):
         """Concatenate and print files
         """
-        return ''.join((Path(f).read_text() for f in filename.split(' ')))
+        return ''.join((Path(f).read_text() for f in filename.split()))
 
     def do_print(self, args):
         """Mimic Python's print function
@@ -87,9 +87,39 @@ class Shell(BaseShell):
         logging.debug(f'Cmd = echo {args}')
         return args
 
-    def do_export(self, args):
-        # TODO set environment variables
-        raise ShellException('NotImplemented')
+    def do_env(self, keys: str):
+        """Retrieve environment variables.
+        Return all variables if no key is given.
+        """
+        data = self.env
+        if keys:
+            try:
+                data = {k: self.env[k] for k in keys.split()}
+            except KeyError:
+                log('Invalid key')
+                return
+
+        return data
+
+    def do_export(self, args: str):
+        """Set an environment variable.
+        `export(k, *values)`
+        """
+        k, *v = args.split()
+
+        if len(v) == 0:
+            log(f'unset {k}')
+            if k in self.env:
+                del self.env[k]
+            else:
+                log('Invalid key')
+            return
+
+        elif len(v) == 1:
+            v = v[0]
+
+        self.set_env_variable(k, v)
+        log('set k')
 
     def do_E(self, args):
         """Show the last exception
@@ -108,7 +138,7 @@ class Shell(BaseShell):
         if not self.lastcmd:
             return
 
-        cmd = self.lastcmd.split(' ')[0]
+        cmd = self.lastcmd.split()[0]
         return Shell.get_method(cmd)
 
     @staticmethod
