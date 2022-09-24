@@ -4,7 +4,7 @@ from itertools import chain, dropwhile
 from queue import Queue
 import nltk
 from nltk.metrics.distance import edit_distance
-from typing import Any, Dict, Iterable, List, Sequence, Tuple, TypeVar
+from typing import Any, Dict, Iterable, List, Literal, Sequence, Tuple, TypeVar, Union
 
 # backwards compatibility
 from io_util import parse_args, parser, debug, interactive
@@ -166,6 +166,9 @@ def split_tips(line: Sequence[T], delimiters: Sequence[T] = ',.') -> Iterable[Li
             suffixes.append(char)
         else:
             break
+    else:
+        # patch index iff iter is exhausted
+        j -= 1
 
     middle = line[i:j+1]
     if middle:
@@ -174,15 +177,16 @@ def split_tips(line: Sequence[T], delimiters: Sequence[T] = ',.') -> Iterable[Li
 
 
 def split_sequence(items: Sequence[T], delimiters: Sequence[T] = ['\n', ';'],
-                   return_delimiters=False, prefixes=[]) -> Iterable[List[T]]:
+                   return_delimiters: Union[bool, Literal['always']] = False, prefixes=[]) -> Iterable[List[T]]:
     """An abstraction of list.split.
     Multiple delimiters are supported.
 
-    Returns
-    -------
-    return_delimiters: bool
-        prefix yielded items with the original delimiters that were found
+    Paramters
+    ---------
+    return_delimiters : bool | 'always'
+        prefix yielded items with the delimiters that were encountered.
         See [polish notation](https://en.wikipedia.org/wiki/Polish_notation)
+        If 'always', then include left-hand side delimiters.
     """
     if not delimiters:
         yield from items
@@ -193,30 +197,37 @@ def split_sequence(items: Sequence[T], delimiters: Sequence[T] = ['\n', ';'],
 
     if return_delimiters:
         delim_is_present = delim in items
+        delim_encountered = False
 
     prefix_added = False
-    results = []
+    buffer = []
     for i, item in enumerate(items):
 
         if item != delim:
-            results.append(item)
+            buffer.append(item)
+
             if i < len(items) - 1:
                 continue
 
-        if not results:
-            continue
+        if buffer:
+            # yield results recursively
 
-        if return_delimiters and not prefix_added and delim_is_present:
-            # extend a copy of prefixes
-            prefixes = prefixes + [delim]
-            prefix_added = True
+            if return_delimiters and not prefix_added and delim_is_present:
+                if return_delimiters == 'always' or delim_encountered:
+                    # extend a copy of prefixes
+                    prefixes = prefixes + [delim]
+                    prefix_added = True
 
-        if there_are_other_delimiters:
-            yield from split_sequence(results, delimiters[1:], return_delimiters, prefixes)
-        else:
-            yield prefixes + results
+            if there_are_other_delimiters:
+                yield from split_sequence(buffer, delimiters[1:], return_delimiters, prefixes)
+            else:
+                yield prefixes + buffer
 
-        results = []
+            buffer = []
+
+        if item == delim:
+            # set this value after yielding any right-hand side results
+            delim_encountered = True
 
 
 def group(items, n):
