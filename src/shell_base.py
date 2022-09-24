@@ -25,7 +25,6 @@ class ShellException(RuntimeError):
 
 class BaseShell(Cmd):
     """Extend CMD with various capabilities. 
-    This is meant as a base for the child-class Shell. 
 
     Functionality:
     - pipes that can be used to combine shell commands and python functions

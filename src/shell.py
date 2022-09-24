@@ -47,9 +47,6 @@ E.g.
 
 
 class Shell(BaseShell):
-    """Add custom functions to ExtendedCmd.
-    """
-
     default_function_group_key = '_'
 
     def __init__(self, *args, **kwds):

@@ -138,9 +138,7 @@ def test_pipe_to_file():
     f.write_text('')
 
     result = catch_output(f'print {text} > {filename}')
-
-    # the operator `>` should be transparant
-    assert result.rstrip() == text
+    assert result == ''
 
     # verify output file
     assert f.read_text().rstrip() == text
