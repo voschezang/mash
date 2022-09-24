@@ -1,13 +1,11 @@
 from dataclasses import dataclass
-from functools import lru_cache, partial
-from itertools import chain, dropwhile
+from itertools import dropwhile
 from queue import Queue
-import nltk
 from nltk.metrics.distance import edit_distance
 from typing import Any, Dict, Iterable, List, Literal, Sequence, Tuple, TypeVar, Union
 
 # backwards compatibility
-from io_util import parse_args, parser, debug, interactive
+from io_util import interactive
 
 T = TypeVar('T')
 

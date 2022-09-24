@@ -2,7 +2,7 @@ from argparse import ArgumentParser, RawTextHelpFormatter
 from pytest import raises
 
 import io_util
-from io_util import check_output, run_subprocess
+from io_util import check_output, read_file, run_subprocess
 from shell import Shell, ShellException, add_cli_args, run_command
 
 # TODO split up testcases for BaseShell and Shell
@@ -10,34 +10,44 @@ from shell import Shell, ShellException, add_cli_args, run_command
 run = 'python src/shell.py '
 
 
-def catch_output(line='', func=run_command) -> str:
-    return io_util.catch_output(line, func)
+def catch_output(line='', func=run_command, **kwds) -> str:
+    return io_util.catch_output(line, func, **kwds)
 
 
 def test_run_command():
-    Shell.ignore_invalid_syntax = False
     run_command('print a')
 
     with raises(ShellException):
-        run_command('echoooo a')
+        run_command('echoooo a', strict=True)
 
 
-def test_simple():
-    Shell.ignore_invalid_syntax = True
+def test_onecmd_output():
     assert catch_output('print a') == 'a'
+    assert catch_output('print a ; print b') == 'a\nb'
     assert 'Unknown syntax' in catch_output('aaaa a')
 
-    Shell.ignore_invalid_syntax = False
     with raises(ShellException):
-        catch_output('aaaa a')
+        run_command('aaaa a', strict=True)
+
+
+def test_onecmd_syntax():
+    # ignore invalid syntax in strict mode
+    run_command('print "\""', strict=False)
+    run_command('aaaa a', strict=False)
+
+    s = 'A string with ;'
+    assert catch_output(f'print " {s} " ') == s
+
+    with raises(ShellException):
+        run_command('print "\""', strict=True)
 
 
 def test_multi_commands():
-    assert catch_output('print a; print b\n print c') == 'a\nb\nc'
+    assert catch_output('print a ; print b\n print c') == 'a\nb\nc'
 
 
 def test_pipe():
-    x = catch_output('print 100 |> print')
+    # x = catch_output('print 100 |> print')
     assert catch_output('print 100 |> print') == '100'
 
 
@@ -48,8 +58,11 @@ def test_pipe_unix():
 def test_pipe_input():
     assert catch_output('print abc | grep abc') == 'abc'
 
+    # fail silently
+    run_command('echo abc | grep def', strict=False)
+
     with raises(ShellException):
-        catch_output('echo abc | grep def')
+        catch_output('echo abc | grep def', strict=True)
 
 
 def test_add_cli_args():
@@ -69,11 +82,13 @@ def test_add_cli_args():
 
 
 def test_cli():
-    # Note that this may be run with a different python version
+    # Note that this may be run with a different python version,
+    # based on the shebang (#!) in shell.py
+
     assert check_output(run + 'print 3') == '3'
     assert check_output(run + '"print 3"') == '3'
     assert check_output(run + '\"print 3\"') == '3'
-    assert check_output(run + '"print ( \' ) "') == "( \' )"
+    ## assert check_output(run + '"print ( \' ) "') == "( \' )"
     # assert check_output(run + 'print "|" ') == '|'
     # assert check_output(run + 'print "\n" ') == '|'
 
@@ -88,7 +103,7 @@ def test_cli_unhappy():
 
 
 def test_cli_multi_commands():
-    assert check_output(run + '"print a; print b\n print c"') == 'a\nb\nc'
+    assert check_output(run + '"print a ; print b\n print c"') == 'a\nb\nc'
 
 
 def test_cli_pipe_input():
@@ -116,23 +131,26 @@ def test_pipe_to_cli():
 
 
 def test_cli_file():
-    out = check_output(run + '-f test/echo_abc.sh')
-    assert 'abc' in out
+    # try execution without cli
+    filename = 'test/echo_abc.sh'
+    command = read_file(filename)
+    run_command(command, strict=True)
 
-    # multiple files
-    out = check_output(run + '-f test/echo_abc.sh')
+    # execute using cli
+
+    out = check_output(run + f'-f {filename}')
     assert 'abc' in out
 
     # commands and files
     key = '238u3r'
-    out = check_output(f'{run} echo {key} -f test/echo_abc.sh')
+    out = check_output(f'{run} echo {key} -f {filename}')
 
     assert 'abc' in out
     assert key in out
 
     # files and commands
     out = check_output(
-        f'{run} -f test/echo_abc.sh echo {key} ')
+        f'{run} -f {filename} echo {key} ')
 
     assert 'abc' in out
     assert key in out

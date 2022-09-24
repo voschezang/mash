@@ -1,14 +1,23 @@
 #!/usr/bin/python3
+from asyncio import CancelledError
 from cmd import Cmd
+from codecs import ignore_errors
 from copy import deepcopy
-from typing import Any, Callable, Dict, List
+from itertools import chain
+from typing import Any, Callable, Dict, List, Literal, Union
 import logging
+import shlex
 import subprocess
 
 import io_util
-from io_util import log, shell_ready_signal, print_shell_ready_signal, has_output, read_file
+from io_util import log, shell_ready_signal, print_shell_ready_signal
+from util import omit_prefixes, split_sequence, split_tips
 
 confirmation_mode = False
+delimiters = ['|', '|>', ';']
+
+Error = None
+Success = 0
 
 
 class ShellException(RuntimeError):
@@ -25,15 +34,22 @@ class BaseShell(Cmd):
     - error handling
     - confirmation mode to allow a user to accept or decline commands
     """
+    # exception = None
     intro = 'Welcome.  Type help or ? to list commands.\n' + shell_ready_signal + '\n'
     prompt = '$ '
-    exception = None
-    ignore_invalid_syntax = True
-    do_char_method = None
-    chars_allowed_for_char_method = []
-    completenames_options = []
 
     # TODO save stdout in a tmp file
+
+    def __init__(self, *args, **kwds):
+        super().__init__(*args, **kwds)
+
+        self.last_command_has_failed = False
+        self.ignore_invalid_syntax = True
+
+        self.completenames_options = []
+        self.chars_allowed_for_char_method = []
+
+        self.do_char_method = None
 
     def completenames(self, text, *ignored):
         """Conditionally override CMD.completenames
@@ -76,57 +92,108 @@ class BaseShell(Cmd):
     # Pipes
     ############################################################################
 
-    def onecmd(self, line):
+    def onecmd(self, line: str) -> Union[Literal[0], Error]:
         """Parse and run `line`.
         Return 0 on success and None otherwise
         """
-        # force a custom precmd hook to be used outside of loop mode
-        line = self.onecmd_prehook(line)
+        # TODO refactor this function
 
         self.last_command_has_failed = False
 
-        if '|' in line:
-            return self.onecmd_with_pipe(line)
+        # force a custom precmd hook to be used outside of loop mode
+        try:
+            line = self.onecmd_prehook(line)
+        except CancelledError:
+            return Success
 
+        try:
+            # split lines and handle quotes
+            # e.g. convert 'echo "echo 1"' to ['echo', 'echo 1']
+            terms = shlex.split(line, comments=True)
+        except ValueError as e:
+            if self.ignore_invalid_syntax:
+                return Success
+            raise ShellException(
+                f'Invalid syntax: {e} for {str(line)[:10]} ..')
+
+        if not terms:
+            # return silently
+            return Success
+
+        ################################################################################
+        # handle lines that end with `;`
+        # e.g. 'echo 1; echo 2;'
+        # TODO this doesn't preserve ; when it was originally enclosed in quotes
+        # terms = chain.from_iterable([split_tips(term.strip(), ';') for term in terms])
+        ################################################################################
+
+        # group terms based on delimiters
+        lines = split_sequence(terms, delimiters, return_delimiters=True)
+
+        lines = list(lines)
+
+        try:
+            line, *lines = lines
+        except ValueError:
+            if self.ignore_invalid_syntax:
+                return Success
+            raise ShellException(f'Invalid syntax for {str(lines)[:10]} ..')
+
+        line = omit_prefixes(line, delimiters)
+        line = ' '.join(line)
         result = super().onecmd(line)
-        if result is not None:
-            print(result)
-        return 0
 
-    def onecmd_with_pipe(self, line):
-        # TODO escape quotes
-        # TODO properly handle delimiters in quotes
-        if '|' in line:
-            line, *lines = line.split('|')
-        else:
-            lines = []
+        if not lines:
+            # allow absent return values
+            if result is not None:
+                print(result)
 
-        logging.info(f'Piped cmd = {line}')
-        result = super().onecmd(line)
+            return Success
 
-        if not result:
+        elif result is None:
             self.last_command_has_failed = True
-
-        if self.last_command_has_failed:
             log('Abort - No return value')
-            return
+            return Error
 
-        elif lines:
-            try:
-                result = self.run_cmd_sequence(lines, result)
-            except subprocess.CalledProcessError:
-                return
+        try:
+            result = self.run_cmd_sequence(lines, result)
+        except subprocess.CalledProcessError as e:
+            returncode, stderr = e.args
+            log(f'Shell exited with {returncode}: {stderr}')
 
-            if result is None:
-                return
+            if self.ignore_invalid_syntax:
+                return Success
+            raise ShellException(str(e))
+
+        if result is None:
+            return Error
 
         print(result)
-        return 0
+        return Success
+
+    def onecmd_with_pipe(self, lines: List[str]):
+        pass
 
     def run_cmd_sequence(self, lines: list, result: str):
         for line in lines:
-            if line[0] == '>':
-                result = self.pipe_cmd_py(line[1:], result)
+            # assume there is at most 1 delimiter in `line`
+            # use_sh = '|' in line and '|>' not in line
+            use_py = '|>' in line or ';' in line
+            # use_no_shell = ';' in line
+
+            if ';' in line:
+                # print prev result & discard it
+
+                if result is not None:
+                    print(result)
+
+                result = ''
+
+            line = omit_prefixes(line, delimiters)
+            line = ' '.join(line).lstrip()
+
+            if use_py:
+                result = self.pipe_cmd_py(line, result)
             else:
                 result = self.pipe_cmd_sh(line, result)
 
@@ -137,30 +204,24 @@ class BaseShell(Cmd):
         return result
 
     def pipe_cmd_py(self, line: str, result: str):
-        line = line.lstrip()
-
         # append arguments
         line = f'{line} {result}'
 
         return super().onecmd(line)
 
     def pipe_cmd_sh(self, line: str, result: str) -> str:
-        line = line.lstrip()
-
+        """
+        May raise subprocess.CalledProcessError
+        """
         # pass last result to stdin
         line = f'echo {result} | {line}'
 
         logging.info(f'Cmd = {line}')
 
-        try:
-            result = subprocess.run(args=line,
-                                    capture_output=True,
-                                    check=True,
-                                    shell=True)
-        except subprocess.CalledProcessError as e:
-            returncode, stderr = e.args
-            log(f'Shell exited with {returncode}: {stderr}')
-            raise
+        result = subprocess.run(args=line,
+                                capture_output=True,
+                                check=True,
+                                shell=True)
 
         stdout = result.stdout.decode().rstrip('\n')
         stderr = result.stdout.decode().rstrip('\n')
@@ -175,6 +236,6 @@ class BaseShell(Cmd):
             assert io_util.interactive
             log('Command:', line)
             if not io_util.confirm():
-                return ''
+                raise CancelledError()
 
         return line

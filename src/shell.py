@@ -209,21 +209,23 @@ def has_input():
     return io_util.parse_args.cmd != []
 
 
-def run_command(command='', shell: Shell = None, delimiters='\n;', strict=None):
+def run_command(command='', shell: Shell = None, strict=None):
+    """Run a single command in using `shell`.
+
+    Parameters
+    ----------
+        strict : bool
+            Raise exceptions when encountering invalid syntax.
+    """
     if shell is None:
         shell = Shell()
 
     if strict is not None:
         shell.ignore_invalid_syntax = not strict
 
-    for line in util.split(command, delimiters):
-        if not line:
-            continue
-
-        result = shell.onecmd(line)
-
-        if result != 0:
-            raise ShellException(f'Abort - No return value (2): {result}')
+    for line in command.splitlines():
+        if line:
+            shell.onecmd(line)
 
 
 def read_stdin():
