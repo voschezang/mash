@@ -135,7 +135,7 @@ def test_pipe_to_file():
 
     # clear file content
     f = Path(filename)
-    f.unlink()
+    f.unlink(True)
 
     result = catch_output(f'print {text} > {filename}')
     assert result == ''
@@ -225,7 +225,7 @@ def test_set_variable_infix():
     v = '| ; 1 2   '
     shell = Shell()
 
-    assert catch_output(f'{k} = "{v}"', shell=shell) == v
+    assert catch_output(f'{k} = "{v}"', shell=shell) == k
     assert k in shell.env
     assert shell.env[k] == v
 
