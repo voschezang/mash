@@ -10,15 +10,12 @@ import subprocess
 
 import io_util
 from io_util import log, shell_ready_signal, print_shell_ready_signal
-from util import for_any, omit_prefixes, split_prefixes, split_sequence, split_tips
+from util import for_any, omit_prefixes, split_prefixes, split_sequence
 
 confirmation_mode = False
 bash_delimiters = ['|', '>', '>>', '1>', '1>>', '2>', '2>>']
 py_delimiters = [';', '|>']
 delimiters = py_delimiters + bash_delimiters
-
-Error = None
-Success = 0
 
 
 class ShellException(RuntimeError):
@@ -26,14 +23,19 @@ class ShellException(RuntimeError):
 
 
 class BaseShell(Cmd):
-    """Extend CMD with various capabilities. 
+    """Extend CMD with various capabilities.
+    This class is restricted to functionality that requires Cmd methods to be overrride.
 
-    Functionality:
-    - pipes that can be used to combine shell commands and python functions
-    - command names that start with symbols
-    - error handling
-    - confirmation mode to allow a user to accept or decline commands
+    Features:
+    - Parsing of multi-line and multi-segment commands.
+        - Chain commands using pipes.
+        - Interop between Python and e.g. Bash using pipes.
+    - Parsing of single commands.
+        - Set/unset variables, retrieve variable values.
+    - Confirmation mode to allow a user to accept or decline commands.
+    - Error handling.
     """
+
     intro = 'Welcome.  Type help or ? to list commands.\n' + shell_ready_signal + '\n'
     prompt = '$ '
 
@@ -45,18 +47,72 @@ class BaseShell(Cmd):
 
         self.ignore_invalid_syntax = True
 
+        # fill this list to customize autocomplete behaviour
         self.completenames_options = []
-        self.chars_allowed_for_char_method = []
-
-        self.do_char_method = None
-
-        self.infix_operators = {'=': self.set_env_variable}
-        self.variable_prefix = '$'
 
         self.env = {}
+        self.set_infix_operators()
+
+        # internals
+        self._do_char_method = None
+        self._chars_allowed_for_char_method = []
+
+    def set_infix_operators(self):
+        # use this for infix operators, e.g. `a = 1`
+        self.infix_operators = {'=': self.set_env_variable}
+        # the sign to indicate that a variable should be expanded
+        self.variable_prefix = '$'
+
+    def set_do_char_method(self, method: Callable[[object, str], Any], chars: List[str]):
+        """Use `method` to interpret commands that start any item in `chars`.
+        This allow special chars to be used as commands.
+        E.g. transform `do_$` into `do_f $`
+        """
+        self._do_char_method = method
+        self._chars_allowed_for_char_method = chars
+
+    def set_env_variable(self, k, v):
+        self.env[k] = v
+        return k
+
+    def onecmd_prehook(self, line):
+        """Similar to cmd.precmd but executed before cmd.onecmd
+        """
+        if confirmation_mode:
+            assert io_util.interactive
+            log('Command:', line)
+            if not io_util.confirm():
+                raise CancelledError()
+
+        return line
+
+    ############################################################################
+    # Overrides
+    ############################################################################
+
+    def onecmd(self, line: str) -> Literal[0]:
+        """Parse and run `line`.
+        Returns 0 on success and None otherwise
+        """
+
+        try:
+            line = self.onecmd_prehook(line)
+            lines = self.parse_command(line)
+            self.run_commands(lines)
+
+        except CancelledError:
+            pass
+
+        return 0
+
+    def postcmd(self, stop, _):
+        """Display the shell_ready_signal to indicate termination to a parent process.
+        """
+        print_shell_ready_signal()
+        return stop
 
     def completenames(self, text, *ignored):
-        """Conditionally override CMD.completenames
+        """Conditionally override Cmd.completenames
         """
         if self.completenames_options:
             return [a for a in self.completenames_options if a.startswith(text)]
@@ -64,8 +120,8 @@ class BaseShell(Cmd):
         return super().completenames(text, *ignored)
 
     def default(self, line):
-        if line in self.chars_allowed_for_char_method and self.do_char_method:
-            return self.do_char_method(line)
+        if line in self._chars_allowed_for_char_method and self._do_char_method:
+            return self._do_char_method(line)
 
         else:
             print('line', line)
@@ -80,80 +136,9 @@ class BaseShell(Cmd):
         # TODO fixme
         pass
 
-    def set_do_char_method(self, method: Callable[[str], Any], chars: List[str]):
-        """Allow special chars to be used as commands. 
-        E.g. transform `do_$` into `do_f $`
-        """
-        self.do_char_method = method
-        self.chars_allowed_for_char_method = chars
-
-    def set_env_variable(self, k, v):
-        self.env[k] = v
-        return k
-
-    def postcmd(self, stop, _):
-        """Display the shell_ready_signal to indicate termination to a parent process.
-        """
-        print_shell_ready_signal()
-        return stop
-
-    def onecmd(self, line: str) -> Union[Literal[0], Error]:
-        """Parse and run `line`.
-        Return 0 on success and None otherwise
-        """
-
-        try:
-            line = self.onecmd_prehook(line)
-            lines = self.parse_command(line)
-            self.run_commands(lines)
-
-        except CancelledError:
-            pass
-
-        return 0
-
-    def onecmd_prehook(self, line):
-        """Similar to cmd.precmd but executed before cmd.onecmd
-        """
-        if confirmation_mode:
-            assert io_util.interactive
-            log('Command:', line)
-            if not io_util.confirm():
-                raise CancelledError()
-
-        return line
-
     ############################################################################
     # Pipes
     ############################################################################
-
-    def parse_command(self, line: str) -> Iterable[List[str]]:
-        """Split up `line` into an iterable of single commands.
-        """
-        try:
-            # split lines and handle quotes
-            # e.g. convert 'echo "echo 1"' to ['echo', 'echo 1']
-            terms = shlex.split(line, comments=True)
-
-        except ValueError as e:
-            if self.ignore_invalid_syntax:
-                return []
-
-            raise ShellException(
-                f'Invalid syntax: {e} for {str(line)[:10]} ..')
-
-        if not terms:
-            return []
-
-        ################################################################################
-        # handle lines that end with `;`
-        # e.g. 'echo 1; echo 2;'
-        # TODO this doesn't preserve ; when it was originally enclosed in quotes
-        # terms = chain.from_iterable([split_tips(term.strip(), ';') for term in terms])
-        ################################################################################
-
-        # group terms based on delimiters
-        return split_sequence(terms, delimiters, return_delimiters=True)
 
     def run_commands(self, lines: Iterable[List[str]], result=''):
         """Run each command in `lines`.
@@ -235,7 +220,45 @@ class BaseShell(Cmd):
         log(stderr)
         return stdout
 
-    def infix_command(self, *args):
+    ############################################################################
+    # Argument Parsing
+    ############################################################################
+
+    def parse_command(self, line: str) -> Iterable[List[str]]:
+        """Split up `line` into an iterable of single commands.
+        """
+        try:
+            # split lines and handle quotes
+            # e.g. convert 'echo "echo 1"' to ['echo', 'echo 1']
+            terms = shlex.split(line, comments=True)
+
+        except ValueError as e:
+            if self.ignore_invalid_syntax:
+                return []
+
+            raise ShellException(
+                f'Invalid syntax: {e} for {str(line)[:10]} ..')
+
+        if not terms:
+            return []
+
+        ################################################################################
+        # handle lines that end with `;`
+        # e.g. 'echo 1; echo 2;'
+        # TODO this doesn't preserve ; when it was originally enclosed in quotes
+        # terms = chain.from_iterable([split_tips(term.strip(), ';') for term in terms])
+        ################################################################################
+
+        # group terms based on delimiters
+        return split_sequence(terms, delimiters, return_delimiters=True)
+
+    def infix_command(self, *args: List[str]):
+        """Treat `args` as an infix command.
+        Apply the respective infix method to args.
+        E.g.  `a = 1`
+        """
+
+        # greedy search for the first occurence of `op`
         for op, method in self.infix_operators.items():
             if op not in args:
                 continue
@@ -251,7 +274,7 @@ class BaseShell(Cmd):
 
             return method(lhs, rhs)
 
-        raise NotImplementedError()
+        raise ValueError()
 
     def expand_variables(self, variables: List[str]) -> Iterable[str]:
         """Replace variables with their values. 
