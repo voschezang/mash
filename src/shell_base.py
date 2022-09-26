@@ -3,7 +3,7 @@ from asyncio import CancelledError
 from cmd import Cmd
 from itertools import chain
 from operator import contains
-from typing import Any, Callable, Dict, Iterable, List, Literal, Sequence, Union
+from typing import Any, Callable, Dict, Iterable, List, Literal
 import logging
 import shlex
 import subprocess
@@ -147,11 +147,6 @@ class BaseShell(Cmd):
             super().default(line)
         else:
             raise ShellException(f'Unknown syntax: {line}')
-
-    def emptyline(self):
-        # this supresses the default behaviour of repeating the previous command
-        # TODO fixme
-        pass
 
     ############################################################################
     # Pipes
