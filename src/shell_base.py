@@ -15,7 +15,6 @@ from util import for_any, omit_prefixes, split_prefixes, split_sequence
 confirmation_mode = False
 bash_delimiters = ['|', '>', '>>', '1>', '1>>', '2>', '2>>']
 py_delimiters = [';', '|>']
-delimiters = py_delimiters + bash_delimiters
 
 
 class ShellException(RuntimeError):
@@ -57,6 +56,11 @@ class BaseShell(Cmd):
         self._do_char_method = None
         self._chars_allowed_for_char_method = []
 
+    @property
+    def delimiters(self):
+        # Return the latest values of these lists
+        return py_delimiters + bash_delimiters
+
     def set_infix_operators(self):
         # use this for infix operators, e.g. `a = 1`
         self.infix_operators = {'=': self.set_env_variable}
@@ -67,9 +71,25 @@ class BaseShell(Cmd):
         """Use `method` to interpret commands that start any item in `chars`.
         This allow special chars to be used as commands.
         E.g. transform `do_$` into `do_f $`
+
+        Naming conflicts with existing `delimiters` are resolved.
         """
         self._do_char_method = method
         self._chars_allowed_for_char_method = chars
+        self.resolve_char_name_conflicts()
+
+    def resolve_char_name_conflicts(self):
+        # TODO don't mutate global vars
+        for char in self._chars_allowed_for_char_method:
+            if char in bash_delimiters:
+                logging.warning(
+                    f'Overriding default sh delimiters: remove {char}')
+                bash_delimiters.remove(char)
+
+            if char in py_delimiters:
+                logging.warning(
+                    f'Overriding default py delimiters: remove {char}')
+                py_delimiters.remove(char)
 
     def set_env_variable(self, k, v):
         self.env[k] = v
@@ -123,9 +143,6 @@ class BaseShell(Cmd):
         if line in self._chars_allowed_for_char_method and self._do_char_method:
             return self._do_char_method(line)
 
-        else:
-            print('line', line)
-
         if self.ignore_invalid_syntax:
             super().default(line)
         else:
@@ -173,10 +190,10 @@ class BaseShell(Cmd):
             raise ShellException('Last return value was absent')
 
         # assume there is at most 1 delimiter
-        prefixes = list(split_prefixes(command_and_args, delimiters))
+        prefixes = list(split_prefixes(command_and_args, self.delimiters))
         use_sh = prefixes and prefixes[-1] in bash_delimiters
 
-        f, *args = list(omit_prefixes(command_and_args, delimiters))
+        f, *args = list(omit_prefixes(command_and_args, self.delimiters))
         args = list(self.expand_variables(args))
         cmd = ' '.join(chain.from_iterable(([f], args)))
 
@@ -250,7 +267,7 @@ class BaseShell(Cmd):
         ################################################################################
 
         # group terms based on delimiters
-        return split_sequence(terms, delimiters, return_delimiters=True)
+        return split_sequence(terms, self.delimiters, return_delimiters=True)
 
     def infix_command(self, *args: List[str]):
         """Treat `args` as an infix command.

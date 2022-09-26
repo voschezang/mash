@@ -366,13 +366,13 @@ def call(f, *_):
 
 
 def for_any(foreach_items: Sequence, predicate: Callable, *args, **kwds) -> bool:
-    """Evaluate whether any item satisfies predicate(.., item)
+    """Evaluate whether any item satisfies predicate(*args, item)
     """
     return any(for_each(foreach_items, predicate, *args, **kwds))
 
 
 def for_all(foreach_items: Sequence, predicate: Callable, *args, **kwds) -> bool:
-    """Evaluate whether all item satisfy predicate(.., item)
+    """Evaluate whether all item satisfy predicate(*args, item)
     """
     return all(for_each(foreach_items, predicate, *args, **kwds))
 

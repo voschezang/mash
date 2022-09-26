@@ -30,8 +30,9 @@ E.g.
 
 {bold('Interopability')}
 Interopability with Bash can be done with pipes:
-    `|` for Bash
     `|>` for Python.
+    `|`  for Bash
+    `>`  for Bash (write to file)
 
 1. To stdin and stdout
 E.g.
@@ -47,6 +48,8 @@ E.g.
 
 
 class Shell(BaseShell):
+    """Extend BaseShell(Cmd) with helper functions.
+    """
     default_function_group_key = '_'
 
     def __init__(self, *args, **kwds):

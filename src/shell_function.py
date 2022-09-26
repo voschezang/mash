@@ -25,10 +25,11 @@ class ShellFunction:
             self.help = ''
 
         try:
-            self.func = deepcopy(func)
+            func = deepcopy(func)
         except TypeError as e:
-            logging.warning('Cannot deepcopy func:' + e.args[0])
-            self.func = func
+            logging.debug('Cannot deepcopy `func`:' + e.args[0])
+
+        self.func = func
 
         if func_name is not None:
             util.rename(self.func, func_name)

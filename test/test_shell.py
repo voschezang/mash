@@ -7,6 +7,7 @@ from time import perf_counter
 import io_util
 from io_util import check_output, read_file, run_subprocess
 from shell import Shell, ShellException, add_cli_args, run_command
+from shell_base import bash_delimiters, py_delimiters
 from util import identity
 
 
@@ -269,3 +270,22 @@ def test_variable_expansion():
     assert shell.env['a'] == '2'
 
     assert catch_output('print $a', shell=shell) == '2'
+
+
+def test_set_do_char_method():
+    shell = Shell()
+    op = '~'
+
+    # invalid syntax
+    with raises(ShellException):
+        run_command(op, shell, strict=True)
+
+    shell.set_do_char_method(print, op)
+    assert catch_output(op, shell=shell, strict=True) == op
+
+    # verify that clashes are resolved
+    for op in [bash_delimiters[0], py_delimiters[0]]:
+        assert catch_output(op, shell=shell, strict=True) == ''
+
+        shell.set_do_char_method(print, op)
+        assert catch_output(op, shell=shell, strict=True).strip() == op
