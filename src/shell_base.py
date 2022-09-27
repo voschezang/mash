@@ -46,24 +46,22 @@ class BaseShell(Cmd):
     def __init__(self, *args, **kwds):
         super().__init__(*args, **kwds)
 
-        self.ignore_invalid_syntax = True
-
         # fill this list to customize autocomplete behaviour
         self.completenames_options = []
 
+        # defaults
+        self.ignore_invalid_syntax = True
         self.env = {}
-
         self.auto_save = False
         self.auto_reload = False
-
-        if self.auto_reload:
-            self.try_load_session()
-
-        self.set_infix_operators()
 
         # internals
         self._do_char_method = None
         self._chars_allowed_for_char_method = []
+
+        self.set_infix_operators()
+        if self.auto_reload:
+            self.try_load_session()
 
     @property
     def delimiters(self):
