@@ -6,8 +6,8 @@ from time import perf_counter
 
 import io_util
 from io_util import check_output, read_file, run_subprocess
-from shell import Shell, ShellException, add_cli_args, run_command
-from shell_base import bash_delimiters, py_delimiters
+from shell import Shell, add_cli_args, run_command
+from shell_base import ShellException, bash_delimiters, py_delimiters
 from util import identity
 
 
