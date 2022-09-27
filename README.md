@@ -128,25 +128,29 @@ functions = {'p': print,
              'sum': sum}
 ```
 
-## CLI and Subshells
 
 **Summary**
 
 ```
-Usage: shell.py [-hsv] [cmd]
-- If no arguments are given then an interactive subshell is started.
+usage: shell.py [-hvsr][-f FILE] [--session SESSION] [cmd [cmd ...]]
 
-Positional arguments:
-  cmd            A comma- or newline-separated list of commands
+If no positional arguments are given then an interactive subshell is started.
 
-Optional arguments:
-  -h, --help     show this help message and exit
+positional arguments:
+  cmd                   A comma- or newline-separated list of commands
+
+optional arguments:
+  -h, --help            show this help message and exit
   -v, --verbose
   -s, --safe            Safe-mode. Ask for confirmation before executing commands.
   -f FILE, --file FILE  Read and run FILE as a commands
+  -r, --reload          Reload last session
+  --session SESSION     Use session SESSION
 ```
 
-## Example 1
+## Examples
+
+### Example 1
 
 See `src/shell_example.py`. It shows how to use a user-definnable mapping of custom functions.
 It uses the library `quo` to create a user-friendly subshell with autocompletion prompts.
@@ -176,7 +180,7 @@ g x [y]
 		y
 ```
 
-## Example 2: Directory
+### Example 2: Directory Simulation
 
 See `src/crud_implementation.py`. This simulates a REST resources with a directory hierarchy.
 In addition, it provides fuzzy name completion.
