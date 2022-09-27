@@ -2,6 +2,7 @@
 from asyncio import CancelledError
 from cmd import Cmd
 from itertools import chain
+from json import dumps, loads
 from operator import contains
 from typing import Any, Callable, Dict, Iterable, List, Literal
 import logging
@@ -15,6 +16,7 @@ from util import for_any, omit_prefixes, split_prefixes, split_sequence
 confirmation_mode = False
 bash_delimiters = ['|', '>', '>>', '1>', '1>>', '2>', '2>>']
 py_delimiters = [';', '|>']
+default_session_filename = '.shell_session.json'
 
 
 class ShellException(RuntimeError):
@@ -50,6 +52,13 @@ class BaseShell(Cmd):
         self.completenames_options = []
 
         self.env = {}
+
+        self.auto_save = False
+        self.auto_reload = False
+
+        if self.auto_reload:
+            self.try_load_session()
+
         self.set_infix_operators()
 
         # internals
@@ -95,6 +104,17 @@ class BaseShell(Cmd):
         self.env[k] = v
         return k
 
+    def show_env(self, env=None):
+        if env is None:
+            env = self.env
+
+        if not env:
+            return
+
+        print('Env')
+        for k, v in env.items():
+            print(f'\t{k}: {v}')
+
     def onecmd_prehook(self, line):
         """Similar to cmd.precmd but executed before cmd.onecmd
         """
@@ -105,6 +125,31 @@ class BaseShell(Cmd):
                 raise CancelledError()
 
         return line
+
+    def save_session(self, session=default_session_filename):
+        with open(session, 'w') as f:
+            f.write(dumps(self.env))
+
+    def try_load_session(self, session=default_session_filename):
+        self.load_session(session, strict=False)
+
+    def load_session(self, session: str, strict=True):
+        try:
+            with open(session) as f:
+                env = loads(f.read())
+
+        except OSError as e:
+            if strict:
+                raise ShellException(e)
+
+            log(f'Session file not found: {session}: {e}')
+            return
+
+        log(f'Using session: {session}')
+        self.show_env(env)
+
+        # TODO handle conflicts
+        self.env.update(env)
 
     ############################################################################
     # Overrides
@@ -128,6 +173,13 @@ class BaseShell(Cmd):
     def postcmd(self, stop, _):
         """Display the shell_ready_signal to indicate termination to a parent process.
         """
+        if self.auto_save:
+            try:
+                self.save_session()
+            except OSError as e:
+                log('Autosave: Cannot save session '
+                    f'{default_session_filename}: {e}')
+
         print_shell_ready_signal()
         return stop
 
@@ -299,9 +351,14 @@ class BaseShell(Cmd):
         for v in variables:
             if len(v) > 1 and v[0] == self.variable_prefix:
                 k = v[1:]
+                msg = f'Variable `{v}` is not set'
+
                 if k in self.env:
                     yield self.env[k]
                     continue
+                elif self.ignore_invalid_syntax:
+                    log(msg)
                 else:
-                    raise ShellException('Variable `{v}` is not set')
+                    raise ShellException(msg)
+
             yield v

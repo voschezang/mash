@@ -289,3 +289,25 @@ def test_set_do_char_method():
 
         shell.set_do_char_method(print, op)
         assert catch_output(op, shell=shell, strict=True).strip() == op
+
+
+def test_save_and_load_session():
+    filename = '.pytest_session_file.json'
+    Path(filename).unlink(True)
+
+    k = 'key'
+    v = 22
+
+    shell = Shell()
+    assert k not in shell.env
+
+    shell.set_env_variable(k, v)
+    shell.save_session(filename)
+
+    shell = Shell()
+    assert k not in shell.env
+
+    shell.load_session(filename)
+    assert k in shell.env
+
+    Path(filename).unlink(True)

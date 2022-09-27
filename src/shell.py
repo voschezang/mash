@@ -130,6 +130,12 @@ class Shell(BaseShell):
         traceback.print_exception(
             type(func.last_exception), func.last_exception, func.last_traceback)
 
+    def do_save(self, _):
+        self.save_session()
+
+    def do_reload(self, _):
+        self.load_session()
+
     def last_method(self):
         """Find the method corresponding to the last command run in `shell`.
         It has the form: do_{cmd}
@@ -224,6 +230,12 @@ def add_cli_args(parser: ArgumentParser):
     if not has_argument(parser, 'file'):
         parser.add_argument('-f', '--file',
                             help='Read and run FILE as a commands')
+    if not has_argument(parser, 'reload'):
+        parser.add_argument('-r', '--reload', action='store_true',
+                            help='Reload last session')
+    if not has_argument(parser, 'session'):
+        parser.add_argument('--session', default=None,
+                            help='Use session SESSION')
 
 
 def set_cli_args():
@@ -279,18 +291,24 @@ def read_stdin():
 
 def run(shell=None):
     set_cli_args()
+    logging.info(f'args = {io_util.parse_args}')
 
     if shell is None:
         shell = Shell()
 
-    logging.info(f'args = {io_util.parse_args}')
+        if io_util.parse_args.reload:
+            shell.try_load_session()
+
+        if io_util.parse_args.session:
+            shell.load_session(io_util.parse_args.session)
 
     commands = ' '.join(io_util.parse_args.cmd + list(read_stdin()))
     filename = io_util.parse_args.file
 
     if not commands and filename is None:
         # run interactively
-        util.interactive = True
+        io_util.interactive = True
+        shell.auto_save = True
         shell.cmdloop()
         return
 
