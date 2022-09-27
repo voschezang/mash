@@ -9,14 +9,14 @@ import sys
 import traceback
 
 import io_util
-from shell_base import BaseShell, ShellException
+from shell_base import BaseShell
 import shell_function as func
 from shell_function import ShellFunction as Function
 from io_util import ArgparseWrapper, bold, has_argument, has_output, log, read_file
 import util
 
 
-description = 'If no arguments are given then an interactive subshell is started.'
+description = 'If no positional arguments are given then an interactive subshell is started.'
 epilog = f"""
 --------------------------------------------------------------------------------
 {bold('Default Commands')}
@@ -241,7 +241,7 @@ def add_cli_args(parser: ArgumentParser):
 def set_cli_args():
     global confirmation_mode
 
-    with ArgparseWrapper() as parser:
+    with ArgparseWrapper(description=description) as parser:
         add_cli_args(parser)
 
     if io_util.parse_args.safe:
@@ -251,7 +251,7 @@ def set_cli_args():
 
 def has_input():
     # ensure argparse has been called
-    with ArgparseWrapper():
+    with ArgparseWrapper(description=description):
         pass
 
     return io_util.parse_args.cmd != []
