@@ -6,3 +6,4 @@
 templates
 test-results-*.xml
 tmp*
+.shell_session.json

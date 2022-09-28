@@ -341,8 +341,8 @@ def is_callable(method) -> bool:
 ################################################################################
 
 
-def identity(value):
-    return value
+def identity(values):
+    return values
 
 
 def constant(value):

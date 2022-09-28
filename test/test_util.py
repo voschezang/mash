@@ -1,7 +1,7 @@
 from operator import contains, eq
 from pytest import raises
 
-from util import concat, equals, find_prefix_matches, find_fuzzy_matches, for_all, for_any, list_prefix_matches, not_equals, split, split_sequence, split_tips
+from util import concat, constant, equals, find_prefix_matches, find_fuzzy_matches, for_all, for_any, identity, list_prefix_matches, not_equals, split, split_sequence, split_tips
 
 
 def test_concat_empty_container():
@@ -152,6 +152,15 @@ def test_find_prefix_matches_all():
     assert list(find_prefix_matches('a', ['c', 'b', 'a'])) == ['a']
     assert list(find_prefix_matches('a', ['aa', 'ai'])) == ['aa', 'ai']
     assert list(find_prefix_matches('ab', ['aa', 'ab'])) == ['ab', 'aa']
+
+
+def test_identity():
+    assert identity(1) == 1
+
+
+def test_constant():
+    K = constant(1)
+    assert K(10) == 1
 
 
 def test_find_prefix_matches():
