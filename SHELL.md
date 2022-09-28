@@ -4,16 +4,33 @@ A tool to generate a [Domain-specific Language](https://en.wikipedia.org/wiki/Do
 
 <img src="img/shell_dropdown.png" style="max-width: 10%" alt="Example of a shell with a dropdown completion menu">
 
+## Overview
+
+By default, it provides piping and Bash-like functionality. It can be extended with custom functions.
+
+**1. Define Mapping**
+
 A client just has to define a mapping between commands and functions. The corresponding documentation is automatically generated from the docstrings and type annotations.
 
 E.g.
+
 ```py
-functions = {'p': print,
-             'sum': sum}
+from shell import set_functions
+
+# the mapping from command names to Python functions
+functions = {'run': some_function}
+
+# link the mapping
+set_functions(functions)
 ```
 
+Then a client can call for example:
 
-**Summary**
+```sh
+./src/shell.py run $args 
+```
+
+## Usage
 
 ```
 usage: shell.py [-hvsr][-f FILE] [--session SESSION] [cmd [cmd ...]]
@@ -58,10 +75,10 @@ e  example  f  g  h  help  ls  shell
 $ help g
 g x [y]
 
-	Parameters
-	----------
-		x: int
-		y
+ Parameters
+ ----------
+  x: int
+  y
 ```
 
 ### Example 2: Directory Simulation
