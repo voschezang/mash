@@ -159,7 +159,6 @@ class Shell(BaseShell):
         method = getattr(Shell, method_name)
 
         if isinstance(method, Function):
-            # TOOD use method.func.synopsis
             return method.func
 
         return method

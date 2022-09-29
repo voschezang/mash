@@ -8,7 +8,7 @@ A tool to generate a [Domain-specific Language](https://en.wikipedia.org/wiki/Do
 
 By default, it provides piping and Bash-like functionality. It can be extended with custom functions.
 
-**1. Define Mapping**
+## Setup
 
 A client just has to define a mapping between commands and functions. The corresponding documentation is automatically generated from the docstrings and type annotations.
 
@@ -49,7 +49,7 @@ optional arguments:
   --session SESSION     Use session SESSION
 ```
 
-## Examples
+## Usage Examples
 
 ### Example 1
 
@@ -105,4 +105,15 @@ repository = {'worlds': [
 $ py src/shell_example_extended.py 'cd world; cd a; cd t; cd snakes; ll'
 python
 cobra
+```
+
+## Implementation
+
+```sh
+shell.Shell # extension of BaseShell
+shell_base.BaseShell # a subclass of Cmd that overrides some methods
+shell_function.ShellFunction # A wrapper for "normal" Python functions that includes error handling.
+crud.CRUD # A directory simulation (an abstract base class)
+crud_implementation.CRUD # Directory simulation
+cli.py # a CLI that combines Shell with quo.Prompt
 ```
