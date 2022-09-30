@@ -4,7 +4,7 @@ from cmd import Cmd
 from itertools import chain
 from json import dumps, loads
 from operator import contains
-from typing import Any, Callable, Dict, Iterable, List, Literal
+from typing import Any, Callable, Dict, Iterable, List, Literal, Tuple
 import logging
 import shlex
 import subprocess
@@ -160,7 +160,7 @@ class BaseShell(Cmd):
 
         try:
             line = self.onecmd_prehook(line)
-            lines = self.parse_command(line)
+            lines = self.parse_commands(line)
             self.run_commands(lines)
 
         except CancelledError:
@@ -211,7 +211,7 @@ class BaseShell(Cmd):
 
         for line in lines:
             try:
-                result = self.run_one_command(line, result)
+                result = self.run_single_command(line, result)
 
             except subprocess.CalledProcessError as e:
                 returncode, stderr = e.args
@@ -222,10 +222,23 @@ class BaseShell(Cmd):
         if result is not None:
             print(result)
 
-    def run_one_command(self, command_and_args: List[str], result: str = '') -> str:
+    def run_single_command(self, command_and_args: List[str], result: str = '') -> str:
+        result = self.filter_result(command_and_args, result)
+
+        prefixes, line, infix_operator_args = self.parse_single_command(
+            command_and_args)
+
+        if prefixes and prefixes[-1] in bash_delimiters:
+            return self.pipe_cmd_sh(line, result, delimiter=prefixes[-1])
+
+        if infix_operator_args:
+            return self.infix_command(*infix_operator_args)
+
+        return self.pipe_cmd_py(line, result)
+
+    def filter_result(self, command_and_args, result):
         if ';' in command_and_args:
             # print prev result & discard it
-
             if result is not None:
                 print(result)
 
@@ -234,25 +247,35 @@ class BaseShell(Cmd):
         elif result is None:
             raise ShellException('Last return value was absent')
 
+        return result
+
+    def infer_shell_prefix(self, command_and_args):
+        # can raise IndexError
+
         # assume there is at most 1 delimiter
         prefixes = list(split_prefixes(command_and_args, self.delimiters))
-        use_sh = prefixes and prefixes[-1] in bash_delimiters
+        prefix = prefixes[-1]
 
-        f, *args = list(omit_prefixes(command_and_args, self.delimiters))
+        if prefix in bash_delimiters:
+            return prefix
+
+    def parse_single_command(self, command_and_args: List[str]) -> Tuple[str, List[str], str]:
+        # strip right-hand side delimiters
+        all_args = list(omit_prefixes(command_and_args, self.delimiters))
+        f, *args = all_args
         args = list(self.expand_variables(args))
-        cmd = ' '.join(chain.from_iterable(([f], args)))
+        line = ' '.join(chain.from_iterable(([f], args)))
 
         # TODO make this check quote-aware
         there_is_an_infix_operator = for_any(
             self.infix_operators, contains, args)
 
-        if use_sh:
-            return self.pipe_cmd_sh(cmd, result, prefixes[-1])
+        infix_operator_args = all_args if there_is_an_infix_operator else []
 
-        if there_is_an_infix_operator:
-            return self.infix_command(f, *args)
+        # assume there is at most 1 delimiter
+        prefixes = list(split_prefixes(command_and_args, self.delimiters))
 
-        return self.pipe_cmd_py(cmd, result)
+        return prefixes, line, infix_operator_args
 
     def pipe_cmd_py(self, line: str, result: str):
         # append arguments
@@ -286,7 +309,7 @@ class BaseShell(Cmd):
     # Argument Parsing
     ############################################################################
 
-    def parse_command(self, line: str) -> Iterable[List[str]]:
+    def parse_commands(self, line: str) -> Iterable[List[str]]:
         """Split up `line` into an iterable of single commands.
         """
         try:
