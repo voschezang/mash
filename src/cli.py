@@ -15,16 +15,13 @@ rprompt_default = ''
 rprompt_error = 'Type `help` or ? for help'
 
 
-def main(shell: Shell = None):
-    shell = shell_main(shell=shell, repl=False)
+def main(**shell_kwds):
+    shell = shell_main(repl=False, **shell_kwds)
     session, shell = setup(shell)
     run(session, shell)
 
 
-def setup(shell: Shell = None) -> Tuple[Prompt, Shell]:
-    if shell is None:
-        shell = Shell()
-
+def setup(shell: Shell) -> Tuple[Prompt, Shell]:
     shell.ignore_invalid_syntax = False
 
     # setup a completion-dropdown

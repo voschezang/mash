@@ -8,6 +8,10 @@ def catch_output(line='', func=run_command, **func_kwds) -> str:
     return io_util.catch_output(line, func, **func_kwds)
 
 
+def test_crud_ls2():
+    obj = init()
+
+
 def test_crud_ls():
     obj = init()
     shell = obj.shell

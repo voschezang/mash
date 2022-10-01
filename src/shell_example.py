@@ -48,11 +48,11 @@ functions = {
     'vi': Function(sh_to_py('vi'), args={'[file]': ''})}
 
 if __name__ == '__main__':
+    # setting cli args is a requirement for shell.has_input
     set_cli_args()
 
     if has_output(sys.stdin) or shell.has_input():
-        main(functions)
+        main(functions=functions)
     else:
         # use_shell_with_history:
-        set_functions(functions)
-        cli.main()
+        cli.main(functions=functions)

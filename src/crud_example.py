@@ -6,7 +6,7 @@ from typing import Any, Dict
 
 from crud_base import Options
 from crud import CRUD
-from shell import Shell, main, set_completions, set_functions
+from shell import build, main
 from util import AdjacencyList, find_fuzzy_matches
 
 
@@ -65,11 +65,7 @@ def init(repository=repository) -> CRUD:
         'cd': complete_cd
     }
 
-    cls = deepcopy(Shell)
-    set_functions(functions, cls)
-    set_completions(completions, cls)
-
-    obj.shell = cls()
+    obj.shell = build(functions, completions)
     obj.shell.set_do_char_method(obj.shell.do_cd, Options)
 
     # reset path

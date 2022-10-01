@@ -1,6 +1,8 @@
 #!/usr/bin/python3
 from argparse import ArgumentParser
+from cmd import Cmd
 from collections import defaultdict
+from copy import deepcopy
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Tuple
 import logging
@@ -191,8 +193,8 @@ def all_commands(cls=Shell):
             yield cmd.lstrip('do_')
 
 
-def set_functions(functions: Dict[str, Function], cls=Shell):
-    """Extend `Shell` with a set of functions
+def set_functions(functions: Dict[str, Function], cls: Cmd = Shell) -> type:
+    """Extend `cls` with a set of functions
     Note that this modifies the class Shell directly, rather than an instance.
     """
     for key, func in functions.items():
@@ -253,6 +255,10 @@ def has_input():
     with ArgparseWrapper(description=description):
         pass
 
+    if 'cmd' not in io_util.parse_args:
+        raise NotImplementedError(
+            'Missing expected arg `cmd`. Has set_cli_args() been run?')
+
     return io_util.parse_args.cmd != []
 
 
@@ -280,24 +286,6 @@ def run(shell, commands, filename, repl=True):
 
     elif repl:
         run_interactively(shell)
-
-
-def setup(shell) -> Tuple[Shell, List[str], str]:
-    set_cli_args()
-    logging.info(f'args = {io_util.parse_args}')
-
-    if shell is None:
-        shell = Shell()
-
-        if io_util.parse_args.reload:
-            shell.try_load_session()
-
-        if io_util.parse_args.session:
-            shell.load_session(io_util.parse_args.session)
-
-    commands = ' '.join(io_util.parse_args.cmd + list(read_stdin()))
-    filename = io_util.parse_args.file
-    return shell, commands, filename
 
 
 def run_commands_from_file(filename: str, shell: Shell):
@@ -330,11 +318,48 @@ def run_interactively(shell):
     shell.cmdloop()
 
 
-def main(functions: Dict[str, Function] = {}, shell=None, repl=True) -> Shell:
-    if functions:
-        set_functions(functions)
+def build(functions: Dict[str, Function] = None, completions: Dict[str, Callable] = None) -> Shell:
+    """Extend the class Shell and create an instance of it.
+    """
+    # copy Shell to avoid side-effects
+    CustomShell = deepcopy(Shell)
 
-    shell, commands, filename = setup(shell)
+    if functions:
+        set_functions(functions, CustomShell)
+    if completions:
+        set_completions(completions, CustomShell)
+
+    return CustomShell()
+
+
+def setup(shell: Shell = None, functions: Dict[str, Function] = None, completions: Dict[str, Callable] = None) -> Tuple[Shell, List[str], str]:
+    """Setup an instance of Shell with any given cli options.
+
+    First initialize Shell with `functions` and `completions`.
+    Then apply any relevant cli options.
+    """
+    set_cli_args()
+    logging.info(f'args = {io_util.parse_args}')
+
+    if shell is None:
+        shell = build(functions, completions)
+    elif functions is not None or completions is not None:
+        raise ValueError(
+            'Incompatible argumets: `shell` and `functions` or `completions`')
+
+    if io_util.parse_args.reload:
+        shell.try_load_session()
+    if io_util.parse_args.session:
+        shell.load_session(io_util.parse_args.session)
+
+    commands = ' '.join(io_util.parse_args.cmd + list(read_stdin()))
+    filename = io_util.parse_args.file
+
+    return shell, commands, filename
+
+
+def main(shell: Shell = None, functions: Dict[str, Function] = None, repl=True) -> Shell:
+    shell, commands, filename = setup(shell, functions)
     run(shell, commands, filename, repl)
     return shell
 
