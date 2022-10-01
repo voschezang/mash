@@ -4,9 +4,9 @@
 """
 from argparse import ArgumentParser, RawTextHelpFormatter
 from contextlib import redirect_stdout
-from io import StringIO, TextIOBase
+from io import StringIO
 from termcolor import colored
-from typing import Callable, List
+from typing import Callable, List, TextIO, Union
 import argparse
 import functools
 import logging
@@ -20,8 +20,8 @@ shell_ready_signal = '-->'
 colored_output = True
 interactive = False
 
-parse_args: argparse.Namespace = None
-parser: argparse.ArgumentParser = None
+parse_args: Union[argparse.Namespace, None] = None
+parser: Union[argparse.ArgumentParser, None] = None
 
 
 def bold(text: str):
@@ -153,14 +153,14 @@ def find_argument(parser: ArgumentParser, arg='arg_name'):
     return None
 
 
-def has_output(stream: TextIOBase = sys.stdin, timeout=0):
+def has_output(stream: TextIO = sys.stdin, timeout=0):
     rlist, _, _ = select.select([stream], [], [], timeout)
     return rlist != []
 
 
-def read_line(stream: TextIOBase, timeout=0, default_value=''):
+def read_line(stream: TextIO, timeout=0, default_value=''):
     if has_output(stream, timeout):
-        return stream.readline().decode()
+        return stream.readline()
 
     return default_value
 
@@ -202,6 +202,7 @@ def run_subprocess(line: str) -> str:
     result = subprocess.run(line, capture_output=True, shell=True)
     if result.returncode != 0:
         raise RuntimeError(result)
+    return result
 
 
 def check_output(line: str) -> str:

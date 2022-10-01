@@ -4,7 +4,7 @@ from itertools import dropwhile, takewhile
 from operator import contains
 from queue import Queue
 from nltk.metrics.distance import edit_distance
-from typing import Any, Callable, Dict, Iterable, List, Literal, Sequence, Tuple, TypeVar, Union
+from typing import Callable, Dict, Generator, Iterable, List, Literal, Sequence, Tuple, TypeVar, Union
 
 # backwards compatibility
 from io_util import interactive
@@ -16,6 +16,7 @@ AdjacencyList = Dict[str, List[str]]
 
 class DataClassHelper:
     """Methods that mutate dataclass fields.
+    Keep track of dependent fields, and ask for user input to fill them in.
     """
 
     def __init__(self, data: dataclass):
@@ -143,8 +144,11 @@ def split(line: str, delimiters=',.'):
     return [line for line in lines if line]
 
 
-def split_tips(line: Sequence[T], delimiters: Sequence[T] = ',.') -> Iterable[List[T]]:
+def split_tips(line: str, delimiters: str = ',.') -> Generator[str, None, None]:
+    """Split `line` based on `delimiters`.
+    """
     if not line:
+        # e.g. an empty list or string
         yield line
         return
 
@@ -177,7 +181,7 @@ def split_tips(line: Sequence[T], delimiters: Sequence[T] = ',.') -> Iterable[Li
 
 
 def split_sequence(items: Sequence[T], delimiters: Sequence[T] = ['\n', ';'],
-                   return_delimiters: Union[bool, Literal['always']] = False, prefixes=[]) -> Iterable[List[T]]:
+                   return_delimiters: Union[bool, Literal['always']] = False, prefixes=[]) -> Generator[List[T], None, None]:
     """An abstraction of list.split.
     Multiple delimiters are supported.
 
@@ -189,7 +193,7 @@ def split_sequence(items: Sequence[T], delimiters: Sequence[T] = ['\n', ';'],
         If 'always', then include left-hand side delimiters.
     """
     if not delimiters:
-        yield from items
+        yield list(items)
         return
 
     there_are_other_delimiters = len(delimiters) > 1
@@ -244,12 +248,12 @@ def group(items, n):
     yield buffer
 
 
-def split_prefixes(items: Sequence[T], prefixes: Sequence[T]) -> Sequence[T]:
+def split_prefixes(items: Sequence[T], prefixes: Sequence[T]) -> Iterable[T]:
     predicate = partial(contains, prefixes)
     return takewhile(predicate, items)
 
 
-def omit_prefixes(items: Sequence[T], prefixes: Sequence[T]) -> Sequence[T]:
+def omit_prefixes(items: Sequence[T], prefixes: Sequence[T]) -> Iterable[T]:
     predicate = partial(contains, prefixes)
     return dropwhile(predicate, items)
 
@@ -275,7 +279,7 @@ def find_fuzzy_matches(element: str, elements: List[str]):
         yield element
         elements.remove(element)
 
-    scores: List[Tuple[str]] = []
+    scores: List[Tuple[str, str]] = []
 
     for i, other in enumerate(elements):
         score = edit_distance(element, other)
@@ -377,7 +381,7 @@ def for_all(foreach_items: Sequence, predicate: Callable, *args, **kwds) -> bool
     return all(for_each(foreach_items, predicate, *args, **kwds))
 
 
-def for_each(foreach_items: Sequence, predicate: Callable, *args, **kwds) -> bool:
+def for_each(foreach_items: Sequence, predicate: Callable, *args, **kwds) -> Iterable:
     return (predicate(*args, i, **kwds) for i in foreach_items)
 
 
