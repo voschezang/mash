@@ -36,6 +36,28 @@ class ExampleContext:
     # direct_dependencies: AdjacencyList
     direct_dependencies = {'attr2': ['attr1']}
 
+    # implement abc.MutableMapping in order to be compatible with Shell.env: dict
+    # TODO refactor
+
+    def __contains__(self, k):
+        return hasattr(self, k)
+
+    def __getitem__(self, k):
+        try:
+            try:
+                return getattr(self, k)
+            except TypeError:
+                raise KeyError(k)
+
+        except AttributeError as e:
+            raise KeyError(e)
+
+    def __setitem__(self, k, v):
+        return setattr(self, k, v)
+
+    def __delitem__(self, k):
+        del self.__dict__[k]
+
 
 def init(repository=repository) -> CRUD:
     # TODO investigate why calling this function "setup" causes side-effects
@@ -67,6 +89,7 @@ def init(repository=repository) -> CRUD:
 
     obj.shell = build(functions, completions)
     obj.shell.set_do_char_method(obj.shell.do_cd, Options)
+    obj.shell.env = obj.context
 
     # reset path
     # TODO fix side-effects that require this hack

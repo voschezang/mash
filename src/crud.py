@@ -19,7 +19,9 @@ Data = Dict[str, Any]
 class CRUD(crud_base.BaseCRUD):
     def __init__(self, context: dataclass, shell: Shell = None, repository={}, **kwds):
         super().__init__(**kwds)
+
         self.init__context(context)
+
         self.shell = shell
         self.repository = repository
 
