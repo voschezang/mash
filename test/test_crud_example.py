@@ -1,8 +1,7 @@
-from pytest import raises
 
 import io_util
 from shell import run_command
-from crud_implementation import init
+from crud_example import init
 
 
 def catch_output(line='', func=run_command, **func_kwds) -> str:

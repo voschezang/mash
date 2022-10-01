@@ -1,172 +1,166 @@
 #!/usr/bin/python3
-from abc import ABC, abstractmethod
+from copy import deepcopy
 from dataclasses import dataclass
-from enum import Enum
+from functools import partial
 import logging
-from typing import Callable, List, Tuple
-from util import find_prefix_matches, identity, is_callable, none
+from pprint import pformat
+from typing import Any, Dict, List
+
+import crud_base
+from crud_base import Item, Option, Options
+from shell import Shell
+from util import DataClassHelper, call, decorate, find_fuzzy_matches, find_prefix_matches, has_method
 
 
-@dataclass
-class Item:
-    name: str
-    value: object
+# example data with dicts and lists
+Data = Dict[str, Any]
 
 
-class Option(Enum):
-    default = ''
-    root = ''
-    home = '~'
-    switch = '-'
-    stay = '.'
-    up = '..'
+class CRUD(crud_base.BaseCRUD):
+    def __init__(self, context: dataclass, shell: Shell = None, repository={}, **kwds):
+        super().__init__(**kwds)
+        self.init__context(context)
+        self.shell = shell
+        self.repository = repository
 
+        self.pre_cd_hook = self.fix_directory_type
+        self.post_cd_hook = self.update_prompt
 
-Options = [o.value for o in Option]
+    def init__context(self, context: dataclass):
+        # add helper methods
+        self.original_context = context
+        self.context = decorate(deepcopy(context),
+                                DataClassHelper(context))
 
+    def ls(self, obj=None) -> List[Item]:
+        items = self._ls(obj)
+        return self.wrap_list_items(items)
 
-class CRUD(ABC):
-    """CRUD operations that mimics a directory hierarchy.
-    A directory (object) can consists folders and files (objects).
-    """
+    def ll(self, obj=None, delimiter='\n'):
+        # items = self.ls(obj)
+        items = self.infer_item_names(self.ls(obj))
+        return delimiter.join([str(item.name) for item in items])
 
-    def __init__(self, path=[], options: Enum = Option, autocomplete=True,
-                 cd_hooks: Tuple[Callable, Callable] = None):
-        self.path = path
-        self.prev_path = []
-        self.autocomplete = autocomplete
-        self.options = options
+    def tree(self, obj=None):
+        items = self._ls(obj)
+        return pformat(items, indent=2)
 
-        self.pre_cd_hook = identity
-        self.post_cd_hook = none
+    def _ls(self, obj) -> Data:
+        cwd = self.cwd
+        if obj is None:
+            # TODO fixme this may return a list instead of `Data`
+            return cwd
 
-        if cd_hooks:
-            for hook in cd_hooks:
-                if hook and not is_callable(hook):
-                    raise ValueError()
+        if self.autocomplete and obj not in cwd:
+            obj = next(find_prefix_matches(obj, cwd.keys()))
 
-            pre, post = cd_hooks
-            self.pre_cd_hook = pre
-            self.post_cd_hook = post
+        if obj in cwd:
+            return cwd[obj]
 
-    @abstractmethod
-    def ls(self, obj: str) -> List[Item]:
-        """List all properties of an object
+        values = cwd.keys()
+        msg = f'Error, {obj} is not in cwd ({values})'
+        raise ValueError(msg)
+
+    @property
+    def cwd(self) -> Data:
+        """Infer the current working directory
         """
-        pass
+        cwd = self.repository
+        for directory in self.path:
+            try:
+                if isinstance(cwd, list):
+                    directory = int(directory)
+                cwd = cwd[directory]
+            except (IndexError, KeyError):
+                raise ValueError(f'Dir {directory} not in cwd ({cwd})')
 
-    # @abstractmethod
-    def ensure(self, key: str, value):
-        """Ensure that the object with reference `key` is set to `value`
+        return cwd
+
+    def wrap_list_items(self, items) -> List[Item]:
+        if hasattr(items, 'keys'):
+            items = [Item(k, v) for k, v in items.items()]
+
+        elif isinstance(items, list):
+            if items and 'name' in items[0]:
+                items = [Item(item['name'], item)
+                         for i, item in enumerate(items)]
+            else:
+                items = [Item(str(i), item) for i, item in enumerate(items)]
+
+        else:
+            logging.warning(f'Error, NotImplementedError for {type(items)}')
+            return []
+
+        return items
+
+    def infer_item_names(self, items) -> List[Item]:
+        if items and isinstance(items[0].name, int) and 'name' in items[0].value:
+            items = [Item(item.value['name'], item) for item in items]
+        return items
+
+    def fix_directory_type(self, dirs: List[str]):
         """
-        pass
-
-    def cd(self, *dirs):
-        """Change the current working environment.
-        E.g. cd(a,b,c) == cd a/b/c
+        if cwd is a list, convert args to indices
+        if cwd is a dict, do nothing
         """
-        dirs = self.pre_cd_hook(dirs)
-
-        # handle empty args
-        if dirs == ():
-            dirs = (self.options.default.value,)
-
-        available_dirs = [item.name for item in self.ls()]
-
-        self.verify_cd_args(dirs, available_dirs)
-
-        if len(dirs) > 0:
-            directory = dirs[0]
-            self._cd(directory, available_dirs)
-
-        if len(dirs) > 1:
-            # dirs = dirs[1:]
-            # dirs = self.pre_cd_hook(dirs)
-            self.cd(*dirs[1:])
-
-        self.post_cd_hook()
-
-    def _cd(self, directory, available_dirs):
-        """Inner version of `self.cd`
-        """
-        if directory is None:
-            directory = self.options.default.value
+        if len(dirs) == 0:
+            return dirs
 
         try:
-            option = Option(directory)
-            self.handle_option(option)
-            return
+            option = Option(dirs[0])
+            # never convert options
+            return dirs
         except ValueError:
             pass
 
-        # TODO if data = array, but directory = str, then infer the index
-
-        if isinstance(directory, int):
-            pass
-
-        elif directory not in available_dirs:
-            old_value = directory
-            directory = next(find_prefix_matches(
-                directory, available_dirs))
-            logging.debug(f'expandig {old_value} into {directory}')
-            logging.info((f'cd {directory}'))
-
-        self.prev_path = self.path.copy()
-        self.path.append(directory)
-
-    def verify_cd_args(self, dirs, allowed_dirs):
-        if not dirs or dirs[0] == '':
-            return
-
         directory = dirs[0]
+        if isinstance(self.cwd, list):
+            if directory.isdigit():
+                directory = int(directory)
+            else:
+                directory = self.infer_index(directory)
 
-        if isinstance(dirs[0], int):
-            assert dirs[0] < len(allowed_dirs)
-            return
+        return (directory,) + dirs[1:]
 
-        if directory in allowed_dirs:
-            return
+    def infer_index(self, directory: str):
+        names = [item.name for item in self.ls()]
 
-        for option in self.options:
-            if directory == option.value:
-                return
+        if directory not in names:
+            logging.debug(f'Dir {directory} is not present in `ls()`')
 
-        if self.autocomplete:
-            if next(find_prefix_matches(directory, allowed_dirs)):
-                return
+        match = next(find_fuzzy_matches(directory, names))
+        return names.index(match)
 
-        if directory not in allowed_dirs:
-            print(f'cd: no such file or directory: {dirs[0]}')
-
-        # Note that this assertion message won't relect all checks
-        assert directory in allowed_dirs
-
-    def handle_option(self, option: Enum):
-        """Implementations of the standard chdir optionns
-
-        E.g.
-        ```sh
-        cd .
-        cd ..
-        cd -
-        cd ~
-        ```
+    def unset_cd_aliases(self):
+        """Remove all custom do_{dirname} methods from self.shell.
         """
-        if option == self.options.home:
-            option = self.options.root
+        self.shell.remove_functions('cd_aliasses')
 
-        if option == self.options.root:
-            self.prev_path = self.path.copy()
-            self.path = []
+    def set_cd_aliases(self):
+        """Add do_{dirname} methods to self.shell for each sub-directory.
+        """
+        self.unset_cd_aliases()
 
-        elif option == self.options.up:
-            self.prev_path = self.path.copy()
-            try:
-                self.path.pop()
-            except IndexError:
-                pass
+        dirs = [item.name for item in self.ls()]
+        self.shell.completenames_options = dirs
 
-        elif option == self.options.switch:
-            self.path, self.prev_path = self.prev_path, self.path
+        for dirname in dirs:
 
-        # otherwise, pass
+            method_name = f'do_{dirname}'
+            if has_method(self.shell, method_name):
+                continue
+
+            # TODO remove the double usage of `partial`
+            cd = partial(call, partial(self.cd, dirname))
+
+            self.shell.add_functions({dirname: cd}, group_key='cd_aliasses')
+
+    def update_prompt(self):
+        # TODO ensure that this method is run after an exception
+        # e.g. after cd fails
+        if self.shell:
+            path = '/'.join([str(a) for a in self.path])
+            prompt = [item for item in (path, '$ ') if item]
+            self.shell.prompt = ' '.join(prompt)
+
+        self.set_cd_aliases()

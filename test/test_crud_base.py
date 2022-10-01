@@ -1,11 +1,11 @@
-import src.crud
-from crud import Item
+import crud_base
+from crud_base import Item
 
 list_items = ['a', 'b', 'c']
 dict_items = {'a': 1, 'b': 2, 'c': 3}
 
 
-class CRUD(src.crud.CRUD):
+class CRUD(crud_base.BaseCRUD):
     """A concrete implementation of the ABC crud.CRUD
     """
 
@@ -24,6 +24,7 @@ def init():
 
 
 def test_ls():
+    result = init().ls()
     result = init().ls()
     assert [r.name for r in result] == list(dict_items.keys())
 

@@ -228,13 +228,13 @@ def add_cli_args(parser: ArgumentParser):
                             help='Safe-mode. Ask for confirmation before executing commands.')
     if not has_argument(parser, 'file'):
         parser.add_argument('-f', '--file',
-                            help='Read and run FILE as a commands')
+                            help='Read and run FILE as a command')
     if not has_argument(parser, 'reload'):
         parser.add_argument('-r', '--reload', action='store_true',
                             help='Reload last session')
     if not has_argument(parser, 'session'):
         parser.add_argument('--session', default=None,
-                            help='Use session SESSION')
+                            help='Use SESSION')
 
 
 def set_cli_args():
