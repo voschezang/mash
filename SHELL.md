@@ -83,11 +83,11 @@ g x [y]
 
 ### Example 2: Directory Simulation
 
-See `src/crud_implementation.py`. This simulates a REST resources with a directory hierarchy.
+See `src/crud_example.py`. This simulates a REST resources with a directory hierarchy.
 In addition, it provides fuzzy name completion.
 
 ```sh
-$ py src/crud_implementation.py tree
+$ py src/crud_example.py tree
 # example data with dicts and lists
 repository = {'worlds': [
     {'name': 'earth',
@@ -113,7 +113,8 @@ cobra
 shell.Shell # extension of BaseShell
 shell_base.BaseShell # a subclass of Cmd that overrides some methods
 shell_function.ShellFunction # A wrapper for "normal" Python functions that includes error handling.
-crud.CRUD # A directory simulation (an abstract base class)
-crud_implementation.CRUD # Directory simulation
+crud.BaseCRUD # A directory simulation (an abstract base class)
+crud.CRUD # Directory simulation
+crud_example # An example with a directory-like repository
 cli.py # a CLI that combines Shell with quo.Prompt
 ```
