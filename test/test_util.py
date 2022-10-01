@@ -39,6 +39,7 @@ def test_split_tips():
     assert list(split_tips(';', d)) == [';']
     assert list(split_tips(';;', d)) == [';', ';']
     assert list(split_tips('az', d)) == ['az']
+    assert list(split_tips(['a', 'z'], d)) == [['a', 'z']]
     assert list(split_tips(';az', d)) == [';', 'az']
     assert list(split_tips('a;', d)) == ['a', ';']
     assert list(split_tips('az;', d)) == ['az', ';']
@@ -65,8 +66,8 @@ def test_split_sequence():
 
 
 def test_split_sequence_no_delim():
-    assert list(split_sequence([], '')) == []
-    assert list(split_sequence('ab', '')) == ['a', 'b']
+    assert list(split_sequence([], '')) == [[]]
+    assert list(split_sequence('ab', '')) == [['a', 'b']]
 
 
 def test_split_sequence_with_return_single_items():
