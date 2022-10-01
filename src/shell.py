@@ -2,7 +2,7 @@
 from argparse import ArgumentParser
 from collections import defaultdict
 from pathlib import Path
-from typing import Any, Callable, Dict, List
+from typing import Any, Callable, Dict, List, Tuple
 import logging
 import os
 import sys
@@ -256,6 +256,55 @@ def has_input():
     return io_util.parse_args.cmd != []
 
 
+def read_stdin():
+    if not has_output(sys.stdin):
+        return ''
+
+    try:
+        yield from sys.__stdin__
+
+    except KeyboardInterrupt as e:
+        print()
+        logging.info(e)
+        exit(130)
+
+
+def run(shell, commands, filename, repl=True):
+    if commands or filename is not None:
+        # compile mode
+        if filename is not None:
+            run_commands_from_file(filename, shell)
+
+        if commands:
+            run_command(commands, shell, strict=True)
+
+    elif repl:
+        run_interactively(shell)
+
+
+def setup(shell) -> Tuple[Shell, List[str], str]:
+    set_cli_args()
+    logging.info(f'args = {io_util.parse_args}')
+
+    if shell is None:
+        shell = Shell()
+
+        if io_util.parse_args.reload:
+            shell.try_load_session()
+
+        if io_util.parse_args.session:
+            shell.load_session(io_util.parse_args.session)
+
+    commands = ' '.join(io_util.parse_args.cmd + list(read_stdin()))
+    filename = io_util.parse_args.file
+    return shell, commands, filename
+
+
+def run_commands_from_file(filename: str, shell: Shell):
+    command = read_file(filename)
+    run_command(command, shell, strict=True)
+
+
 def run_command(command='', shell: Shell = None, strict=None):
     """Run a single command in using `shell`.
 
@@ -275,63 +324,20 @@ def run_command(command='', shell: Shell = None, strict=None):
             shell.onecmd(line)
 
 
-def read_stdin():
-    if not has_output(sys.stdin):
-        return ''
-
-    try:
-        yield from sys.__stdin__
-
-    except KeyboardInterrupt as e:
-        print()
-        logging.info(e)
-        exit(130)
+def run_interactively(shell):
+    io_util.interactive = True
+    shell.auto_save = True
+    shell.cmdloop()
 
 
-def run(shell=None):
-    set_cli_args()
-    logging.info(f'args = {io_util.parse_args}')
-
-    if shell is None:
-        shell = Shell()
-
-        if io_util.parse_args.reload:
-            shell.try_load_session()
-
-        if io_util.parse_args.session:
-            shell.load_session(io_util.parse_args.session)
-
-    commands = ' '.join(io_util.parse_args.cmd + list(read_stdin()))
-    filename = io_util.parse_args.file
-
-    if not commands and filename is None:
-        # run interactively
-        io_util.interactive = True
-        shell.auto_save = True
-        shell.cmdloop()
-        return
-
-    if filename is not None:
-        # compile mode
-        run_commands_from_file(filename, shell)
-
-    if commands:
-        # compile mode
-        run_command(commands, shell, strict=True)
-
-
-def run_commands_from_file(filename: str, shell: Shell):
-    command = read_file(filename)
-    run_command(command, shell, strict=True)
-
-
-def main(functions: Dict[str, Function] = {}):
+def main(functions: Dict[str, Function] = {}, shell=None, repl=True) -> Shell:
     if functions:
         set_functions(functions)
 
-    shell = Shell()
-    run(shell)
+    shell, commands, filename = setup(shell)
+    run(shell, commands, filename, repl)
+    return shell
 
 
 if __name__ == '__main__':
-    run()
+    main()
