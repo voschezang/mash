@@ -1,3 +1,4 @@
+from pytest import raises
 
 import io_util
 from shell import run_command
@@ -6,10 +7,6 @@ from crud_example import init
 
 def catch_output(line='', func=run_command, **func_kwds) -> str:
     return io_util.catch_output(line, func, **func_kwds)
-
-
-def test_crud_ls2():
-    obj = init()
 
 
 def test_crud_ls():
@@ -90,3 +87,46 @@ def test_set_cd_aliasses():
 
     run_command('animals', obj.shell)
     assert 'animals' in shell.prompt
+
+
+def test_crud_env_get():
+    obj = init()
+    k = 'root'
+
+    line = f'env {k}'
+    result = catch_output(line, shell=obj.shell, strict=True)
+    result = catch_output(line, shell=obj.shell, strict=True)
+
+
+def test_crud_env_set():
+    obj = init()
+    k = 'a'
+    v = '10'
+
+    obj.shell.set_env_variable(k, v)
+
+    assert obj.context[k] == v
+
+    line = f'env {k}'
+    assert v in catch_output(line, shell=obj.shell, strict=True)
+
+    line = f'echo ${k}'
+    assert v in catch_output(line, shell=obj.shell, strict=True)
+
+    del obj.shell.env[k]
+
+    with raises(KeyError):
+        obj.shell.env[k]
+
+
+def test_crud_env_expand():
+    obj = init()
+    k = 'root'
+    v = '10'
+
+    # set value using infix operator (`=`)
+    line = f'{k} = {v}'
+    assert k in catch_output(line, shell=obj.shell, strict=True)
+
+    line = f'echo ${k}'
+    assert v in catch_output(line, shell=obj.shell, strict=True)

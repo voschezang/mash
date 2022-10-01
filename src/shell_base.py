@@ -4,7 +4,7 @@ from cmd import Cmd
 from itertools import chain
 from json import dumps, loads
 from operator import contains
-from typing import Any, Callable, Dict, Iterable, List, Literal, Tuple
+from typing import Any, Callable, Dict, Iterable, List, Literal, MutableMapping, Tuple
 import logging
 import shlex
 import subprocess
@@ -41,9 +41,14 @@ class BaseShell(Cmd):
     prompt = '$ '
 
     # TODO save stdout in a tmp file
-    # TODO store/recover sessions using self.env
 
-    def __init__(self, *args, **kwds):
+    def __init__(self, *args, env: MutableMapping = None, **kwds):
+        """
+        Parameters
+        ----------
+            env : MutableMapping, e.g. a dict
+                Must be JSON serializable
+        """
         super().__init__(*args, **kwds)
 
         # fill this list to customize autocomplete behaviour
@@ -51,7 +56,10 @@ class BaseShell(Cmd):
 
         # defaults
         self.ignore_invalid_syntax = True
-        self.env = {}
+
+        # use a new dict as default
+        self.env = env if env is not None else {}
+
         self.auto_save = False
         self.auto_reload = False
 
