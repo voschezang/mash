@@ -32,7 +32,7 @@ Then a client can call for example:
 
 ## Usage
 
-```
+```sh
 usage: shell.py [-hvsr][-f FILE] [--session SESSION] [cmd [cmd ...]]
 
 If no positional arguments are given then an interactive subshell is started.
@@ -57,7 +57,7 @@ See `src/shell_example.py`. It shows how to use a user-definnable mapping of cus
 It uses the library `quo` to create a user-friendly subshell with autocompletion prompts.
 
 ```sh
-# py src/dsl_example.py echo hello, echo world
+# py src/shell.py echo hello, echo world
 hello
 world
 ```
@@ -107,12 +107,29 @@ python
 cobra
 ```
 
-## Implementation
+### Example 3: Commands
+
+Run commands from a file with `python src/shell.py -f FILE`
 
 ```sh
-shell.Shell # extension of BaseShell
+# write to file
+print A sentence. > out.txt 
+!cat out.txt |> export x # save text from file
+print $x
+
+y <- shell expr 2 + 2 # store result in variable $y
+print "result:" $y # prints "result: 4
+```
+
+## Implementation
+
+Modules:
+
+```sh
 shell_base.BaseShell # a subclass of Cmd that overrides some methods
+shell.Shell # extension of BaseShell
 shell_function.ShellFunction # A wrapper for "normal" Python functions that includes error handling.
+shell_example.py
 crud.BaseCRUD # A directory simulation (an abstract base class)
 crud.CRUD # Directory simulation
 crud_example # An example with a directory-like repository

@@ -466,6 +466,9 @@ class BaseShell(Cmd):
         ```
         """
         for v in variables:
+            # TODO expand variables that are in the middle of a line
+            # e.g. ".. $x"
+
             if len(v) >= 2 and v[0] == self.variable_prefix:
                 k = v[1:]
 
