@@ -12,7 +12,7 @@ import subprocess
 
 import io_util
 from io_util import log, shell_ready_signal, print_shell_ready_signal
-from util import for_any, omit_prefixes, split_prefixes, split_sequence
+from util import for_any, is_alpha, omit_prefixes, split_prefixes, split_sequence
 
 confirmation_mode = False
 bash_delimiters = ['|', '>', '>>', '1>', '1>>', '2>', '2>>']
@@ -79,7 +79,8 @@ class BaseShell(Cmd):
 
     def set_infix_operators(self):
         # use this for infix operators, e.g. `a = 1`
-        self.infix_operators = {'=': self.set_env_variable}
+        self.infix_operators = {'=': self.set_env_variable,
+                                '<-': self.eval_and_set_env_variable}
         # the sign to indicate that a variable should be expanded
         self.variable_prefix = '$'
 
@@ -119,8 +120,25 @@ class BaseShell(Cmd):
 
         self.env = env
 
-    def set_env_variable(self, k, *values: Tuple):
+    def eval(self, args: Tuple[str]) -> str:
+        """Evaluate / run `args` and return the result.
+        """
+        k = '_eval_output'
+        line = f'{" ".join(args)} |> export {k}'
+
+        self.onecmd(line)
+
+        result = self.env[k]
+        del self.env[k]
+        return result
+
+    def set_env_variable(self, k: str, *values):
         self.env[k] = ' '.join(values)
+        return k
+
+    def eval_and_set_env_variable(self, k: str, *values):
+        result = self.eval(values)
+        self.set_env_variable(k, result)
         return k
 
     def show_env(self, env=None):
@@ -188,6 +206,36 @@ class BaseShell(Cmd):
 
         # TODO handle conflicts
         self.update_env(env)
+
+    ############################################################################
+    # Overrides - do_*
+    ############################################################################
+
+    def do_export(self, args: str):
+        """Set an environment variable.
+        `export(k, *values)`
+        """
+        k, *v = args.split()
+
+        if len(v) == 0:
+            log(f'unset {k}')
+            if k in self.env:
+                del self.env[k]
+            else:
+                log('Invalid key')
+            return
+
+        elif len(v) == 1:
+            v = v[0]
+
+        log(f'set {k}')
+        self.set_env_variable(k, v)
+
+    def do_shell(self, args):
+        """System call
+        """
+        logging.info(f'Cmd = !{args}')
+        return subprocess.check_output(args)
 
     ############################################################################
     # Overrides
@@ -410,8 +458,13 @@ class BaseShell(Cmd):
         ```
         """
         for v in variables:
-            if len(v) > 1 and v[0] == self.variable_prefix:
+            if len(v) > 2 and v[0] == self.variable_prefix:
                 k = v[1:]
+
+                if not self.variable_name_is_valid(k):
+                    # ignore this variable silently
+                    yield v
+                    continue
 
                 error_msg = f'Variable `{v}` is not set'
 
@@ -424,3 +477,6 @@ class BaseShell(Cmd):
                     raise ShellException(error_msg)
 
             yield v
+
+    def variable_name_is_valid(self, k: str) -> bool:
+        return is_alpha(k, ignore='_')

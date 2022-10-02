@@ -247,6 +247,23 @@ def test_set_variable_infix_multiple_values():
     assert catch_output(f'echo ${k}', shell=shell) == v
 
 
+def test_set_variable_infix_eval():
+    shell = Shell()
+    shell.ignore_invalid_syntax = False
+
+    k = 'some_key'
+    v = '! expr 2 + 2'
+
+    assert catch_output(f'{k} <- {v}', shell=shell) == k
+    assert k in shell.env
+    assert shell.env[k] == '4'
+
+    v = '! x=$(( 2 + 2 )); echo $x'
+    assert catch_output(f'{k} <- {v}', shell=shell) == k
+    assert k in shell.env
+    assert shell.env[k] == '4'
+
+
 def test_do_export():
     k = 'some_key'
     shell = Shell()
@@ -278,6 +295,18 @@ def test_do_export_unset():
     shell.env['k'] = '1'
     run_command('export k', shell)
     assert 'k' not in shell.env
+
+
+def test_do_export_after_pipe():
+    shell = Shell()
+
+    v = 'abc'
+    # run_command(f'print {v} |> export k', shell)
+    # assert shell.env['k'] == v
+
+    v = 'def'
+    run_command(f'! echo {v} |> export k', shell)
+    assert shell.env['k'] == v
 
 
 def test_variable_expansion():

@@ -4,7 +4,7 @@ from cmd import Cmd
 from collections import defaultdict
 from copy import deepcopy
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Tuple
+from typing import Callable, Dict, List, Tuple
 import logging
 import os
 import sys
@@ -68,12 +68,6 @@ class Shell(BaseShell):
 
         sys.exit(int(args))
 
-    def do_shell(self, args):
-        """System call
-        """
-        logging.info(f'Cmd = !{args}')
-        # TODO add option to forward environment variables
-        os.system(args)
 
     def do_cat(self, filename):
         """Concatenate and print files
@@ -105,26 +99,6 @@ class Shell(BaseShell):
                 return
 
         return data
-
-    def do_export(self, args: str):
-        """Set an environment variable.
-        `export(k, *values)`
-        """
-        k, *v = args.split()
-
-        if len(v) == 0:
-            log(f'unset {k}')
-            if k in self.env:
-                del self.env[k]
-            else:
-                log('Invalid key')
-            return
-
-        elif len(v) == 1:
-            v = v[0]
-
-        log(f'set {k}')
-        self.set_env_variable(k, v)
 
     def do_E(self, args):
         """Show the last exception
