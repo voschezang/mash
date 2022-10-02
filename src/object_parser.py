@@ -11,7 +11,7 @@ from typing import _GenericAlias
 from enum import Enum
 from abc import ABC, abstractmethod
 
-from util import has_method
+from util import has_method, is_alpha, is_enum
 
 
 class ErrorMessages:
@@ -264,21 +264,6 @@ def find_synonym(cls, key: str):
                 return original_key
 
     raise BuildError(ErrorMessages.unexpected_key(cls, key))
-
-################################################################################
-# Predicates
-################################################################################
-
-
-def is_alpha(key: str, ignore=[]) -> bool:
-    return all(c.isalpha() or c in ignore for c in key)
-
-
-def is_enum(cls: type) -> bool:
-    try:
-        return issubclass(cls, Enum)
-    except TypeError:
-        pass
 
 ###############################################################################
 # Exceptions

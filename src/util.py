@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from enum import Enum
 from functools import partial
 from itertools import dropwhile, takewhile
 from operator import contains
@@ -340,6 +341,13 @@ def has_method(cls, method) -> bool:
 def is_callable(method) -> bool:
     return hasattr(method, '__call__')
 
+
+def is_enum(cls: type) -> bool:
+    try:
+        return issubclass(cls, Enum)
+    except TypeError:
+        pass
+
 ################################################################################
 # Pure functions
 ################################################################################
@@ -367,6 +375,14 @@ def call(f, *_):
     """Call f and ignore all other arguments
     """
     return f()
+
+################################################################################
+# Predicates
+################################################################################
+
+
+def is_alpha(key: str, ignore=[]) -> bool:
+    return all(c.isalpha() or c in ignore for c in key)
 
 
 def for_any(foreach_items: Sequence, predicate: Callable, *args, **kwds) -> bool:
