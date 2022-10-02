@@ -119,8 +119,8 @@ class BaseShell(Cmd):
 
         self.env = env
 
-    def set_env_variable(self, k, v):
-        self.env[k] = v
+    def set_env_variable(self, k, *values: Tuple):
+        self.env[k] = ' '.join(values)
         return k
 
     def show_env(self, env=None):
@@ -389,7 +389,7 @@ class BaseShell(Cmd):
                 continue
 
             try:
-                lhs, _, rhs = args
+                lhs, _, *rhs = args
             except ValueError:
                 msg = f'Invalid syntax for infix operator {op}'
                 if self.ignore_invalid_syntax:
@@ -397,7 +397,7 @@ class BaseShell(Cmd):
                     return
                 raise ShellException(msg)
 
-            return method(lhs, rhs)
+            return method(lhs, *rhs)
 
         raise ValueError()
 
@@ -412,14 +412,15 @@ class BaseShell(Cmd):
         for v in variables:
             if len(v) > 1 and v[0] == self.variable_prefix:
                 k = v[1:]
-                msg = f'Variable `{v}` is not set'
+
+                error_msg = f'Variable `{v}` is not set'
 
                 if k in self.env:
                     yield self.env[k]
                     continue
                 elif self.ignore_invalid_syntax:
-                    log(msg)
+                    log(error_msg)
                 else:
-                    raise ShellException(msg)
+                    raise ShellException(error_msg)
 
             yield v

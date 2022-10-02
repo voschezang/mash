@@ -222,13 +222,29 @@ def test_add_functions():
 
 
 def test_set_variable_infix():
+    shell = Shell()
+    shell.ignore_invalid_syntax = False
+
     k = 'some_key'
     v = '| ; 1 2   '
-    shell = Shell()
 
     assert catch_output(f'{k} = "{v}"', shell=shell) == k
     assert k in shell.env
     assert shell.env[k] == v
+
+
+def test_set_variable_infix_multiple_values():
+    shell = Shell()
+    shell.ignore_invalid_syntax = False
+
+    k = 'some_key'
+    v = '1 2'
+
+    assert catch_output(f'{k} = {v}', shell=shell) == k
+    assert k in shell.env
+    assert shell.env[k] == v
+
+    assert catch_output(f'echo ${k}', shell=shell) == v
 
 
 def test_do_export():
