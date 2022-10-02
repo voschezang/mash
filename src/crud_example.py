@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 from copy import deepcopy
-from dataclasses import dataclass
+from dataclasses import dataclass, fields
 from pprint import pformat
 from typing import Any, Dict
 
@@ -41,6 +41,9 @@ class ExampleContext:
 
     def __contains__(self, k):
         return hasattr(self, k)
+
+    def __iter__(self):
+        return (field.name for field in fields(self))
 
     def __getitem__(self, k):
         try:
@@ -89,7 +92,7 @@ def init(repository=repository) -> CRUD:
 
     obj.shell = build(functions, completions)
     obj.shell.set_do_char_method(obj.shell.do_cd, Options)
-    obj.shell.env = obj.context
+    obj.shell.update_env(obj.context)
 
     # reset path
     # TODO fix side-effects that require this hack

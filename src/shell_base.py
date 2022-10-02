@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 from asyncio import CancelledError
 from cmd import Cmd
+from dataclasses import asdict
 from itertools import chain
 from json import dumps, loads
 from operator import contains
@@ -57,8 +58,8 @@ class BaseShell(Cmd):
         # defaults
         self.ignore_invalid_syntax = True
 
-        # use a new dict as default
-        self.env = env if env is not None else {}
+        self.env = {}
+        self.update_env(env)
 
         self.auto_save = False
         self.auto_reload = False
@@ -106,6 +107,18 @@ class BaseShell(Cmd):
                     f'Overriding default py delimiters: remove {char}')
                 py_delimiters.remove(char)
 
+    def update_env(self, env: MutableMapping = None):
+        if env is None:
+            return
+
+        try:
+            env.update(self.env)
+        except (AttributeError, TypeError, ValueError):
+            for k in self.env:
+                env[k] = self.env[k]
+
+        self.env = env
+
     def set_env_variable(self, k, v):
         self.env[k] = v
         return k
@@ -118,8 +131,8 @@ class BaseShell(Cmd):
             return
 
         print('Env')
-        for k, v in env.items():
-            print(f'\t{k}: {v}')
+        for k in env:
+            print(f'\t{k}: {env[k]}')
 
     def onecmd_prehook(self, line):
         """Similar to cmd.precmd but executed before cmd.onecmd
@@ -133,8 +146,21 @@ class BaseShell(Cmd):
         return line
 
     def save_session(self, session=default_session_filename):
+        if not self.env:
+            logging.info('No env data to save')
+            return
+
         with open(session, 'w') as f:
-            f.write(dumps(self.env))
+            try:
+                json = dumps(self.env)
+            except TypeError:
+                logging.debug('Cannot serialize self.env')
+                try:
+                    json = dumps(self.env, skip_keys=True)
+                except TypeError:
+                    json = dumps(asdict(self.env))
+
+            f.write(json)
 
     def try_load_session(self, session=default_session_filename):
         self.load_session(session, strict=False)
@@ -142,7 +168,7 @@ class BaseShell(Cmd):
     def load_session(self, session: str, strict=True):
         try:
             with open(session) as f:
-                env = loads(f.read())
+                data = f.read()
 
         except OSError as e:
             if strict:
@@ -151,11 +177,17 @@ class BaseShell(Cmd):
             log(f'Session file not found: {session}: {e}')
             return
 
+        if not data:
+            logging.info('No env data found')
+            return
+
+        env = loads(data)
+
         log(f'Using session: {session}')
         self.show_env(env)
 
         # TODO handle conflicts
-        self.env.update(env)
+        self.update_env(env)
 
     ############################################################################
     # Overrides
