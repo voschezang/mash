@@ -258,7 +258,7 @@ def test_set_variable_infix_eval():
     assert k in shell.env
     assert shell.env[k] == '4'
 
-    v = '! x=$(( 2 + 2 )); echo $x'
+    v = '! "x=$(( 2 + 2 )); echo $x"'
     assert catch_output(f'{k} <- {v}', shell=shell) == k
     assert k in shell.env
     assert shell.env[k] == '4'
@@ -281,11 +281,11 @@ def test_do_export():
     for cmd in [f'export {k} {v}',
                 f'export {k} "{v}"']:
         run_command(f'export {k} "1 2"', shell)
-        assert shell.env[k] == ['1', '2']
+        assert shell.env[k] == v
 
     v = '| ; 2'
     run_command(f'export {k} "{v}"', shell)
-    assert shell.env[k] == ['|', ';', '2']
+    assert shell.env[k] == v
 
 
 def test_do_export_unset():
@@ -346,7 +346,7 @@ def test_save_and_load_session():
     shell = Shell()
     assert k not in shell.env
 
-    shell.set_env_variable(k, v)
+    shell.set_env_variable(k, str(v))
     shell.save_session(filename)
 
     shell = Shell()
@@ -354,5 +354,6 @@ def test_save_and_load_session():
 
     shell.load_session(filename)
     assert k in shell.env
+    assert shell.env[k] == str(v)
 
     Path(filename).unlink(True)

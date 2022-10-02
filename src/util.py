@@ -365,7 +365,7 @@ def constant(value):
     return K
 
 
-def none():
+def none(*_):
     """Do nothing
     """
     pass

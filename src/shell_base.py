@@ -5,19 +5,22 @@ from dataclasses import asdict
 from itertools import chain
 from json import dumps, loads
 from operator import contains
-from typing import Any, Callable, Dict, Iterable, List, Literal, MutableMapping, Tuple
+from typing import Any, Callable, Dict, Iterable, List, Literal, Tuple
 import logging
 import shlex
 import subprocess
 
 import io_util
-from io_util import log, shell_ready_signal, print_shell_ready_signal
+from io_util import log, shell_ready_signal, print_shell_ready_signal, check_output
 from util import for_any, is_alpha, omit_prefixes, split_prefixes, split_sequence
 
 confirmation_mode = False
 bash_delimiters = ['|', '>', '>>', '1>', '1>>', '2>', '2>>']
 py_delimiters = [';', '|>']
 default_session_filename = '.shell_session.json'
+
+
+Command = Callable[[Cmd, str], str]
 
 
 class ShellException(RuntimeError):
@@ -43,17 +46,17 @@ class BaseShell(Cmd):
 
     # TODO save stdout in a tmp file
 
-    def __init__(self, *args, env: MutableMapping = None, **kwds):
+    def __init__(self, *args, env: Dict[str, Any] = None, **kwds):
         """
         Parameters
         ----------
-            env : MutableMapping, e.g. a dict
+            env : dict
                 Must be JSON serializable
         """
         super().__init__(*args, **kwds)
 
         # fill this list to customize autocomplete behaviour
-        self.completenames_options = []
+        self.completenames_options: List[Command] = []
 
         # defaults
         self.ignore_invalid_syntax = True
@@ -65,8 +68,8 @@ class BaseShell(Cmd):
         self.auto_reload = False
 
         # internals
-        self._do_char_method = None
-        self._chars_allowed_for_char_method = []
+        self._do_char_method = self.none
+        self._chars_allowed_for_char_method: List[str] = []
 
         self.set_infix_operators()
         if self.auto_reload:
@@ -84,7 +87,7 @@ class BaseShell(Cmd):
         # the sign to indicate that a variable should be expanded
         self.variable_prefix = '$'
 
-    def set_do_char_method(self, method: Callable[[object, str], Any], chars: List[str]):
+    def set_do_char_method(self, method: Command, chars: List[str]):
         """Use `method` to interpret commands that start any item in `chars`.
         This allow special chars to be used as commands.
         E.g. transform `do_$` into `do_f $`
@@ -108,7 +111,7 @@ class BaseShell(Cmd):
                     f'Overriding default py delimiters: remove {char}')
                 py_delimiters.remove(char)
 
-    def update_env(self, env: MutableMapping = None):
+    def update_env(self, env: Dict[str, Any] = None):
         if env is None:
             return
 
@@ -120,23 +123,31 @@ class BaseShell(Cmd):
 
         self.env = env
 
-    def eval(self, args: Tuple[str]) -> str:
+    def eval(self, args: Iterable[str]) -> str:
         """Evaluate / run `args` and return the result.
         """
+        # convert args to a shell command
         k = '_eval_output'
-        line = f'{" ".join(args)} |> export {k}'
+        args = ' '.join(shlex.quote(arg) for arg in args)
+        line = f'{args} |> export {k}'
 
         self.onecmd(line)
 
+        # retrieve result
         result = self.env[k]
         del self.env[k]
+
         return result
 
-    def set_env_variable(self, k: str, *values):
+    def set_env_variable(self, k: str, *values: str):
+        """Set the variable `k` to `values`
+        """
         self.env[k] = ' '.join(values)
         return k
 
-    def eval_and_set_env_variable(self, k: str, *values):
+    def eval_and_set_env_variable(self, k: str, *values: str):
+        """Evaluate `values` as an expression and store the result in the variable `k`
+        """
         result = self.eval(values)
         self.set_env_variable(k, result)
         return k
@@ -215,9 +226,9 @@ class BaseShell(Cmd):
         """Set an environment variable.
         `export(k, *values)`
         """
-        k, *v = args.split()
+        k, *values = args.split()
 
-        if len(v) == 0:
+        if len(values) == 0:
             log(f'unset {k}')
             if k in self.env:
                 del self.env[k]
@@ -225,23 +236,20 @@ class BaseShell(Cmd):
                 log('Invalid key')
             return
 
-        elif len(v) == 1:
-            v = v[0]
-
         log(f'set {k}')
-        self.set_env_variable(k, v)
+        self.set_env_variable(k, *values)
 
     def do_shell(self, args):
         """System call
         """
         logging.info(f'Cmd = !{args}')
-        return subprocess.check_output(args)
+        return check_output(args)
 
     ############################################################################
     # Overrides
     ############################################################################
 
-    def onecmd(self, line: str) -> Literal[0]:
+    def onecmd(self, line: str) -> Literal[False]:
         """Parse and run `line`.
         Returns 0 on success and None otherwise
         """
@@ -254,7 +262,7 @@ class BaseShell(Cmd):
         except CancelledError:
             pass
 
-        return 0
+        return False
 
     def postcmd(self, stop, _):
         """Display the shell_ready_signal to indicate termination to a parent process.
@@ -277,14 +285,14 @@ class BaseShell(Cmd):
 
         return super().completenames(text, *ignored)
 
-    def default(self, line):
-        if line in self._chars_allowed_for_char_method and self._do_char_method:
+    def default(self, line: str):
+        if line in self._chars_allowed_for_char_method:
             return self._do_char_method(line)
 
         if self.ignore_invalid_syntax:
-            super().default(line)
-        else:
-            raise ShellException(f'Unknown syntax: {line}')
+            return super().default(line)
+
+        raise ShellException(f'Unknown syntax: {line}')
 
     ############################################################################
     # Pipes
@@ -347,7 +355,7 @@ class BaseShell(Cmd):
         if prefix in bash_delimiters:
             return prefix
 
-    def parse_single_command(self, command_and_args: List[str]) -> Tuple[str, List[str], str]:
+    def parse_single_command(self, command_and_args: List[str]) -> Tuple[List[str], str, List[str]]:
         # strip right-hand side delimiters
         all_args = list(omit_prefixes(command_and_args, self.delimiters))
         f, *args = all_args
@@ -425,7 +433,7 @@ class BaseShell(Cmd):
         # group terms based on delimiters
         return split_sequence(terms, self.delimiters, return_delimiters=True)
 
-    def infix_command(self, *args: List[str]):
+    def infix_command(self, *args: str):
         """Treat `args` as an infix command.
         Apply the respective infix method to args.
         E.g.  `a = 1`
@@ -458,7 +466,7 @@ class BaseShell(Cmd):
         ```
         """
         for v in variables:
-            if len(v) > 2 and v[0] == self.variable_prefix:
+            if len(v) >= 2 and v[0] == self.variable_prefix:
                 k = v[1:]
 
                 if not self.variable_name_is_valid(k):
@@ -480,3 +488,9 @@ class BaseShell(Cmd):
 
     def variable_name_is_valid(self, k: str) -> bool:
         return is_alpha(k, ignore='_')
+
+    def none(self, _: str) -> str:
+        """Do nothing. Similar to util.none.
+        This is a default value for self._do_char_method.
+        """
+        return ''
