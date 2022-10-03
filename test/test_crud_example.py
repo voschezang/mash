@@ -105,7 +105,7 @@ def test_crud_env_set():
 
     obj.shell.set_env_variable(k, v)
 
-    assert obj.context[k] == v
+    assert obj.shell.env[k] == v
 
     line = f'env {k}'
     assert v in catch_output(line, shell=obj.shell, strict=True)

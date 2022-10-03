@@ -17,19 +17,10 @@ Data = Dict[str, Any]
 
 
 class CRUD(crud_base.BaseCRUD):
-    def __init__(self, context: dataclass, shell: Shell = None, repository={}, **kwds):
+    def __init__(self, shell: Shell = None, repository={}, **kwds):
         super().__init__(cd_hooks=(self.fix_directory_type, self.update_prompt), **kwds)
-
-        self.init__context(context)
-
         self.shell = shell
         self.repository = repository
-
-    def init__context(self, context: dataclass):
-        # add helper methods
-        self.original_context = context
-        self.context = decorate(deepcopy(context),
-                                DataClassHelper(context))
 
     def ls(self, obj=None) -> List[Item]:
         items = self._ls(obj)
