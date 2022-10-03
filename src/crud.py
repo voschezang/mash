@@ -18,15 +18,12 @@ Data = Dict[str, Any]
 
 class CRUD(crud_base.BaseCRUD):
     def __init__(self, context: dataclass, shell: Shell = None, repository={}, **kwds):
-        super().__init__(**kwds)
+        super().__init__(cd_hooks=(self.fix_directory_type, self.update_prompt), **kwds)
 
         self.init__context(context)
 
         self.shell = shell
         self.repository = repository
-
-        self.pre_cd_hook = self.fix_directory_type
-        self.post_cd_hook = self.update_prompt
 
     def init__context(self, context: dataclass):
         # add helper methods

@@ -31,14 +31,11 @@ class BaseCRUD(ABC):
     """
 
     def __init__(self, path=[], options: Enum = Option, autocomplete=True,
-                 cd_hooks: Tuple[Callable, Callable] = None):
+                 cd_hooks: Tuple[Callable, Callable] = (identity, none)):
         self.path = path
         self.prev_path = []
         self.autocomplete = autocomplete
         self.options = options
-
-        self.pre_cd_hook = identity
-        self.post_cd_hook = none
 
         if cd_hooks:
             for hook in cd_hooks:
