@@ -8,8 +8,8 @@ from typing import Any, Dict, List
 
 import crud_base
 from crud_base import Item, Option, Options
-from shell import Shell
-from util import call, constant, find_fuzzy_matches, find_prefix_matches, has_method
+from shell import Shell, build, set_completions, set_functions
+from util import find_fuzzy_matches, find_prefix_matches, has_method
 
 
 # example data with dicts and lists
@@ -18,17 +18,34 @@ cd_aliasses = 'cd_aliasses'
 
 
 class CRUD(crud_base.BaseCRUD):
-    def __init__(self, shell: Shell = None, repository={}, **kwds):
+    def __init__(self, repository={}, **kwds):
         super().__init__(cd_hooks=(self.fix_directory_type, self.update_prompt), **kwds)
-        self.shell = shell
         self.repository = repository
+        self.init_shell()
+
+    def init_shell(self, *build_args, **build_kwds):
+        cls = build(*build_args, instantiate=False, **build_kwds)
+        self.set_shell_functions(cls)
+        # self.set_shell_completions(cls)
+
+        self.shell = cls()
+        self.shell.set_do_char_method(self.shell.do_cd, Options)
+
+    def set_shell_functions(self, cls):
+        set_functions({'cd': self.cd,
+                       'ls': partial(self.ll, delimiter=', '),
+                       'll': self.ll,
+                       'tree': self.tree},
+                      cls)
+
+    def set_shell_completions(self, cls):
+        set_completions({'cd': self.complete_cd}, cls)
 
     def ls(self, obj=None) -> List[Item]:
         items = self._ls(obj)
         return self.wrap_list_items(items)
 
-    def ll(self, obj=None, delimiter='\n'):
-        # items = self.ls(obj)
+    def ll(self, obj=None, delimiter='\n') -> str:
         items = self.infer_item_names(self.ls(obj))
         return delimiter.join([str(item.name) for item in items])
 
@@ -126,10 +143,6 @@ class CRUD(crud_base.BaseCRUD):
     def set_cd_aliases(self):
         """Add do_{dirname} methods to self.shell for each sub-directory.
         """
-        if not self.shell:
-            print('warning; no shell', self)
-            return
-
         self.unset_cd_aliases()
 
         dirs = [item.name for item in self.ls()]
@@ -144,6 +157,10 @@ class CRUD(crud_base.BaseCRUD):
             cd_dirname = partial(self.cd, dirname)
             self.shell.add_functions({dirname: cd_dirname},
                                      group_key=cd_aliasses)
+
+    def complete_cd(self, text, line, begidx, endidx):
+        candidates = self.ll(delimiter=' ')
+        return list(find_fuzzy_matches(text, candidates))
 
     def update_prompt(self):
         # TODO ensure that this method is run after an exception

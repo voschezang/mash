@@ -26,31 +26,17 @@ def init(repository=repository) -> CRUD:
 
     obj = CRUD(repository=repository)
 
-    def cd(*args):
-        return obj.cd(*args)
-
     def ls(*args):
         return [item.name for item in obj.ls(*args)]
-
-    def ll(*args):
-        return obj.ll(*args)
 
     def complete_cd(self, text, line, begidx, endidx):
         candidates = ls()
         return list(find_fuzzy_matches(text, candidates))
 
-    functions = {
-        'cd': cd,
-        'ls': ls,
-        'll': ll,
-        'tree': obj.tree
-    }
     completions = {
         'cd': complete_cd
     }
-
-    obj.shell = build(functions, completions)
-    obj.shell.set_do_char_method(obj.shell.do_cd, Options)
+    obj.init_shell({}, completions)
 
     # reset path
     # TODO fix side-effects that require this hack
@@ -60,5 +46,7 @@ def init(repository=repository) -> CRUD:
 
 
 if __name__ == '__main__':
+    # obj = CRUD(repository=repository)
+    # obj.init_shell()
     obj = init(repository)
     main(shell=obj.shell)
