@@ -11,7 +11,7 @@ import sys
 import traceback
 
 import io_util
-from shell_base import BaseShell
+from shell_base import BaseShell, ShellException
 import shell_function as func
 from shell_function import ShellFunction as Function
 from io_util import ArgparseWrapper, bold, has_argument, has_output, log, read_file
@@ -67,7 +67,6 @@ class Shell(BaseShell):
             args = 0
 
         sys.exit(int(args))
-
 
     def do_cat(self, filename):
         """Concatenate and print files
@@ -292,10 +291,11 @@ def run_interactively(shell):
     shell.cmdloop()
 
 
-def build(functions: Dict[str, Function] = None, completions: Dict[str, Callable] = None) -> Shell:
+def build(functions: Dict[str, Function] = None, completions: Dict[str, Callable] = None, instantiate=True) -> Shell:
     """Extend the class Shell and create an instance of it.
+    Note that `set_functions` must be called before instantiating Shell.
     """
-    # copy Shell to avoid side-effects
+    # copy class to avoid side-effects
     CustomShell = deepcopy(Shell)
 
     if functions:
@@ -303,7 +303,9 @@ def build(functions: Dict[str, Function] = None, completions: Dict[str, Callable
     if completions:
         set_completions(completions, CustomShell)
 
-    return CustomShell()
+    if instantiate:
+        return CustomShell()
+    return CustomShell
 
 
 def setup(shell: Shell = None, functions: Dict[str, Function] = None, completions: Dict[str, Callable] = None) -> Tuple[Shell, List[str], str]:
@@ -334,7 +336,13 @@ def setup(shell: Shell = None, functions: Dict[str, Function] = None, completion
 
 def main(shell: Shell = None, functions: Dict[str, Function] = None, repl=True) -> Shell:
     shell, commands, filename = setup(shell, functions)
-    run(shell, commands, filename, repl)
+
+    try:
+        run(shell, commands, filename, repl)
+    except ShellException as e:
+        log(e, prefix='')
+        sys.exit(1)
+
     return shell
 
 

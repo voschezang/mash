@@ -75,10 +75,9 @@ def set_verbosity():
     logger.setLevel(verbosity_level)
 
 
-def log(*args, file=sys.stderr, **kwds):
+def log(*args, file=sys.stderr, prefix=warn('···'), **kwds):
     """Print to stderr
     """
-    prefix = warn('···')
     print(prefix, *args, file=file, **kwds)
 
 
