@@ -21,6 +21,15 @@ class Option(Enum):
     stay = '.'
     up = '..'
 
+    @staticmethod
+    def verify(value):
+        try:
+            option = Option(value)
+        except ValueError:
+            # conversion failed means that `value` is not an Option
+            return False
+        return True
+
 
 Options = [o.value for o in Option]
 

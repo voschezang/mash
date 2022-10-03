@@ -9,11 +9,12 @@ from typing import Any, Dict, List
 import crud_base
 from crud_base import Item, Option, Options
 from shell import Shell
-from util import DataClassHelper, call, decorate, find_fuzzy_matches, find_prefix_matches, has_method
+from util import call, constant, find_fuzzy_matches, find_prefix_matches, has_method
 
 
 # example data with dicts and lists
 Data = Dict[str, Any]
+cd_aliasses = 'cd_aliasses'
 
 
 class CRUD(crud_base.BaseCRUD):
@@ -96,12 +97,8 @@ class CRUD(crud_base.BaseCRUD):
         if len(dirs) == 0:
             return dirs
 
-        try:
-            option = Option(dirs[0])
-            # never convert options
+        if Option.verify(dirs[0]):
             return dirs
-        except ValueError:
-            pass
 
         directory = dirs[0]
         if isinstance(self.cwd, list):
@@ -124,11 +121,15 @@ class CRUD(crud_base.BaseCRUD):
     def unset_cd_aliases(self):
         """Remove all custom do_{dirname} methods from self.shell.
         """
-        self.shell.remove_functions('cd_aliasses')
+        self.shell.remove_functions(cd_aliasses)
 
     def set_cd_aliases(self):
         """Add do_{dirname} methods to self.shell for each sub-directory.
         """
+        if not self.shell:
+            print('warning; no shell', self)
+            return
+
         self.unset_cd_aliases()
 
         dirs = [item.name for item in self.ls()]
@@ -140,10 +141,9 @@ class CRUD(crud_base.BaseCRUD):
             if has_method(self.shell, method_name):
                 continue
 
-            # TODO remove the double usage of `partial`
-            cd = partial(call, partial(self.cd, dirname))
-
-            self.shell.add_functions({dirname: cd}, group_key='cd_aliasses')
+            cd_dirname = partial(self.cd, dirname)
+            self.shell.add_functions({dirname: cd_dirname},
+                                     group_key=cd_aliasses)
 
     def update_prompt(self):
         # TODO ensure that this method is run after an exception
