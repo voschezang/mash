@@ -5,7 +5,7 @@ from itertools import dropwhile, takewhile
 from operator import contains
 from queue import Queue
 from nltk.metrics.distance import edit_distance
-from typing import Callable, Dict, Generator, Iterable, List, Literal, Sequence, Tuple, TypeVar, Union
+from typing import Any, Callable, Dict, Generator, Iterable, List, Literal, Sequence, Tuple, TypeVar, Union
 
 # backwards compatibility
 from io_util import interactive
@@ -369,6 +369,27 @@ def none(*_):
     """Do nothing
     """
     pass
+
+
+def flip(f):
+    """Similar to functools.partial, but flip the arguments
+    """
+    def g(*args):
+        args = args[::-1]
+        return f(*args)
+    return g
+
+
+def lazy_map(func, func_args, generator: Callable[[Any], Iterable], post_func=identity):
+    """Apply `func` to the result of `generator()`.
+    Apply post_func afterwards.
+    """
+    def inner(*args, **kwds):
+        g = partial(func, func_args)
+        items = generator(*args, **kwds)
+        return post_func(map(g, items))
+
+    return inner
 
 
 def call(f, *_):
