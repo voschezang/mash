@@ -365,6 +365,23 @@ def constant(value):
     return K
 
 
+def partial_simple(f, *args):
+    """Similar to functools.partial
+    """
+    def g(*other_args):
+        print('par', args, other_args)
+        return f(*args, *other_args)
+    return g
+
+
+def partial_no_args(f, *args):
+    """Similar to functools.partial
+    """
+    def K():
+        return f(*args)
+    return K
+
+
 def none(*_):
     """Do nothing
     """

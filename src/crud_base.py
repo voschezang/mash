@@ -32,6 +32,7 @@ class Option(Enum):
 
 
 Options = [o.value for o in Option]
+Path = List[str]
 
 
 class BaseCRUD(ABC):
@@ -39,10 +40,10 @@ class BaseCRUD(ABC):
     A directory (object) can consists folders and files (objects).
     """
 
-    def __init__(self, path=[], options: Enum = Option, autocomplete=True,
+    def __init__(self, path: Path = [], options: Enum = Option, autocomplete=True,
                  cd_hooks: Tuple[Callable, Callable] = (identity, none)):
-        self.path = path
-        self.prev_path = []
+        self.path: Path = path
+        self.prev_path: Path = []
         self.autocomplete = autocomplete
         self.options = options
 
@@ -67,10 +68,11 @@ class BaseCRUD(ABC):
         """
         pass
 
-    def cd(self, *dirs):
+    def cd(self, *dirs: str):
         """Change the current working environment.
         E.g. cd(a,b,c) == cd a/b/c
         """
+        print('cd', self)
         dirs = self.pre_cd_hook(dirs)
 
         # handle empty args
@@ -98,16 +100,13 @@ class BaseCRUD(ABC):
         if directory is None:
             directory = self.options.default.value
 
-        try:
+        if Option.verify(directory):
             option = Option(directory)
             self.handle_option(option)
             return
-        except ValueError:
-            pass
-
-        # TODO if data = array, but directory = str, then infer the index
 
         if isinstance(directory, int):
+            # TODO if data = array, but directory = str, then infer the index
             pass
 
         elif directory not in available_dirs:

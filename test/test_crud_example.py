@@ -1,8 +1,14 @@
 from pytest import raises
 
-import io_util
+from crud import CRUD
+from crud_base import Options
+from crud_example import repository
 from shell import run_command
-from crud_example import init
+import io_util
+
+
+def init():
+    return CRUD(repository=repository)
 
 
 def catch_output(line='', func=run_command, **func_kwds) -> str:
@@ -30,11 +36,11 @@ def test_crud_cd_dict():
     obj = init()
     shell = obj.shell
 
-    assert 'worlds' not in shell.prompt
+    # assert 'worlds' not in shell.prompt
 
-    # invalid resource name
-    run_command('cd abc', obj.shell)
-    assert 'worlds' not in shell.prompt
+    # # invalid resource name
+    # run_command('cd abc', obj.shell)
+    # assert 'worlds' not in shell.prompt
 
     # valid resource name
     run_command('cd worlds', obj.shell)
@@ -130,3 +136,15 @@ def test_crud_env_expand():
 
     line = f'echo ${k}'
     assert v in catch_output(line, shell=obj.shell, strict=True)
+
+
+def test_cd_with_Options():
+    o = init()
+    o.cd('worlds')
+    assert o.path == ['worlds']
+
+    run_command('..', o.shell)
+    assert o.path == []
+
+    run_command('-', o.shell)
+    assert o.path == ['worlds']

@@ -1,6 +1,4 @@
 #!/usr/bin/python3
-from copy import deepcopy
-from dataclasses import dataclass
 from functools import partial
 import logging
 from pprint import pformat
@@ -8,9 +6,8 @@ from typing import Any, Dict, List
 
 import crud_base
 from crud_base import Item, Option, Options
-from shell import Shell, build, set_completions, set_functions
-from util import find_fuzzy_matches, find_prefix_matches, has_method
-
+from shell import build, set_completions, set_functions
+from util import find_fuzzy_matches, find_prefix_matches, has_method, partial_no_args, partial_simple
 
 # example data with dicts and lists
 Data = Dict[str, Any]
@@ -19,20 +16,29 @@ cd_aliasses = 'cd_aliasses'
 
 class CRUD(crud_base.BaseCRUD):
     def __init__(self, repository={}, **kwds):
-        super().__init__(cd_hooks=(self.fix_directory_type, self.update_prompt), **kwds)
+        update = partial_no_args(update_prompt, self)
+        super().__init__(cd_hooks=(self.fix_directory_type, update), **kwds)
         self.repository = repository
+
         self.init_shell()
+
+        # reset path
+        # TODO fix side-effects that require this hack
+        self.cd()
 
     def init_shell(self, *build_args, **build_kwds):
         cls = build(*build_args, instantiate=False, **build_kwds)
         self.set_shell_functions(cls)
-        # self.set_shell_completions(cls)
+        self.set_shell_completions(cls)
 
         self.shell = cls()
-        self.shell.set_do_char_method(self.shell.do_cd, Options)
+        self.shell.set_do_char_method(self.cd, Options)
 
     def set_shell_functions(self, cls):
-        set_functions({'cd': self.cd,
+        # convert method to a function
+        cd = partial_simple(self.cd)
+
+        set_functions({'cd': cd,
                        'ls': partial(self.ll, delimiter=', '),
                        'll': self.ll,
                        'tree': self.tree},
@@ -162,12 +168,12 @@ class CRUD(crud_base.BaseCRUD):
         candidates = self.ll(delimiter=' ')
         return list(find_fuzzy_matches(text, candidates))
 
-    def update_prompt(self):
-        # TODO ensure that this method is run after an exception
-        # e.g. after cd fails
-        if self.shell:
-            path = '/'.join([str(a) for a in self.path])
-            prompt = [item for item in (path, '$ ') if item]
-            self.shell.prompt = ' '.join(prompt)
 
-        self.set_cd_aliases()
+def update_prompt(crud: CRUD):
+    # TODO ensure that this method is run after an exception
+    # e.g. after cd fails
+    path = '/'.join([str(a) for a in crud.path])
+    prompt = [item for item in (path, '$ ') if item]
+    crud.shell.prompt = ' '.join(prompt)
+
+    crud.set_cd_aliases()
