@@ -21,3 +21,28 @@ def test_ls():
 
     with raises(ValueError):
         crud.ls('0')
+
+
+def test_cd():
+    crud = init()
+
+    assert crud.path == []
+
+    crud.cd('w')
+    assert crud.path == ['worlds']
+
+
+def test_cd_ls():
+    crud = init()
+    assert crud.path == []
+
+    crud.cd('w')
+    assert crud.path == ['worlds']
+
+    assert crud.ls()[0].name == 'earth'
+
+    crud.cd('earth')
+    assert len(crud.ls('animals')) == 2
+
+    # TODO
+    # assert crud.ls('..') == []

@@ -372,12 +372,11 @@ def constant(value):
     return K
 
 
-def partial_simple(f, *args):
+def partial_simple(f, *args, **kwds):
     """Similar to functools.partial
     """
-    def g(*other_args):
-        print('par', args, other_args)
-        return f(*args, *other_args)
+    def g(*other_args, **other_kwds):
+        return f(*args, *other_args, **kwds, **other_kwds)
     return g
 
 

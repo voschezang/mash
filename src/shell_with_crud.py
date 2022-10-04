@@ -31,10 +31,12 @@ class ShellWithCRUD:
     def set_shell_functions(self, cls):
         # convert method to a function
         cd = partial_simple(self.crud.cd)
+        ls = partial_simple(self.crud.ll, delimiter=', ')
+        ll = partial_simple(self.crud.ll)
 
         set_functions({'cd': cd,
-                       'ls': partial(self.crud.ll, delimiter=', '),
-                       'll': self.crud.ll,
+                       'ls': ls,
+                       'll': ll,
                        'tree': self.crud.tree},
                       cls)
 

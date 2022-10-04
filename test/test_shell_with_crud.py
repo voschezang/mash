@@ -46,6 +46,25 @@ def test_crud_cd_dict():
     run_command('cd worlds', obj.shell)
     assert 'worlds' in shell.prompt
 
+    obj.crud.cd()
+    assert 'worlds' not in shell.prompt
+
+    obj.crud.cd('worlds')
+    assert 'worlds' in shell.prompt
+
+
+def test_crud_ls_after_cd():
+    obj = init()
+    obj.crud.cd('worlds')
+
+    # use ls()
+    result = obj.crud.ls()
+    assert result[0].name == 'earth'
+
+    # use do_ls()
+    result = catch_output('ls', shell=obj.shell)
+    assert result == 'earth'
+
 
 def test_crud_cd_list():
     # TODO this testcase fails when tests are run in parallel
@@ -96,12 +115,15 @@ def test_set_cd_aliasses():
 
 
 def test_crud_env_get():
-    obj = init()
     k = 'root'
+    v = 'abc'
+
+    obj = init()
+    obj.shell.env[k] = v
 
     line = f'env {k}'
     result = catch_output(line, shell=obj.shell, strict=True)
-    result = catch_output(line, shell=obj.shell, strict=True)
+    assert result == "{'root': 'abc'}"
 
 
 def test_crud_env_set():
