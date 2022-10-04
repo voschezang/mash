@@ -5,7 +5,7 @@ from itertools import dropwhile, takewhile
 from operator import contains
 from queue import Queue
 from nltk.metrics.distance import edit_distance
-from typing import Any, Callable, Dict, Generator, Iterable, List, Literal, Sequence, Tuple, TypeVar, Union
+from typing import Any, Callable, Dict, Generator, Iterable, List, Literal, MappingView, Sequence, Tuple, TypeVar, Union
 
 # backwards compatibility
 from io_util import interactive
@@ -235,7 +235,14 @@ def split_sequence(items: Sequence[T], delimiters: Sequence[T] = ['\n', ';'],
             delim_encountered = True
 
 
-def group(items, n):
+def take(values: Iterable[T], n: int) -> List[T]:
+    """Return the first n items
+    https://hackage.haskell.org/package/base-4.17.0.0/docs/Prelude.html#v:take
+    """
+    return (v for i, v in enumerate(values) if i < n)
+
+
+def group(items: Iterable[T], n: int) -> Iterable[List[T]]:
     """Group items by chunks of size n.
     I.e. a lazy version of itertools.pairwise with variable groupsize.
     """
@@ -306,7 +313,7 @@ def list_prefix_matches(element: str, elements: List[str]):
                 yield other
 
 
-def find_prefix_matches(element: str, elements: List[str]):
+def find_prefix_matches(element: str, elements: MappingView[str]):
     """Yields all elements that are equal to a prefix of `element`.
     Elements with better matches are chosen first.
 
@@ -319,7 +326,7 @@ def find_prefix_matches(element: str, elements: List[str]):
         yield match
 
     if i == -1:
-        preview = ', '.join(elements[:3])
+        preview = ', '.join(take(elements, 3))
         raise ValueError(
             f'{element} is not a prefix of any of the given items [{preview}, ..]')
 
