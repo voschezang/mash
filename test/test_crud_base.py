@@ -1,11 +1,11 @@
-import crud_base
-from crud_base import Item
+import crud
+from crud import Item
 
 list_items = ['a', 'b', 'c']
 dict_items = {'a': 1, 'b': 2, 'c': 3}
 
 
-class CRUD(crud_base.BaseCRUD):
+class CRUD(crud.CRUD):
     """A concrete implementation of the ABC crud.CRUD
     """
 

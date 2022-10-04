@@ -3,7 +3,7 @@ from functools import partial
 from pprint import pformat
 from typing import Any, Dict, List
 
-from crud_base import BaseCRUD, Item, Option, Options
+from crud import CRUD, Item, Option, Options
 from shell import build, set_completions, set_functions
 from util import find_prefix_matches, has_method, partial_simple
 
@@ -12,7 +12,7 @@ Data = Dict[str, Any]
 cd_aliasses = 'cd_aliasses'
 
 
-class StaticCRUD(BaseCRUD):
+class StaticCRUD(CRUD):
     def __init__(self, repository={}, **kwds):
         super().__init__(pre_cd_hook=self.fix_directory_type, **kwds)
         self.repository = repository

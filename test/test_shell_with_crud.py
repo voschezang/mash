@@ -1,7 +1,7 @@
 from pytest import raises
 
 from shell_with_crud import ShellWithCRUD
-from crud_base import Options
+from crud import Options
 from crud_example import repository
 from shell import run_command
 import io_util
