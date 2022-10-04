@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 from typing import Any, Dict
 
-from crud_implementations import ShellWithCRUD
+from shell_with_crud import ShellWithCRUD
 from shell import main
 
 

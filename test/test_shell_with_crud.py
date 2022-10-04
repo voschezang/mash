@@ -1,6 +1,6 @@
 from pytest import raises
 
-from crud_implementations import ShellWithCRUD as CRUD
+from shell_with_crud import ShellWithCRUD
 from crud_base import Options
 from crud_example import repository
 from shell import run_command
@@ -8,7 +8,7 @@ import io_util
 
 
 def init():
-    return CRUD(repository=repository)
+    return ShellWithCRUD(repository=repository)
 
 
 def catch_output(line='', func=run_command, **func_kwds) -> str:
@@ -36,11 +36,11 @@ def test_crud_cd_dict():
     obj = init()
     shell = obj.shell
 
-    # assert 'worlds' not in shell.prompt
+    assert 'worlds' not in shell.prompt
 
-    # # invalid resource name
-    # run_command('cd abc', obj.shell)
-    # assert 'worlds' not in shell.prompt
+    # invalid resource name
+    run_command('cd abc', obj.shell)
+    assert 'worlds' not in shell.prompt
 
     # valid resource name
     run_command('cd worlds', obj.shell)

@@ -16,9 +16,6 @@ class StaticCRUD(BaseCRUD):
     def __init__(self, repository={}, **kwds):
         super().__init__(pre_cd_hook=self.fix_directory_type, **kwds)
         self.repository = repository
-        # TODO
-        # # reset path
-        # self.cd()
 
     def ls(self, obj=None) -> List[Item]:
         items = self._ls(obj)
@@ -82,68 +79,3 @@ class StaticCRUD(BaseCRUD):
                 directory = self.infer_index(directory)
 
         return (directory,) + dirs[1:]
-
-
-class ShellWithCRUD:
-    def __init__(self, repository={}, crud: BaseCRUD = None, **kwds):
-        if crud is None:
-            self.crud = StaticCRUD(
-                repository, post_cd_hook=self.update_prompt, **kwds)
-
-        self.init_shell()
-
-        # reset path
-        self.crud.cd()
-
-    def init_shell(self, *build_args, **build_kwds):
-        cls = build(*build_args, instantiate=False, **build_kwds)
-        self.set_shell_functions(cls)
-        self.set_shell_completions(cls)
-
-        self.shell = cls()
-        self.shell.set_do_char_method(self.crud.cd, Options)
-
-    def set_shell_functions(self, cls):
-        # convert method to a function
-        cd = partial_simple(self.crud.cd)
-
-        set_functions({'cd': cd,
-                       'ls': partial(self.crud.ll, delimiter=', '),
-                       'll': self.crud.ll,
-                       'tree': self.crud.tree},
-                      cls)
-
-    def set_shell_completions(self, cls):
-        set_completions({'cd': self.crud.complete_cd}, cls)
-
-    def unset_cd_aliases(self):
-        """Remove all custom do_{dirname} methods from self.shell.
-        """
-        self.shell.remove_functions(cd_aliasses)
-
-    def set_cd_aliases(self):
-        """Add do_{dirname} methods to self.shell for each sub-directory.
-        """
-        self.unset_cd_aliases()
-
-        dirs = [item.name for item in self.crud.ls()]
-        self.shell.completenames_options = dirs
-
-        for dirname in dirs:
-
-            method_name = f'do_{dirname}'
-            if has_method(self.shell, method_name):
-                continue
-
-            cd_dirname = partial(self.crud.cd, dirname)
-            self.shell.add_functions({dirname: cd_dirname},
-                                     group_key=cd_aliasses)
-
-    def update_prompt(self):
-        # TODO ensure that this method is run after an exception
-        # e.g. after cd fails
-        path = '/'.join([str(a) for a in self.crud.path])
-        prompt = [item for item in (path, '$ ') if item]
-        self.shell.prompt = ' '.join(prompt)
-
-        self.set_cd_aliases()
