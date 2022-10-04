@@ -1,6 +1,6 @@
 from pytest import raises
 
-from crud import CRUD
+from crud_implementations import ShellWithCRUD as CRUD
 from crud_base import Options
 from crud_example import repository
 from shell import run_command
@@ -140,11 +140,11 @@ def test_crud_env_expand():
 
 def test_cd_with_Options():
     o = init()
-    o.cd('worlds')
-    assert o.path == ['worlds']
+    o.crud.cd('worlds')
+    assert o.crud.path == ['worlds']
 
     run_command('..', o.shell)
-    assert o.path == []
+    assert o.crud.path == []
 
     run_command('-', o.shell)
-    assert o.path == ['worlds']
+    assert o.crud.path == ['worlds']

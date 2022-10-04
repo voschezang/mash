@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 from typing import Any, Dict
 
-from crud import CRUD
+from crud_implementations import ShellWithCRUD
 from shell import main
 
 
@@ -19,5 +19,5 @@ repository: Data = {'worlds': [
 
 
 if __name__ == '__main__':
-    obj = CRUD(repository=repository)
+    obj = ShellWithCRUD(repository=repository)
     main(shell=obj.shell)

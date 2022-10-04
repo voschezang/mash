@@ -3,8 +3,8 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from enum import Enum
 import logging
-from typing import Callable, List, Tuple
-from util import find_prefix_matches, identity, is_callable, none
+from typing import Callable, List
+from util import find_fuzzy_matches, find_prefix_matches, identity, none
 
 
 @dataclass
@@ -41,24 +41,18 @@ class BaseCRUD(ABC):
     """
 
     def __init__(self, path: Path = [], options: Enum = Option, autocomplete=True,
-                 cd_hooks: Tuple[Callable, Callable] = (identity, none)):
+                 pre_cd_hook: Callable[[str], str] = identity, post_cd_hook=none):
         self.path: Path = path
         self.prev_path: Path = []
         self.autocomplete = autocomplete
         self.options = options
 
-        if cd_hooks:
-            for hook in cd_hooks:
-                if hook and not is_callable(hook):
-                    raise ValueError()
-
-            pre, post = cd_hooks
-            self.pre_cd_hook = pre
-            self.post_cd_hook = post
+        self.pre_cd_hook = pre_cd_hook
+        self.post_cd_hook = post_cd_hook
 
     @abstractmethod
-    def ls(self, obj: str) -> List[Item]:
-        """List all properties of an object
+    def ls(self, obj: str = None) -> List[Item]:
+        """List all objects in a folder or all properties of an object
         """
         pass
 
@@ -88,8 +82,6 @@ class BaseCRUD(ABC):
             self._cd(directory, available_dirs)
 
         if len(dirs) > 1:
-            # dirs = dirs[1:]
-            # dirs = self.pre_cd_hook(dirs)
             self.cd(*dirs[1:])
 
         self.post_cd_hook()
@@ -175,3 +167,39 @@ class BaseCRUD(ABC):
             self.path, self.prev_path = self.prev_path, self.path
 
         # otherwise, pass
+
+    def wrap_list_items(self, items) -> List[Item]:
+        if hasattr(items, 'keys'):
+            items = [Item(k, v) for k, v in items.items()]
+
+        elif isinstance(items, list):
+            if items and 'name' in items[0]:
+                items = [Item(item['name'], item) for item in items]
+            else:
+                items = [Item(str(i), item) for i, item in enumerate(items)]
+
+        else:
+            logging.warning(f'Error, NotImplementedError for {type(items)}')
+            return []
+
+        return items
+
+    def infer_item_names(self, items) -> List[Item]:
+        if items and isinstance(items[0].name, int) and 'name' in items[0].value:
+            items = [Item(item.value['name'], item) for item in items]
+        return items
+
+    def infer_index(self, directory: str):
+        names = [item.name for item in self.ls()]
+
+        if directory not in names:
+            logging.debug(f'Dir {directory} is not present in `ls()`')
+
+        match = next(find_fuzzy_matches(directory, names))
+        return names.index(match)
+
+    def complete_cd(self, text, line, begidx, endidx):
+        """Filter the result of `ls` to match `text`.
+        """
+        candidates = self.ll(delimiter=' ')
+        return list(find_fuzzy_matches(text, candidates))
