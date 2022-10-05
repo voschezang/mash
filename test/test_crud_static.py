@@ -31,6 +31,9 @@ def test_cd():
     crud.cd('w')
     assert crud.path == ['worlds']
 
+    crud.cd('earth')
+    assert crud.path == ['worlds', 0]
+
 
 def test_cd_ls():
     crud = init()

@@ -73,20 +73,19 @@ def test_crud_cd_list():
     shell = obj.shell
 
     assert 'w' not in shell.prompt
-    assert '0' not in shell.prompt
 
     run_command('cd w', obj.shell)
 
     assert '0' not in shell.prompt
-    assert '1' not in shell.prompt
 
     # invalid index
     run_command('cd 1', obj.shell)
-    assert '1' not in shell.prompt
+    assert 'earth' not in shell.prompt
+    assert '10' not in shell.prompt
 
     # valid index
     run_command('cd 0', obj.shell)
-    assert '0' in shell.prompt
+    assert 'earth' in shell.prompt
 
 
 def test_set_cd_aliasses():
@@ -108,7 +107,7 @@ def test_set_cd_aliasses():
 
     run_command(child, obj.shell)
     # the child-dir is translated into an index
-    assert '0' in shell.prompt
+    assert 'earth' in shell.prompt
 
     run_command('animals', obj.shell)
     assert 'animals' in shell.prompt

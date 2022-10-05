@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from enum import Enum
 from functools import partial
-from itertools import dropwhile, takewhile
+from itertools import accumulate, dropwhile, takewhile
 from operator import contains
 from queue import Queue
 from nltk.metrics.distance import edit_distance
@@ -92,6 +92,20 @@ def infer_dependencies(known_deps: AdjacencyList, key: str):
 ################################################################################
 # Operations for lists and sequences
 ################################################################################
+
+def append_list(a: list, b) -> list:
+    a = a.copy()
+    a.append(b)
+    return a
+
+
+def accumulate_list(items: Iterable[T]) -> Iterable[List[T]]:
+    items = accumulate(items, append_list, initial=[])
+
+    # drop the first item
+    next(items)
+
+    return items
 
 
 def concat(items: Sequence = []):
@@ -372,8 +386,9 @@ def constant(value):
     return K
 
 
-def partial_simple(f, *args, **kwds):
-    """Similar to functools.partial
+def partial_simple(f: Callable, *args, **kwds):
+    """Similar to functools.partial.
+    Can be can be used converts bound methods to functions.
     """
     def g(*other_args, **other_kwds):
         return f(*args, *other_args, **kwds, **other_kwds)

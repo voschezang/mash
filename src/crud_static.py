@@ -1,14 +1,13 @@
 #!/usr/bin/python3
-from functools import partial
+import logging
 from pprint import pformat
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Union
 
-from crud import CRUD, Item, Option, Options
-from shell import build, set_completions, set_functions
-from util import find_prefix_matches, has_method, partial_simple
+from crud import CRUD, Item, Option
+from util import accumulate_list, find_prefix_matches
 
 # example data with dicts and lists
-Data = Dict[str, Any]
+Data = Union[Dict[str, Any], list]
 cd_aliasses = 'cd_aliasses'
 
 
@@ -29,8 +28,8 @@ class StaticCRUD(CRUD):
         items = self._ls(obj)
         return pformat(items, indent=2)
 
-    def _ls(self, obj) -> Data:
-        cwd = self.cwd
+    def _ls(self, obj, path=None) -> Data:
+        cwd = self.get_cwd(path)
         if obj is None:
             # TODO fixme this may return a list instead of `Data`
             return cwd
@@ -49,8 +48,17 @@ class StaticCRUD(CRUD):
     def cwd(self) -> Data:
         """Infer the current working directory
         """
+        return self.get_cwd()
+
+    def get_cwd(self, path=None) -> Data:
+        """Infer the current working directory
+        """
         cwd = self.repository
-        for directory in self.path:
+
+        if path is None:
+            path = self.path
+
+        for directory in path:
             try:
                 if isinstance(cwd, list):
                     directory = int(directory)
@@ -59,6 +67,22 @@ class StaticCRUD(CRUD):
                 raise ValueError(f'Dir {directory} not in cwd ({cwd})')
 
         return cwd
+
+    def wrap_list_items(self, items: Data) -> List[Item]:
+        if hasattr(items, 'keys'):
+            items = [Item(k, v) for k, v in items.items()]
+
+        elif isinstance(items, list):
+            if items and 'name' in items[0]:
+                items = [Item(item['name'], item) for item in items]
+            else:
+                items = [Item(str(i), item) for i, item in enumerate(items)]
+
+        else:
+            logging.warning(f'Error, NotImplementedError for {type(items)}')
+            return []
+
+        return items
 
     def fix_directory_type(self, dirs: List[str]):
         """
@@ -79,3 +103,16 @@ class StaticCRUD(CRUD):
                 directory = self.infer_index(directory)
 
         return (directory,) + dirs[1:]
+
+    def format_path(self) -> str:
+        return '/'.join(self._iter_path())
+
+    def _iter_path(self):
+        for path in accumulate_list(self.path):
+            value = path[-1]
+            if isinstance(value, int):
+                i = value
+                item = self._ls(None, path)
+                yield item['name']
+            else:
+                yield value

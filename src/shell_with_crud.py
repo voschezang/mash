@@ -69,7 +69,8 @@ class ShellWithCRUD:
     def update_prompt(self):
         # TODO ensure that this method is run after an exception
         # e.g. after cd fails
-        path = '/'.join([str(a) for a in self.crud.path])
+        path = self.crud.format_path()
+
         prompt = [item for item in (path, '$ ') if item]
         self.shell.prompt = ' '.join(prompt)
 

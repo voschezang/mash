@@ -3,6 +3,9 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from enum import Enum
 import logging
+import sys
+from tempfile import TemporaryFile
+import traceback
 from typing import Callable, List
 from util import find_fuzzy_matches, find_prefix_matches, identity, none
 
@@ -33,6 +36,10 @@ class Option(Enum):
 
 Options = [o.value for o in Option]
 Path = List[str]
+
+
+class CRUDError(RuntimeError):
+    pass
 
 
 class CRUD(ABC):
@@ -74,7 +81,10 @@ class CRUD(ABC):
 
         available_dirs = [item.name for item in self.ls()]
 
-        self.verify_cd_args(dirs, available_dirs)
+        try:
+            self.verify_cd_args(dirs, available_dirs)
+        except AssertionError as e:
+            raise CRUDError('Invalid arguments for `cd`')
 
         if len(dirs) > 0:
             directory = dirs[0]
@@ -167,22 +177,6 @@ class CRUD(ABC):
             self.path, self.prev_path = self.prev_path, self.path
 
         # otherwise, pass
-
-    def wrap_list_items(self, items) -> List[Item]:
-        if hasattr(items, 'keys'):
-            items = [Item(k, v) for k, v in items.items()]
-
-        elif isinstance(items, list):
-            if items and 'name' in items[0]:
-                items = [Item(item['name'], item) for item in items]
-            else:
-                items = [Item(str(i), item) for i, item in enumerate(items)]
-
-        else:
-            logging.warning(f'Error, NotImplementedError for {type(items)}')
-            return []
-
-        return items
 
     def infer_item_names(self, items) -> List[Item]:
         if items and isinstance(items[0].name, int) and 'name' in items[0].value:
