@@ -7,7 +7,7 @@ from time import perf_counter
 import io_util
 from io_util import check_output, read_file, run_subprocess
 from shell import Shell, add_cli_args, run_command
-from shell_base import ShellException, bash_delimiters, py_delimiters
+from shell_base import ShellError, bash_delimiters, py_delimiters
 from util import identity
 
 
@@ -21,7 +21,7 @@ def catch_output(line='', func=run_command, **kwds) -> str:
 def test_run_command():
     run_command('print a')
 
-    with raises(ShellException):
+    with raises(ShellError):
         run_command('echoooo a', strict=True)
 
 
@@ -30,7 +30,7 @@ def test_onecmd_output():
     assert catch_output('print a ; print b') == 'a\nb'
     assert 'Unknown syntax' in catch_output('aaaa a')
 
-    with raises(ShellException):
+    with raises(ShellError):
         run_command('aaaa a', strict=True)
 
 
@@ -42,7 +42,7 @@ def test_onecmd_syntax():
     s = 'A string with ;'
     assert catch_output(f'print " {s} " ') == s
 
-    with raises(ShellException):
+    with raises(ShellError):
         run_command('print "\""', strict=True)
 
 
@@ -64,7 +64,7 @@ def test_pipe_unix():
 def test_pipe_input():
     assert catch_output('print abc | grep abc') == 'abc'
 
-    with raises(ShellException):
+    with raises(ShellError):
         catch_output('echo abc | grep def', strict=False)
 
 
@@ -126,7 +126,7 @@ def test_cli_pipe_interop():
     shell = Shell()
     shell.add_functions({'custom_func': identity})
     cmd = 'print abc | grep abc | custom_func'
-    with raises(ShellException):
+    with raises(ShellError):
         catch_output(cmd)
 
 
@@ -335,7 +335,7 @@ def test_set_do_char_method():
     op = '~'
 
     # invalid syntax
-    with raises(ShellException):
+    with raises(ShellError):
         run_command(op, shell, strict=True)
 
     shell.set_do_char_method(print, op)

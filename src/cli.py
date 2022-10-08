@@ -7,7 +7,7 @@ from quo.prompt import Prompt
 from quo.text import Text
 
 from shell import Shell, all_commands, run_command, main as shell_main
-from shell_base import ShellException
+from shell_base import ShellError
 from doc_inference import infer_synopsis
 
 rprompt_init = 'Type any command to continue'
@@ -55,7 +55,7 @@ def step(session, shell):
         try:
             run_command(cmd, shell)
             session.rprompt = Text(rprompt_default)
-        except ShellException as e:
+        except ShellError as e:
             print(e)
             session.rprompt = Text(rprompt_error)
     except KeyboardInterrupt:

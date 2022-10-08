@@ -11,7 +11,7 @@ import sys
 import traceback
 
 import io_util
-from shell_base import BaseShell, ShellException
+from shell_base import BaseShell, ShellError
 import shell_function as func
 from shell_function import ShellFunction as Function
 from io_util import ArgparseWrapper, bold, has_argument, has_output, log, read_file
@@ -339,7 +339,7 @@ def main(shell: Shell = None, functions: Dict[str, Function] = None, repl=True) 
 
     try:
         run(shell, commands, filename, repl)
-    except ShellException as e:
+    except ShellError as e:
         log(e, prefix='')
         sys.exit(1)
 

@@ -23,7 +23,7 @@ default_session_filename = '.shell_session.json'
 Command = Callable[[Cmd, str], str]
 
 
-class ShellException(RuntimeError):
+class ShellError(RuntimeError):
     pass
 
 
@@ -201,7 +201,7 @@ class BaseShell(Cmd):
 
         except OSError as e:
             if strict:
-                raise ShellException(e)
+                raise ShellError(e)
 
             log(f'Session file not found: {session}: {e}')
             return
@@ -292,7 +292,7 @@ class BaseShell(Cmd):
         if self.ignore_invalid_syntax:
             return super().default(line)
 
-        raise ShellException(f'Unknown syntax: {line}')
+        raise ShellError(f'Unknown syntax: {line}')
 
     ############################################################################
     # Pipes
@@ -313,7 +313,7 @@ class BaseShell(Cmd):
                 returncode, stderr = e.args
                 log(f'Shell exited with {returncode}: {stderr}')
 
-                raise ShellException(str(e))
+                raise ShellError(str(e))
 
         if result is not None:
             print(result)
@@ -341,7 +341,7 @@ class BaseShell(Cmd):
             result = ''
 
         elif result is None:
-            raise ShellException('Last return value was absent')
+            raise ShellError('Last return value was absent')
 
         return result
 
@@ -417,7 +417,7 @@ class BaseShell(Cmd):
             if self.ignore_invalid_syntax:
                 return []
 
-            raise ShellException(
+            raise ShellError(
                 f'Invalid syntax: {e} for {str(line)[:10]} ..')
 
         if not terms:
@@ -451,7 +451,7 @@ class BaseShell(Cmd):
                 if self.ignore_invalid_syntax:
                     log(msg)
                     return
-                raise ShellException(msg)
+                raise ShellError(msg)
 
             return method(lhs, *rhs)
 
@@ -485,16 +485,17 @@ class BaseShell(Cmd):
                 elif self.ignore_invalid_syntax:
                     log(error_msg)
                 else:
-                    raise ShellException(error_msg)
+                    raise ShellError(error_msg)
 
             elif is_globbable(v):
-                # TODO verify that v is un-quoted
+                # TODO properly handle quotes
+                # e.g. echo '"{1..3}"'
 
                 try:
                     matches = glob(v, self.completenames_options,
                                    strict=not self.ignore_invalid_syntax)
                 except ValueError as e:
-                    raise ShellException(e)
+                    raise ShellError(e)
 
                 yield ' '.join(matches)
                 continue
