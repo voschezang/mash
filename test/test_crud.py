@@ -12,8 +12,8 @@ class CRUD(crud.CRUD):
     def __init__(self, **kwds):
         super().__init__(**kwds)
 
-    def ls(self, resource=None):
-        if resource is list:
+    def ls_absolute(self, path=None):
+        if path == ['']:
             return [Item(str(i), item) for i, item in enumerate(list_items)]
 
         return [Item(k, v) for k, v in dict_items.items()]
@@ -28,7 +28,7 @@ def test_ls():
     result = init().ls()
     assert [r.name for r in result] == list(dict_items.keys())
 
-    result = init().ls(list)
+    result = init().ls([''])
     assert [int(r.name) for r in result] == list(range(len(list_items)))
     assert [r.value for r in result] == list_items
 

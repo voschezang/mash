@@ -3,7 +3,7 @@ import logging
 from pprint import pformat
 from typing import Any, Dict, List, Union
 
-from crud import CRUD, Item, Option
+from crud import CRUD, CRUDError, Item, Option, Path
 from util import accumulate_list, find_prefix_matches
 
 # example data with dicts and lists
@@ -16,29 +16,65 @@ class StaticCRUD(CRUD):
         super().__init__(pre_cd_hook=self.fix_directory_type, **kwds)
         self.repository = repository
 
-    def ls(self, obj=None) -> List[Item]:
-        items = self._ls(obj)
+    def ls_absolute(self, path: Path = []) -> List[Item]:
+        items = self._ls(path)
+        return self.wrap_list_items(items)
+
+    def ls_str(self, obj: str = None) -> List[Item]:
+        items = self.ls_inner(obj)
         return self.wrap_list_items(items)
 
     def ll(self, obj=None, delimiter='\n') -> str:
-        items = self.infer_item_names(self.ls(obj))
+        items = self.infer_item_names(self.ls_str(obj))
         return delimiter.join([str(item.name) for item in items])
 
     def tree(self, obj=None):
-        items = self._ls(obj)
+        items = self.ls_inner(obj)
         return pformat(items, indent=2)
 
-    def _ls(self, obj, path=None) -> Data:
+    def ls_inner(self, obj: str = None, path=None) -> Data:
+        if path is None:
+            path = self.path
+
+        if obj is not None:
+            path = path + [obj]
+
+        return self._ls(path)
+
+    def _ls(self, path: Path = None) -> Data:
+        obj = None
+        if path:
+            obj = path[-1]
+            path = path[:-1]
+
+        # TODO handle indices AND .name fields
         cwd = self.get_cwd(path)
+
         if obj is None:
             # TODO fixme this may return a list instead of `Data`
             return cwd
 
-        if self.autocomplete and obj not in cwd:
-            obj = next(find_prefix_matches(obj, cwd.keys()))
+        if isinstance(obj, str) and obj.isdigit():
+            raise ValueError('-')
+        if isinstance(cwd, list) and isinstance(obj, int):
+            return cwd[int(obj)]
 
+        # do a fuzzy search
+        if self.autocomplete and obj not in cwd:
+            if isinstance(cwd, dict):
+                keys = cwd.keys()
+            else:
+                keys = [k['name'] for k in cwd]
+
+            obj = next(find_prefix_matches(str(obj), keys))
+
+        # do an exact search
         if obj in cwd:
-            return cwd[obj]
+            if isinstance(cwd, dict):
+                return cwd[obj]
+
+            i = cwd.find(obj)
+            return cwd[i]
 
         values = cwd.keys()
         msg = f'Error, {obj} is not in cwd ({values})'
@@ -48,15 +84,12 @@ class StaticCRUD(CRUD):
     def cwd(self) -> Data:
         """Infer the current working directory
         """
-        return self.get_cwd()
+        return self.get_cwd(self.path)
 
-    def get_cwd(self, path=None) -> Data:
+    def get_cwd(self, path: Path = []) -> Data:
         """Infer the current working directory
         """
         cwd = self.repository
-
-        if path is None:
-            path = self.path
 
         for directory in path:
             try:
@@ -95,7 +128,7 @@ class StaticCRUD(CRUD):
         if Option.verify(dirs[0]):
             return dirs
 
-        directory = dirs[0]
+        directory = str(dirs[0])
         if isinstance(self.cwd, list):
             if directory.isdigit():
                 directory = int(directory)
@@ -111,8 +144,7 @@ class StaticCRUD(CRUD):
         for path in accumulate_list(self.path):
             value = path[-1]
             if isinstance(value, int):
-                i = value
-                item = self._ls(None, path)
+                item = self.ls_inner(None, path)
                 yield item['name']
             else:
                 yield value

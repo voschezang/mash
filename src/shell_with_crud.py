@@ -29,16 +29,17 @@ class ShellWithCRUD:
         self.shell.set_do_char_method(self.crud.cd, Options)
 
     def set_shell_functions(self, cls):
-        # convert method to a function
+        # convert methods to functions
         cd = partial_simple(self.crud.cd)
         ls = partial_simple(self.crud.ll, delimiter=', ')
         ll = partial_simple(self.crud.ll)
+        tree = partial_simple(self.crud.tree)
 
         set_functions({'cd': cd,
                        'ls': ls,
                        'll': ll,
-                       'tree': self.crud.tree},
-                      cls)
+                       'tree': tree
+                       }, cls)
 
     def set_shell_completions(self, cls):
         set_completions({'cd': self.crud.complete_cd}, cls)
@@ -53,7 +54,7 @@ class ShellWithCRUD:
         """
         self.unset_cd_aliases()
 
-        dirs = [item.name for item in self.crud.ls()]
+        dirs = [item.name for item in self.crud.ls_str()]
         self.shell.completenames_options = dirs
 
         for dirname in dirs:

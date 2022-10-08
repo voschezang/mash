@@ -10,17 +10,17 @@ def init():
 
 def test_ls():
     crud = init()
-    items = crud.ls()
+    items = crud.ls_str()
     assert items[0].name == 'worlds'
 
-    items = crud.ls('worlds')
+    items = crud.ls_str('worlds')
     assert items[0].name == 'earth'
 
-    items = crud.ls('w')
+    items = crud.ls_str('w')
     assert items[0].name == 'earth'
 
     with raises(ValueError):
-        crud.ls('0')
+        crud.ls_str('0')
 
 
 def test_cd():
@@ -34,6 +34,26 @@ def test_cd():
     crud.cd('earth')
     assert crud.path == ['worlds', 0]
 
+    crud.cd('..')
+    assert crud.path == ['worlds']
+
+    crud.cd('..', 'w', 'e')
+    assert crud.path == ['worlds', 0]
+
+    crud.cd('..')
+    assert crud.path == ['worlds']
+
+    with raises(AssertionError):
+        crud.cd('100')
+
+    crud.cd('0')
+    assert crud.path == ['worlds', 0]
+
+    crud.cd('..')
+    assert crud.path == ['worlds']
+    crud.cd(0)
+    assert crud.path == ['worlds', 0]
+
 
 def test_cd_ls():
     crud = init()
@@ -42,10 +62,10 @@ def test_cd_ls():
     crud.cd('w')
     assert crud.path == ['worlds']
 
-    assert crud.ls()[0].name == 'earth'
+    assert crud.ls_str()[0].name == 'earth'
 
     crud.cd('earth')
-    assert len(crud.ls('animals')) == 2
+    assert len(crud.ls_str('animals')) == 2
 
     # TODO
     # assert crud.ls('..') == []

@@ -4,10 +4,9 @@ from dataclasses import dataclass
 from enum import Enum
 import logging
 import sys
-from tempfile import TemporaryFile
 import traceback
 from typing import Callable, List
-from util import find_fuzzy_matches, find_prefix_matches, identity, none
+from util import extract_exception, find_fuzzy_matches, find_prefix_matches, identity, list_prefix_matches, none
 
 
 @dataclass
@@ -46,6 +45,7 @@ class CRUD(ABC):
     """CRUD operations that mimics a directory hierarchy.
     A directory (object) can consists folders and files (objects).
     """
+    ROOT = object()
 
     def __init__(self, path: Path = [], options: Enum = Option, autocomplete=True,
                  pre_cd_hook: Callable[[str], str] = identity, post_cd_hook=none):
@@ -57,11 +57,25 @@ class CRUD(ABC):
         self.pre_cd_hook = pre_cd_hook
         self.post_cd_hook = post_cd_hook
 
-    @abstractmethod
-    def ls(self, obj: str = None) -> List[Item]:
+    def ls(self, path: Path = None) -> List[Item]:
         """List all objects in a folder or all properties of an object
         """
+        if not path:
+            path = self.path
+        elif path[0] != CRUD.ROOT:
+            path = self.path + path
+
+        return self.ls_absolute(path)
+
+    @abstractmethod
+    def ls_absolute(self, path: Path = []) -> List[Item]:
         pass
+
+    # @abstractmethod
+    # def ls(self, obj: str = None) -> List[Item]:
+    #     """List all objects in a folder or all properties of an object
+    #     """
+    #     pass
 
     # @abstractmethod
     def ensure(self, key: str, value):
@@ -81,10 +95,7 @@ class CRUD(ABC):
 
         available_dirs = [item.name for item in self.ls()]
 
-        try:
-            self.verify_cd_args(dirs, available_dirs)
-        except AssertionError as e:
-            raise CRUDError('Invalid arguments for `cd`')
+        self.verify_cd_args(dirs, available_dirs)
 
         if len(dirs) > 0:
             directory = dirs[0]
@@ -139,7 +150,7 @@ class CRUD(ABC):
                 return
 
         if self.autocomplete:
-            if next(find_prefix_matches(directory, allowed_dirs)):
+            for _ in list_prefix_matches(directory, allowed_dirs):
                 return
 
         if directory not in allowed_dirs:
