@@ -4,6 +4,8 @@ from functools import partial
 from itertools import accumulate, dropwhile, takewhile
 from operator import contains
 from queue import Queue
+import sys
+import traceback
 from nltk.metrics.distance import edit_distance
 from typing import Any, Callable, Dict, Generator, Iterable, List, Literal, MappingView, Sequence, Tuple, TypeVar, Union
 
@@ -311,22 +313,6 @@ def find_fuzzy_matches(element: str, elements: List[str]):
     yield from ordered
 
 
-def list_prefix_matches(element: str, elements: List[str]):
-    """Yields all elements that are equal to a prefix of `element`.
-    Elements with better matches are chosen first.
-    """
-    prev_matches = set()
-    for i in range(max(1, len(element)), 0, -1):
-        prefix = element[:i]
-        for other in elements:
-            if other in prev_matches:
-                continue
-
-            if other.startswith(prefix):
-                prev_matches |= {other}
-                yield other
-
-
 def find_prefix_matches(element: str, elements: MappingView[str]):
     """Yields all elements that are equal to a prefix of `element`.
     Elements with better matches are chosen first.
@@ -343,6 +329,22 @@ def find_prefix_matches(element: str, elements: MappingView[str]):
         preview = ', '.join(take(elements, 3))
         raise ValueError(
             f'{element} is not a prefix of any of the given items [{preview}, ..]')
+
+
+def list_prefix_matches(element: str, elements: List[str]):
+    """Yields all elements that are equal to a prefix of `element`.
+    Elements with better matches are chosen first.
+    """
+    prev_matches = set()
+    for i in range(max(1, len(element)), 0, -1):
+        prefix = element[:i]
+        for other in elements:
+            if other in prev_matches:
+                continue
+
+            if other.startswith(prefix):
+                prev_matches |= {other}
+                yield other
 
 
 ################################################################################
@@ -368,6 +370,17 @@ def is_enum(cls: type) -> bool:
         return issubclass(cls, Enum)
     except TypeError:
         pass
+
+def extract_exception():
+    """
+    except AssertionError:
+        print(extract_exception())
+    """
+    _, _, last_traceback = sys.exc_info()
+    info = traceback.extract_tb(last_traceback)
+    filename, line, func, text = info[-1]
+    return filename, line, func, text
+
 
 ################################################################################
 # Pure functions
