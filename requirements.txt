@@ -1,5 +1,6 @@
 aiohttp
 autopep8
+braceexpand
 django
 flake8
 flask

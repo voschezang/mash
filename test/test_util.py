@@ -1,7 +1,7 @@
 from operator import contains, eq
 from pytest import raises
 
-from util import concat, constant, equals, find_prefix_matches, find_fuzzy_matches, for_all, for_any, identity, list_prefix_matches, not_equals, split, split_sequence, split_tips
+from util import concat, constant, equals, find_prefix_matches, find_fuzzy_matches, for_all, for_any, glob, identity, list_prefix_matches, not_equals, split, split_sequence, split_tips
 
 
 def test_concat_empty_container():
@@ -153,6 +153,26 @@ def test_find_prefix_matches_all():
     assert list(find_prefix_matches('a', ['c', 'b', 'a'])) == ['a']
     assert list(find_prefix_matches('a', ['aa', 'ai'])) == ['aa', 'ai']
     assert list(find_prefix_matches('ab', ['aa', 'ab'])) == ['ab', 'aa']
+
+
+def test_glob_with_options():
+    v = 'abc?{a'
+    assert list(glob(v)) == [v]
+
+    v = '?[a-z]*'
+    assert list(glob(v)) == [v]
+
+    options = ['ab', 'de']
+    assert list(glob('*', options)) == options
+    assert list(glob('a?', options)) == ['ab']
+    assert list(glob('[a-z]?', options)) == options
+    assert list(glob('[a-z][a-c]', options)) == ['ab']
+
+
+def test_glob_ranges():
+    assert list(glob('{4..2}')) == ['4', '3', '2']
+    assert list(glob('{aa,bb}')) == ['aa', 'bb']
+    assert set(glob('{1..2}-{aa,bb}')) == {'1-aa', '2-aa', '1-bb', '2-bb'}
 
 
 def test_identity():

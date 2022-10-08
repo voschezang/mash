@@ -1,7 +1,10 @@
 from dataclasses import dataclass
+from braceexpand import braceexpand, UnbalancedBracesError
 from enum import Enum
+# from fnmatch import fnmatch
+import fnmatch
 from functools import partial
-from itertools import accumulate, dropwhile, takewhile
+from itertools import accumulate, chain, dropwhile, takewhile
 from operator import contains
 from queue import Queue
 import sys
@@ -90,10 +93,10 @@ def infer_dependencies(known_deps: AdjacencyList, key: str):
             direct_dependencies = infer_dependencies(known_deps, other_key)
             yield from direct_dependencies
 
-
 ################################################################################
 # Operations for lists and sequences
 ################################################################################
+
 
 def append_list(a: list, b) -> list:
     a = a.copy()
@@ -347,6 +350,32 @@ def list_prefix_matches(element: str, elements: List[str]):
                 yield other
 
 
+def glob(v: str, options: List[str] = []) -> Iterable[str]:
+    """Filter items based on Unix shell-style wildcards
+    E.g.
+    ```
+    w?ldcard
+    [a-e]*
+    ranges_{1..3}
+    options_{a,b,c}
+    ```
+    """
+    try:
+        values = braceexpand(v)
+    except UnbalancedBracesError:
+        values = [v]
+
+    if not options:
+        yield from values
+        return
+
+    for value in values:
+        matches = list(fnmatch.filter(options, value))
+        if matches:
+            yield from matches
+        else:
+            yield value
+
 ################################################################################
 # Inspection helpers
 ################################################################################
@@ -370,6 +399,7 @@ def is_enum(cls: type) -> bool:
         return issubclass(cls, Enum)
     except TypeError:
         pass
+
 
 def extract_exception():
     """
