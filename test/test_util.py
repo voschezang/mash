@@ -167,6 +167,13 @@ def test_glob_with_options():
     assert list(glob('a?', options)) == ['ab']
     assert list(glob('[a-z]?', options)) == options
     assert list(glob('[a-z][a-c]', options)) == ['ab']
+    assert list(glob('[a-z]', options)) == ['[a-z]']
+
+    with raises(ValueError):
+        list(glob('{a]', options, strict=True))
+
+    with raises(ValueError):
+        list(glob('[a-z]', options, strict=True))
 
 
 def test_glob_ranges():

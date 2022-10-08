@@ -32,6 +32,12 @@ def test_crud_ls():
     assert catch_output('ls abc', shell=shell) == ''
 
 
+def test_crud_expansion():
+    obj = init()
+    shell = obj.shell
+    assert catch_output('print *', shell=shell) == 'worlds'
+
+
 def test_crud_cd_dict():
     obj = init()
     shell = obj.shell

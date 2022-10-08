@@ -317,6 +317,19 @@ def test_variable_expansion():
     assert catch_output('print $a', shell=shell) == '2'
 
 
+def test_variable_expansion_regex():
+    shell = Shell()
+    shell.completenames_options = ['abc', 'prefix123']
+
+    all = ' '.join(shell.completenames_options)
+    assert catch_output('echo *', shell=shell) == all
+
+    assert catch_output('echo ab?', shell=shell) == 'abc'
+    assert catch_output('echo ???b', shell=shell) == '???b'
+    assert catch_output('echo a*', shell=shell) == 'abc'
+    assert catch_output('echo [a-z]*123', shell=shell) == 'prefix123'
+
+
 def test_set_do_char_method():
     shell = Shell()
     op = '~'

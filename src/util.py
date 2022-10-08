@@ -1,16 +1,15 @@
-from dataclasses import dataclass
 from braceexpand import braceexpand, UnbalancedBracesError
+from dataclasses import dataclass
 from enum import Enum
-# from fnmatch import fnmatch
-import fnmatch
 from functools import partial
-from itertools import accumulate, chain, dropwhile, takewhile
+from itertools import accumulate, dropwhile, takewhile
+from nltk.metrics.distance import edit_distance
 from operator import contains
 from queue import Queue
+from typing import Any, Callable, Dict, Generator, Iterable, List, Literal, MappingView, Sequence, Tuple, TypeVar, Union
+import fnmatch
 import sys
 import traceback
-from nltk.metrics.distance import edit_distance
-from typing import Any, Callable, Dict, Generator, Iterable, List, Literal, MappingView, Sequence, Tuple, TypeVar, Union
 
 # backwards compatibility
 from io_util import interactive
@@ -18,6 +17,7 @@ from io_util import interactive
 T = TypeVar('T')
 
 AdjacencyList = Dict[str, List[str]]
+GLOB_CHARS = '?*{}[]'
 
 
 class DataClassHelper:
@@ -350,7 +350,7 @@ def list_prefix_matches(element: str, elements: List[str]):
                 yield other
 
 
-def glob(v: str, options: List[str] = []) -> Iterable[str]:
+def glob(value: str, options: List[str] = [], strict=False) -> Iterable[str]:
     """Filter items based on Unix shell-style wildcards
     E.g.
     ```
@@ -361,9 +361,12 @@ def glob(v: str, options: List[str] = []) -> Iterable[str]:
     ```
     """
     try:
-        values = braceexpand(v)
+        values = braceexpand(value)
     except UnbalancedBracesError:
-        values = [v]
+        if strict:
+            raise ValueError(f'Unbalanced braces: {value}')
+        else:
+            values = [value]
 
     if not options:
         yield from values
@@ -374,6 +377,8 @@ def glob(v: str, options: List[str] = []) -> Iterable[str]:
         if matches:
             yield from matches
         else:
+            if strict and is_globbable(value):
+                raise ValueError(f'No matches found: {value}')
             yield value
 
 ################################################################################
@@ -485,6 +490,10 @@ def call(f, *_):
 
 def is_alpha(key: str, ignore=[]) -> bool:
     return all(c.isalpha() or c in ignore for c in key)
+
+
+def is_globbable(value: str) -> bool:
+    return for_any(GLOB_CHARS, contains, value)
 
 
 def for_any(foreach_items: Sequence, predicate: Callable, *args, **kwds) -> bool:

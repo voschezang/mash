@@ -12,7 +12,7 @@ import subprocess
 
 import io_util
 from io_util import log, shell_ready_signal, print_shell_ready_signal, check_output
-from util import for_any, is_alpha, omit_prefixes, split_prefixes, split_sequence
+from util import for_any, is_alpha, is_globbable, omit_prefixes, split_prefixes, split_sequence, glob
 
 confirmation_mode = False
 bash_delimiters = ['|', '>', '>>', '1>', '1>>', '2>', '2>>']
@@ -486,6 +486,18 @@ class BaseShell(Cmd):
                     log(error_msg)
                 else:
                     raise ShellException(error_msg)
+
+            elif is_globbable(v):
+                # TODO verify that v is un-quoted
+
+                try:
+                    matches = glob(v, self.completenames_options,
+                                   strict=not self.ignore_invalid_syntax)
+                except ValueError as e:
+                    raise ShellException(e)
+
+                yield ' '.join(matches)
+                continue
 
             yield v
 
