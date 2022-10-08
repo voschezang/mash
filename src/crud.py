@@ -3,10 +3,8 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from enum import Enum
 import logging
-import sys
-import traceback
 from typing import Callable, List
-from util import extract_exception, find_fuzzy_matches, find_prefix_matches, identity, list_prefix_matches, none
+from util import find_fuzzy_matches, find_prefix_matches, identity, list_prefix_matches, none
 
 
 @dataclass

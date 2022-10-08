@@ -9,6 +9,7 @@ from util import accumulate_list, find_prefix_matches
 # example data with dicts and lists
 Data = Union[Dict[str, Any], list]
 cd_aliasses = 'cd_aliasses'
+NAME = 'name'
 
 
 class StaticCRUD(CRUD):
@@ -64,7 +65,7 @@ class StaticCRUD(CRUD):
             if isinstance(cwd, dict):
                 keys = cwd.keys()
             else:
-                keys = [k['name'] for k in cwd]
+                keys = [k[NAME] for k in cwd]
 
             obj = next(find_prefix_matches(str(obj), keys))
 
@@ -103,11 +104,11 @@ class StaticCRUD(CRUD):
 
     def wrap_list_items(self, items: Data) -> List[Item]:
         if hasattr(items, 'keys'):
-            items = [Item(k, v) for k, v in items.items()]
+            items = [Item(k, v) for k, v in items.items() if k != NAME]
 
         elif isinstance(items, list):
-            if items and 'name' in items[0]:
-                items = [Item(item['name'], item) for item in items]
+            if items and NAME in items[0]:
+                items = [Item(item[NAME], item) for item in items]
             else:
                 items = [Item(str(i), item) for i, item in enumerate(items)]
 
@@ -145,6 +146,6 @@ class StaticCRUD(CRUD):
             value = path[-1]
             if isinstance(value, int):
                 item = self.ls_inner(None, path)
-                yield item['name']
+                yield item[NAME]
             else:
                 yield value

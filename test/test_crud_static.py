@@ -69,3 +69,14 @@ def test_cd_ls():
 
     # TODO
     # assert crud.ls('..') == []
+
+
+def test_cd_ll():
+    crud = init()
+    # assert crud.ll() == 'worlds'
+
+    crud.cd('w', 'e')
+    assert crud.ll() == 'animals'
+
+    crud.cd('a')
+    assert crud.ll(delimiter=', ') == 'terrestrial, aquatic'
