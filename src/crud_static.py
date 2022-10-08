@@ -3,13 +3,12 @@ import logging
 from pprint import pformat
 from typing import Any, Dict, List, Union
 
-from crud import CRUD, CRUDError, Item, Option, Path
+from crud import CRUD, Item, Option, Path
 from util import accumulate_list, find_prefix_matches
 
 # example data with dicts and lists
 Data = Union[Dict[str, Any], list]
 cd_aliasses = 'cd_aliasses'
-NAME = 'name'
 
 
 class StaticCRUD(CRUD):
@@ -65,7 +64,7 @@ class StaticCRUD(CRUD):
             if isinstance(cwd, dict):
                 keys = cwd.keys()
             else:
-                keys = [k[NAME] for k in cwd]
+                keys = [k[CRUD.NAME] for k in cwd]
 
             obj = next(find_prefix_matches(str(obj), keys))
 
@@ -104,11 +103,11 @@ class StaticCRUD(CRUD):
 
     def wrap_list_items(self, items: Data) -> List[Item]:
         if hasattr(items, 'keys'):
-            items = [Item(k, v) for k, v in items.items() if k != NAME]
+            items = [Item(k, v) for k, v in items.items() if k != CRUD.NAME]
 
         elif isinstance(items, list):
-            if items and NAME in items[0]:
-                items = [Item(item[NAME], item) for item in items]
+            if items and CRUD.NAME in items[0]:
+                items = [Item(item[CRUD.NAME], item) for item in items]
             else:
                 items = [Item(str(i), item) for i, item in enumerate(items)]
 
@@ -146,6 +145,6 @@ class StaticCRUD(CRUD):
             value = path[-1]
             if isinstance(value, int):
                 item = self.ls_inner(None, path)
-                yield item[NAME]
+                yield item[CRUD.NAME]
             else:
                 yield value

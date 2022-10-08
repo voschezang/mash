@@ -40,10 +40,11 @@ class CRUDError(RuntimeError):
 
 
 class CRUD(ABC):
-    """CRUD operations that mimics a directory hierarchy.
-    A directory (object) can consists folders and files (objects).
+    """CRUD operations that mimics a file ssytem directories.
+    A directory (object) can consists of folders and files (objects).
     """
     ROOT = object()
+    NAME = 'name'
 
     def __init__(self, path: Path = [], options: Enum = Option, autocomplete=True,
                  pre_cd_hook: Callable[[str], str] = identity, post_cd_hook=none):
@@ -55,25 +56,26 @@ class CRUD(ABC):
         self.pre_cd_hook = pre_cd_hook
         self.post_cd_hook = post_cd_hook
 
-    def ls(self, path: Path = None) -> List[Item]:
+    def ls(self, *paths: Path) -> List[Item]:
         """List all objects in a folder or all properties of an object
         """
-        if not path:
-            path = self.path
-        elif path[0] != CRUD.ROOT:
-            path = self.path + path
+        results = []
 
-        return self.ls_absolute(path)
+        if not paths:
+            path = self.path
+            results = self.ls_absolute(path)
+
+        for path in paths:
+            if path and path[0] != CRUD.ROOT:
+                path = self.path + path
+
+            results += self.ls_absolute(path)
+
+        return results
 
     @abstractmethod
     def ls_absolute(self, path: Path = []) -> List[Item]:
         pass
-
-    # @abstractmethod
-    # def ls(self, obj: str = None) -> List[Item]:
-    #     """List all objects in a folder or all properties of an object
-    #     """
-    #     pass
 
     # @abstractmethod
     def ensure(self, key: str, value):
@@ -188,8 +190,8 @@ class CRUD(ABC):
         # otherwise, pass
 
     def infer_item_names(self, items) -> List[Item]:
-        if items and isinstance(items[0].name, int) and 'name' in items[0].value:
-            items = [Item(item.value['name'], item) for item in items]
+        if items and isinstance(items[0].name, int) and CRUD.NAME in items[0].value:
+            items = [Item(item.value[CRUD.NAME], item) for item in items]
         return items
 
     def infer_index(self, directory: str):

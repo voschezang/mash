@@ -25,12 +25,14 @@ def init():
 
 def test_ls():
     result = init().ls()
-    result = init().ls()
     assert [r.name for r in result] == list(dict_items.keys())
 
     result = init().ls([''])
     assert [int(r.name) for r in result] == list(range(len(list_items)))
     assert [r.value for r in result] == list_items
+
+    result = init().ls([''], [''])
+    assert [r.value for r in result] == list_items + list_items
 
 
 def test_cd_single_folder():
