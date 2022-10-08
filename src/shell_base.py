@@ -414,11 +414,12 @@ class BaseShell(Cmd):
             terms = shlex.split(line, comments=True)
 
         except ValueError as e:
+            msg = f'Invalid syntax: {e} for {str(line)[:10]} ..'
             if self.ignore_invalid_syntax:
+                log(msg)
                 return []
 
-            raise ShellError(
-                f'Invalid syntax: {e} for {str(line)[:10]} ..')
+            raise ShellError(msg)
 
         if not terms:
             return []
@@ -488,17 +489,16 @@ class BaseShell(Cmd):
                     raise ShellError(error_msg)
 
             elif is_globbable(v):
-                # TODO properly handle quotes
-                # e.g. echo '"{1..3}"'
-
                 try:
-                    matches = glob(v, self.completenames_options,
-                                   strict=not self.ignore_invalid_syntax)
-                except ValueError as e:
-                    raise ShellError(e)
+                    matches = glob(v, self.completenames_options, strict=True)
+                    yield ' '.join(matches)
+                    continue
 
-                yield ' '.join(matches)
-                continue
+                except ValueError as e:
+                    if self.ignore_invalid_syntax:
+                        log(f'Invalid syntax: {e}')
+                    else:
+                        raise ShellError(e)
 
             yield v
 

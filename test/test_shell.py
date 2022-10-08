@@ -329,6 +329,10 @@ def test_variable_expansion_regex():
     assert catch_output('echo a*', shell=shell) == 'abc'
     assert catch_output('echo [a-z]*123', shell=shell) == 'prefix123'
 
+    # TODO
+    # assert catch_output('echo "{1..3}"', shell=shell) == '{1..3}'
+    # assert catch_output('echo \{1..3}\"', shell=shell) == '{1..3}'
+
 
 def test_set_do_char_method():
     shell = Shell()

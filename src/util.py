@@ -362,9 +362,9 @@ def glob(value: str, options: List[str] = [], strict=False) -> Iterable[str]:
     """
     try:
         values = braceexpand(value)
-    except UnbalancedBracesError:
+    except UnbalancedBracesError as e:
         if strict:
-            raise ValueError(f'Unbalanced braces: {value}')
+            raise ValueError(e)
         else:
             values = [value]
 
