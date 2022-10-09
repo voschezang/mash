@@ -20,13 +20,12 @@ class StaticCRUD(CRUD):
         items = self.ls_absolute_inner(path)
         return self.infer_item_names(items)
 
-    def ll(self, obj: str = None, delimiter='\n') -> str:
-        if obj is not None:
-            path = [obj]
+    def ll(self, *path: str, delimiter='\n') -> str:
+        if path:
+            items = self.ls(path)
         else:
-            path = []
+            items = self.ls()
 
-        items = self.ls(*path)
         return delimiter.join([str(item.name) for item in items])
 
     def tree(self, obj=None):
@@ -36,7 +35,6 @@ class StaticCRUD(CRUD):
 
         items = self.ls_with_defaults(obj)
         return pformat(items, indent=2)
-
 
     def ls_absolute_inner(self, path: Path = None) -> Data:
         self.filter_path(path)
@@ -82,7 +80,8 @@ class StaticCRUD(CRUD):
     def infer_data(self, path: Path, data) -> Data:
         if isinstance(data, type):
             if has_method(data, 'get_all'):
-                data = data.get_all(path)
+                items = data.get_all(path)
+                data = [Item(k, None) for k in items]
             else:
                 data = data.__annotations__
         return data
@@ -95,7 +94,7 @@ class StaticCRUD(CRUD):
             if items and CRUD.NAME in items[0]:
                 items = [Item(item[CRUD.NAME], item) for item in items]
             else:
-                items = [Item(str(i), item) for i, item in enumerate(items)]
+                items = [Item(item, None) for item in items]
 
         else:
             logging.warning(f'Error, NotImplementedError for {type(items)}')

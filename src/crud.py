@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from enum import Enum
 import logging
-from typing import Callable, List
+from typing import Callable, List, Union
 from util import find_fuzzy_matches, find_prefix_matches, identity, list_prefix_matches, none
 
 
@@ -56,7 +56,7 @@ class CRUD(ABC):
         self.pre_cd_hook = pre_cd_hook
         self.post_cd_hook = post_cd_hook
 
-    def ls(self, *paths: Path) -> List[Item]:
+    def ls(self, *paths: Union[Path, str]) -> List[Item]:
         """List all objects in a folder or all properties of an object
         """
         results = []
@@ -66,8 +66,11 @@ class CRUD(ABC):
             results = self.ls_absolute(path)
 
         for path in paths:
+            if isinstance(path, str):
+                path = [path]
+
             if path and path[0] != CRUD.ROOT:
-                path = self.path + [path]
+                path = self.path + list(path)
 
             results += self.ls_absolute(path)
 
