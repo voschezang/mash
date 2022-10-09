@@ -42,50 +42,51 @@ class StaticCRUD(CRUD):
         return self._ls(path)
 
     def _ls(self, path: Path = None) -> Data:
-        cwd = self.repository
-        # cwd = self.infer_data(path, cwd)
+        contents = self.repository
+
         for directory in path:
+            contents = self.infer_data(path, contents)
             try:
-                if isinstance(cwd, list) and isinstance(directory, int):
+                if isinstance(contents, list) and isinstance(directory, int):
                     # directory = int(directory)
-                    cwd = cwd[directory]
+                    contents = contents[directory]
                     continue
 
                 # do a fuzzy serach
-                if self.autocomplete and directory not in cwd:
-                    if isinstance(cwd, dict):
-                        keys = cwd.keys()
+                if self.autocomplete and directory not in contents:
+                    if isinstance(contents, dict):
+                        keys = contents.keys()
                     else:
-                        keys = [k[CRUD.NAME] for k in cwd]
+                        keys = [k[CRUD.NAME] for k in contents]
 
                     directory = next(find_prefix_matches(str(directory), keys))
 
                 # do an exact search
-                if directory not in cwd:
-                    values = cwd.keys() if isinstance(cwd, dict) else cwd
+                if directory not in contents:
+                    values = contents.keys() if isinstance(contents, dict) else contents
                     msg = f'Error, {directory} is not in cwd ({values})'
                     raise ValueError(msg)
 
-                if isinstance(cwd, dict):
-                    cwd = cwd[directory]
+                if isinstance(contents, dict):
+                    contents = contents[directory]
                 else:
-                    i = cwd.find(directory)
-                    cwd = cwd[i]
+                    i = contents.find(directory)
+                    contents = contents[i]
                 continue
 
             except (IndexError, KeyError):
-                raise ValueError(f'Dir {directory} not in cwd ({cwd})')
+                raise ValueError(f'Dir {directory} not in cwd ({contents})')
 
-        # cwd = self.infer_data(path, cwd)
-        return cwd
+        contents = self.infer_data(path, contents)
+        return contents
 
-    def infer_data(self, path, cwd):
-        if isinstance(cwd, type):
-            if has_method(cwd, 'get_all'):
-                cwd = cwd.get_all(path)
+    def infer_data(self, path: Path, data) -> Data:
+        if isinstance(data, type):
+            if has_method(data, 'get_all'):
+                data = data.get_all(path)
             else:
-                cwd = cwd.__annotations__
-        return cwd
+                data = data.__annotations__
+        return data
 
     def wrap_list_items(self, items: Data) -> List[Item]:
         if hasattr(items, 'keys'):

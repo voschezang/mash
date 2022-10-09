@@ -66,6 +66,7 @@ def test_cd_ls():
 
     crud.cd('earth')
     assert len(crud.ls_str('animals')) == 2
+    assert crud.ls('animals')[0].name == ''
 
     # TODO
     # assert crud.ls('..') == []
