@@ -75,8 +75,6 @@ class TeamType(Enum):
 
 @dataclass
 class TeamData:
-    """An example of a subclass of custom Spec type
-    """
     members: List[User]
     team_type: TeamType = 'A'
     active: bool = True

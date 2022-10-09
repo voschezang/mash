@@ -4,7 +4,7 @@ from pprint import pformat
 from typing import Any, Dict, List, Union
 
 from crud import CRUD, Item, Option, Path
-from util import accumulate_list, find_prefix_matches
+from util import accumulate_list, find_prefix_matches, has_method
 
 # example data with dicts and lists
 Data = Union[Dict[str, Any], list]
@@ -42,63 +42,49 @@ class StaticCRUD(CRUD):
         return self._ls(path)
 
     def _ls(self, path: Path = None) -> Data:
-        obj = None
-        if path:
-            obj = path[-1]
-            path = path[:-1]
-
-        # TODO handle indices AND .name fields
-        cwd = self.get_cwd(path)
-
-        if obj is None:
-            # TODO fixme this may return a list instead of `Data`
-            return cwd
-
-        if isinstance(obj, str) and obj.isdigit():
-            raise ValueError('-')
-        if isinstance(cwd, list) and isinstance(obj, int):
-            return cwd[int(obj)]
-
-        # do a fuzzy search
-        if self.autocomplete and obj not in cwd:
-            if isinstance(cwd, dict):
-                keys = cwd.keys()
-            else:
-                keys = [k[CRUD.NAME] for k in cwd]
-
-            obj = next(find_prefix_matches(str(obj), keys))
-
-        # do an exact search
-        if obj in cwd:
-            if isinstance(cwd, dict):
-                return cwd[obj]
-
-            i = cwd.find(obj)
-            return cwd[i]
-
-        values = cwd.keys()
-        msg = f'Error, {obj} is not in cwd ({values})'
-        raise ValueError(msg)
-
-    @property
-    def cwd(self) -> Data:
-        """Infer the current working directory
-        """
-        return self.get_cwd(self.path)
-
-    def get_cwd(self, path: Path = []) -> Data:
-        """Infer the current working directory
-        """
         cwd = self.repository
-
+        # cwd = self.infer_data(path, cwd)
         for directory in path:
             try:
-                if isinstance(cwd, list):
-                    directory = int(directory)
-                cwd = cwd[directory]
+                if isinstance(cwd, list) and isinstance(directory, int):
+                    # directory = int(directory)
+                    cwd = cwd[directory]
+                    continue
+
+                # do a fuzzy serach
+                if self.autocomplete and directory not in cwd:
+                    if isinstance(cwd, dict):
+                        keys = cwd.keys()
+                    else:
+                        keys = [k[CRUD.NAME] for k in cwd]
+
+                    directory = next(find_prefix_matches(str(directory), keys))
+
+                # do an exact search
+                if directory not in cwd:
+                    values = cwd.keys() if isinstance(cwd, dict) else cwd
+                    msg = f'Error, {directory} is not in cwd ({values})'
+                    raise ValueError(msg)
+
+                if isinstance(cwd, dict):
+                    cwd = cwd[directory]
+                else:
+                    i = cwd.find(directory)
+                    cwd = cwd[i]
+                continue
+
             except (IndexError, KeyError):
                 raise ValueError(f'Dir {directory} not in cwd ({cwd})')
 
+        # cwd = self.infer_data(path, cwd)
+        return cwd
+
+    def infer_data(self, path, cwd):
+        if isinstance(cwd, type):
+            if has_method(cwd, 'get_all'):
+                cwd = cwd.get_all(path)
+            else:
+                cwd = cwd.__annotations__
         return cwd
 
     def wrap_list_items(self, items: Data) -> List[Item]:
@@ -129,7 +115,8 @@ class StaticCRUD(CRUD):
             return dirs
 
         directory = str(dirs[0])
-        if isinstance(self.cwd, list):
+        cwd = self._ls(self.path)
+        if isinstance(cwd, list):
             if directory.isdigit():
                 directory = int(directory)
             else:

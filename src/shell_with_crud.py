@@ -12,8 +12,10 @@ cd_aliasses = 'cd_aliasses'
 class ShellWithCRUD:
     def __init__(self, repository={}, crud: CRUD = None, **kwds):
         if crud is None:
-            self.crud = StaticCRUD(
-                repository, post_cd_hook=self.update_prompt, **kwds)
+            crud = StaticCRUD(repository, post_cd_hook=self.update_prompt,
+                              **kwds)
+
+        self.crud = crud
 
         self.init_shell()
 
