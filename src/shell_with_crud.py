@@ -56,7 +56,7 @@ class ShellWithCRUD:
         """
         self.unset_cd_aliases()
 
-        dirs = [item.name for item in self.crud.ls_str()]
+        dirs = [item.name for item in self.crud.ls()]
         self.shell.completenames_options = dirs
 
         for dirname in dirs:

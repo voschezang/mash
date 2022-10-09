@@ -64,7 +64,7 @@ def test_crud_ls_after_cd():
     obj.crud.cd('worlds')
 
     # use ls()
-    result = obj.crud.ls_str()
+    result = obj.crud.ls()
     assert result[0].name == 'earth'
 
     # use do_ls()

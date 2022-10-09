@@ -17,31 +17,30 @@ class StaticCRUD(CRUD):
         self.repository = repository
 
     def ls_absolute(self, path: Path = []) -> List[Item]:
-        items = self._ls(path)
-        return self.wrap_list_items(items)
+        items = self.ls_absolute_inner(path)
+        return self.infer_item_names(items)
 
-    def ls_str(self, obj: str = None) -> List[Item]:
-        items = self.ls_inner(obj)
-        return self.wrap_list_items(items)
+    def ll(self, obj: str = None, delimiter='\n') -> str:
+        if obj is not None:
+            path = [obj]
+        else:
+            path = []
 
-    def ll(self, obj=None, delimiter='\n') -> str:
-        items = self.infer_item_names(self.ls_str(obj))
+        items = self.ls(*path)
         return delimiter.join([str(item.name) for item in items])
 
     def tree(self, obj=None):
-        items = self.ls_inner(obj)
-        return pformat(items, indent=2)
-
-    def ls_inner(self, obj: str = None, path=None) -> Data:
-        if path is None:
-            path = self.path
-
+        path = self.path
         if obj is not None:
             path = path + [obj]
 
-        return self._ls(path)
+        items = self.ls_with_defaults(obj)
+        return pformat(items, indent=2)
 
-    def _ls(self, path: Path = None) -> Data:
+
+    def ls_absolute_inner(self, path: Path = None) -> Data:
+        self.filter_path(path)
+
         contents = self.repository
 
         for directory in path:
@@ -88,7 +87,7 @@ class StaticCRUD(CRUD):
                 data = data.__annotations__
         return data
 
-    def wrap_list_items(self, items: Data) -> List[Item]:
+    def infer_item_names(self, items: Data) -> List[Item]:
         if hasattr(items, 'keys'):
             items = [Item(k, v) for k, v in items.items() if k != CRUD.NAME]
 
@@ -116,7 +115,7 @@ class StaticCRUD(CRUD):
             return dirs
 
         directory = str(dirs[0])
-        cwd = self._ls(self.path)
+        cwd = self.ls_absolute_inner(self.path)
         if isinstance(cwd, list):
             if directory.isdigit():
                 directory = int(directory)
@@ -132,7 +131,9 @@ class StaticCRUD(CRUD):
         for path in accumulate_list(self.path):
             value = path[-1]
             if isinstance(value, int):
-                item = self.ls_inner(None, path)
+                item = self.ls_absolute_inner(path)
+                # item = self.ls_inner(None, path)
+                # TODO verify that item is not a list
                 yield item[CRUD.NAME]
             else:
                 yield value

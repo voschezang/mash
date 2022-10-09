@@ -67,7 +67,7 @@ class CRUD(ABC):
 
         for path in paths:
             if path and path[0] != CRUD.ROOT:
-                path = self.path + path
+                path = self.path + [path]
 
             results += self.ls_absolute(path)
 
@@ -188,6 +188,21 @@ class CRUD(ABC):
             self.path, self.prev_path = self.prev_path, self.path
 
         # otherwise, pass
+
+    def filter_path(self, path: Path):
+        """Filter occurences of '..' in path.
+        """
+        try:
+            while True:
+                i = path.index(self.options.up.value)
+
+                if i == 0:
+                    return path
+
+                del path[i]
+                del path[i-1]
+        except ValueError:
+            return
 
     def infer_item_names(self, items) -> List[Item]:
         if items and isinstance(items[0].name, int) and CRUD.NAME in items[0].value:
