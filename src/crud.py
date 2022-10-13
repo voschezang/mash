@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from enum import Enum
 import logging
-from typing import Callable, List, Union
+from typing import Callable, Iterable, List, Union
 from util import find_fuzzy_matches, find_prefix_matches, identity, list_prefix_matches, none
 
 
@@ -80,10 +80,32 @@ class CRUD(ABC):
     def ls_absolute(self, path: Path = []) -> List[Item]:
         pass
 
-    # @abstractmethod
+    def ll(self, *path: str, delimiter='\n') -> str:
+        """List all objects in a folder or all properties of an object, as a string.
+        """
+        items = self.items(*path, attribute='name')
+        return delimiter.join(items)
+
+    def show(self, *path: str, delimiter='\n') -> str:
+        """Show the values or properties of an object.
+        """
+        items = self.items(*path, attribute='value')
+        return delimiter.join(items)
+
+    def items(self, *path: str, attribute='name') -> Iterable[str]:
+        """
+        """
+        if path:
+            items = self.ls(path)
+        else:
+            items = self.ls()
+
+        return ((str(getattr(item, attribute))) for item in items)
+
     def ensure(self, key: str, value):
         """Ensure that the object with reference `key` is set to `value`
         """
+        # TODO
         pass
 
     def cd(self, *dirs: str):
