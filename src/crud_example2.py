@@ -1,94 +1,94 @@
 #!/usr/bin/python3
 from dataclasses import dataclass
+from functools import lru_cache
 from pathlib import Path
 from typing import Any, Dict, List
-from object_parser_example import User
-from random import randint, random
+import requests
+from random import randint
 
-from shell_with_crud import ShellWithCRUD
+from crud_static import StaticCRUD
 from shell import main
 
 
-def generate(n, prefix='', delimiter='_'):
+@lru_cache
+def generate(prefix='', n=2):
     return [f'{prefix}_{randint(0, 1000)}' for i in range(n)]
 
 
-class TeamMembers:
+# class RemoteData(ABC):
+#     @abstractmethod
+#     def get_value(path: Path) -> Any:
+#         pass
+
+#     @abstractmethod
+#     def get_all(path: Path) -> Dict[str, type]:
+#         pass
+
+
+class Member(str):
+    @staticmethod
+    def get_value(path: Path) -> str:
+        # return path[-1] + '---'
+        return [path[-1] + '---', path[-1] + '+++']
+
     @staticmethod
     def get_all(path: Path) -> List[str]:
-        i = path.find('department') + 1
-        department = path[i]
-        return generate(3, f'department_{department}_team')
-
-
-class TeamMembers(User):
-    pass
+        return generate(f'u')
 
 
 class Team:
-    members: TeamMembers
+    # members: Dict[str, Member]
+    members: List[Member]
 
-    # @staticmethod
-    # def get_all(department: str):
-    #     return generate(3, f'{department}_team')
-
-
-class Teams(Team):
-    # @staticmethod
-    # def get_all(department: str):
-    #     return generate(3, f'{department}_team')
     @staticmethod
     def get_all(path: Path) -> List[str]:
-        i = path.find('department') + 1
-        department = path[i]
-        return generate(3, f'{department}_team')
+        return generate(f't')
 
 
 @dataclass
 class Department:
-    teams: Teams
-    # @staticmethod
-    # def get_all(organization: str):
-    #     return generate(3, f'department')
+    # teams: List[str, Team]
+    teams: List[Team]
 
-
-class Departments(Department):
     @staticmethod
-    def get_all(path: Path):
-        return generate(2, f'department')
+    def get_all(path: Path) -> Dict[str, type]:
+        keys = generate(f'department')
+        return {k: Department for k in keys}
 
 
 @dataclass
 class Organization:
-    departments: Departments
-    data: str = 'abc'
-
-
-repository = Organization
-# if hasattr(self.cls, '__dataclass_fields__'):
+    departments: Dict[str, Department]
+    field1: str = 'abc'
+    field2: str = 'abc'
 
 
 if __name__ == '__main__':
-    obj = ShellWithCRUD(repository=repository)
-    # main(shell=obj.shell)
-    result = obj.crud.ll()
+    obj = StaticCRUD(repository=Organization)
+    result = obj.ll()
     print('Org')
     print(result)
 
-    # k = 'data'
-    # result = obj.crud.ll(k)
-    # print('\n', k)
+    path = []
+
+    result = 'departments'
+    for i in range(6):
+        k = result.split('\n')[0]
+        path.append(k)
+        print('\npath', path)
+        result = obj.ll(*path)
+        print(result)
+
+    print('\npath', path)
+    result = obj.ll(*path)
+    print(result)
+    # print('\npath', path)
+    # result = obj.ll(*path)
     # print(result)
 
-    k = 'departments'
-    path = [k]
-    print('\npath', path)
-    # result = obj.crud.ll(*path)
-    print(result)
-
-    k = 'department_1'
-    # k = result.split('\n')[0]
-    path.append(k)
-    print('\npath', path)
-    result = obj.crud.ll(*path)
-    print(result)
+    # result = obj.ll(*path)
+    # print(result)
+    # result = obj.ll(*path)
+    # print(path)
+    # print(result)
+    # TODO ls ..../users/123 returns a list of users

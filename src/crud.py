@@ -15,11 +15,14 @@ class Item:
 
 class Option(Enum):
     default = ''
+    # TODO root should be '/' or CRUD.ROOT
     root = ''
     home = '~'
     switch = '-'
     stay = '.'
     up = '..'
+    upup = '...'
+    upupup = '...'
 
     @staticmethod
     def verify(value):
@@ -32,7 +35,7 @@ class Option(Enum):
 
 
 Options = [o.value for o in Option]
-Path = List[str]
+Path = List[Union[list, str]]
 
 
 class CRUDError(RuntimeError):
@@ -86,8 +89,8 @@ class CRUD(ABC):
         items = self.items(*path, attribute='name')
         return delimiter.join(items)
 
-    def show(self, *path: str, delimiter='\n') -> str:
-        """Show the values or properties of an object.
+    def get(self, *path: str, delimiter='\n') -> str:
+        """Returns the values or properties of the object associated with `path`.
         """
         items = self.items(*path, attribute='value')
         return delimiter.join(items)

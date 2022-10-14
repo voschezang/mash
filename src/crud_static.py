@@ -1,8 +1,8 @@
 #!/usr/bin/python3
-from copy import deepcopy
+from copy import copy, deepcopy
 import logging
 from pprint import pformat
-from typing import Any, Callable, Dict, List, Union
+from typing import Any, Callable, Dict, Iterable, List, Tuple, Union
 
 from crud import CRUD, Item, Option, Path
 from util import accumulate_list, find_prefix_matches, has_method, is_callable
@@ -10,20 +10,128 @@ from util import accumulate_list, find_prefix_matches, has_method, is_callable
 # example data with dicts and lists
 Data = Union[Dict[str, Any], list]
 Method = Union[Callable, str]
+Index = int
+Key = [str, int]
 
 cd_aliasses = 'cd_aliasses'
 
 
+class StepTree(dict):
+    def __init__(self, *args, **kwds):
+        super().__init__(*args, **kwds)
+        self._trace: List[dict] = []
+
+    def ls(self):
+        return self.keys()
+
+    def cd(self, key):
+        self._trace.append(self.tree)
+        self.tree = self.tree[key]
+
+    def up(self):
+        self.tree = self._trace.pop()
+
+
+class Tree(dict):
+    def __init__(self, *args, **kwds):
+        super().__init__(*args, **kwds)
+        self.init_root()
+
+    def init_root(self):
+        self.tree = self
+
+        self._trace: List[Tuple[Key, dict]] = []
+        self._prev_trace = []
+
+    def cwd(self) -> Path:
+        return [k for k, _ in self._trace]
+
+    @property
+    def path(self):
+        return self.cwd()
+
+    def ls(self, *paths: Union[Path, str]) -> Iterable:
+        if paths is None:
+            yield from self.keys()
+            return
+
+        for path in paths:
+            if isinstance(path, str):
+                path = [path]
+
+            yield from self.get(path)
+
+    def get(self, path: Union[Path, str]):
+        cwd = self.tree
+        for k in path:
+            cwd = cwd[k]
+        return cwd
+
+    def append(self, k, v):
+        """Associate key k with value v and then change the working directory to k 
+        """
+        self.tree[k] = v
+        self.cd(k)
+
+    def cd(self, *path: Key):
+        """
+        cd a b c
+        cd -
+        """
+        if path is None:
+            return
+
+        # cache current position
+        origin = copy(self._trace)
+
+        # change dirs
+        for k in path:
+            if Option.verify(k):
+                self.handle_cd_option(Option(k))
+            else:
+                self._cd(k)
+
+        # store origin
+        self._prev_trace = origin
+
+    def handle_cd_option(self, k):
+        k = Option(k)
+        if k == Option.switch:
+            self._switch_traces()
+            self._sync_traces()
+
+        elif k == Option.up:
+            self._up()
+        return k
+
+    def _up(self):
+        _, self.tree = self._trace.pop()
+
+    def _switch_traces(self):
+        self._trace, self.prev_trace = self._prev_trace, self._trace
+
+    def _sync_traces(self):
+        _, self.tree = self._trace[-1]
+        _, self.prev_tree = self._prev_trace[-1]
+
+    def _cd(self, key: Key):
+        self._trace.append((key, self.tree))
+        self.tree = self.tree[key]
+
+    def __repr__(self):
+        return self.tree.__repr__()
+
+
 class StaticCRUD(CRUD):
     def __init__(self, repository={},
-                 get_all_method: Method = 'get_all',
+                 get_values_method: Method = 'get_all',
                  get_value_method: Method = 'get_value', **kwds):
         super().__init__(pre_cd_hook=self.fix_directory_type, **kwds)
 
-        self.get_all_method = get_all_method
+        self.get_values_method = get_values_method
         self.get_value_method = get_value_method
 
-        self.root = None
+        self.tree = None
         self.repository = repository
 
     def ls_absolute(self, path: Path = []) -> List[Item]:
@@ -48,94 +156,93 @@ class StaticCRUD(CRUD):
         # maintain a tree that represents self.repostiory
         cache_repository = True
 
-        if cache_repository and self.root:
-            contents = self.root
+        if cache_repository and self.tree:
+            self.tree.init_root()
+            contents = self.tree
         else:
             contents = self.infer_data(self.repository, [])
-            self.root = contents
-
-        tree = self.root
+            self.tree = Tree(**contents)
 
         for i, directory in enumerate(path):
-            if cache_repository and directory in tree and isinstance(tree[directory], dict):
-                contents = tree[directory]
-
-                # update tree
-                tree[path[i]] = contents
-                # iterate tree
-                tree = tree[path[i]]
-                continue
-
             try:
-                if isinstance(contents, str):
-                    raise IndexError()
+                is_in_cache = cache_repository and \
+                    directory in self.tree.ls() and \
+                    isinstance(self.tree.get(directory), dict)
+            except TypeError:
+                raise ValueError(f'Value is not a directory: {self.tree}')
 
-                contents = get_item(contents, directory, self.autocomplete)
+            if is_in_cache:
+                contents = self.tree.get(directory)
 
-            except (IndexError, KeyError):
-                raise ValueError(
-                    f'Item {directory} not in directory ({contents})')
+            else:
 
-            contents = self.infer_data(contents, path)
+                try:
+                    if isinstance(contents, str):
+                        raise ValueError(
+                            'Value is not a directory: {contents}')
+
+                    contents = get_item(contents, directory, self.autocomplete)
+
+                except (IndexError, KeyError):
+                    raise ValueError(
+                        f'Item {directory} not in directory ({contents})')
+
+                contents = self.infer_data(contents, path)
 
             if cache_repository:
-                # update tree
-                tree[directory] = contents
-                # iterate tree
-                tree = tree[directory]
+                self.tree.append(directory, contents)
 
         return contents
 
     def infer_data(self, data: Union[Data, str], path: Path) -> Data:
-        use_dict = True
-        cls = data
-        method = self.get_value_method
-
-        # infer element types for Dict and List containers
-        if hasattr(data, '_name'):
-            if getattr(data, '_name') == 'Dict':
-                cls = data.__args__[1]
-                method = self.get_all_method
-            elif getattr(data, '_name') == 'List':
-                cls = data.__args__[0]
-                method = self.get_all_method
-                use_dict = False
-
         if is_callable(self.get_value_method):
             return self.get_value_method(data)
 
-        if not isinstance(cls, type):
-            return data
+        cls = data
+        is_container = False
+        container_cls = None
 
-        if has_method(cls, method):
-            return self.get_items(cls, method, path, use_dict)
+        # infer element types for Dict and List containers
+        if getattr(data, '_name', '') == 'Dict':
+            cls = data.__args__[1]
+            container_cls = dict
+            is_container = True
+        elif getattr(data, '_name', '') == 'List':
+            cls = data.__args__[0]
+            container_cls = list
+            is_container = True
 
-        elif hasattr(cls, '__annotations__'):
-            return cls.__annotations__
+        if isinstance(cls, type):
+            return self._get_values(cls, path, is_container, container_cls)
 
         return data
 
-    def get_items(self, cls: type, method: str, path: Path, use_dict: bool):
-        items = getattr(cls, method)(path)
+    def _get_values(self, cls: type, path: Path, is_container: bool, container_cls: type):
+        method = self.get_values_method if is_container else self.get_value_method
+
+        if has_method(cls, method):
+            items = getattr(cls, method)(path)
+
+            if container_cls is dict:
+                return items
+            elif container_cls is list:
+                if hasattr(cls, '__annotations__'):
+                    cls = cls.__annotations__
+
+                # items = {i: v for i, v in enumerate(items)}
+
+                # assume that all keys are unique
+                return {k: deepcopy(cls) for k in items}
+
+            return items
 
         if hasattr(cls, '__annotations__'):
-            cls = cls.__annotations__
+            return cls.__annotations__
 
-        if use_dict:
-            # assume that all keys are unique
-            items = {k: deepcopy(cls) for k in items}
-
-        return items
+        return cls
 
     def infer_item_names(self, items: Data) -> List[Item]:
         if has_method(items, 'keys') and not isinstance(items, type):
-            # print(items)
-            try:
-                items2 = [Item(k, v)
-                          for k, v in items.items() if k != CRUD.NAME]
-            except (TypeError, AttributeError):
-                x = 1
-                x = 1
             items = [Item(k, v) for k, v in items.items() if k != CRUD.NAME]
 
         elif isinstance(items, list):
@@ -179,10 +286,9 @@ class StaticCRUD(CRUD):
         for path in accumulate_list(self.path):
             value = path[-1]
             if isinstance(value, int):
-                item = self.ls_absolute_inner(path)
-                # item = self.ls_inner(None, path)
+                items = self.ls_absolute_inner(path)
                 # TODO verify that item is not a list
-                yield item[CRUD.NAME]
+                yield items[CRUD.NAME]
             else:
                 yield value
 
