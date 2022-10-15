@@ -1,45 +1,10 @@
 #!/usr/bin/python3
 from dataclasses import dataclass
-from typing import Any, Callable, Dict, Iterable, List, Tuple, Union
+from typing import Any, Callable, Iterable, List, Tuple, Union
 
 from crud import Option, Path
 from util import has_method, identity, none
-
-Key = Union[str, int]
-Trace = List[Tuple[Key, Union[dict, list]]]
-
-
-@dataclass
-class State:
-    """A tree of dict's. Tree traversal is managed with the methods cd, up.
-    """
-    tree: dict
-    _trace: Trace
-
-    @property
-    def trace(self) -> Trace:
-        """A copy of the interal field `_trace`.
-        """
-        return list(self._trace)
-
-    @property
-    def path(self) -> Path:
-        return [k for k, _ in self.trace]
-
-    def ls(self) -> Iterable[Key]:
-        try:
-            return self.tree.keys()
-        except AttributeError:
-            return range(len(self.tree))
-
-    def cd(self, key: Key):
-        self._trace.append((key, self.tree))
-        # assume that tree[key] is a dict or list
-        self.tree = self.tree[key]
-
-    def up(self) -> Key:
-        key, self.tree = self._trace.pop()
-        return key
+from directory_view import Key, View
 
 
 class Directory(dict):
@@ -52,45 +17,45 @@ class Directory(dict):
         self.init_states()
 
     def init_states(self):
-        self.state = State(self, [])
-        self.prev = State(self, [])
+        self.state = View(self, [])
+        self.prev = View(self, [])
 
     @property
     def path(self):
         return self.state.path
 
-    def mv(self, src: Key, dst: Key):
-        del self.tree[src]
-        self.tree[dst] = self.tree[src]
+    def cp(self, *references: Key):
+        """Copy references.
 
-    def cp(self, src: Key, dst: Key):
-        self.tree[dst] = self.tree[src]
+        Usage
+        -----
+        ```sh
+        cp(a, b) # Let b point to the value referenced by a.
+        cp(*a, b) # let b contain the pointers *a.
+        ```
+        """
+        self.state.cp(*references)
 
-    def ls(self, *paths: Union[Path, str]) -> Iterable[Key]:
-        """List all objects in the dir associated with path.
+    def mv(self, *references: Key):
+        """Move references.
+
+        Usage
+        -----
+        ```sh
+        mv(a, b) # rename the reference a to b.
+        mv(*a, b) # move references *a to b
+        ```
+        """
+        self.state.mv(*references)
+
+    def ls(self, *paths: Union[Path, str]) -> List[Key]:
+        """List all objects in the dir associated with each path.
         If this dir is a path, then its properties are returned.
         """
         if not paths:
-            yield from self.state.ls()
-            return
+            return list(self.state.ls())
 
-        for path in paths:
-            if isinstance(path, str):
-                path = [path]
-
-            result = self.get(path)
-
-            if has_method(result, 'keys'):
-                results = result.keys()
-            elif isinstance(result, list):
-                results = range(len(result))
-            else:
-                try:
-                    results = list(result)
-                except TypeError:
-                    results = [result]
-
-            yield from results
+        return list(self._ls_inner(paths))
 
     def ll(self, *path: str, delimiter='\n') -> str:
         """Return a formatted result of ls(). 
@@ -122,7 +87,7 @@ class Directory(dict):
             return
 
         # cache current position
-        origin = State(self.state.tree, self.state.trace)
+        origin = View(self.state.tree, self.state.trace)
 
         # change dirs
         for k in path:
@@ -131,16 +96,20 @@ class Directory(dict):
                 self.post_cd_hook()
             else:
                 k = self.pre_cd_hook(k)
-                self.state.cd(k)
+                self.state.down(k)
                 self.post_cd_hook()
 
         # store origin
         self.prev = origin
 
+    ############################################################################
+    # Internals
+    ############################################################################
+
     def _cd_option(self, option: Option):
         if option == Option.root:
             self.prev = self.state
-            self.state = State(self, [])
+            self.state = View(self, [])
 
         elif option == Option.switch:
             self.state, self.prev = self.prev, self.state
@@ -156,3 +125,24 @@ class Directory(dict):
             self._cd_option(Option.up)
             self._cd_option(Option.up)
             self._cd_option(Option.up)
+
+    def _ls_inner(self, paths: Tuple[Union[Path, str]]) -> Iterable[Key]:
+        """A helper method for self.ls()
+        """
+        for path in paths:
+            if isinstance(path, str):
+                path = [path]
+
+            result = self.get(path)
+
+            if has_method(result, 'keys'):
+                results = result.keys()
+            elif isinstance(result, list):
+                results = range(len(result))
+            else:
+                try:
+                    results = list(result)
+                except TypeError:
+                    results = [result]
+
+            yield from results

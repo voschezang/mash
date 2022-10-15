@@ -1,3 +1,6 @@
+from copy import deepcopy
+from pytest import raises
+
 from directory import Directory
 
 root = {'a': {'1': '1', '2': 2, '3': [3, 4]},
@@ -10,7 +13,7 @@ indices = [0, 1]
 
 
 def init():
-    return Directory(root)
+    return Directory(deepcopy(root))
 
 
 def test_get():
@@ -28,18 +31,18 @@ def test_get():
 
 def test_ls():
     d = init()
-    assert list(d.ls()) == keys
-    assert list(d.ls(['a'])) == inner_keys
-    assert list(d.ls('a')) == inner_keys
-    assert list(d.ls('a', 'a')) == inner_keys + inner_keys
-    assert list(d.ls('a', 'b')) == inner_keys + indices
+    assert d.ls() == keys
+    assert d.ls(['a']) == inner_keys
+    assert d.ls('a') == inner_keys
+    assert d.ls('a', 'a') == inner_keys + inner_keys
+    assert d.ls('a', 'b') == inner_keys + indices
 
-    assert list(d.ls(['a', '1'])) == ['1']
-    assert list(d.ls(['a', '2'])) == [2]
-    assert list(d.ls(['a', '3'])) == indices
-    assert list(d.ls(['a', '3', 0])) == [3]
+    assert d.ls(['a', '1']) == ['1']
+    assert d.ls(['a', '2']) == [2]
+    assert d.ls(['a', '3']) == indices
+    assert d.ls(['a', '3', 0]) == [3]
 
-    assert list(d.ls(['b', 0])) == ['1']
+    assert d.ls(['b', 0]) == ['1']
 
 
 def test_cd():
@@ -95,3 +98,41 @@ def test_cd_up():
     d.cd('-')
     d.cd('....')
     assert d.path == []
+
+
+def test_cp_single():
+    d = init()
+
+    d.cp('a', 'A')
+    assert d.ls('a') == d.ls('A')
+
+    with raises(ValueError):
+        d.cp()
+
+    with raises(ValueError):
+        d.cp('a')
+
+
+def test_cp_multi():
+    d = init()
+
+    d.cp('a', 'b', 'c')
+    assert d.get(['c', 'a']) == d.get('a')
+    assert d.get(['c', 'b']) == d.get('b')
+
+
+def test_mv_rename():
+    d = init()
+
+    a = d['a']
+    d.mv('a', 'c')
+    assert d.get(['c']) == a
+    assert 'a' not in d
+
+
+def test_mv_to():
+    d = init()
+
+    a = d['a']
+    d.mv('a', 'a', 'c')
+    assert d.get(['c', 'a']) == a

@@ -253,7 +253,6 @@ class BaseShell(Cmd):
         """Parse and run `line`.
         Returns 0 on success and None otherwise
         """
-
         try:
             line = self.onecmd_prehook(line)
             lines = self.parse_commands(line)
