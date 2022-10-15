@@ -102,7 +102,12 @@ class View:
 
     def _get_from_dict(self, k):
         try:
+            if k not in self.tree:
+                keys = self.ls()
+                k = next(find_prefix_matches(str(k), keys))
+
             return k, self.tree[k]
+
         except KeyError:
             raise ValueError(self._file_not_found(k))
 

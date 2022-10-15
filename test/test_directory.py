@@ -5,7 +5,7 @@ from directory import Directory
 
 root = {'a': {'1': '1', '2': 2, '3': ['A', 'B', 10, 20]},
         'b': [{'1': '1'}, {'2': 2}],
-        'c': None
+        'c': {'a_long_name': True}
         }
 keys = ['a', 'b', 'c']
 inner_keys = ['1', '2', '3']
@@ -31,10 +31,20 @@ def test_get_exact():
     assert d.get(['b', 1, '2']) == 2
 
 
+def test_get_fuzzy():
+    d = init()
+
+    assert d.get(['abc', '1']) == '1'
+    assert d.get(['c', 'a_long_n'])
+
+    with raises(ValueError):
+        d.get(['Z'])
+
+
 def test_get_unhappy():
     d = init()
     with raises(ValueError):
-        d.get(['abc'])
+        d.get(['def'])
 
     with raises(ValueError):
         d.get([0])
@@ -75,7 +85,8 @@ def test_ls():
 def test_ll():
     d = init()
     assert d.ll('a') == '\n'.join(inner_keys)
-    assert d.ll('a', '3', delimiter=', ') == '0: A, 1: B, 2: 10, 3: 20'
+    assert d.ll('a', '3', delimiter=', ') == 'A, B, 10, 20'
+    # assert d.ll('a', '3', delimiter=', ') == '0: A, 1: B, 2: 10, 3: 20'
 
 
 def test_cd():

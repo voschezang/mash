@@ -71,7 +71,8 @@ class Directory(dict):
 
         if isinstance(self.get(path), list):
             names = (self.infer_key_name(path, k) for k in keys)
-            keys = (f'{i}: {k}' for i, k in enumerate(names))
+            # keys = (f'{i}: {k}' for i, k in enumerate(names))
+            keys = names
 
         return delimiter.join(keys)
 
