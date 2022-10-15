@@ -72,6 +72,12 @@ def test_ls():
     assert d.ls(['b', 0]) == ['1']
 
 
+def test_ll():
+    d = init()
+    assert d.ll('a') == '\n'.join(inner_keys)
+    assert d.ll('a', '3', delimiter=', ') == '0: A, 1: B, 2: 10, 3: 20'
+
+
 def test_cd():
     d = init()
     assert d.path == []

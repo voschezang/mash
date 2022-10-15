@@ -67,8 +67,13 @@ class Directory(dict):
     def ll(self, *path: str, delimiter='\n') -> str:
         """Return a formatted result of ls(). 
         """
-        items = map(str, self.ls(path))
-        return delimiter.join(items)
+        keys = self.ls(path)
+
+        if isinstance(self.get(path), list):
+            names = (self.infer_key_name(path, k) for k in keys)
+            keys = (f'{i}: {k}' for i, k in enumerate(names))
+
+        return delimiter.join(keys)
 
     def get(self, path: Union[Path, str], relative=True):
         """Return the value of the file associated with `path`.
@@ -120,13 +125,26 @@ class Directory(dict):
         result = self.state.path
         for i, path in enumerate(accumulate_list(self.state.path)):
             key = path[-1]
-            if isinstance(key, int):
-                value = self.get(path, relative=False)
-
-                if 'name' in value:
-                    result[i] = value['name']
+            result[i] = self.infer_key_name(path, key)
 
         return result
+
+    def infer_key_name(self, path: Path, k: Key) -> str:
+        if isinstance(k, int):
+            value = self.get(list(path) + [k], relative=False)
+
+            try:
+                if 'name' in value:
+                    return value['name']
+            except TypeError:
+                pass
+
+            value = str(value)
+            n = 100
+            if len(value) > n:
+                return value[:n] + '..'
+            return value
+        return str(k)
 
     ############################################################################
     # Internals
