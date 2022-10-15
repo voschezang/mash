@@ -1,7 +1,7 @@
 from operator import contains, eq
 from pytest import raises
 
-from util import concat, constant, equals, find_prefix_matches, find_fuzzy_matches, for_all, for_any, glob, identity, list_prefix_matches, not_equals, split, split_sequence, split_tips
+from util import concat, constant, equals, find_prefix_matches, find_fuzzy_matches, for_all, for_any, glob, identity, is_alpha, is_digit, list_prefix_matches, not_equals, split, split_sequence, split_tips
 
 
 def test_concat_empty_container():
@@ -196,6 +196,24 @@ def test_find_prefix_matches():
 
     with raises(ValueError):
         assert next(find_prefix_matches('a', ['A', 'b', 'c', ])) == 'ab'
+
+
+def test_is_alpha():
+    assert is_alpha('abc')
+    assert not is_alpha('-')
+    assert is_alpha('-', ignore='-')
+
+
+def test_is_digit():
+    assert is_digit(1)
+    assert is_digit(-1)
+    assert is_digit('+10')
+    assert is_digit('-10')
+
+    assert not is_digit(1.2)
+    assert not is_digit([])
+    assert not is_digit('1.2')
+    assert not is_digit('1 2')
 
 
 def test_for_any():

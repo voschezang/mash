@@ -1,24 +1,27 @@
 #!/usr/bin/python3
 from dataclasses import dataclass
+from pprint import pformat
 from typing import Any, Callable, Iterable, List, Tuple, Union
 
 from crud import Option, Path
-from util import has_method, identity, none
+from util import accumulate_list, has_method, identity, none
 from directory_view import Key, View
 
 
 class Directory(dict):
-    def __init__(self, *args, **kwds):
+    def __init__(self, *args,
+                 pre_cd_hook: Callable[[Key], Any] = identity,
+                 post_cd_hook: Callable = none, **kwds):
         super().__init__(*args, **kwds)
 
-        self.pre_cd_hook: Callable[[Key], Any] = identity
-        self.post_cd_hook: Callable = none
+        self.pre_cd_hook = pre_cd_hook
+        self.post_cd_hook = post_cd_hook
 
         self.init_states()
 
     def init_states(self):
-        self.state = View(self, [])
-        self.prev = View(self, [])
+        self.state = View(self)
+        self.prev = View(self)
 
     @property
     def path(self):
@@ -48,6 +51,10 @@ class Directory(dict):
         """
         self.state.mv(*references)
 
+    def tree(self, path=None) -> str:
+        cwd = self.get(path)
+        return pformat(cwd, indent=2)
+
     def ls(self, *paths: Union[Path, str]) -> List[Key]:
         """List all objects in the dir associated with each path.
         If this dir is a path, then its properties are returned.
@@ -63,14 +70,18 @@ class Directory(dict):
         items = map(str, self.ls(path))
         return delimiter.join(items)
 
-    def get(self, path: Union[Path, str]):
+    def get(self, path: Union[Path, str], relative=True):
         """Return the value of the file associated with `path`.
         """
-        cwd = self.state.tree
-        for k in path:
-            cwd = cwd[k]
+        if relative:
+            cwd = View(self.state.tree)
+        else:
+            cwd = View(self)
 
-        return cwd
+        for k in path:
+            cwd.down(k)
+
+        return cwd.tree
 
     def append(self, k, v):
         """Associate key k with value v and then change the working directory to k 
@@ -101,6 +112,21 @@ class Directory(dict):
 
         # store origin
         self.prev = origin
+
+    @property
+    def semantic_path(self) -> Path:
+        """Convert indices in path to semantic values.
+        """
+        result = self.state.path
+        for i, path in enumerate(accumulate_list(self.state.path)):
+            key = path[-1]
+            if isinstance(key, int):
+                value = self.get(path, relative=False)
+
+                if 'name' in value:
+                    result[i] = value['name']
+
+        return result
 
     ############################################################################
     # Internals

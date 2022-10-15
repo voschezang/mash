@@ -3,30 +3,57 @@ from pytest import raises
 
 from directory import Directory
 
-root = {'a': {'1': '1', '2': 2, '3': [3, 4]},
+root = {'a': {'1': '1', '2': 2, '3': ['A', 'B', 10, 20]},
         'b': [{'1': '1'}, {'2': 2}],
         'c': None
         }
 keys = ['a', 'b', 'c']
 inner_keys = ['1', '2', '3']
-indices = [0, 1]
+list_values = ['A', 'B', 10, 20]
+indices_a = [0, 1, 2, 3]
+indices_b = [0, 1]
 
 
 def init():
     return Directory(deepcopy(root))
 
 
-def test_get():
+def test_get_exact():
     d = init()
     assert list(d.get('a')) == inner_keys
     assert list(d.get(['a'])) == inner_keys
     assert d.get(['a', '1']) == '1'
     assert d.get(['a', '2']) == 2
-    assert d.get(['a', '3']) == [3, 4]
+    assert d.get(['a', '3']) == list_values
 
     assert d.get(['b', 0]) == {'1': '1'}
     assert d.get(['b', 0, '1']) == '1'
     assert d.get(['b', 1, '2']) == 2
+
+
+def test_get_unhappy():
+    d = init()
+    with raises(ValueError):
+        d.get(['abc'])
+
+    with raises(ValueError):
+        d.get([0])
+
+    with raises(TypeError):
+        d.get(0)
+
+
+def test_get_index():
+    d = init()
+    value = 'A'
+    assert d.get(['a', '3', value]) == value
+
+    value = 20
+    path = ['a', '3']
+    assert value in d.get(path)
+    assert value == d.get(path + [-1])
+    with raises(ValueError):
+        d.get(['a', '3', 10])
 
 
 def test_ls():
@@ -35,12 +62,12 @@ def test_ls():
     assert d.ls(['a']) == inner_keys
     assert d.ls('a') == inner_keys
     assert d.ls('a', 'a') == inner_keys + inner_keys
-    assert d.ls('a', 'b') == inner_keys + indices
+    assert d.ls('a', 'b') == inner_keys + indices_b
 
     assert d.ls(['a', '1']) == ['1']
     assert d.ls(['a', '2']) == [2]
-    assert d.ls(['a', '3']) == indices
-    assert d.ls(['a', '3', 0]) == [3]
+    assert d.ls(['a', '3']) == indices_a
+    assert d.ls(['a', '3', 0]) == ['A']
 
     assert d.ls(['b', 0]) == ['1']
 
@@ -67,7 +94,7 @@ def test_cd_switch():
 
     d.cd('b')
     assert d.path == ['b']
-    assert list(d.ls()) == indices
+    assert list(d.ls()) == indices_b
     assert d.prev.path == []
 
     d.cd('-')

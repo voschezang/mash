@@ -491,6 +491,12 @@ def call(f, *_):
 def is_alpha(key: str, ignore=[]) -> bool:
     return all(c.isalpha() or c in ignore for c in key)
 
+def is_digit(s: str) -> bool:
+    try:
+        int(str(s))
+        return True
+    except ValueError:
+        return False
 
 def is_globbable(value: str) -> bool:
     return for_any(GLOB_CHARS, contains, value)
