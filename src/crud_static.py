@@ -1,125 +1,19 @@
 #!/usr/bin/python3
 from copy import copy, deepcopy
+from dataclasses import dataclass
 import logging
 from pprint import pformat
-from typing import Any, Callable, Dict, Iterable, List, Tuple, Union
+from typing import Any, Callable, Dict, Iterable, List, Union
 
 from crud import CRUD, Item, Option, Path
 from util import accumulate_list, find_prefix_matches, has_method, is_callable
+from directory import Directory
 
 # example data with dicts and lists
 Data = Union[Dict[str, Any], list]
 Method = Union[Callable, str]
-Index = int
-Key = [str, int]
 
 cd_aliasses = 'cd_aliasses'
-
-
-class StepTree(dict):
-    def __init__(self, *args, **kwds):
-        super().__init__(*args, **kwds)
-        self._trace: List[dict] = []
-
-    def ls(self):
-        return self.keys()
-
-    def cd(self, key):
-        self._trace.append(self.tree)
-        self.tree = self.tree[key]
-
-    def up(self):
-        self.tree = self._trace.pop()
-
-
-class Tree(dict):
-    def __init__(self, *args, **kwds):
-        super().__init__(*args, **kwds)
-        self.init_root()
-
-    def init_root(self):
-        self.tree = self
-
-        self._trace: List[Tuple[Key, dict]] = []
-        self._prev_trace = []
-
-    def cwd(self) -> Path:
-        return [k for k, _ in self._trace]
-
-    @property
-    def path(self):
-        return self.cwd()
-
-    def ls(self, *paths: Union[Path, str]) -> Iterable:
-        if paths is None:
-            yield from self.keys()
-            return
-
-        for path in paths:
-            if isinstance(path, str):
-                path = [path]
-
-            yield from self.get(path)
-
-    def get(self, path: Union[Path, str]):
-        cwd = self.tree
-        for k in path:
-            cwd = cwd[k]
-        return cwd
-
-    def append(self, k, v):
-        """Associate key k with value v and then change the working directory to k 
-        """
-        self.tree[k] = v
-        self.cd(k)
-
-    def cd(self, *path: Key):
-        """
-        cd a b c
-        cd -
-        """
-        if path is None:
-            return
-
-        # cache current position
-        origin = copy(self._trace)
-
-        # change dirs
-        for k in path:
-            if Option.verify(k):
-                self.handle_cd_option(Option(k))
-            else:
-                self._cd(k)
-
-        # store origin
-        self._prev_trace = origin
-
-    def handle_cd_option(self, k):
-        k = Option(k)
-        if k == Option.switch:
-            self._switch_traces()
-            self._sync_traces()
-
-        elif k == Option.up:
-            self._up()
-        return k
-
-    def _up(self):
-        _, self.tree = self._trace.pop()
-
-    def _switch_traces(self):
-        self._trace, self.prev_trace = self._prev_trace, self._trace
-
-    def _sync_traces(self):
-        _, self.tree = self._trace[-1]
-        _, self.prev_tree = self._prev_trace[-1]
-
-    def _cd(self, key: Key):
-        self._trace.append((key, self.tree))
-        self.tree = self.tree[key]
-
-    def __repr__(self):
-        return self.tree.__repr__()
 
 
 class StaticCRUD(CRUD):
@@ -157,11 +51,11 @@ class StaticCRUD(CRUD):
         cache_repository = True
 
         if cache_repository and self.tree:
-            self.tree.init_root()
+            self.tree.init_states()
             contents = self.tree
         else:
             contents = self.infer_data(self.repository, [])
-            self.tree = Tree(**contents)
+            self.tree = Directory(**contents)
 
         for i, directory in enumerate(path):
             try:

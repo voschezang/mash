@@ -22,7 +22,7 @@ class Option(Enum):
     stay = '.'
     up = '..'
     upup = '...'
-    upupup = '...'
+    upupup = '....'
 
     @staticmethod
     def verify(value):
@@ -104,12 +104,6 @@ class CRUD(ABC):
             items = self.ls()
 
         return ((str(getattr(item, attribute))) for item in items)
-
-    def ensure(self, key: str, value):
-        """Ensure that the object with reference `key` is set to `value`
-        """
-        # TODO
-        pass
 
     def cd(self, *dirs: str):
         """Change the current working environment.
