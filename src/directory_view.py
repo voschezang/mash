@@ -124,6 +124,6 @@ class View:
             raise ValueError(self._file_not_found(k))
 
     def _file_not_found(self, k):
-        preview_items = (crop(str(s),10) for s in take(self.ls(), 5))
+        preview_items = (crop(str(s), 10) for s in take(self.ls(), 5))
         preview = crop(', '.join(preview_items), 80)
         return f'No such file or directory: `{k}` not in [{preview}, ..]'

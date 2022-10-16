@@ -64,5 +64,3 @@ if __name__ == '__main__':
         print('\npath', path)
         result = obj.ll(*path)
         print(result)
-
-    k = result.split('\n')[0]

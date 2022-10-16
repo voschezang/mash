@@ -184,6 +184,7 @@ def test_glob_ranges():
 
 def test_identity():
     assert identity(1) == 1
+    assert identity(1, 2) == (1, 2)
 
 
 def test_constant():

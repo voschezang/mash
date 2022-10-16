@@ -1,5 +1,4 @@
 from copy import deepcopy
-from typing import Type
 from pytest import raises
 
 from directory import Directory
@@ -125,7 +124,7 @@ def test_cd_b():
     d.cd(k)
     assert d.path == [k]
     assert list(d.ls()) == indices_b
-    assert d.ll(delimiter=',') ==  "{'1': '1'},{'2': 2}"
+    assert d.ll(delimiter=',') == "{'1': '1'},{'2': 2}"
 
 
 def test_cd_switch():

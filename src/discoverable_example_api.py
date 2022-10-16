@@ -5,6 +5,7 @@ import requests
 
 from shell_with_crud import ShellWithCRUD
 from shell import main
+from discoverable_directory import DiscoverableDirectory
 
 
 def retrieve_data(url, *args):
@@ -25,10 +26,9 @@ def get(url, *args):
 
 
 if __name__ == '__main__':
-    obj = ShellWithCRUD(repository='https://api.github.com/',
+    obj = ShellWithCRUD(repository={'repository': 'https://api.github.com/'},
                         get_value_method=retrieve_data)
     obj.crud.ll()
-    obj.crud.ll()
-    obj.crud.ll('events_url')
-    obj.crud.cd('events_url')
-    # main(shell=obj.shell)
+    obj.crud.ll('repo', 'events_url')
+
+    main(shell=obj.shell)

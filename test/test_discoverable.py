@@ -1,3 +1,5 @@
+from pytest import raises
+
 from discoverable_example import Organization
 from discoverable_directory import DiscoverableDirectory
 
@@ -6,6 +8,25 @@ def test_discoverable_ll():
     k = 'repository'
     d = DiscoverableDirectory(repository=Organization)
     assert d.ll() == k
+
+
+def test_discoverable_unhappy():
+    k = 'repository'
+    d = DiscoverableDirectory(repository=Organization)
+
+    with raises(TypeError):
+        d.get(int)
+
+    for k in ['never', ['never'], [100], [int]]:
+        with raises(ValueError):
+            d.get(k)
+
+        with raises(ValueError):
+            d.ls(k)
+
+    for k in ['never', 100, int, float]:
+        with raises(ValueError):
+            d.cd(k)
 
 
 def test_discoverable_cd():

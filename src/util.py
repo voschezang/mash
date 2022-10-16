@@ -429,7 +429,9 @@ def extract_exception():
 ################################################################################
 
 
-def identity(values):
+def identity(*values):
+    if len(values) == 1:
+        return values[0]
     return values
 
 
@@ -439,6 +441,9 @@ def constant(value):
     def K(*args):
         return value
     return K
+
+def first(*values):
+    return values[0]
 
 
 def partial_simple(f: Callable, *args, **kwds):

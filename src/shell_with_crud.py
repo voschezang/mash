@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 from functools import partial
 from directory import Directory
+from discoverable_directory import DiscoverableDirectory
 
 from crud import CRUD,  Options
 from crud_static import StaticCRUD
@@ -13,10 +14,10 @@ cd_aliasses = 'cd_aliasses'
 class ShellWithCRUD:
     def __init__(self, repository={}, crud: CRUD = None, **kwds):
         if crud is None:
-            # crud = StaticCRUD(repository, post_cd_hook=self.update_prompt,
-            #                   **kwds)
-            crud = Directory(
+            crud = DiscoverableDirectory(
                 repository, post_cd_hook=self.update_prompt, **kwds)
+            # crud = Directory(
+            #     repository, post_cd_hook=self.update_prompt, **kwds)
 
         self.crud = crud
 

@@ -1,7 +1,7 @@
 from pytest import raises
 
 from crud_static import StaticCRUD
-from crud_example import repository
+from directory_example import repository
 
 
 def init():

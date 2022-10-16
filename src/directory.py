@@ -4,13 +4,13 @@ from pprint import pformat
 from typing import Any, Callable, Iterable, List, Tuple, Union
 
 from crud import Option, Path
-from util import accumulate_list, has_method, identity, none
+from util import accumulate_list, first, has_method, identity, none
 from directory_view import Key, View
 
 
 class Directory(dict):
     def __init__(self, *args,
-                 get_hook: Callable[[Key, View], Key] = identity,
+                 get_hook: Callable[[Key, View], Key] = first,
                  post_cd_hook: Callable = none,
                  **kwds):
         super().__init__(*args, **kwds)
@@ -97,14 +97,21 @@ class Directory(dict):
         if not path:
             return cwd.tree
 
-        *path, key = path
-        for k in path:
-            k = self.get_hook(k, cwd)
-            cwd.down(k)
+        *parents, key = path
+        self.traverse_view(parents, cwd)
 
         key = self.get_hook(key, cwd)
         _, value = cwd.get(key)
         return value
+
+    def traverse_view(self, path: Path, cwd: View) -> View:
+        """Return a view of `path`
+        """
+        for key in path:
+            key = self.get_hook(key, cwd)
+            cwd.down(key)
+
+        return cwd
 
     def append(self, k, v):
         """Associate key k with value v and then change the working directory to k 
@@ -125,13 +132,7 @@ class Directory(dict):
 
         # change dirs
         for k in path:
-            if Option.verify(k):
-                self._cd_option(Option(k))
-                self.post_cd_hook()
-            else:
-                k = self.get_hook(k)
-                self.state.down(k)
-                self.post_cd_hook()
+            self._cd_step(k)
 
         # store origin
         self.prev = origin
@@ -168,6 +169,15 @@ class Directory(dict):
     # Internals
     ############################################################################
 
+    def _cd_step(self, k: Key):
+        if Option.verify(k):
+            self._cd_option(Option(k))
+            self.post_cd_hook()
+        else:
+            k = self.get_hook(k)
+            self.state.down(k)
+            self.post_cd_hook()
+
     def _cd_option(self, option: Option):
         if option == Option.root:
             self.prev = self.state
@@ -197,29 +207,17 @@ class Directory(dict):
 
             result = self.get(path)
 
-            if getattr(result, '_name', '') in ['Dict', 'List']:
-                results = ['Dict of x']
-                # results = [result]
-            elif isinstance(result, type) or isinstance(result, str):
-                results = [result]
-            elif has_method(result, 'keys'):
+            if has_method(result, 'keys'):
                 results = result.keys()
+            elif isinstance(result, str):
+                results = [result]
             elif isinstance(result, list):
                 results = range(len(result))
             else:
+
                 try:
                     results = list(result)
                 except TypeError:
                     results = [result]
 
             yield from results
-
-# def format_type():
-#         if getattr(data, '_name', '') == 'Dict':
-#             cls = data.__args__[1]
-#             container_cls = dict
-#             is_container = True
-#         elif getattr(data, '_name', '') == 'List':
-#             cls = data.__args__[0]
-#             container_cls = list
-#             is_container = True

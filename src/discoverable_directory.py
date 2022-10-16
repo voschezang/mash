@@ -15,10 +15,7 @@ class DiscoverableDirectory(Directory):
     def __init__(self, *args,
                  get_values_method: Method = 'get_all',
                  get_value_method: Method = 'get_value', **kwds):
-        super().__init__(*args,
-                         get_hook=self.discover,
-                         #  get_hook=self.discover_value,
-                         **kwds)
+        super().__init__(*args, get_hook=self.discover, **kwds)
 
         self.get_values_method = get_values_method
         self.get_value_method = get_value_method
@@ -76,8 +73,6 @@ class DiscoverableDirectory(Directory):
             elif container_cls is list:
                 if hasattr(cls, '__annotations__'):
                     cls = cls.__annotations__
-
-                # items = {i: v for i, v in enumerate(items)}
 
                 # assume that all keys are unique
                 return {k: deepcopy(cls) for k in items}
