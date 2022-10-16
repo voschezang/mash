@@ -3,14 +3,14 @@ from pytest import raises
 
 from directory import Directory
 
-root = {'a': {'1': '1', '2': 2, '3': ['A', 'B', 10, 20]},
+root = {'a': {'1': '1', '2': 2, '3': ['A', 'B', 10, 20, [30]]},
         'b': [{'1': '1'}, {'2': 2}],
         'c': {'a_long_name': True}
         }
 keys = ['a', 'b', 'c']
 inner_keys = ['1', '2', '3']
-list_values = ['A', 'B', 10, 20]
-indices_a = [0, 1, 2, 3]
+list_values = ['A', 'B', 10, 20, [30]]
+indices_a = [0, 1, 2, 3, 4]
 indices_b = [0, 1]
 
 
@@ -61,7 +61,8 @@ def test_get_index():
     value = 20
     path = ['a', '3']
     assert value in d.get(path)
-    assert value == d.get(path + [-1])
+    assert value == d.get(path + [3])
+
     with raises(ValueError):
         d.get(['a', '3', 10])
 
@@ -85,19 +86,19 @@ def test_ls():
 def test_ll():
     d = init()
     assert d.ll('a') == '\n'.join(inner_keys)
-    assert d.ll('a', '3', delimiter=', ') == 'A, B, 10, 20'
+    assert d.ll('a', '3', delimiter=', ') == 'A, B, 10, 20, [30]'
 
     assert d.ll('a', '3', delimiter=', ',
-                include_list_indices=True) == '0: A, 1: B, 2: 10, 3: 20'
+                include_list_indices=True) == '0: A, 1: B, 2: 10, 3: 20, 4: [30]'
 
     assert d.ll('b', delimiter=',') == "{'1': '1'},{'2': 2}"
     assert d.ll('b', 0, delimiter=',') == '1'
     assert d.ll('b', 0, '1', delimiter=',') == '1'
 
-    with raises(TypeError):
+    with raises(ValueError):
         d.ll('b', 0, '1', '1')
 
-    with raises(TypeError):
+    with raises(ValueError):
         d.ll('b', 0, '1', 1)
 
 
@@ -147,7 +148,18 @@ def test_cd_switch():
 def test_cd_up():
     d = init()
 
-    path = ['a', '3', 0]
+    path = ['a', '3']
+    d.cd(*path)
+    assert d.path == path
+
+    # cd into file should fail
+    with raises(ValueError):
+        d.cd(0)
+
+    d.cd()
+    assert d.path == []
+
+    path = ['a', '3', 4]
     d.cd(*path)
     assert d.path == path
 

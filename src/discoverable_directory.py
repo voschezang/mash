@@ -1,7 +1,6 @@
 #!/usr/bin/python3
 from typing import Callable,  Union
 from copy import deepcopy
-from crud import Path
 from directory_view import Key, View
 
 from util import has_method, is_callable

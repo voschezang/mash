@@ -1,11 +1,34 @@
 #!/usr/bin/python3
-from dataclasses import dataclass
+from enum import Enum
 from pprint import pformat
 from typing import Any, Callable, Iterable, List, Tuple, Union
 
-from crud import Option, Path
-from util import accumulate_list, first, has_method, identity, none
-from directory_view import Key, View
+from util import accumulate_list, first, has_method, none
+from directory_view import NAME, Key, Path, View
+
+
+class Option(Enum):
+    default = ''
+    # TODO root should be '/' or a singleton object()
+    root = ''
+    home = '~'
+    switch = '-'
+    stay = '.'
+    up = '..'
+    upup = '...'
+    upupup = '....'
+
+    @staticmethod
+    def verify(value):
+        try:
+            option = Option(value)
+        except ValueError:
+            # conversion failed means that `value` is not an Option
+            return False
+        return True
+
+
+Options = [o.value for o in Option]
 
 
 class Directory(dict):
@@ -94,7 +117,7 @@ class Directory(dict):
         else:
             cwd = View(self)
 
-        if not path:
+        if path == ():
             return cwd.tree
 
         *parents, key = path
@@ -153,8 +176,8 @@ class Directory(dict):
             value = self.get(list(path) + [k], relative=relative)
 
             try:
-                if 'name' in value:
-                    return value['name']
+                if NAME in value:
+                    return value[NAME]
             except TypeError:
                 pass
 

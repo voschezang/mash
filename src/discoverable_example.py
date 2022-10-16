@@ -4,7 +4,7 @@ from functools import lru_cache
 from typing import Dict, List
 from random import randint
 
-from crud import Path
+from directory_view import Path
 from discoverable_directory import DiscoverableDirectory
 
 

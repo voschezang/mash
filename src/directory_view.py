@@ -3,11 +3,11 @@ from dataclasses import dataclass, field
 import logging
 from typing import Any, Iterable, List, Tuple, Union
 
-from crud import Path
-from util import crop, find_fuzzy_matches, find_prefix_matches, identity, is_digit, list_prefix_matches, none, take
+from util import crop, find_fuzzy_matches, find_prefix_matches, is_digit, take
 
 Key = Union[str, int]
 Trace = List[Tuple[Key, Union[dict, list]]]
+Path = List[Union[list, str]]
 
 NAME = 'name'
 

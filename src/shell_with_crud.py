@@ -1,10 +1,8 @@
 #!/usr/bin/python3
 from functools import partial
-from directory import Directory
+from directory import Directory, Options
 from discoverable_directory import DiscoverableDirectory
 
-from crud import CRUD,  Options
-from crud_static import StaticCRUD
 from shell import build, set_completions, set_functions
 from util import find_fuzzy_matches, has_method, partial_simple
 
@@ -12,12 +10,10 @@ cd_aliasses = 'cd_aliasses'
 
 
 class ShellWithCRUD:
-    def __init__(self, repository={}, crud: CRUD = None, **kwds):
+    def __init__(self, repository={}, crud: Directory = None, **kwds):
         if crud is None:
             crud = DiscoverableDirectory(
                 repository, post_cd_hook=self.update_prompt, **kwds)
-            # crud = Directory(
-            #     repository, post_cd_hook=self.update_prompt, **kwds)
 
         self.crud = crud
 
