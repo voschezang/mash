@@ -19,5 +19,5 @@ repository: Data = {'worlds': [
 
 
 if __name__ == '__main__':
-    obj = ShellWithDirectory(repository=repository)
+    obj = ShellWithDirectory(data=repository)
     main(shell=obj.shell)

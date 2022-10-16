@@ -26,9 +26,9 @@ def get(url, *args):
 
 
 if __name__ == '__main__':
-    obj = ShellWithDirectory(repository={'repository': 'https://api.github.com/'},
+    obj = ShellWithDirectory(data={'repository': 'https://api.github.com/'},
                              get_value_method=retrieve_data)
-    obj.crud.ll()
-    obj.crud.ll('repo', 'events_url')
+    obj.repository.ll()
+    obj.repository.ll('repo', 'events_url')
 
     main(shell=obj.shell)
