@@ -51,7 +51,7 @@ class Directory(dict):
         """
         self.state.mv(*references)
 
-    def tree(self, path=None) -> str:
+    def tree(self, *path: str) -> str:
         cwd = self.get(path)
         return pformat(cwd, indent=2)
 
@@ -64,15 +64,18 @@ class Directory(dict):
 
         return list(self._ls_inner(paths))
 
-    def ll(self, *path: str, delimiter='\n') -> str:
+    def ll(self, *path: str, delimiter='\n', include_list_indices=False) -> str:
         """Return a formatted result of ls(). 
         """
         keys = self.ls(path)
 
         if isinstance(self.get(path), list):
             names = (self.infer_key_name(path, k) for k in keys)
-            # keys = (f'{i}: {k}' for i, k in enumerate(names))
-            keys = names
+
+            if include_list_indices:
+                keys = (f'{i}: {k}' for i, k in enumerate(names))
+            else:
+                keys = names
 
         return delimiter.join(keys)
 
@@ -125,14 +128,14 @@ class Directory(dict):
         """
         result = self.state.path
         for i, path in enumerate(accumulate_list(self.state.path)):
-            key = path[-1]
-            result[i] = self.infer_key_name(path, key)
+            *path, key = path
+            result[i] = self.infer_key_name(path, key, relative=False)
 
         return result
 
-    def infer_key_name(self, path: Path, k: Key) -> str:
+    def infer_key_name(self, path: Path, k: Key, relative=True) -> str:
         if isinstance(k, int):
-            value = self.get(list(path) + [k], relative=False)
+            value = self.get(list(path) + [k], relative=relative)
 
             try:
                 if 'name' in value:

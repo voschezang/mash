@@ -63,9 +63,9 @@ def test_crud_ls_after_cd():
     obj = init()
     obj.crud.cd('worlds')
 
-    # use ls()
-    result = obj.crud.ls()
-    assert result[0].name == 'earth'
+    # use ll()
+    result = obj.crud.ll()
+    assert result == 'earth'
 
     # use do_ls()
     result = catch_output('ls', shell=obj.shell)
@@ -87,7 +87,7 @@ def test_crud_cd_list():
     # invalid index
     run_command('cd 1', obj.shell)
     assert 'earth' not in shell.prompt
-    assert '10' not in shell.prompt
+    assert '1' not in shell.prompt
 
     # valid index
     run_command('cd 0', obj.shell)
@@ -99,7 +99,7 @@ def test_set_cd_aliasses():
     shell = obj.shell
 
     parent = 'worlds'
-    child = 'earth'
+    child = 'animals'
 
     assert parent not in shell.prompt
     assert child not in shell.prompt
@@ -110,6 +110,9 @@ def test_set_cd_aliasses():
 
     run_command(parent, obj.shell)
     assert parent in shell.prompt
+
+    run_command('0', obj.shell)
+    assert 'earth' in shell.prompt
 
     run_command(child, obj.shell)
     # the child-dir is translated into an index

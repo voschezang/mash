@@ -1,10 +1,11 @@
 #!/usr/bin/python3
 from functools import partial
+from directory import Directory
 
 from crud import CRUD,  Options
 from crud_static import StaticCRUD
 from shell import build, set_completions, set_functions
-from util import has_method, partial_simple
+from util import find_fuzzy_matches, has_method, partial_simple
 
 cd_aliasses = 'cd_aliasses'
 
@@ -12,8 +13,10 @@ cd_aliasses = 'cd_aliasses'
 class ShellWithCRUD:
     def __init__(self, repository={}, crud: CRUD = None, **kwds):
         if crud is None:
-            crud = StaticCRUD(repository, post_cd_hook=self.update_prompt,
-                              **kwds)
+            # crud = StaticCRUD(repository, post_cd_hook=self.update_prompt,
+            #                   **kwds)
+            crud = Directory(
+                repository, post_cd_hook=self.update_prompt, **kwds)
 
         self.crud = crud
 
@@ -44,7 +47,7 @@ class ShellWithCRUD:
                        }, cls)
 
     def set_shell_completions(self, cls):
-        set_completions({'cd': self.crud.complete_cd}, cls)
+        set_completions({'cd': self.complete_cd}, cls)
 
     def unset_cd_aliases(self):
         """Remove all custom do_{dirname} methods from self.shell.
@@ -56,7 +59,8 @@ class ShellWithCRUD:
         """
         self.unset_cd_aliases()
 
-        dirs = [item.name for item in self.crud.ls()]
+        # dirs = [item.name for item in self.crud.ls()]
+        dirs = self.crud.ls()
         self.shell.completenames_options = dirs
 
         for dirname in dirs:
@@ -72,9 +76,18 @@ class ShellWithCRUD:
     def update_prompt(self):
         # TODO ensure that this method is run after an exception
         # e.g. after cd fails
-        path = self.crud.format_path()
+        # try:
+        #     self.crud.semantic_path
+
+        path = '/'.join(self.crud.semantic_path)
 
         prompt = [item for item in (path, '$ ') if item]
         self.shell.prompt = ' '.join(prompt)
 
         self.set_cd_aliases()
+
+    def complete_cd(self, text, line, begidx, endidx):
+        """Filter the result of `ls` to match `text`.
+        """
+        candidates = self.crud.ll(delimiter=' ')
+        return list(find_fuzzy_matches(text, candidates))

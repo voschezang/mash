@@ -1,4 +1,5 @@
 from copy import deepcopy
+from typing import Type
 from pytest import raises
 
 from directory import Directory
@@ -86,10 +87,22 @@ def test_ll():
     d = init()
     assert d.ll('a') == '\n'.join(inner_keys)
     assert d.ll('a', '3', delimiter=', ') == 'A, B, 10, 20'
-    # assert d.ll('a', '3', delimiter=', ') == '0: A, 1: B, 2: 10, 3: 20'
+
+    assert d.ll('a', '3', delimiter=', ',
+                include_list_indices=True) == '0: A, 1: B, 2: 10, 3: 20'
+
+    assert d.ll('b', delimiter=',') == "{'1': '1'},{'2': 2}"
+    assert d.ll('b', 0, delimiter=',') == '1'
+    assert d.ll('b', 0, '1', delimiter=',') == '1'
+
+    with raises(TypeError):
+        d.ll('b', 0, '1', '1')
+
+    with raises(TypeError):
+        d.ll('b', 0, '1', 1)
 
 
-def test_cd():
+def test_cd_a():
     d = init()
     assert d.path == []
 
@@ -97,10 +110,22 @@ def test_cd():
     d.cd(k)
     assert d.path == [k]
     assert list(d.ls()) == inner_keys
+    assert d.ll(delimiter=',') == ','.join(inner_keys)
 
     d.cd()
     assert d.path == []
     assert d.prev.path == [k]
+
+
+def test_cd_b():
+    d = init()
+    assert d.path == []
+
+    k = 'b'
+    d.cd(k)
+    assert d.path == [k]
+    assert list(d.ls()) == indices_b
+    assert d.ll(delimiter=',') ==  "{'1': '1'},{'2': 2}"
 
 
 def test_cd_switch():
