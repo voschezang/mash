@@ -3,7 +3,7 @@ from functools import lru_cache
 from urllib.parse import quote_plus
 import requests
 
-from shell_with_crud import ShellWithCRUD
+from shell_with_directory import ShellWithDirectory
 from shell import main
 from discoverable_directory import DiscoverableDirectory
 
@@ -26,8 +26,8 @@ def get(url, *args):
 
 
 if __name__ == '__main__':
-    obj = ShellWithCRUD(repository={'repository': 'https://api.github.com/'},
-                        get_value_method=retrieve_data)
+    obj = ShellWithDirectory(repository={'repository': 'https://api.github.com/'},
+                             get_value_method=retrieve_data)
     obj.crud.ll()
     obj.crud.ll('repo', 'events_url')
 
