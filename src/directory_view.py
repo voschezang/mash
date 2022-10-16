@@ -4,7 +4,7 @@ import logging
 from typing import Any, Iterable, List, Tuple, Union
 
 from crud import Path
-from util import find_fuzzy_matches, find_prefix_matches, identity, is_digit, list_prefix_matches, none, take
+from util import crop, find_fuzzy_matches, find_prefix_matches, identity, is_digit, list_prefix_matches, none, take
 
 Key = Union[str, int]
 Trace = List[Tuple[Key, Union[dict, list]]]
@@ -35,6 +35,9 @@ class View:
 
     def down(self, key: Key):
         key, value = self.get(key)
+
+        if isinstance(value, str) or getattr(value, '_name', '') in ['Dict', 'List']:
+            raise ValueError(f'{key} is not a directory')
 
         self.tree = value
         self._trace.append((key, self.tree))
@@ -108,7 +111,7 @@ class View:
 
             return k, self.tree[k]
 
-        except KeyError:
+        except (KeyError, ValueError):
             raise ValueError(self._file_not_found(k))
 
     def _get_from_list(self, k):
@@ -121,5 +124,6 @@ class View:
             raise ValueError(self._file_not_found(k))
 
     def _file_not_found(self, k):
-        preview = ', '.join([str(s) for s in take(self.ls(), 5)])[:80]
-        return f'No such file or directory: `{k}` not in [{preview}..]'
+        preview_items = (crop(str(s),10) for s in take(self.ls(), 5))
+        preview = crop(', '.join(preview_items), 80)
+        return f'No such file or directory: `{k}` not in [{preview}, ..]'

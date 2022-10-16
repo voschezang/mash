@@ -93,6 +93,13 @@ def infer_dependencies(known_deps: AdjacencyList, key: str):
             direct_dependencies = infer_dependencies(known_deps, other_key)
             yield from direct_dependencies
 
+
+def crop(s: str, n=100, suffix='..') -> str:
+    margin = len(suffix)
+    if len(s) <= n + margin:
+        return s
+    return s[:n] + suffix
+
 ################################################################################
 # Operations for lists and sequences
 ################################################################################

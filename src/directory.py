@@ -10,11 +10,12 @@ from directory_view import Key, View
 
 class Directory(dict):
     def __init__(self, *args,
-                 pre_cd_hook: Callable[[Key], Any] = identity,
-                 post_cd_hook: Callable = none, **kwds):
+                 get_hook: Callable[[Key, View], Key] = identity,
+                 post_cd_hook: Callable = none,
+                 **kwds):
         super().__init__(*args, **kwds)
 
-        self.pre_cd_hook = pre_cd_hook
+        self.get_hook = get_hook
         self.post_cd_hook = post_cd_hook
 
         self.init_states()
@@ -68,8 +69,14 @@ class Directory(dict):
         """Return a formatted result of ls(). 
         """
         keys = self.ls(path)
+        value = self.get(path)
 
-        if isinstance(self.get(path), list):
+        if getattr(value, '_name', '') in ['Dict', 'List']:
+            keys = map(str, keys)
+        elif isinstance(value, type):
+            keys = [value.__name__]
+
+        elif isinstance(value, list):
             names = (self.infer_key_name(path, k) for k in keys)
 
             if include_list_indices:
@@ -87,10 +94,17 @@ class Directory(dict):
         else:
             cwd = View(self)
 
+        if not path:
+            return cwd.tree
+
+        *path, key = path
         for k in path:
+            k = self.get_hook(k, cwd)
             cwd.down(k)
 
-        return cwd.tree
+        key = self.get_hook(key, cwd)
+        _, value = cwd.get(key)
+        return value
 
     def append(self, k, v):
         """Associate key k with value v and then change the working directory to k 
@@ -115,7 +129,7 @@ class Directory(dict):
                 self._cd_option(Option(k))
                 self.post_cd_hook()
             else:
-                k = self.pre_cd_hook(k)
+                k = self.get_hook(k)
                 self.state.down(k)
                 self.post_cd_hook()
 
@@ -183,7 +197,12 @@ class Directory(dict):
 
             result = self.get(path)
 
-            if has_method(result, 'keys'):
+            if getattr(result, '_name', '') in ['Dict', 'List']:
+                results = ['Dict of x']
+                # results = [result]
+            elif isinstance(result, type) or isinstance(result, str):
+                results = [result]
+            elif has_method(result, 'keys'):
                 results = result.keys()
             elif isinstance(result, list):
                 results = range(len(result))
@@ -194,3 +213,13 @@ class Directory(dict):
                     results = [result]
 
             yield from results
+
+# def format_type():
+#         if getattr(data, '_name', '') == 'Dict':
+#             cls = data.__args__[1]
+#             container_cls = dict
+#             is_container = True
+#         elif getattr(data, '_name', '') == 'List':
+#             cls = data.__args__[0]
+#             container_cls = list
+#             is_container = True
