@@ -2,8 +2,8 @@
 import sys
 import rich
 
-import shell
-from shell import Function, Shell, set_cli_args, set_functions, sh_to_py, main
+import shell.shell as shell
+from shell.shell import Function, Shell, set_cli_args, set_functions, sh_to_py, main
 from io_util import has_output
 import cli
 

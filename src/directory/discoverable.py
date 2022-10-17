@@ -1,10 +1,10 @@
 #!/usr/bin/python3
 from typing import Callable,  Union
 from copy import deepcopy
-from directory_view import Key, View
+from directory.view import Key, View
 
 from util import has_method, is_callable
-from directory import Directory
+from directory.directory import Directory
 
 
 Method = Union[Callable, str]

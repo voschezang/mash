@@ -6,12 +6,12 @@ from time import perf_counter
 
 import io_util
 from io_util import check_output, read_file, run_subprocess
-from shell import Shell, add_cli_args, run_command
-from shell_base import ShellError, bash_delimiters, py_delimiters
+from shell.shell import Shell, add_cli_args, run_command
+from shell.shell_base import ShellError, bash_delimiters, py_delimiters
 from util import identity
 
 
-run = 'python src/shell.py '
+run = 'python src/shell_example.py '
 
 
 def catch_output(line='', func=run_command, **kwds) -> str:

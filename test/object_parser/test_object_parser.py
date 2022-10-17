@@ -3,9 +3,9 @@ from typing import List
 import pytest
 import string
 
-from object_parser import *
-from object_parser import parse_field_key, verify_key_format
-from object_parser import Factory, JSONFactory
+from object_parser.object_parser import *
+from object_parser.object_parser import parse_field_key, verify_key_format
+from object_parser.object_parser import Factory, JSONFactory
 
 
 def test_abstract_factory():

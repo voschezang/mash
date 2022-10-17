@@ -1,8 +1,8 @@
 #!/usr/bin/python3
 from typing import Any, Dict
 
-from shell_with_directory import ShellWithDirectory
-from shell import main
+from shell.shell_with_directory import ShellWithDirectory
+from shell.shell import main
 
 
 # example data with dicts and lists

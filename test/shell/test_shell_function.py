@@ -1,4 +1,4 @@
-from shell import Function
+from shell.shell import Function
 
 
 def test_Function_args():

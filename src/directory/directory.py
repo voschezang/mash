@@ -4,7 +4,7 @@ from pprint import pformat
 from typing import Any, Callable, Iterable, List, Tuple, Union
 
 from util import accumulate_list, first, has_method, none
-from directory_view import NAME, Key, Path, View
+from directory.view import NAME, Key, Path, View
 
 
 class Option(Enum):

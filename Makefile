@@ -8,8 +8,7 @@ format:
 	autopep8 -r -a -a -a --in-place .
 
 clean:
-	rm -rf __pycache__
-	rm -rf */__pycache__
+	find . -name '__pycache__' | xargs rm -rf {1}
 
 setup:
 	pip3 install -r requirements.txt

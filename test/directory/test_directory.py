@@ -1,7 +1,7 @@
 from copy import deepcopy
 from pytest import raises
 
-from directory import Directory
+from directory.directory import Directory
 
 root = {'a': {'1': '1', '2': 2, '3': ['A', 'B', 10, 20, [30]]},
         'b': [{'1': '1'}, {'2': 2}],
