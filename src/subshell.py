@@ -7,7 +7,7 @@ import time
 import logging
 
 from util import shell_ready_signal, has_output
-import progress_bar
+import shell.progress_bar as progress_bar
 
 is_activated = defaultdict(bool)
 

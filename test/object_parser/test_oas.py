@@ -1,5 +1,5 @@
 from src.object_parser_example import example_data, Organization, Capacity
-from src.oas import OAS
+from object_parser.oas import OAS
 
 json = example_data
 

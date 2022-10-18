@@ -1,11 +1,10 @@
 from dataclasses import dataclass
 from enum import auto, Enum
 from json import dumps
-from oas import OAS, path_create
-from object_parser.object_parser import Spec, SpecError
 from typing import List
 
-from object_parser.object_parser import JSONFactory
+from object_parser.oas import OAS, path_create
+from object_parser.object_parser import JSONFactory, Spec, SpecError
 
 
 @dataclass
