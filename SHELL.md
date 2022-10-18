@@ -15,7 +15,7 @@ A client just has to define a mapping between commands and functions. The corres
 E.g.
 
 ```py
-from shell import set_functions
+from shell.shell import set_functions
 
 # the mapping from command names to Python functions
 functions = {'run': some_function}
@@ -27,7 +27,7 @@ set_functions(functions)
 Then a client can call for example:
 
 ```sh
-./src/shell.py run $args 
+./src/shell_example.py run $args 
 ```
 
 ## Usage
@@ -102,7 +102,7 @@ repository = {'worlds': [
 
 ```sh
 # note the autocompletion
-$ py src/shell_example_extended.py 'cd world; cd a; cd t; cd snakes; ll'
+$ py src/src/directory_example.py 'cd world; cd a; cd t; cd snakes; ll'
 python
 cobra
 ```
@@ -126,12 +126,18 @@ print "result:" $y # prints "result: 4
 Modules:
 
 ```sh
-shell_base.BaseShell # a subclass of Cmd that overrides some methods
-shell.Shell # extension of BaseShell
-shell_function.ShellFunction # A wrapper for "normal" Python functions that includes error handling.
-shell_example.py
-crud.BaseCRUD # A directory simulation (an abstract base class)
-crud.CRUD # Directory simulation
-crud_example # An example with a directory-like repository
+shell/
+    base.BaseShell # A subclass of Cmd that overrides some methods.
+    shell.Shell # An extension of BaseShell.
+    function.ShellFunction # A wrapper for "normal" Python functions that includes error handling.
+
+directory
+    directory.Directory # A directory simulation that provides an interface to data..
+    discoverable.py # A subclass that extends Directory with lazy data loading.
+    view # A view of internal data.
+
 cli.py # a CLI that combines Shell with quo.Prompt
+directory_example # An example with a directory-like repository
+discoverable_example
+shell_example.py
 ```

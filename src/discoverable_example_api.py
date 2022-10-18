@@ -3,7 +3,7 @@ from functools import lru_cache
 from urllib.parse import quote_plus
 import requests
 
-from shell.shell_with_directory import ShellWithDirectory
+from shell.with_directory import ShellWithDirectory
 from shell.shell import main
 from directory.discoverable import DiscoverableDirectory
 

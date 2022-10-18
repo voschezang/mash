@@ -1,6 +1,6 @@
 from pytest import raises
 
-from shell.shell_with_directory import ShellWithDirectory
+from shell.with_directory import ShellWithDirectory
 from directory_example import repository
 from shell.shell import run_command
 import io_util

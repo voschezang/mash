@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 from typing import Any, Dict
 
-from shell.shell_with_directory import ShellWithDirectory
+from shell.with_directory import ShellWithDirectory
 from shell.shell import main
 
 

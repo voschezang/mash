@@ -7,7 +7,7 @@ from quo.prompt import Prompt
 from quo.text import Text
 
 from shell.shell import Shell, all_commands, run_command, main as shell_main
-from shell.shell_base import ShellError
+from shell.base import ShellError
 from doc_inference import infer_synopsis
 
 rprompt_init = 'Type any command to continue'

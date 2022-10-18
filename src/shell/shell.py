@@ -11,9 +11,9 @@ import sys
 import traceback
 
 import io_util
-from shell.shell_base import BaseShell, ShellError
-import shell.shell_function as func
-from shell.shell_function import ShellFunction as Function
+from shell.base import BaseShell, ShellError
+import shell.function as func
+from shell.function import ShellFunction as Function
 from io_util import ArgparseWrapper, bold, has_argument, has_output, log, read_file
 import util
 
