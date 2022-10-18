@@ -3,7 +3,7 @@ from typing import Callable,  Union
 from copy import deepcopy
 from directory.view import Key, View
 
-from util import has_method, is_callable
+from util import has_annotations, has_method, is_callable
 from directory.directory import Directory
 
 
@@ -24,8 +24,8 @@ class DiscoverableDirectory(Directory):
             cwd = self.state
 
         k, initial_value = cwd.get(k)
-
         data = self.infer_data(k, initial_value)
+
         if data != initial_value:
             cwd.tree[k] = data
             # TODO improve name
@@ -70,7 +70,7 @@ class DiscoverableDirectory(Directory):
             if container_cls is dict:
                 return items
             elif container_cls is list:
-                if hasattr(cls, '__annotations__'):
+                if has_annotations(cls):
                     cls = cls.__annotations__
 
                 # assume that all keys are unique
@@ -78,7 +78,7 @@ class DiscoverableDirectory(Directory):
 
             return items
 
-        if hasattr(cls, '__annotations__'):
+        if has_annotations(cls):
             return cls.__annotations__
 
         return cls

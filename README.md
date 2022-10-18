@@ -7,12 +7,12 @@ This repository originally contained a number of computational models which can 
 In addition, there are some utilities.
 
 In `src`:
+
 - An object parser which converts JSON data to Python classes: `object_parser.py`.
 - An OAS-generator for Python classes: `oas.py`.
 - A parrallelization framework for load testing: `parallel.py`.
 - A shell that can interpret a domain-specific language: `shell.py`.
 - A subshell wrapper, to redirect the output of shell scripts: `subshell.py`.
-
 
 # Examples
 
@@ -42,7 +42,7 @@ Note that the fit for the exponential signal on the right-most plot is poor.
 [src/semilinear_fit.py](src/semilinear_fit.py) fits various non-linear models.
 
 1. Bayesian ridge regression, with polynomial and sinoid basis functions.
-2. A Gaussian Process. 
+2. A Gaussian Process.
 
 Note that these models estimate both a mean and a standard deviation, which can be used to define a confidence interval (C.I.).
 
@@ -55,16 +55,17 @@ Sampling from the Gaussian Process produces a collection of possible futures.
 
 <img src="img/bayesian_fits_future.png" style="max-width: 10%" alt="Plot of Predicted Future Possibilities">
 
-
 # Setup
 
 Using a `Makefile` for convenience.
+
 ```
 make install
 make test
 ```
 
 ## Run
+
 ```
 python3 src/random_walk.py
 python3 src/linear_fit.py
@@ -78,19 +79,21 @@ Some experiments with parallelization, concurrency and `asyncio` in Python.
 ## Test
 
 Start a dummy server.
+
 ```
 python3 src/server.py
 ```
 
 Do a simple load test
+
 ```
 python3 src/parallel.py -v
 ```
 
 # Object Parser
 
-- [src/object_parser.py](src/object_parser.py) parses JSON data and instantiate Python objects.
-- [src/oas.py](src/oas.py) converts domain-models to OAS.
+- [src/object_parser/object_parser.py](object_parser.py) parses JSON data and instantiate Python objects.
+- [src/object_parser/oas.py](oas.py) converts domain-models to OAS.
 
 ## Exammple
 
@@ -103,17 +106,18 @@ python src/object_parser_example.py
 ### REST API
 
 Server
+
 ```sh
 python src/object_parser_server.py
 ```
 
 Client
+
 ```sh
 curl -X 'POST' 'http://localhost:5000/v1/organizations' \
   -H 'Content-Type: application/json' \
   -d '{ "board": [ "string" ], "ceo": "string", "departments": [ { "manager": "string", "teams": [ { "manager": "string", "members": [ "string" ], "team_type": "A", "active": true, "capacity": 0, "value": 0 } ] } ] }'
 ```
-
 
 # Shell
 

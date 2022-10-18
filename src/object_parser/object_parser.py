@@ -11,7 +11,7 @@ from typing import _GenericAlias
 from enum import Enum
 from abc import ABC, abstractmethod
 
-from util import has_method, is_alpha, is_enum
+from util import has_annotations, has_method, is_alpha, is_enum
 
 
 class ErrorMessages:
@@ -158,7 +158,7 @@ class JSONFactory(Factory):
         result = {}
         if not data:
             return result
-        elif not hasattr(self.cls, '__annotations__'):
+        elif not has_annotations(self.cls):
             raise SpecError(self.errors.no_type_annotations(self.cls))
 
         errors = []
@@ -194,7 +194,7 @@ class JSONFactory(Factory):
         else:
             instance = self.cls()
 
-        if hasattr(self.cls, '__annotations__'):
+        if has_annotations(self.cls):
             # assume instance of Spec
             for k in self.cls.__annotations__:
                 if k not in fields:
@@ -251,7 +251,7 @@ def parse_field_key(cls, key: str):
     if has_method(cls, 'parse_key'):
         key = cls.parse_key(key)
 
-    if hasattr(cls, '__annotations__') and key in cls.__annotations__:
+    if has_annotations(cls):
         return key
 
     return find_synonym(cls, key)
@@ -302,7 +302,7 @@ def init_recursively(cls, data={}):
         else:
             instance = cls()
 
-        if hasattr(cls, '__annotations__'):
+        if has_annotations(cls):
             # assume instance of Spec
             for k in cls.__annotations__:
                 if k not in fields:
@@ -323,7 +323,7 @@ def init_values(cls, data: dict) -> dict:
     result = {}
     if not data:
         return result
-    elif not hasattr(cls, '__annotations__'):
+    elif not has_annotations(cls):
         raise SpecError(ErrorMessages.no_type_annotations())
 
     for key in cls.__annotations__:

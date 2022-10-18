@@ -515,6 +515,9 @@ def is_digit(s: str) -> bool:
 def is_globbable(value: str) -> bool:
     return for_any(GLOB_CHARS, contains, value)
 
+def has_annotations(cls: type) -> bool:
+    # hasattr is necessary for < 3.10  
+    return hasattr(cls, '__annotations__') and cls.__annotations__
 
 def for_any(foreach_items: Sequence, predicate: Callable, *args, **kwds) -> bool:
     """Evaluate whether any item satisfies predicate(*args, item)
