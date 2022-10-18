@@ -9,7 +9,7 @@ from directory.discoverable import DiscoverableDirectory
 
 
 @lru_cache
-def generate(prefix='', n=2):
+def generate(prefix: str, n=2):
     return [f'{prefix}_{randint(0, 1000)}' for i in range(n)]
 
 
@@ -20,7 +20,7 @@ class Member(str):
 
     @staticmethod
     def get_all(path: Path) -> List[str]:
-        return generate(f'u')
+        return generate('u')
 
 
 class Team:
@@ -28,7 +28,7 @@ class Team:
 
     @staticmethod
     def get_all(path: Path) -> List[str]:
-        return generate(f't')
+        return generate('t')
 
 
 @dataclass
@@ -37,7 +37,7 @@ class Department:
 
     @staticmethod
     def get_all(*_) -> Dict[str, type]:
-        keys = generate(f'department')
+        keys = generate('department')
         return {k: Department for k in keys}
 
 

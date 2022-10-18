@@ -79,19 +79,9 @@ if __name__ == '__main__':
     # bayesian regression
     n = 70
     offset = 0.3
-    x_random = sorted(
-        offset +
-        np.hstack(
-            [
-                np.random.gamma(
-                    2,
-                    size=n //
-                    2),
-                7 +
-                np.random.gamma(
-                    3,
-                    size=n //
-                    2)]))
+    x_random = offset + np.hstack([np.random.gamma(2, size=n // 2),
+                                   7 + np.random.gamma(3, size=n // 2)])
+    x_random.sort()
     x_max = x_random.max() * 1.1 + offset
     x_linear = np.linspace(0, x_max, 1000)
     y_true = signal(x_linear, noise_amount=0)

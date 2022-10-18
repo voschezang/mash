@@ -51,7 +51,7 @@ def test_discoverable_cd():
 
     # listing an object should return a singleton of itself
     properties = d.ls(path + [members[i]])
-    assert 'id' in properties
+    assert 'id' in properties, (path, members[i], d.ls(path))
     assert 'value' in properties
     member = d.get(path + [members[i]])
     assert member['id'] == members[i]
