@@ -344,4 +344,3 @@ def main(shell: Shell = None, functions: Dict[str, Function] = None, repl=True) 
         sys.exit(1)
 
     return shell
-

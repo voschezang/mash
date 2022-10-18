@@ -10,7 +10,7 @@ numpy
 pytest
 pytest-cov
 pytest-xdist
-quo
+quo==2022.8.2
 rich
 scipy
 sklearn

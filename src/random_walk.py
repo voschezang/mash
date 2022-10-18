@@ -151,7 +151,8 @@ def noise(n, std):
 def random_linspace(start, stop, num):
     """ Returns a ascending uniform-random series between `start` and `stop`.
     """
-    x = sorted(np.random.uniform(start, stop, num))
+    x = np.random.uniform(start, stop, num)
+    x.sort()
     return x
 
 

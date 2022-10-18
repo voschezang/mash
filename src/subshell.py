@@ -6,7 +6,7 @@ import sys
 import time
 import logging
 
-from util import shell_ready_signal, has_output
+from io_util import shell_ready_signal, has_output
 import shell.progress_bar as progress_bar
 
 is_activated = defaultdict(bool)
@@ -120,4 +120,10 @@ def handle_user_input(process):
 
 if __name__ == '__main__':
     # TODO add proper CLI
+
+    if not sys.argv[1:]:
+        fn = sys.modules[__name__].__file__
+        logging.warning('Usage: {fn} CMD')
+        sys.exit(3)
+
     main(sys.argv[1:])
