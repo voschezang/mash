@@ -15,7 +15,7 @@ A client just has to define a mapping between commands and functions. The corres
 E.g.
 
 ```py
-from shell.shell import set_functions
+from shell import set_functions
 
 # the mapping from command names to Python functions
 functions = {'run': some_function}
@@ -109,7 +109,7 @@ cobra
 
 ### Example 3: Commands
 
-Run commands from a file with `python src/shell.py -f FILE`
+Run commands from a file with `python src/shell.py -f FILE` or `python -m src.shell -f FILE`.
 
 ```sh
 # write to file

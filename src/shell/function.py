@@ -1,4 +1,3 @@
-#!/usr/bin/python3
 from copy import deepcopy
 from types import TracebackType
 from typing import Dict

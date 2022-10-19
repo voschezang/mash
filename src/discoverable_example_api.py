@@ -5,7 +5,6 @@ import requests
 
 from shell.with_directory import ShellWithDirectory
 from shell.shell import main
-from directory.discoverable import DiscoverableDirectory
 
 
 def retrieve_data(url, *args):

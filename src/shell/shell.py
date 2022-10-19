@@ -1,22 +1,23 @@
 #!/usr/bin/python3
-from argparse import ArgumentParser
-from cmd import Cmd
-from collections import defaultdict
-from copy import deepcopy
-from pathlib import Path
-from typing import Callable, Dict, List, Tuple
-import logging
-import os
 import sys
-import traceback
+if __name__ == '__main__':
+    sys.path.append('src')
 
-import io_util
-from shell.base import BaseShell, ShellError
-import shell.function as func
-from shell.function import ShellFunction as Function
-from io_util import ArgparseWrapper, bold, has_argument, has_output, log, read_file
 import util
-
+from io_util import ArgparseWrapper, bold, has_argument, has_output, log, read_file
+from shell.function import ShellFunction as Function
+import shell.function as func
+from shell.base import BaseShell, ShellError
+import io_util
+import traceback
+import os
+import logging
+from typing import Callable, Dict, List, Tuple
+from pathlib import Path
+from copy import deepcopy
+from collections import defaultdict
+from cmd import Cmd
+from argparse import ArgumentParser
 
 description = 'If no positional arguments are given then an interactive subshell is started.'
 epilog = f"""
@@ -344,3 +345,7 @@ def main(shell: Shell = None, functions: Dict[str, Function] = None, repl=True) 
         sys.exit(1)
 
     return shell
+
+
+if __name__ == '__main__':
+    main()
