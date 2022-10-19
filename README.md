@@ -37,7 +37,7 @@ Using `main`
 Or, as Python modules
 
 ```sh
-python3 -m src.data_science.random_walk
+python3 src/data_science/random_walk.py
 ```
 
 # Examples
