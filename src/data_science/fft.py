@@ -1,3 +1,7 @@
+import sys
+if __name__ == '__main__':
+    sys.path.append('src')
+
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.fft import fft, fftfreq, ifft

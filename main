@@ -1,10 +1,11 @@
 #!/bin/bash
-# A wrapper that allows Python 
-module=$1
-echo "rest: $@"
+#
+# A wrapper that providers bindings/aliases to run Python modules.
+#
 
-if [ ! "$module" ]; then
+if [ ! "$1" ]; then
     >&2 echo 'Error: first arg must be an input file'
+    exit 1
 fi
 
 python -m src.data_science.$@
