@@ -1,10 +1,15 @@
+#!/usr/bin/python3
+import sys
+if __name__ == '__main__':
+    sys.path.append('src')
+
 from dataclasses import dataclass
 from enum import auto, Enum
 from json import dumps
 from typing import List
 
 from object_parser.oas import OAS, path_create
-from object_parser.object_parser import JSONFactory, Spec, SpecError
+from object_parser import JSONFactory, Spec, SpecError
 
 
 @dataclass

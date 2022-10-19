@@ -109,7 +109,7 @@ cobra
 
 ### Example 3: Commands
 
-Run commands from a file with `python src/shell.py -f FILE` or `python -m src.shell -f FILE`.
+Run commands from a file with `python src/shell -f FILE` or `python -m src.shell -f FILE`.
 
 ```sh
 # write to file

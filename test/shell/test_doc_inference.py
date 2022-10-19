@@ -1,4 +1,4 @@
-from shell.doc_inference import infer_signature, infer_synopsis, generate_docs
+from doc_inference import infer_signature, infer_synopsis, generate_docs
 
 
 def func(a, b: int, c: str = None) -> tuple:

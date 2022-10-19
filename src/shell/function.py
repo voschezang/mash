@@ -3,7 +3,7 @@ from types import TracebackType
 from typing import Dict
 import logging
 import sys
-from shell.doc_inference import generate_docs
+from doc_inference import generate_docs
 
 from io_util import log
 import util

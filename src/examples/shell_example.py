@@ -1,9 +1,10 @@
 #!/usr/bin/python3
 import sys
-import rich
+if __name__ == '__main__':
+    sys.path.append('src')
 
-import shell.shell as shell
-from shell.shell import Function, Shell, set_cli_args, set_functions, sh_to_py, main
+import rich
+from shell.shell import Function, Shell, has_input, set_cli_args, sh_to_py, main
 from io_util import has_output
 import cli
 
@@ -51,7 +52,7 @@ if __name__ == '__main__':
     # setting cli args is a requirement for shell.has_input
     set_cli_args()
 
-    if has_output(sys.stdin) or shell.has_input():
+    if has_output(sys.stdin) or has_input():
         main(functions=functions)
     else:
         # use_shell_with_history:

@@ -1,6 +1,6 @@
 from pytest import raises
 
-from discoverable_example import Organization
+from examples.discoverable_example import Organization
 from directory.discoverable import DiscoverableDirectory
 
 

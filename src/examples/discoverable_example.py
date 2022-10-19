@@ -1,4 +1,8 @@
 #!/usr/bin/python3
+import sys
+if __name__ == '__main__':
+    sys.path.append('src')
+
 from dataclasses import dataclass
 from functools import lru_cache
 from typing import Dict, List
