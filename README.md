@@ -10,9 +10,35 @@ In `src`:
 
 - An object parser which converts JSON data to Python classes: `object_parser.py`.
 - An OAS-generator for Python classes: `oas.py`.
-- A parrallelization framework for load testing: `parallel.py`.
+- A parallelization framework for load testing: `parallel.py`.
 - A shell that can interpret a domain-specific language: `shell.py`.
 - A subshell wrapper, to redirect the output of shell scripts: `subshell.py`.
+
+# Usage
+
+## List supported modules
+
+```sh
+./main <TAB>
+# this will list the support modules
+echo            fft             linear_fit      random_walk     semilinear_fit
+```
+
+## Run a module
+
+Using `main`
+
+```sh
+./main random_walk
+./main linear_fit
+./main semilinear_fit
+```
+
+Or, as Python modules
+
+```sh
+python3 -m src.data_science.random_walk
+```
 
 # Examples
 
@@ -59,17 +85,17 @@ Sampling from the Gaussian Process produces a collection of possible futures.
 
 Using a `Makefile` for convenience.
 
-```
+```sh
 make install
 make test
 ```
 
-## Run
+## Optional
 
-```
-python3 src/random_walk.py
-python3 src/linear_fit.py
-python3 src/semilinear_fit.py
+Setup completions
+
+```sh
+source setup/setup.sh
 ```
 
 # Parallelization Utilities

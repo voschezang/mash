@@ -1,0 +1,10 @@
+#!/bin/bash
+# A wrapper that allows Python 
+module=$1
+echo "rest: $@"
+
+if [ ! "$module" ]; then
+    >&2 echo 'Error: first arg must be an input file'
+fi
+
+python -m src.data_science.$@
