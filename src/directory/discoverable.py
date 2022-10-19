@@ -4,7 +4,7 @@ from copy import deepcopy
 from directory.view import Key, View
 
 from util import has_annotations, has_method, is_callable
-from directory.directory import Directory
+from directory import Directory
 
 
 Method = Union[Callable, str]

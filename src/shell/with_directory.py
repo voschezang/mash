@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 from functools import partial
-from directory.directory import Directory, Options
+from directory import Directory, Options
 from directory.discoverable import DiscoverableDirectory
 
 from shell.shell import build, set_completions, set_functions
