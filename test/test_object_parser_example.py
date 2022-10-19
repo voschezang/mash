@@ -32,12 +32,13 @@ def test_Team():
     assert team.active
 
     # alt init method, using Factory
-    user = JSONFactory(Team).build(data)
+    team = JSONFactory(Team).build(data)
     assert team.manager == manager
     assert team.active
 
     with pytest.raises(SpecError):
         team = Team(**data, an_incorrect_key=[])
+        a = 1
 
     with pytest.raises(SpecError):
         invalid_data = data.copy()

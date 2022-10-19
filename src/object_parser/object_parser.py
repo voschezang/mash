@@ -251,7 +251,7 @@ def parse_field_key(cls, key: str):
     if has_method(cls, 'parse_key'):
         key = cls.parse_key(key)
 
-    if has_annotations(cls):
+    if has_annotations(cls) and key in cls.__annotations__:
         return key
 
     return find_synonym(cls, key)
