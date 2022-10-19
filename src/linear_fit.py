@@ -6,7 +6,7 @@ from sklearn.metrics import mean_squared_error as mse
 
 import plot
 from plot import COLORS
-from random_walk import random_linspace, smooth_noise, noise
+from data_science.random_walk import random_linspace, smooth_noise, noise
 
 
 def fit_transform_dataset(

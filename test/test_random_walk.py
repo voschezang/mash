@@ -1,6 +1,6 @@
 import numpy as np
 
-from src.random_walk import random_walk, geometric_random_walk
+from data_science.random_walk import random_walk, geometric_random_walk
 
 assert_func = np.testing.assert_allclose
 relative_tolerance = 0
