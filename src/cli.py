@@ -6,7 +6,7 @@ from quo.history import MemoryHistory
 from quo.prompt import Prompt
 from quo.text import Text
 
-from shell import Shell, all_commands, run_command, main as shell_main
+from shell.shell import Shell, all_commands, run_command, main as shell_main
 from shell.base import ShellError
 from doc_inference import infer_synopsis
 

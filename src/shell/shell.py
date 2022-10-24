@@ -14,12 +14,9 @@ import util
 import io_util
 from io_util import ArgparseWrapper, bold, has_argument, has_output, log, read_file
 
-from function import ShellFunction as Function
-import function as func
-from base import BaseShell, ShellError
-# from shell.function import ShellFunction as Function
-# import shell.function as func
-# from shell.base import BaseShell, ShellError
+from shell.function import ShellFunction as Function
+import shell.function as func
+from shell.base import BaseShell, ShellError
 
 
 description = 'If no positional arguments are given then an interactive subshell is started.'

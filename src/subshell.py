@@ -123,7 +123,7 @@ if __name__ == '__main__':
 
     if not sys.argv[1:]:
         fn = sys.modules[__name__].__file__
-        logging.warning('Usage: {fn} CMD')
+        logging.warning(f'Usage: {fn} CMD')
         sys.exit(3)
 
     main(sys.argv[1:])

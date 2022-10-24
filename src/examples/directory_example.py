@@ -6,7 +6,7 @@ if __name__ == '__main__':
 from typing import Any, Dict
 
 from shell.with_directory import ShellWithDirectory
-from shell.shell import main
+from shell import main
 
 
 # example data with dicts and lists
