@@ -24,9 +24,11 @@ class ShellFunction:
             self.help = ''
 
         try:
+            # copy to prevent side-effects
             func = deepcopy(func)
         except TypeError as e:
-            logging.debug('Cannot deepcopy `func`:' + e.args[0])
+            logging.info(
+                'Cannot deepcopy `func`: {e.args[0]}. For func {func}')
 
         self.func = func
 

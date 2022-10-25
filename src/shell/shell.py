@@ -77,13 +77,13 @@ class Shell(BaseShell):
     def do_print(self, args):
         """Mimic Python's print function
         """
-        logging.debug(f'Cmd = print {args}')
+        logging.info(f'Cmd: print {args}')
         return args
 
     def do_echo(self, args):
         """Mimic Bash's print function
         """
-        logging.debug(f'Cmd = echo {args}')
+        logging.info(f'Cmd: echo {args}')
         return args
 
     def do_env(self, keys: str):
@@ -248,7 +248,7 @@ def read_stdin():
 
     except KeyboardInterrupt as e:
         print()
-        logging.info(e)
+        logging.debug(e)
         exit(130)
 
 
@@ -319,7 +319,7 @@ def setup(shell: Shell = None, functions: Dict[str, Function] = None, completion
     Then apply any relevant cli options.
     """
     set_cli_args()
-    logging.info(f'args = {io_util.parse_args}')
+    logging.info(f'args: {io_util.parse_args}')
 
     if shell is None:
         shell = build(functions, completions)
