@@ -27,8 +27,9 @@ class ShellFunction:
             # copy to prevent side-effects
             func = deepcopy(func)
         except TypeError as e:
+            name = getattr(func, '__name__', 'func')
             logging.info(
-                'Cannot deepcopy `func`: {e.args[0]}. For func {func}')
+                f'Cannot deepcopy `{name}`: {e.args[0]}')
 
         self.func = func
 

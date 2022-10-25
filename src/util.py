@@ -442,6 +442,7 @@ def constant(value):
         return value
     return K
 
+
 def first(*values):
     return values[0]
 
@@ -452,6 +453,11 @@ def partial_simple(f: Callable, *args, **kwds):
     """
     def g(*other_args, **other_kwds):
         return f(*args, *other_args, **kwds, **other_kwds)
+
+    doc = '' if f.__doc__ is None else f.__doc__
+
+    g.__doc__ = 'Partial function of f: \n' + doc
+    g.__name__ = f'{f.__name__}(..)()'
     return g
 
 
@@ -515,9 +521,11 @@ def is_digit(s: str) -> bool:
 def is_globbable(value: str) -> bool:
     return for_any(GLOB_CHARS, contains, value)
 
+
 def has_annotations(cls: type) -> bool:
-    # hasattr is necessary for < 3.10  
+    # hasattr is necessary for < 3.10
     return hasattr(cls, '__annotations__') and cls.__annotations__
+
 
 def for_any(foreach_items: Sequence, predicate: Callable, *args, **kwds) -> bool:
     """Evaluate whether any item satisfies predicate(*args, item)

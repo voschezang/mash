@@ -3,7 +3,7 @@ from functools import partial
 from directory import Directory, Options
 from directory.discoverable import DiscoverableDirectory
 
-from shell.shell import build, set_completions, set_functions
+from shell import build, set_completions, set_functions
 from util import find_fuzzy_matches, has_method, partial_simple
 
 cd_aliasses = 'cd_aliasses'
@@ -56,19 +56,21 @@ class ShellWithDirectory:
         """
         self.unset_cd_aliases()
 
-        # dirs = [item.name for item in self.crud.ls()]
         dirs = self.repository.ls()
         self.shell.completenames_options = dirs
 
         for dirname in dirs:
-
             method_name = f'do_{dirname}'
-            if has_method(self.shell, method_name):
-                continue
+            if not has_method(self.shell, method_name):
+                self.add_cd_alias(dirname)
 
-            cd_dirname = partial(self.repository.cd, dirname)
-            self.shell.add_functions({dirname: cd_dirname},
-                                     group_key=cd_aliasses)
+    def add_cd_alias(self, dirname: str):
+        # create alias
+        cd_dirname = partial(self.repository.cd, dirname)
+        cd_dirname.__name__ = f'{self.repository.cd.__name__}({dirname})'
+
+        self.shell.add_functions({dirname: cd_dirname},
+                                 group_key=cd_aliasses)
 
     def update_prompt(self):
         # TODO ensure that this method is run after an exception
