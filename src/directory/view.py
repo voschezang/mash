@@ -6,7 +6,8 @@ from typing import Any, Iterable, List, Tuple, Union
 from util import crop, find_fuzzy_matches, find_prefix_matches, is_digit, take
 
 Key = Union[str, int]
-Trace = List[Tuple[Key, Union[dict, list]]]
+Data = Union[dict, list]
+Trace = List[Tuple[Key, Data]]
 Path = List[Union[list, str]]
 
 NAME = 'name'
@@ -16,7 +17,7 @@ NAME = 'name'
 class View:
     """A tree of dict's. Tree traversal is managed with the methods cd, up.
     """
-    tree: dict
+    tree: Data
     _trace: Trace = field(default_factory=list)
 
     @property
@@ -39,8 +40,8 @@ class View:
         if isinstance(value, str) or getattr(value, '_name', '') in ['Dict', 'List']:
             raise ValueError(f'{key} is not a directory')
 
-        self.tree = value
         self._trace.append((key, self.tree))
+        self.tree = value
 
     def get(self, k: Key) -> Tuple[Key, Any]:
         """Return the value that is refrences by k.

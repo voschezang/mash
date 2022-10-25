@@ -151,6 +151,7 @@ def test_cd_up():
     path = ['a', '3']
     d.cd(*path)
     assert d.path == path
+    assert d.ls() == indices_a
 
     # cd into file should fail
     with raises(ValueError):
@@ -168,16 +169,40 @@ def test_cd_up():
 
     d.cd('..')
     assert d.path == path[:-1]
+    assert d.ls() == indices_a
 
     d.cd('-')
     assert d.path == path
+    assert d.ls() == [0]
 
     d.cd('...')
     assert d.path == path[:-2]
+    assert d.ls() == inner_keys
 
     d.cd('-')
     d.cd('....')
     assert d.path == []
+    assert d.ls() == keys
+
+
+def test_cd_up_down():
+    d = init()
+
+    path = ['a', '3']
+    d.cd(*path)
+    assert d.path == path
+
+    d.cd('..')
+    assert d.path == ['a']
+
+    d.cd('3')
+    assert d.path == path
+
+    d.cd('...')
+    assert d.path == []
+
+    d.cd(*path)
+    assert d.path == path
 
 
 def test_cp_single():
