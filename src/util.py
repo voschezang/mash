@@ -509,6 +509,9 @@ def call(f, *_):
 def is_alpha(key: str, ignore=[]) -> bool:
     return all(c.isalpha() or c in ignore for c in key)
 
+def is_alphanumerical(key: str, ignore=[]) -> bool:
+    return all(c.isalnum() or c in ignore for c in key)
+
 
 def is_digit(s: str) -> bool:
     try:

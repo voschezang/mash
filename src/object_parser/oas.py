@@ -65,7 +65,7 @@ class OAS(dict):
     def __init__(self, *args, **kwds):
         super().__init__(template.copy())
 
-    @ property
+    @property
     def components(self):
         return self[K.components][K.schemas]
 

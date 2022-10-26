@@ -11,7 +11,7 @@ from typing import _GenericAlias
 from enum import Enum
 from abc import ABC, abstractmethod
 
-from util import has_annotations, has_method, is_alpha, is_enum
+from util import has_annotations, has_method, is_alpha, is_alphanumerical, is_enum
 
 
 class ErrorMessages:
@@ -134,12 +134,15 @@ class JSONFactory(Factory):
     def build_instance(self, data) -> object:
         """Init either a `dataclass, list, Enum` or custom class.
         """
-        if has_method(data, 'items'):
+        if isinstance(self.cls, _GenericAlias):
+            if has_method(data, 'items'):
+                return {}
+
+            return self.build_list(data)
+
+        elif has_method(data, 'items'):
             fields = self.build_fields(data)
             return self.build_from_dict(fields)
-
-        elif isinstance(self.cls, _GenericAlias):
-            return self.build_list(data)
 
         if is_enum(self.cls):
             return self.build_enum(data)
@@ -205,11 +208,10 @@ class JSONFactory(Factory):
 
     def build_list(self, items: list) -> list:
         if len(self.cls.__args__) != 1:
-            raise NotImplementedError
+            raise NotImplementedError()
 
         list_item = self.cls.__args__[0]
         factory = JSONFactory(list_item)
-        # return [list_item(v) for v in items]
         return [factory.build(v) for v in items]
 
     def build_enum(self, value) -> Enum:
@@ -227,10 +229,6 @@ class JSONFactory(Factory):
 
         return self.cls(data)
 
-    def verify_key_format(self, key: str):
-        super().verify_key_format(key)
-        if not is_alpha(key, ignore='_') or key.startswith('_'):
-            raise BuildError(self.errors.invalid_key_format(self.cls, key))
 
 ################################################################################
 # Helpers
@@ -372,7 +370,7 @@ def init(cls, args):
 
 
 def verify_key_format(cls, key: str):
-    if not is_alpha(key, ignore='_') or key.startswith('_'):
+    if not is_alpha(key[0]) or not is_alphanumerical(key, ignore='_'):
         raise SpecError(ErrorMessages.invalid_key_format(cls, key))
 
 
