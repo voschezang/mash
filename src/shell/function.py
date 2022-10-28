@@ -21,7 +21,7 @@ class ShellFunction:
         try:
             self.help = generate_docs(func, synopsis, args, doc)
         except NotImplementedError:
-            self.help = ''
+            self.help = func.__doc__
 
         try:
             # copy to prevent side-effects

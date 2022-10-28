@@ -44,6 +44,9 @@ def test_discoverable_cd():
     teams = d.ls()
     assert teams[0].startswith('t_')
 
+    d.cd('...')
+    d.cd(departments[0], 'teams')
+
     path = [teams[0], 'members']
     members = d.ls([teams[0], 'members'])
     i = 1

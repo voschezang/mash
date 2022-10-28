@@ -6,7 +6,7 @@ from itertools import accumulate, dropwhile, takewhile
 from nltk.metrics.distance import edit_distance
 from operator import contains
 from queue import Queue
-from typing import Any, Callable, Dict, Generator, Iterable, List, Literal, MappingView, Sequence, Tuple, TypeVar, Union
+from typing import Any, Callable, Dict, Generator, Iterable, List, MappingView, Sequence, Tuple, TypeVar, Union
 import fnmatch
 import sys
 import traceback
@@ -208,7 +208,7 @@ def split_tips(line: str, delimiters: str = ',.') -> Generator[str, None, None]:
 
 
 def split_sequence(items: Sequence[T], delimiters: Sequence[T] = ['\n', ';'],
-                   return_delimiters: Union[bool, Literal['always']] = False, prefixes=[]) -> Generator[List[T], None, None]:
+                   return_delimiters: Union[bool, str] = False, prefixes=[]) -> Generator[List[T], None, None]:
     """An abstraction of list.split.
     Multiple delimiters are supported.
 
