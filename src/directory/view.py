@@ -36,9 +36,7 @@ class View:
 
     def down(self, key: Key):
         key, value = self.get(key)
-
-        if isinstance(value, str) or getattr(value, '_name', '') in ['Dict', 'List']:
-            raise ValueError(f'{key} is not a directory')
+        verify_directory(value, key)
 
         self._trace.append((key, self.tree))
         self.tree = value
@@ -114,6 +112,8 @@ class View:
 
         except (KeyError, ValueError):
             raise ValueError(self._file_not_found(k))
+        except TypeError as e:
+            e = e
 
     def _get_from_list(self, k):
         # convert key to an index
@@ -128,3 +128,13 @@ class View:
         preview_items = (crop(str(s), 10) for s in take(self.ls(), 5))
         preview = crop(', '.join(preview_items), 80)
         return f'No such file or directory: `{k}` not in [{preview}, ..]'
+
+
+def verify_directory(value, name: str):
+    error = f'{name} is not a directory'
+    if isinstance(value, str) or getattr(value, '_name', '') in ['Dict', 'List']:
+        raise ValueError(error)
+    try:
+        'some_key' in value
+    except TypeError:
+        raise ValueError(error)

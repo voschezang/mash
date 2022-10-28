@@ -111,11 +111,11 @@ class OAS(dict):
             elif isinstance(v, _GenericAlias) or isinstance(v, list):
                 child = v[0]
                 item_type = infer_oas_type(child)
-                if isinstance(child, Spec):
+                if isinstance(child, Spec) or not has_known_type(child):
                     self.extend(child)
                     item = oas_ref(item_type)
                 else:
-                    item = {'type': infer_oas_type(child)}
+                    item = {'type': item_type}
 
                 self.components[t][K.props][k] = {
                     'type': 'array',
@@ -135,7 +135,7 @@ def oas_component(obj: Spec, doc=''):
         doc = obj.__doc__.strip()
 
     result = {K.doc: doc}
-    if isinstance(obj, Spec):
+    if isinstance(obj, Spec) or hasattr(obj, '__dataclass_fields__'):
         result['type'] = 'object'
         result[K.props] = {}
 
@@ -148,6 +148,9 @@ def oas_component(obj: Spec, doc=''):
 def oas_ref(item=''):
     return {'$ref': f'#/components/schemas/{item}'}
 
+
+def has_known_type(obj):
+    return type(obj)  in translations
 
 def infer_oas_type(obj):
     obj_type = type(obj)

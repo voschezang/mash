@@ -107,7 +107,10 @@ class Directory(dict):
             else:
                 keys = names
 
-        return delimiter.join(keys)
+        try:
+            return delimiter.join(keys)
+        except TypeError:
+            return delimiter.join((str(k) for k in keys))
 
     def get(self, path: Union[Path, str], relative=True):
         """Return the value of the file associated with `path`.
@@ -221,7 +224,7 @@ class Directory(dict):
             self._cd_option(Option.up)
             self._cd_option(Option.up)
 
-    def _ls_inner(self, paths: Tuple[Union[Path, str]]) -> Iterable[Key]:
+    def _ls_inner(self, paths: Iterable[Union[Path, str]]) -> Iterable[Key]:
         """A helper method for self.ls()
         """
         for path in paths:
@@ -240,6 +243,7 @@ class Directory(dict):
 
                 try:
                     results = list(result)
+                    x = 1
                 except TypeError:
                     results = [result]
 

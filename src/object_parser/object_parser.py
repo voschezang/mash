@@ -7,7 +7,7 @@
 - `ErrorMessages` exposes a few custom strings.
 - `Spec` is a legacy alternative to dataclasses that provides a simplified constructor.
 """
-from typing import _GenericAlias
+from typing import _GenericAlias, Dict
 from enum import Enum
 from abc import ABC, abstractmethod
 
@@ -86,7 +86,6 @@ class Factory(ABC):
         - `cls.verify_key_format()` defaults to verify_key_format
         - `cls._key_synonyms: dict` can be used to define alternative keys
         """
-        # pass
 
         parsed_data = self.parse_value(data)
         instance = self.build_instance(parsed_data)
@@ -134,15 +133,15 @@ class JSONFactory(Factory):
     def build_instance(self, data) -> object:
         """Init either a `dataclass, list, Enum` or custom class.
         """
-        if isinstance(self.cls, _GenericAlias):
-            if has_method(data, 'items'):
-                return {}
+        # if has_method(data, 'items'):
+        #     return {}
 
-            return self.build_list(data)
-
-        elif has_method(data, 'items'):
+        if has_method(data, 'items'):
             fields = self.build_fields(data)
             return self.build_from_dict(fields)
+
+        elif isinstance(self.cls, _GenericAlias):
+            return self.build_list(data)
 
         if is_enum(self.cls):
             return self.build_enum(data)
@@ -153,7 +152,7 @@ class JSONFactory(Factory):
     # Internals
     ############################################################################
 
-    def build_fields(self, data={}) -> object:
+    def build_fields(self, data={}) -> dict:
         """Instantiate all fields in `cls`, based its type annotations and the values in `data`.
         """
         data = parse_field_keys(self.cls, data)
@@ -161,11 +160,19 @@ class JSONFactory(Factory):
         result = {}
         if not data:
             return result
+
+        elif getattr(self.cls, '_name', '') in ['Dict', 'List']:
+            keys = data.keys()
+            # TODO handle data: list
+
         elif not has_annotations(self.cls):
             raise SpecError(self.errors.no_type_annotations(self.cls))
 
+        else:
+            keys = self.cls.__annotations__.keys()
+
         errors = []
-        for key in self.cls.__annotations__:
+        for key in keys:
             # (before finalization) fields are independent, hence multiple errors can be collected
             try:
                 result[key] = self.build_field(key, data)
@@ -180,7 +187,13 @@ class JSONFactory(Factory):
     def build_field(self, key, data):
         if key in data:
             self.verify_key_format(key)
-            factory = JSONFactory(self.cls.__annotations__[key])
+
+            if has_annotations(self.cls):
+                inner_cls = self.cls.__annotations__[key]
+            else:
+                inner_cls = infer_inner_cls(self.cls)
+
+            factory = JSONFactory(inner_cls)
             return factory.build(data[key])
 
         elif hasattr(self.cls, key):
@@ -188,9 +201,12 @@ class JSONFactory(Factory):
 
         raise SpecError(self.errors.missing_mandatory_key(self.cls, key))
 
-    def build_from_dict(self, fields):
+    def build_from_dict(self, fields: dict):
         if hasattr(self.cls, '__dataclass_fields__'):
             return self.cls(**fields)
+
+        if getattr(self.cls, '_name', '') in ['Dict', 'List']:
+            return list(fields.values())
 
         if issubclass(self.cls, Spec):
             instance = super(Spec, self.cls).__new__(self.cls)
@@ -240,7 +256,15 @@ def parse_field_keys(cls, data) -> dict:
     return {parse_field_key(cls, k): v for k, v in data.items()}
 
 
-def parse_field_key(cls, key: str):
+def parse_field_key(cls, key: str) -> str:
+    if getattr(cls, '_name', '') in ['Dict', 'List']:
+        if cls._name == 'Dict':
+            inner_cls = cls.__args__[1]
+        elif cls._name == 'List':
+            inner_cls = cls.__args__[0]
+
+        return f'{{{inner_cls.__name__}}}'
+
     if has_method(cls, 'verify_key_format'):
         cls.verify_key_format(key)
     else:
@@ -442,3 +466,11 @@ class Spec():
         repr = f'<{cls} object at {hex(id(self))}>'
         data = vars(self)
         return f'{repr} {data}'
+
+
+def infer_inner_cls(cls=Dict[str, str]):
+    if cls._name == 'Dict':
+        return cls.__args__[1]
+    elif cls._name == 'List':
+        return cls.__args__[0]
+    raise NotImplementedError()

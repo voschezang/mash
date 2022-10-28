@@ -28,8 +28,6 @@ class DiscoverableDirectory(Directory):
 
         if data != initial_value:
             cwd.tree[k] = data
-            # TODO improve name
-            cwd.tree['initial_value_of_' + k] = initial_value
         return k
 
     def infer_data(self, k: Key, initial_value=None):
@@ -70,15 +68,12 @@ class DiscoverableDirectory(Directory):
             if container_cls is dict:
                 return items
             elif container_cls is list:
-                if has_annotations(cls):
-                    cls = cls.__annotations__
-
                 # assume that all keys are unique
                 return {k: deepcopy(cls) for k in items}
 
             return items
 
         if has_annotations(cls):
-            return cls.__annotations__
+            return cls.__annotations__.copy()
 
         return cls
