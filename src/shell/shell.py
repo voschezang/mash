@@ -176,7 +176,7 @@ def set_functions(functions: Dict[str, Function], cls: Cmd = Shell) -> type:
     """
     for key, func in functions.items():
         if not is_valid_method_name(key):
-            raise ValueError(f'Key: {key} is not a valid method name')
+            logging.debug(f'Key: {key} is not a valid method name')
 
         if not isinstance(func, Function):
             func = Function(func)

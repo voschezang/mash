@@ -535,7 +535,10 @@ def is_globbable(value: str) -> bool:
 
 
 def is_valid_method_name(value: str) -> bool:
-    return is_alpha(value[0]) and is_alphanumerical(value, ignore='_')
+    try:
+        return is_alpha(value[0]) and is_alphanumerical(value, ignore='_')
+    except TypeError:
+        return False
 
 
 def has_annotations(cls: type) -> bool:

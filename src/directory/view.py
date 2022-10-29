@@ -97,7 +97,7 @@ class View:
             names = list(map(str, items))
 
         if key not in names:
-            logging.debug(f'Dir {key} is not present in `ls()`')
+            logging.info(f'Dir {key} is not present in `ls()`')
 
         match = next(find_fuzzy_matches(key, names))
         return names.index(match)

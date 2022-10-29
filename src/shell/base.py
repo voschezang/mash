@@ -266,7 +266,7 @@ class BaseShell(Cmd):
     def postcmd(self, stop, _):
         """Display the shell_ready_signal to indicate termination to a parent process.
         """
-        if self.auto_save:
+        if self.auto_save and self.env:
             try:
                 self.save_session()
             except OSError as e:
