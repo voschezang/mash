@@ -1,7 +1,7 @@
 from copy import deepcopy
 from pytest import raises
 
-from directory import Directory
+from directory import Directory, Option
 
 root = {'a': {'1': '1', '2': 2, '3': ['A', 'B', 10, 20, [30]]},
         'b': [{'1': '1'}, {'2': 2}],
@@ -203,6 +203,41 @@ def test_cd_up_down():
 
     d.cd(*path)
     assert d.path == path
+
+
+def test_cd_home():
+    d = init()
+    assert d.in_home()
+    assert d.path == []
+
+    d.cd('a')
+    assert d.in_home()
+    assert d.path == ['a']
+    assert d.full_path == ['/', 'a']
+
+    d.home = ['b']
+    assert not d.in_home()
+    assert d.path == ['/', 'a']
+
+    d.cd('~')
+    assert d.path == []
+    assert d.full_path == ['/', 'b']
+
+    d.cd('-')
+
+    d.cd('3')
+    assert d.path == ['/', 'a', '3']
+
+    with raises(ValueError):
+        d.cd('a')
+
+    d.cd()
+    assert d.path == []
+    assert d.full_path == ['/', 'b']
+
+    d.cd('/')
+    assert d.path == ['/']
+    assert d.full_path == ['/']
 
 
 def test_cp_single():

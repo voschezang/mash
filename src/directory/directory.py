@@ -8,12 +8,11 @@ from directory.view import NAME, Key, Path, View
 
 
 class Option(Enum):
-    default = ''
-    # TODO root should be '/' or a singleton object()
-    root = ''
+    default = '~'
     home = '~'
-    switch = '-'
+    root = '/'
     stay = '.'
+    switch = '-'
     up = '..'
     upup = '...'
     upupup = '....'
@@ -33,11 +32,13 @@ Options = [o.value for o in Option]
 
 class Directory(dict):
     def __init__(self, *args,
+                 home: Path = [],
                  get_hook: Callable[[Key, View], Key] = first,
                  post_cd_hook: Callable = none,
                  **kwds):
         super().__init__(*args, **kwds)
 
+        self.home = home
         self.get_hook = get_hook
         self.post_cd_hook = post_cd_hook
 
@@ -48,8 +49,23 @@ class Directory(dict):
         self.prev = View(self)
 
     @property
-    def path(self):
-        return self.state.path
+    def path(self) -> Path:
+        if self.in_home():
+            i = len(self.home)
+            return self.state.path[i:]
+
+        return self.full_path
+
+    @property
+    def full_path(self) -> Path:
+        return [Option.root.value] + self.state.path
+
+    def in_home(self) -> bool:
+        """Check whether home is in cwd.
+        """
+        path = self.state.path
+        return len(path) >= len(self.home) and \
+            all(path[i] == k for i, k in enumerate(self.home))
 
     def cp(self, *references: Key):
         """Copy references.
@@ -149,7 +165,7 @@ class Directory(dict):
         """Change working directory to `path`.
         """
         if not path:
-            self._cd_option(Option.default)
+            self.cd_option(Option.default)
             self.post_cd_hook()
             return
 
@@ -167,8 +183,8 @@ class Directory(dict):
     def semantic_path(self) -> Path:
         """Convert indices in path to semantic values.
         """
-        result = self.state.path
-        for i, path in enumerate(accumulate_list(self.state.path)):
+        result = self.path
+        for i, path in enumerate(accumulate_list(self.path)):
             *path, key = path
             result[i] = self.infer_key_name(path, key, relative=False)
 
@@ -197,17 +213,18 @@ class Directory(dict):
 
     def _cd_step(self, k: Key):
         if Option.verify(k):
-            self._cd_option(Option(k))
+            self.cd_option(Option(k))
             self.post_cd_hook()
         else:
             k = self.get_hook(k)
             self.state.down(k)
             self.post_cd_hook()
 
-    def _cd_option(self, option: Option):
+    def cd_option(self, option: Option):
         if option == Option.root:
-            self.prev = self.state
-            self.state = View(self, [])
+            self.goto([])
+        elif option == Option.home:
+            self.goto(self.home)
 
         elif option == Option.switch:
             self.state, self.prev = self.prev, self.state
@@ -216,13 +233,25 @@ class Directory(dict):
             self.state.up()
 
         elif option == Option.upup:
-            self._cd_option(Option.up)
-            self._cd_option(Option.up)
+            self.cd_option(Option.up)
+            self.cd_option(Option.up)
 
         elif option == Option.upupup:
-            self._cd_option(Option.up)
-            self._cd_option(Option.up)
-            self._cd_option(Option.up)
+            self.cd_option(Option.up)
+            self.cd_option(Option.up)
+            self.cd_option(Option.up)
+
+    def goto(self, path: Path):
+        if self.full_path == path:
+            return
+
+        if path:
+            view = self.traverse_view(self.home, View(self))
+        else:
+            view = View(self)
+
+        self.prev = self.state
+        self.state = view
 
     def _ls_inner(self, paths: Iterable[Union[Path, str]]) -> Iterable[Key]:
         """A helper method for self.ls()
@@ -243,7 +272,6 @@ class Directory(dict):
 
                 try:
                     results = list(result)
-                    x = 1
                 except TypeError:
                     results = [result]
 

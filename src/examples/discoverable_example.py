@@ -10,6 +10,8 @@ if __name__ == '__main__':
     sys.path.append('src')
 
 
+from shell.with_directory import ShellWithDirectory
+from shell import main
 from object_parser.object_parser import JSONFactory
 from object_parser.oas import OAS, path_create
 from directory.view import Path
@@ -71,11 +73,14 @@ class Organization:
 
 
 if __name__ == '__main__':
-    obj = DiscoverableDirectory(repository=Organization)
+    shell = ShellWithDirectory(data={'repository': Organization})
+    obj = shell.repository
+    # obj = DiscoverableDirectory(repository=Organization)
     result = obj.ll()
     print('Org')
     print(result)
-    obj.cd('repository')
+    obj.home = ['repository']
+    obj.cd()
 
     path = []
     result = 'departments'
@@ -94,3 +99,5 @@ if __name__ == '__main__':
     oas['servers'] = [{'url': 'http://localhost:5000/v1'}]
     oas['paths']['/organizations'] = path_create('Organization')
     print(dumps(oas))
+
+    main(shell=shell.shell)
