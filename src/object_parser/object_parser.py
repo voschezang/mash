@@ -11,7 +11,7 @@ from typing import _GenericAlias, Dict
 from enum import Enum
 from abc import ABC, abstractmethod
 
-from util import has_annotations, has_method, is_alpha, is_alphanumerical, is_enum
+from util import has_annotations, has_method, infer_inner_cls, is_alpha, is_alphanumerical, is_enum
 
 
 class ErrorMessages:
@@ -466,11 +466,3 @@ class Spec():
         repr = f'<{cls} object at {hex(id(self))}>'
         data = vars(self)
         return f'{repr} {data}'
-
-
-def infer_inner_cls(cls=Dict[str, str]):
-    if cls._name == 'Dict':
-        return cls.__args__[1]
-    elif cls._name == 'List':
-        return cls.__args__[0]
-    raise NotImplementedError()

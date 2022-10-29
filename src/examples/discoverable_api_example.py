@@ -8,7 +8,7 @@ from urllib.parse import quote_plus
 import requests
 
 from shell.with_directory import ShellWithDirectory
-from shell.shell import main
+from shell import main
 
 
 def retrieve_data(url, *args):

@@ -412,6 +412,12 @@ def is_enum(cls: type) -> bool:
     except TypeError:
         pass
 
+def infer_inner_cls(cls=Dict[str, str]):
+    if cls._name == 'Dict':
+        return cls.__args__[1]
+    elif cls._name == 'List':
+        return cls.__args__[0]
+    raise NotImplementedError()
 
 def extract_exception():
     """

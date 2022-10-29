@@ -3,7 +3,7 @@ from typing import Callable,  Union
 from copy import deepcopy
 from directory.view import Key, View
 
-from util import has_annotations, has_method, is_callable
+from util import has_annotations, has_method, infer_inner_cls, is_callable
 from directory import Directory
 
 
@@ -39,28 +39,25 @@ class DiscoverableDirectory(Directory):
         if is_callable(self.get_value_method):
             return self.get_value_method(data)
 
-        cls = data
-        is_container = False
-        container_cls = None
-
         # infer element types for Dict and List containers
-        if getattr(data, '_name', '') == 'Dict':
-            cls = data.__args__[1]
-            container_cls = dict
-            is_container = True
-        elif getattr(data, '_name', '') == 'List':
-            cls = data.__args__[0]
-            container_cls = list
-            is_container = True
+        if getattr(data, '_name', '') in ['Dict', 'List']:
+            container_cls = dict if data._name == 'Dict' else list
+            cls = infer_inner_cls(data)
+        else:
+            container_cls = None
+            cls = data
 
         if isinstance(cls, type):
-            return self._get_values(cls, k, is_container, container_cls)
+            return self._get_values(cls, k, container_cls)
 
         return data
 
-    def _get_values(self, cls: type, k: Key, is_container: bool, container_cls: type):
+    def _get_values(self, cls: type, k: Key, container_cls: type):
         path = list(self.path) + [k]
-        method = self.get_values_method if is_container else self.get_value_method
+        if container_cls is dict or container_cls is list:
+            method = self.get_values_method
+        else:
+            method = self.get_value_method
 
         if has_method(cls, method):
             items = getattr(cls, method)(path)
