@@ -11,7 +11,7 @@ from typing import _GenericAlias, Dict
 from enum import Enum
 from abc import ABC, abstractmethod
 
-from util import has_annotations, has_method, infer_inner_cls, is_alpha, is_alphanumerical, is_enum
+from util import has_annotations, has_method, infer_inner_cls, is_alpha, is_alphanumerical, is_enum, is_valid_method_name
 
 
 class ErrorMessages:
@@ -394,7 +394,7 @@ def init(cls, args):
 
 
 def verify_key_format(cls, key: str):
-    if not is_alpha(key[0]) or not is_alphanumerical(key, ignore='_'):
+    if not is_valid_method_name(key):
         raise SpecError(ErrorMessages.invalid_key_format(cls, key))
 
 

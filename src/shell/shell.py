@@ -10,9 +10,9 @@ import os
 import sys
 import traceback
 
-import util
 import io_util
 from io_util import ArgparseWrapper, bold, has_argument, has_output, log, read_file
+from util import has_method, is_valid_method_name
 
 from shell.function import ShellFunction as Function
 import shell.function as func
@@ -132,7 +132,7 @@ class Shell(BaseShell):
     @staticmethod
     def get_method(method_suffix: str):
         method_name = f'do_{method_suffix}'
-        if not util.has_method(Shell, method_name):
+        if not has_method(Shell, method_name):
             return
 
         method = getattr(Shell, method_name)
@@ -166,7 +166,7 @@ class Shell(BaseShell):
 
 def all_commands(cls=Shell):
     for cmd in vars(cls):
-        if cmd.startswith('do_') and util.has_method(cls, cmd):
+        if cmd.startswith('do_') and has_method(cls, cmd):
             yield cmd.lstrip('do_')
 
 
@@ -175,6 +175,9 @@ def set_functions(functions: Dict[str, Function], cls: Cmd = Shell) -> type:
     Note that this modifies the class Shell directly, rather than an instance.
     """
     for key, func in functions.items():
+        if not is_valid_method_name(key):
+            raise ValueError(f'Key: {key} is not a valid method name')
+
         if not isinstance(func, Function):
             func = Function(func)
 

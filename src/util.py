@@ -412,12 +412,14 @@ def is_enum(cls: type) -> bool:
     except TypeError:
         pass
 
+
 def infer_inner_cls(cls=Dict[str, str]):
     if cls._name == 'Dict':
         return cls.__args__[1]
     elif cls._name == 'List':
         return cls.__args__[0]
     raise NotImplementedError()
+
 
 def extract_exception():
     """
@@ -515,6 +517,7 @@ def call(f, *_):
 def is_alpha(key: str, ignore=[]) -> bool:
     return all(c.isalpha() or c in ignore for c in key)
 
+
 def is_alphanumerical(key: str, ignore=[]) -> bool:
     return all(c.isalnum() or c in ignore for c in key)
 
@@ -529,6 +532,10 @@ def is_digit(s: str) -> bool:
 
 def is_globbable(value: str) -> bool:
     return for_any(GLOB_CHARS, contains, value)
+
+
+def is_valid_method_name(value: str) -> bool:
+    return is_alpha(value[0]) and is_alphanumerical(value, ignore='_')
 
 
 def has_annotations(cls: type) -> bool:
