@@ -1,8 +1,8 @@
 import pytest
-from object_parser.spec import init_recursively, init_values
+from object_parser.spec import init_recursively
 from object_parser import JSONFactory
 from object_parser.errors import SpecError
-from examples.object_parser_example import A, B, Department, DepartmentData, Organization, SuperUser, Team, TeamType, User, example_data
+from examples.object_parser_example import A, B, Department, DepartmentData, Organization, OrganizationData, SuperUser, Team, TeamType, User, example_data
 
 json = example_data
 
@@ -85,14 +85,6 @@ def test_Department():
 def test_DepartmentData():
     for department in json['departments']:
 
-        d = init_recursively(DepartmentData, department)
-
-        assert d.manager == department['manager']
-        i = 0
-        assert d.teams[i].manager == department['teams'][i]['manager']
-        assert d.teams[i].members == department['teams'][i]['members']
-
-        # alt init method, using Factory
         d = JSONFactory(DepartmentData).build(department)
 
         assert d.manager == department['manager']
@@ -101,16 +93,9 @@ def test_DepartmentData():
         assert d.teams[i].members == department['teams'][i]['members']
 
 
-def test_DepartmentData2():
-    for department in json['departments']:
-
-        fields = init_values(DepartmentData, department)
-        d = DepartmentData(**fields)
-
-        assert d.manager == department['manager']
-        i = 0
-        assert d.teams[i].manager == department['teams'][i]['manager']
-        assert d.teams[i].members == department['teams'][i]['members']
+def test_OrganizationData():
+    org = JSONFactory(OrganizationData).build(json)
+    assert org.board == json['board']
 
 
 def test_Organization():

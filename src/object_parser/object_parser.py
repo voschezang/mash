@@ -10,7 +10,7 @@
 from typing import _GenericAlias
 from enum import Enum
 from abc import ABC, abstractmethod
-from object_parser.errors import BuildError, BuildErrors, ErrorMessages, SpecError
+from object_parser.errors import BuildError, BuildErrors, ErrorMessages
 
 from object_parser.spec import Spec, find_synonym, parse_field_key, parse_field_keys
 from util import has_annotations, has_method, infer_inner_cls, is_enum, is_valid_method_name

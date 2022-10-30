@@ -9,8 +9,9 @@ from json import dumps
 from typing import Dict, List
 
 from object_parser.oas import OAS, path_create
-from object_parser import JSONFactory, Spec, SpecError
-
+from object_parser import JSONFactory
+from object_parser.spec import Spec
+from object_parser.errors import SpecError
 
 @dataclass
 class B:
@@ -104,7 +105,7 @@ class Team(CustomSpec):
 @dataclass
 class DepartmentData:
     manager: User
-    teams: List[Team]
+    teams: List[TeamData]
 
 
 class Department(CustomSpec):

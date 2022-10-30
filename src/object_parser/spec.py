@@ -61,9 +61,8 @@ def init(cls, args):
         inner_cls = infer_inner_cls(cls)
         return {k: inner_cls(v) for k, v in args.items()}
     elif isinstance(cls, _GenericAlias):
-        # assume this is a typing.List
-        if len(cls.__args__) != 1:
-            raise NotImplementedError
+        # assume typing.List
+        assert len(cls.__args__) == 1
 
         list_item = cls.__args__[0]
         return [list_item(v) for v in args]
