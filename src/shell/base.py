@@ -5,7 +5,7 @@ from dataclasses import asdict
 from itertools import chain
 from json import dumps, loads
 from operator import contains
-from typing import Any, Callable, Dict, Iterable, List, Literal, Tuple
+from typing import Any, Callable, Dict, Iterable, List, Tuple
 import logging
 import shlex
 import subprocess
@@ -249,7 +249,7 @@ class BaseShell(Cmd):
     # Overrides
     ############################################################################
 
-    def onecmd(self, line: str) -> Literal[False]:
+    def onecmd(self, line: str) -> bool:
         """Parse and run `line`.
         Returns 0 on success and None otherwise
         """

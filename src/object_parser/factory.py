@@ -5,7 +5,7 @@ from abc import ABC, abstractmethod
 from object_parser import find_synonym, parse_field_keys, verify_key_format
 from object_parser.errors import BuildError, BuildErrors, ErrorMessages, SpecError
 from object_parser.spec import Spec
-from util import has_annotations, has_method, infer_inner_cls, is_Dict, is_Dict_or_List, is_enum
+from util import has_annotations, has_method, infer_inner_cls, is_Dict_or_List, is_enum
 
 
 class Factory(ABC):
@@ -96,7 +96,7 @@ class Factory(ABC):
         """
         if has_method(self.cls, 'verify_key_format'):
             self.cls.verify_key_format(key)
-        elif not is_Dict(self.cls):
+        elif not is_Dict_or_List(self.cls):
             # ignore key for containers such as Dict
             verify_key_format(self.cls, key)
 
