@@ -112,6 +112,19 @@ class Department(CustomSpec):
     teams: List[Team]
 
 
+@dataclass
+class OrganizationData:
+    board: List[User]
+    ceo: SuperUser
+    departments: List[DepartmentData]
+
+    _key_synonyms = {'ceo': ['boss']}
+
+    def __post_init__(self):
+        if self.ceo in self.board:
+            raise SpecError('Incompatible values')
+
+
 class Organization(CustomSpec):
     board: List[User]
     ceo: SuperUser

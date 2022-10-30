@@ -4,8 +4,10 @@ import pytest
 import string
 
 from object_parser.object_parser import *
+from object_parser.spec import init
 from object_parser.object_parser import parse_field_key, verify_key_format
 from object_parser.object_parser import Factory, JSONFactory
+from util import is_alpha
 
 
 def test_abstract_factory():

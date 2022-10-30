@@ -1,6 +1,7 @@
 import pytest
-from object_parser import init_recursively, init_values, JSONFactory
-from object_parser.object_parser import SpecError
+from object_parser.spec import init_recursively, init_values
+from object_parser import JSONFactory
+from object_parser.errors import SpecError
 from examples.object_parser_example import A, B, Department, DepartmentData, Organization, SuperUser, Team, TeamType, User, example_data
 
 json = example_data
