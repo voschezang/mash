@@ -364,7 +364,13 @@ def _init_field(cls, key, data):
 
 
 def init(cls, args):
-    if isinstance(cls, _GenericAlias):
+    if getattr(cls, '_name', '') == 'Dict':
+        # inner_cls = self.cls.__annotations__[key]
+        inner_cls = infer_inner_cls(cls)
+        # factory = JSONFactory(inner_cls)
+        # return factory.build(data[key])
+        return {k: inner_cls(v) for k, v in args.items()}
+    elif isinstance(cls, _GenericAlias):
         # assume this is a typing.List
         if len(cls.__args__) != 1:
             raise NotImplementedError

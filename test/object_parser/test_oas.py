@@ -1,17 +1,21 @@
-from examples.object_parser_example import example_data, Organization, Capacity
+from examples.object_parser_example import SuperUser, example_data, Organization, Capacity
 from object_parser.oas import OAS
 
 json = example_data
 
 members = {'type': 'array',
            'items': {'type': 'string'}}
+stakeholders = {'type': 'array',
+                'items': {'$ref': '#/components/schemas/SuperUser'}}
 team_type = {'type': 'string', 'enum': ['A', 'B']}
 properties = {'manager': {'type': 'string'},
               'members': members,
+              'stakeholders': stakeholders,
               'team_type': team_type,
               'active': {'type': 'boolean'},
               'capacity': {'$ref': '#/components/schemas/Capacity'},
-              'value': {'type': 'number'}
+              'value': {'type': 'number'},
+              'secret': {'type': 'string'}
               }
 
 
@@ -31,6 +35,8 @@ def test_oas_component():
                                    'type': 'object',
                                    'properties': properties
                                    },
+                          'SuperUser': {'description': SuperUser.__doc__.strip(),
+                                        'type': 'string'},
                           'Capacity': {'description': Capacity.__doc__.strip(),
                                        'type': 'string'}
                           }

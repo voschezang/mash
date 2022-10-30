@@ -6,11 +6,13 @@ from object_parser import Spec, is_enum
 from typing import _GenericAlias
 
 
-translations = {
-    int: 'integer',
-    float: 'number',
-    str: 'string',
+# OAS basic types, excluding containers  (e.g. dict, list)
+basic_value_type = {
     bool: 'boolean',
+    complex: 'string',
+    float: 'number',
+    int: 'integer',
+    str: 'string',
 }
 
 
@@ -108,26 +110,32 @@ class OAS(dict):
                     'enum': values
                 }
 
+            elif type(v) in basic_value_type.keys():
+                self.components[t][K.props][k] = {'type': item_type}
+
             elif isinstance(v, _GenericAlias) or isinstance(v, list):
-                child = v[0]
-                item_type = infer_oas_type(child)
-                if isinstance(child, Spec) or not has_known_type(child):
-                    self.extend(child)
-                    item = oas_ref(item_type)
-                else:
-                    item = {'type': item_type}
+                for child in v:
+                    self.add_array(t, k, child)
 
-                self.components[t][K.props][k] = {
-                    'type': 'array',
-                    'items': item
-                }
-
-            elif type(v) not in translations.keys():
+            elif item_type == 'dict':
+                for child in v.values():
+                    self.add_array(t, k, child)
+            else:
                 self.extend(v)
                 self.components[t][K.props][k] = oas_ref(item_type)
 
-            else:
-                self.components[t][K.props][k] = {'type': item_type}
+    def add_array(self, parent_name: str, child_name: str, child):
+        item_type = infer_oas_type(child)
+        if isinstance(child, Spec) or not has_known_type(child):
+            self.extend(child)
+            item = oas_ref(item_type)
+        else:
+            item = {'type': item_type}
+
+        self.components[parent_name][K.props][child_name] = {
+            'type': 'array',
+                    'items': item
+        }
 
 
 def oas_component(obj: Spec, doc=''):
@@ -150,11 +158,12 @@ def oas_ref(item=''):
 
 
 def has_known_type(obj):
-    return type(obj)  in translations
+    return type(obj) in basic_value_type
+
 
 def infer_oas_type(obj):
     obj_type = type(obj)
     try:
-        return translations[obj_type]
+        return basic_value_type[obj_type]
     except KeyError:
         return obj_type.__name__

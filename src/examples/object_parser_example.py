@@ -6,7 +6,7 @@ if __name__ == '__main__':
 from dataclasses import dataclass
 from enum import auto, Enum
 from json import dumps
-from typing import List
+from typing import Dict, List
 
 from object_parser.oas import OAS, path_create
 from object_parser import JSONFactory, Spec, SpecError
@@ -80,6 +80,7 @@ class TeamType(Enum):
 @dataclass
 class TeamData:
     members: List[User]
+    stakeholders: Dict[str, SuperUser]
     team_type: TeamType = 'A'
     active: bool = True
     capacity: Capacity = 1
@@ -92,10 +93,12 @@ class Team(CustomSpec):
     """
     manager: User = 'admin'
     members: List[User]
+    stakeholders: Dict[str, SuperUser]
     team_type: TeamType = 'A'
     active: bool = True
     capacity: Capacity = 1
     value: float = 1.
+    secret: complex = 1j
 
 
 @dataclass
@@ -127,8 +130,9 @@ example_data = {
     'departments': [{
             'manager': 'charlie',
             'teams': [{
-                'manager': 'danny',
+                'manager': 'donald',
                 'members': ['ernie', 'felix'],
+                'stakeholders': {'goofy': 'goofy'},
                 'team_type': 'a',
                 'capacity': 2,
                 'value': 3.1

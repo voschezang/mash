@@ -22,7 +22,7 @@ def test_SuperUser():
 
 def test_Team():
     manager = 'alice'
-    data = {'manager': manager, 'members': []}
+    data = {'manager': manager, 'members': [], 'stakeholders': {}}
     team = Team(**data, active=False)
     assert team.manager == manager
     assert not team.active
@@ -55,7 +55,7 @@ def test_Team():
 
 def test_Team_enum():
     team_type = 'B'
-    team = Team(manager='a', members=[], team_type=team_type)
+    team = Team(manager='a', members=[], team_type=team_type, stakeholders={})
     assert team.team_type == TeamType.B
 
     with pytest.raises(SpecError):
