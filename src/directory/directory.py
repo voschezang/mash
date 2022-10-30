@@ -1,9 +1,9 @@
 #!/usr/bin/python3
 from enum import Enum
 from pprint import pformat
-from typing import Any, Callable, Iterable, List, Tuple, Union
+from typing import Callable, Iterable, List, Union
 
-from util import accumulate_list, first, has_method, none
+from util import accumulate_list, first, has_method, is_Dict_or_List, none
 from directory.view import NAME, Key, Path, View
 
 
@@ -110,7 +110,7 @@ class Directory(dict):
         keys = self.ls(path)
         value = self.get(path)
 
-        if getattr(value, '_name', '') in ['Dict', 'List']:
+        if is_Dict_or_List(value):
             keys = map(str, keys)
         elif isinstance(value, type):
             keys = [value.__name__]

@@ -3,7 +3,7 @@ from typing import Callable,  Union
 from copy import deepcopy
 from directory.view import Key, View
 
-from util import has_annotations, has_method, infer_inner_cls, is_callable
+from util import has_annotations, has_method, infer_inner_cls, is_Dict, is_Dict_or_List, is_callable
 from directory import Directory
 
 
@@ -40,8 +40,8 @@ class DiscoverableDirectory(Directory):
             return self.get_value_method(data)
 
         # infer element types for Dict and List containers
-        if getattr(data, '_name', '') in ['Dict', 'List']:
-            container_cls = dict if data._name == 'Dict' else list
+        if is_Dict_or_List(data):
+            container_cls = dict if is_Dict(data) else list
             cls = infer_inner_cls(data)
         else:
             container_cls = None

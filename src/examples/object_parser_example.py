@@ -160,6 +160,7 @@ if __name__ == '__main__':
         org = Organization(example_data)
     else:
         org = JSONFactory(Organization).build(example_data)
+        org = JSONFactory(OrganizationData).build(example_data)
 
     print(org)
     oas = OAS()

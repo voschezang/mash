@@ -528,7 +528,15 @@ def is_digit(s: str) -> bool:
         return True
     except ValueError:
         return False
+    
+def is_Dict(cls):
+    return getattr(cls, '_name', '') == 'Dict'
 
+def is_List(cls):
+    return getattr(cls, '_name', '') == 'List'
+
+def is_Dict_or_List(cls):
+    return is_Dict(cls) or is_List(cls)
 
 def is_globbable(value: str) -> bool:
     return for_any(GLOB_CHARS, contains, value)

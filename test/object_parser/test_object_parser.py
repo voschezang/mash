@@ -3,9 +3,9 @@ from typing import List
 import pytest
 import string
 
+from object_parser import parse_field_key, verify_key_format
 from object_parser.spec import init, Spec
 from object_parser.errors import SpecError
-from object_parser.factory import parse_field_key, verify_key_format
 from object_parser.factory import Factory, JSONFactory
 from util import is_alpha, is_enum
 

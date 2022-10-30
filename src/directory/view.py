@@ -3,7 +3,7 @@ from dataclasses import dataclass, field
 import logging
 from typing import Any, Iterable, List, Tuple, Union
 
-from util import crop, find_fuzzy_matches, find_prefix_matches, is_digit, take
+from util import crop, find_fuzzy_matches, find_prefix_matches, is_digit, take, is_Dict_or_List
 
 Key = Union[str, int]
 Data = Union[dict, list]
@@ -132,7 +132,7 @@ class View:
 
 def verify_directory(value, name: str):
     error = f'{name} is not a directory'
-    if isinstance(value, str) or getattr(value, '_name', '') in ['Dict', 'List']:
+    if isinstance(value, str) or is_Dict_or_List(value):
         raise ValueError(error)
     try:
         'some_key' in value

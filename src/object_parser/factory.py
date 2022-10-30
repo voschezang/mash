@@ -1,19 +1,11 @@
-"""Parse json-like data and init objects such as dataclasses.
-
-# Classes
-
-- `Factory` is a generic interface. 
-- `JSONFactory` is a concrete implementation.
-- `ErrorMessages` exposes a few custom strings.
-- `Spec` is a legacy alternative to dataclasses that provides a simplified constructor.
-"""
 from typing import _GenericAlias
 from enum import Enum
 from abc import ABC, abstractmethod
-from object_parser.errors import BuildError, BuildErrors, ErrorMessages
 
-from object_parser.spec import Spec, find_synonym, parse_field_key, parse_field_keys
-from util import has_annotations, has_method, infer_inner_cls, is_enum, is_valid_method_name
+from object_parser import find_synonym, parse_field_key, parse_field_keys, verify_key_format
+from object_parser.errors import BuildError, BuildErrors, ErrorMessages, SpecError
+from object_parser.spec import Spec
+from util import has_annotations, has_method, infer_inner_cls, is_Dict, is_Dict_or_List, is_enum, is_valid_method_name
 
 
 class Factory(ABC):
@@ -57,7 +49,7 @@ class Factory(ABC):
 
         User-defineable methods
         -----------------------
-        See the class `Spec` below for an example.
+        See the class `Spec` for an example.
 
         Process values
         - `cls.parse_value()` can be used to pre-process input values before instantiating objects
@@ -104,6 +96,9 @@ class Factory(ABC):
         """
         if has_method(self.cls, 'verify_key_format'):
             self.cls.verify_key_format(key)
+        elif not is_Dict(self.cls):
+            # ignore key for containers such as Dict
+            verify_key_format(self.cls, key)
 
     def find_synonym(self, key: str) -> str:
         """Use the optional field "_key_synonyms" in `self.cls` to translate a key.
@@ -140,7 +135,7 @@ class JSONFactory(Factory):
         if not data:
             return result
 
-        elif getattr(self.cls, '_name', '') in ['Dict', 'List']:
+        elif is_Dict_or_List(self.cls):
             # TODO handle type: list
             keys = data.keys()
 
@@ -155,7 +150,8 @@ class JSONFactory(Factory):
             # (before finalization) fields are independent, hence multiple errors can be collected
             try:
                 result[key] = self.build_field(key, data)
-            except BuildError as e:
+            # except BuildError as e:
+            except SpecError as e:
                 errors.append(e)
 
         if errors:
@@ -184,7 +180,7 @@ class JSONFactory(Factory):
         if hasattr(self.cls, '__dataclass_fields__'):
             return self.cls(**fields)
 
-        if getattr(self.cls, '_name', '') in ['Dict', 'List']:
+        if is_Dict_or_List(self.cls):
             return list(fields.values())
 
         if issubclass(self.cls, Spec):
@@ -223,13 +219,3 @@ class JSONFactory(Factory):
             data = self.cls.parse_value(data)
 
         return self.cls(data)
-
-
-################################################################################
-# Helpers
-################################################################################
-
-
-def verify_key_format(cls, key: str):
-    if not is_valid_method_name(key):
-        raise BuildError(ErrorMessages.invalid_key_format(cls, key))

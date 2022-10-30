@@ -1,8 +1,8 @@
 from typing import _GenericAlias
 
+from object_parser import parse_field_keys, verify_key_format
 from object_parser.errors import ErrorMessages, SpecError
-from object_parser.errors import BuildError, BuildErrors, ErrorMessages, SpecError
-from util import has_annotations, has_method, infer_inner_cls, is_enum, is_valid_method_name
+from util import has_annotations, has_method, infer_inner_cls, is_Dict, is_enum, is_valid_method_name
 
 
 def init_recursively(cls, data={}):
@@ -57,7 +57,7 @@ def _init_field(cls, key, data):
 
 
 def init(cls, args):
-    if getattr(cls, '_name', '') == 'Dict':
+    if is_Dict(cls):
         inner_cls = infer_inner_cls(cls)
         return {k: inner_cls(v) for k, v in args.items()}
     elif isinstance(cls, _GenericAlias):
@@ -86,49 +86,6 @@ def init(cls, args):
         obj.__post_init__()
 
     return obj
-
-
-def parse_field_keys(cls, data) -> dict:
-    # note that dict comprehensions ignore duplicates
-    return {parse_field_key(cls, k): v for k, v in data.items()}
-
-
-def parse_field_key(cls, key: str) -> str:
-    if getattr(cls, '_name', '') in ['Dict', 'List']:
-        if cls._name == 'Dict':
-            inner_cls = cls.__args__[1]
-        elif cls._name == 'List':
-            inner_cls = cls.__args__[0]
-
-        return f'{{{inner_cls.__name__}}}'
-
-    if has_method(cls, 'verify_key_format'):
-        cls.verify_key_format(key)
-    else:
-        verify_key_format(cls, key)
-
-    if has_method(cls, 'parse_key'):
-        key = cls.parse_key(key)
-
-    if has_annotations(cls) and key in cls.__annotations__:
-        return key
-
-    return find_synonym(cls, key)
-
-
-def find_synonym(cls, key: str):
-    if hasattr(cls, '_key_synonyms'):
-        for original_key, synonyms in cls._key_synonyms.items():
-            if key in synonyms:
-                return original_key
-
-    raise BuildError(ErrorMessages.unexpected_key(cls, key))
-
-
-def verify_key_format(cls, key: str):
-    # TODO rm duplicate func
-    if not is_valid_method_name(key):
-        raise SpecError(ErrorMessages.invalid_key_format(cls, key))
 
 
 class Spec():

@@ -1,6 +1,7 @@
 import pytest
-from object_parser.spec import init_recursively
+
 from object_parser import JSONFactory
+from object_parser.spec import init_recursively
 from object_parser.errors import SpecError
 from examples.object_parser_example import A, B, Department, DepartmentData, Organization, OrganizationData, SuperUser, Team, TeamType, User, example_data
 
@@ -32,14 +33,23 @@ def test_Team():
     assert team.manager == manager
     assert team.active
 
+    with pytest.raises(SpecError):
+        team = Team(**data, an_incorrect_key=[])
+        a = 1
+
+    # missing mandatory key
+    with pytest.raises(SpecError):
+        team = Team(manager=manager)
+
+
+def test_Team_with_factory():
+    manager = 'alice'
+    data = {'manager': manager, 'members': [], 'stakeholders': {}}
+
     # alt init method, using Factory
     team = JSONFactory(Team).build(data)
     assert team.manager == manager
     assert team.active
-
-    with pytest.raises(SpecError):
-        team = Team(**data, an_incorrect_key=[])
-        a = 1
 
     with pytest.raises(SpecError):
         invalid_data = data.copy()
@@ -47,9 +57,6 @@ def test_Team():
         team = JSONFactory(Team).build(invalid_data)
 
     # missing mandatory key
-    with pytest.raises(SpecError):
-        team = Team(manager=manager)
-
     with pytest.raises(SpecError):
         team = JSONFactory(Team).build({'manager': manager})
 
@@ -72,6 +79,10 @@ def test_Department():
         i = 0
         assert d.teams[i].manager == department['teams'][i]['manager']
         assert d.teams[i].members == department['teams'][i]['members']
+
+
+def test_Department_with_factory():
+    for department in json['departments']:
 
         # alt init method, using Factory
         d = JSONFactory(Department).build(department)
