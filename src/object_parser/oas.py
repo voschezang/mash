@@ -2,7 +2,8 @@
 See: [OAS](https://swagger.io/specification/)
 """
 
-from object_parser import Spec, is_enum
+from object_parser import Spec
+from util import is_enum
 from typing import _GenericAlias
 
 

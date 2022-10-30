@@ -2,10 +2,10 @@ from typing import _GenericAlias
 from enum import Enum
 from abc import ABC, abstractmethod
 
-from object_parser import find_synonym, parse_field_key, parse_field_keys, verify_key_format
+from object_parser import find_synonym, parse_field_keys, verify_key_format
 from object_parser.errors import BuildError, BuildErrors, ErrorMessages, SpecError
 from object_parser.spec import Spec
-from util import has_annotations, has_method, infer_inner_cls, is_Dict, is_Dict_or_List, is_enum, is_valid_method_name
+from util import has_annotations, has_method, infer_inner_cls, is_Dict, is_Dict_or_List, is_enum
 
 
 class Factory(ABC):
