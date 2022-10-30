@@ -12,7 +12,7 @@ if __name__ == '__main__':
 
 from shell.with_directory import ShellWithDirectory
 from shell import main
-from object_parser.object_parser import JSONFactory
+from object_parser.factory import JSONFactory
 from object_parser.oas import OAS, path_create
 from directory.view import Path
 from directory.discoverable import DiscoverableDirectory
