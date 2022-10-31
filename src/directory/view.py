@@ -112,8 +112,6 @@ class View:
 
         except (KeyError, ValueError):
             raise ValueError(self._file_not_found(k))
-        except TypeError as e:
-            e = e
 
     def _get_from_list(self, k):
         # convert key to an index

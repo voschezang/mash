@@ -6,8 +6,8 @@ from shell.shell import run_command
 import io_util
 
 
-def init():
-    return ShellWithDirectory(data=repository)
+def init(**kwds):
+    return ShellWithDirectory(data=repository, **kwds)
 
 
 def catch_output(line='', func=run_command, **func_kwds) -> str:
@@ -177,3 +177,13 @@ def test_cd_with_Options():
 
     run_command('-', o.shell)
     assert o.repository.path == ['worlds']
+
+
+def test_shell_home():
+    o = init(home=['worlds', 'earth'])
+
+    assert o.repository.path == []
+    assert o.repository.ls('animals') == [0, 1]
+
+    o.repository.cd('/')
+    assert o.repository.path == ['/']

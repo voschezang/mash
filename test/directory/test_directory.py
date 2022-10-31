@@ -14,8 +14,8 @@ indices_a = [0, 1, 2, 3, 4]
 indices_b = [0, 1]
 
 
-def init():
-    return Directory(deepcopy(root))
+def init(**kwds):
+    return Directory(deepcopy(root), **kwds)
 
 
 def test_get_exact():
@@ -215,7 +215,7 @@ def test_cd_home():
     assert d.path == ['a']
     assert d.full_path == ['/', 'a']
 
-    d.home = ['b']
+    d._home = ['b']
     assert not d.in_home()
     assert d.path == ['/', 'a']
 
@@ -238,6 +238,21 @@ def test_cd_home():
     d.cd('/')
     assert d.path == ['/']
     assert d.full_path == ['/']
+
+
+def test_set_home():
+    d = init(home=['a'])
+    assert d.path == []
+    assert d.full_path == ['/', 'a']
+
+    assert d.ls() == inner_keys
+    d.cd('..')
+    assert d.path == ['/']
+    assert d.full_path == ['/']
+
+    d.cd()
+    assert d.path == []
+    assert d.full_path == ['/', 'a']
 
 
 def test_cp_single():

@@ -10,12 +10,11 @@ if __name__ == '__main__':
     sys.path.append('src')
 
 
-from shell.with_directory import ShellWithDirectory
-from shell import main
+from directory.view import Path
 from object_parser.factory import JSONFactory
 from object_parser.oas import OAS, path_create
-from directory.view import Path
-from directory.discoverable import DiscoverableDirectory
+from shell import main
+from shell.with_directory import ShellWithDirectory
 
 
 @lru_cache
@@ -79,8 +78,7 @@ if __name__ == '__main__':
     result = obj.ll()
     print('Org')
     print(result)
-    obj.home = ['repository']
-    obj.cd()
+    obj.init_home(['repository'])
 
     path = []
     result = 'departments'
@@ -100,4 +98,5 @@ if __name__ == '__main__':
     oas['paths']['/organizations'] = path_create('Organization')
     print(dumps(oas))
 
+    obj.init_home(['repository', 'departments'])
     main(shell=shell.shell)

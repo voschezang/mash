@@ -1,12 +1,14 @@
 #!/usr/bin/python3
 from functools import partial
 from directory import Directory, Options
+from directory.directory import Option
 from directory.discoverable import DiscoverableDirectory
 
 from shell import build, set_completions, set_functions
 from util import find_fuzzy_matches, has_method, partial_simple
 
 cd_aliasses = 'cd_aliasses'
+path_delimiter = '/'
 
 
 class ShellWithDirectory:
@@ -75,10 +77,19 @@ class ShellWithDirectory:
     def update_prompt(self):
         # TODO ensure that this method is run after an exception
         # e.g. after cd fails
-        # try:
-        #     self.crud.semantic_path
 
-        path = '/'.join(self.repository.semantic_path)
+        # abort in case of incomplete initiatlization
+        if not hasattr(self, 'repository'):
+            return
+
+        semantic_path = self.repository.semantic_path
+
+        if path_delimiter == Option.root.value:
+            # avoid double '//' in path
+            if semantic_path and semantic_path[0] == Option.root.value:
+                semantic_path[0] = ''
+
+        path = path_delimiter.join(semantic_path)
 
         prompt = [item for item in (path, '$ ') if item]
         self.shell.prompt = ' '.join(prompt)

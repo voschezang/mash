@@ -32,17 +32,29 @@ Options = [o.value for o in Option]
 
 class Directory(dict):
     def __init__(self, *args,
-                 home: Path = [],
+                 home: Path = None,
                  get_hook: Callable[[Key, View], Key] = first,
                  post_cd_hook: Callable = none,
                  **kwds):
         super().__init__(*args, **kwds)
 
-        self.home = home
         self.get_hook = get_hook
         self.post_cd_hook = post_cd_hook
 
         self.init_states()
+        self.init_home(home)
+
+    def init_home(self, home: Path):
+        # set tmp default
+        self._home = []
+
+        if home is None:
+            home = []
+
+        self.cd(Option.root.value)
+        self.cd(*home)
+
+        self._home = self.state.path
 
     def init_states(self):
         self.state = View(self)
@@ -51,7 +63,7 @@ class Directory(dict):
     @property
     def path(self) -> Path:
         if self.in_home():
-            i = len(self.home)
+            i = len(self._home)
             return self.state.path[i:]
 
         return self.full_path
@@ -60,12 +72,16 @@ class Directory(dict):
     def full_path(self) -> Path:
         return [Option.root.value] + self.state.path
 
+    @property
+    def home(self) -> Path:
+        return self._home
+
     def in_home(self) -> bool:
         """Check whether home is in cwd.
         """
         path = self.state.path
-        return len(path) >= len(self.home) and \
-            all(path[i] == k for i, k in enumerate(self.home))
+        return len(path) >= len(self._home) and \
+            all(path[i] == k for i, k in enumerate(self._home))
 
     def cp(self, *references: Key):
         """Copy references.
@@ -224,7 +240,7 @@ class Directory(dict):
         if option == Option.root:
             self.goto([])
         elif option == Option.home:
-            self.goto(self.home)
+            self.goto(self._home)
 
         elif option == Option.switch:
             self.state, self.prev = self.prev, self.state
@@ -246,7 +262,7 @@ class Directory(dict):
             return
 
         if path:
-            view = self.traverse_view(self.home, View(self))
+            view = self.traverse_view(self._home, View(self))
         else:
             view = View(self)
 
