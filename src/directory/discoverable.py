@@ -54,7 +54,7 @@ class DiscoverableDirectory(Directory):
         return data
 
     def _get_values(self, cls: type, k: Key, container_cls: type):
-        path = list(self.path) + [k]
+        path = list(self.full_path) + [k]
         if container_cls is dict or container_cls is list:
             method = self.get_values_method
         else:

@@ -110,6 +110,9 @@ class JSONFactory(Factory):
     def build_instance(self, data) -> object:
         """Init either a `dataclass, list, Enum` or custom class.
         """
+        if isinstance(data, _GenericAlias):
+            raise ValueError(f'Cannot instantiate class {self.cls} with data {data}')
+
         if has_method(data, 'items'):
             fields = self.build_fields(data)
             return self.build_from_dict(fields)
