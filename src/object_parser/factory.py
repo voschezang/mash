@@ -1,6 +1,7 @@
 from typing import _GenericAlias
 from enum import Enum
 from abc import ABC, abstractmethod
+import logging
 
 from object_parser import find_synonym, parse_field_keys, verify_key_format
 from object_parser.errors import BuildError, BuildErrors, ErrorMessages, SpecError
@@ -111,14 +112,15 @@ class JSONFactory(Factory):
         """Init either a `dataclass, list, Enum` or custom class.
         """
         if isinstance(data, _GenericAlias):
-            raise ValueError(f'Cannot instantiate class {self.cls} with data {data}')
+            raise BuildError(
+                f'Cannot instantiate class {self.cls} with data {data}')
 
         if has_method(data, 'items'):
             fields = self.build_fields(data)
             return self.build_from_dict(fields)
 
         elif isinstance(self.cls, _GenericAlias):
-            return self.build_list(data)
+            return list(self.build_list(data))
 
         if is_enum(self.cls):
             return self.build_enum(data)
@@ -206,7 +208,13 @@ class JSONFactory(Factory):
 
         list_item = self.cls.__args__[0]
         factory = JSONFactory(list_item)
-        return [factory.build(v) for v in items]
+        for v in items:
+            try:
+                yield factory.build(v)
+            except BuildErrors as e:
+                logging.debug(
+                    f'build_list: factory({list_item}).build({v}) failed: {e}')
+
 
     def build_enum(self, value) -> Enum:
         if has_method(self.cls, 'parse_value'):

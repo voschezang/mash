@@ -58,3 +58,10 @@ def test_discoverable_cd():
     assert 'value' in properties
     member = d.get(path + [members[i]])
     assert member['id'] == members[i]
+
+
+def test_discoverable_ls_double():
+    d = DiscoverableDirectory(repository=Organization)
+
+    departments = d.ls(['repository', 'departments'])
+    assert departments[0].startswith('department')

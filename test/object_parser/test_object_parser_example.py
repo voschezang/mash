@@ -1,3 +1,5 @@
+from copy import deepcopy
+from typing import Dict, List
 import pytest
 
 from object_parser import JSONFactory
@@ -122,6 +124,19 @@ def test_Organization_with_translated_key():
     org = Organization(json)
     boss = json['boss']
     assert org.ceo.lower() == boss.lower()
+
+
+def test_Organization_with_uninitialized_values():
+    data = deepcopy(json)
+    team = deepcopy(data['departments'][0]['teams'][0])
+
+    # append a non-initialized entry
+    team['members'] = List[User]
+    team['stakeholders'] = Dict[str, SuperUser]
+    team = data['departments'][0]['teams'].append(team)
+
+    org = JSONFactory(Organization).build(data)
+    assert org.departments[0].teams[0].manager == 'donald'
 
 
 def test_dataclass():
