@@ -90,7 +90,7 @@ def debug(*args, **kwds):
 
 def add_default_args(parser: ArgumentParser):
     if parser is None:
-        raise NotImplementedError
+        raise NotImplementedError()
 
     parser.add_argument('-v', '--verbose', default=0, action='count')
 
