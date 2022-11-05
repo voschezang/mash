@@ -38,10 +38,8 @@ def parse_row(row: dict, headings: list, height=1):
 
 def parse(data: dict):
     headings = data.parameters.headings
-    # TODO magic number
-    height = 2
     for row in data.rows:
-        yield list(parse_row(row.row, headings, height))
+        yield list(parse_row(row.row, headings, row.height))
 
 
 def render_table_head(doc, css):
@@ -52,14 +50,14 @@ def render_table_head(doc, css):
         style(css)
 
 
-def render_table_body(height, headings, with_width):
+def render_table_body(max_height, headings, with_width):
     with tr():
         for heading in headings:
             th(heading)
 
     for row in with_width:
         with tbody():
-            for i in range(height):
+            for i in range(max_height):
                 with tr():
                     for col in row:
                         if len(col) > i:
@@ -67,21 +65,20 @@ def render_table_body(height, headings, with_width):
 
 
 def generate(data: dict, css=''):
-    height = 2
     headings = data.parameters.headings.values()
 
     with_width = list(parse(data))
 
-    return render(css, height, headings, with_width)
+    return render(css, data.max_row_height, headings, with_width)
 
 
-def render(css, height, headings, with_width):
+def render(css, max_height, headings, with_width):
     doc = dominate.document(title='table')
     render_table_head(doc, css)
 
     with doc:
         with table():
-            render_table_body(height, headings, with_width)
+            render_table_body(max_height, headings, with_width)
 
     return doc
 
@@ -93,18 +90,6 @@ def add_cli_args(parser: ArgumentParser):
                             help='Table data files in .yaml format')
         parser.add_argument('--css', default=css,
                             help='Style sheet in .css format')
-
-
-def verify_table_data(data: dict):
-    assert 'parameters' in data
-    assert 'rows' in data
-
-    assert 'headings' in data['parameters']
-
-    for row in data['rows']:
-        assert 'row' in row
-        for heading in row['row'].keys():
-            assert heading in data['parameters']['headings']
 
 
 def main(filename: str, stylesheet: str = None, html=True, md=False):
