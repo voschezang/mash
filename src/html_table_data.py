@@ -2,18 +2,26 @@
 """
 from dataclasses import dataclass
 from typing import Dict, List
+import mistletoe
 
 from object_parser import JSONFactory
 
 
-@dataclass
-class Parameters:
-    headings: Dict[str, str]
+
+
+HeadingKey = str
+
+
+class Markdown(str):
+    @staticmethod
+    def parse_value(value):
+        v = mistletoe.markdown(value)
+        return mistletoe.markdown(value)
 
 
 @dataclass
 class Row:
-    row: Dict[str, List[str]]
+    row: Dict[HeadingKey, List[Markdown]]
 
     @property
     def height(self):
@@ -21,6 +29,11 @@ class Row:
         This can be used to infer the html rowspan property.
         """
         return max(len(col) for col in self.row.values())
+
+
+@dataclass
+class Parameters:
+    headings: Dict[HeadingKey, Markdown]
 
 
 @dataclass
@@ -32,6 +45,7 @@ class HTMLTableData:
     def max_row_height(self):
         return max(row.height for row in self.rows)
 
+
 def parse_json(json: dict):
     return JSONFactory(HTMLTableData).build(json)
 
@@ -39,8 +53,8 @@ def parse_json(json: dict):
 example_yaml_data = """
 parameters:
     headings:
-        first: First Heading
-        last: Last Heading
+        first: _First_ Heading
+        last: _Last_ Heading
 rows:
     - row:
           first:

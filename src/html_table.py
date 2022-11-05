@@ -5,6 +5,7 @@ import os
 import yaml
 import dominate
 from dominate.tags import table, tbody, th, tr, td, style
+from dominate.util import raw
 
 import io_util
 from io_util import has_argument
@@ -13,6 +14,7 @@ from html_table_data import HTMLTableData, example_yaml_data, parse_json
 
 
 def parse_cell(text: str, rowspan=1):
+    text = raw(text)
     if rowspan == 1:
         return partial(td, text)
     return partial(td, text, rowspan=rowspan)
@@ -53,7 +55,7 @@ def render_table_head(doc, css):
 def render_table_body(max_height, headings, with_width):
     with tr():
         for heading in headings:
-            th(heading)
+            th(raw(heading))
 
     for row in with_width:
         with tbody():

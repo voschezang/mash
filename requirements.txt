@@ -6,6 +6,7 @@ dominate
 flake8
 flask
 matplotlib
+mistletoe
 nltk
 numpy
 pytest
