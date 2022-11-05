@@ -2,6 +2,7 @@ aiohttp
 autopep8
 braceexpand
 django
+dominate
 flake8
 flask
 matplotlib
@@ -10,7 +11,8 @@ numpy
 pytest
 pytest-cov
 pytest-xdist
-quo==2022.8.2
+pyyaml
+quo
 rich
 scipy
 sklearn
