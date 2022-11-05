@@ -69,3 +69,34 @@ rows:
               - Option D
               - Option E
 """
+
+# example_yaml_data = """
+# parameters:
+#     headings:
+#         first: _First_ Heading
+#         middle: _Middle_ Heading
+#         last: _Last_ Heading
+# rows:
+#     - row:
+#           first:
+#               - A value
+#               - Another
+#           middle:
+#               - Center
+#           last:
+#               - Option A
+#               - Option B
+#               - Option C
+#               - Option D
+#               - Option E
+#               - Option F
+#     - row:
+#           first:
+#               - A value
+#               - Another option
+#           middle:
+#               - Option X
+#           last:
+#               - Option Y
+#               - Option Z
+# """

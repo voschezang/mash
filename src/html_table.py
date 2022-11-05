@@ -22,9 +22,15 @@ def parse_cell(text: str, rowspan=1):
 
 def parse_column(column: dict, height: int):
     if len(column) > 1:
-        height = 1
+        if len(column) == height:
+            rowspan = 1
+        else:
+            rowspan = height // len(column)
 
-    return [parse_cell(cell, height) for cell in column]
+    else:
+        rowspan = height
+
+    return [parse_cell(cell, rowspan) for cell in column]
 
 
 def parse_row(row: dict, headings: list, height=1):
