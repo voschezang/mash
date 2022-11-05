@@ -6,7 +6,7 @@ import logging
 from object_parser import find_synonym, parse_field_keys, verify_key_format
 from object_parser.errors import BuildError, BuildErrors, ErrorMessages, SpecError
 from object_parser.spec import Spec
-from util import has_annotations, has_method, infer_inner_cls, is_Dict_or_List, is_enum
+from util import has_annotations, has_method, infer_inner_cls, is_Dict_or_List, is_Dict, is_List, is_enum
 
 
 class Factory(ABC):
@@ -165,6 +165,9 @@ class JSONFactory(Factory):
         return result
 
     def build_field(self, key, data):
+        if key == 'row':
+            x = 1
+
         if key in data:
             self.verify_key_format(key)
 
@@ -185,7 +188,10 @@ class JSONFactory(Factory):
         if hasattr(self.cls, '__dataclass_fields__'):
             return self.cls(**fields)
 
-        if is_Dict_or_List(self.cls):
+        if is_Dict(self.cls):
+            return self.build_generic_Dict(fields)
+
+        if is_List(self.cls):
             return list(fields.values())
 
         if issubclass(self.cls, Spec):
@@ -203,6 +209,19 @@ class JSONFactory(Factory):
 
         return instance
 
+    def build_generic_Dict(self, fields):
+        inner_cls = self.cls.__args__[1]
+        factory = JSONFactory(inner_cls)
+        result = {}
+        for k, v in fields.items():
+            try:
+                result[k] = factory.build(v)
+            except BuildErrors as e:
+                logging.debug(
+                        f'build_list: factory({inner_cls}).build({v}) failed: {e}')
+                    
+        return result
+
     def build_list(self, items: list) -> list:
         assert len(self.cls.__args__) == 1
 
@@ -214,7 +233,6 @@ class JSONFactory(Factory):
             except BuildErrors as e:
                 logging.debug(
                     f'build_list: factory({list_item}).build({v}) failed: {e}')
-
 
     def build_enum(self, value) -> Enum:
         if has_method(self.cls, 'parse_value'):

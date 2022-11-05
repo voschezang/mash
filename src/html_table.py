@@ -1,9 +1,7 @@
 from argparse import ArgumentParser
-from dataclasses import dataclass
 from functools import partial
 from logging import info
 import os
-from typing import Dict, List
 import yaml
 import dominate
 from dominate.tags import table, tbody, th, tr, td, style
@@ -11,26 +9,7 @@ from dominate.tags import table, tbody, th, tr, td, style
 import io_util
 from io_util import has_argument
 from io_util import ArgparseWrapper, has_argument
-
-example_yaml_data = """
-parameters:
-    headings:
-        first: First Heading
-        last: Last Heading
-rows:
-    - row:
-          first:
-              - A value
-          last:
-              - Option B
-              - Option C
-    - row:
-          first:
-              - Another value
-          last:
-              - Option D
-              - Option E
-"""
+from html_table_data import HTMLTableData, example_yaml_data, parse_json
 
 
 def parse_cell(text: str, rowspan=1):
@@ -58,12 +37,11 @@ def parse_row(row: dict, headings: list, height=1):
 
 
 def parse(data: dict):
-    headings = data['parameters']['headings']
+    headings = data.parameters.headings
     # TODO magic number
     height = 2
-    for row in data['rows']:
-        row = row['row']
-        yield list(parse_row(row, headings, height))
+    for row in data.rows:
+        yield list(parse_row(row.row, headings, height))
 
 
 def render_table_head(doc, css):
@@ -90,11 +68,11 @@ def render_table_body(height, headings, with_width):
 
 def generate(data: dict, css=''):
     height = 2
-    headings = data['parameters']['headings'].values()
+    headings = data.parameters.headings.values()
 
     with_width = list(parse(data))
 
-    return render(css, height, headings, with_width, doc)
+    return render(css, height, headings, with_width)
 
 
 def render(css, height, headings, with_width):
@@ -140,10 +118,8 @@ def main(filename: str, stylesheet: str = None, html=True, md=False):
     else:
         f = example_yaml_data
 
-    data = yaml.load(f, yaml.Loader)
-
-    verify_table_data(data)
-
+    json: dict = yaml.load(f, yaml.Loader)
+    data: HTMLTableData = parse_json(json)
     doc = generate(data, css)
     body = doc.body.children[1]
 

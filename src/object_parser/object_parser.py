@@ -24,6 +24,9 @@ def parse_field_key(cls, key: str) -> str:
         elif is_List(cls):
             inner_cls = cls.__args__[0]
 
+        if is_Dict_or_List(cls):
+            return key
+
         return f'{{{inner_cls.__name__}}}'
 
     if has_method(cls, 'verify_key_format'):

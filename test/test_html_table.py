@@ -2,6 +2,7 @@ from pytest import raises
 import yaml
 
 from html_table import example_yaml_data, generate, verify_table_data
+from html_table_data import parse_json
 
 expected_html = """
 <table>
@@ -42,7 +43,9 @@ def test_html_table_verify_data():
 
 
 def test_html_table_generate():
-    data = yaml.load(example_yaml_data, yaml.Loader)
+    json = yaml.load(example_yaml_data, yaml.Loader)
+    data = parse_json(json)
     doc = generate(data)
+
     body = str(doc.body.children[1]).strip()
     assert body == expected_html.strip()
