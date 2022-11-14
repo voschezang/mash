@@ -295,7 +295,11 @@ def run_command(command='', shell: Shell = None, strict=None):
 def run_interactively(shell):
     io_util.interactive = True
     shell.auto_save = True
-    shell.cmdloop()
+    try:
+        shell.cmdloop()
+    except KeyboardInterrupt:
+        print('<KeyboardInterrupt>')
+        pass
 
 
 def build(functions: Dict[str, Function] = None, completions: Dict[str, Callable] = None, instantiate=True) -> Shell:
