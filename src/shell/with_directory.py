@@ -5,7 +5,7 @@ from directory.directory import Option
 from directory.discoverable import DiscoverableDirectory
 
 from shell import build, set_completions, set_functions
-from util import find_fuzzy_matches, has_method, partial_simple
+from util import constant, find_fuzzy_matches, has_method, partial_simple
 
 cd_aliasses = 'cd_aliasses'
 path_delimiter = '/'
@@ -37,13 +37,20 @@ class ShellWithDirectory:
         cd = partial_simple(self.repository.cd)
         ls = partial_simple(self.repository.ll, delimiter=', ')
         ll = partial_simple(self.repository.ll)
+        get = partial_simple(self.repository.get)
         tree = partial_simple(self.repository.tree)
+        pwd = partial_simple(self.pwd)
 
         set_functions({'cd': cd,
                        'ls': ls,
                        'll': ll,
-                       'tree': tree
+                       'get': get,
+                       'tree': tree,
+                       'pwd': pwd
                        }, cls)
+
+    def pwd(self):
+        return self.repository.full_path
 
     def set_shell_completions(self, cls):
         set_completions({'cd': self.complete_cd}, cls)
