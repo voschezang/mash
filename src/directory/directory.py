@@ -56,6 +56,9 @@ class Directory(dict):
 
         self._home = self.state.path
 
+        # reset path
+        self.cd()
+
     def init_states(self):
         self.state = View(self)
         self.prev = View(self)

@@ -3,6 +3,7 @@ from functools import partial
 from directory import Directory, Options
 from directory.directory import Option
 from directory.discoverable import DiscoverableDirectory
+from directory.view import Path
 
 from shell import build, set_completions, set_functions
 from util import constant, find_fuzzy_matches, has_method, partial_simple
@@ -40,20 +41,32 @@ class ShellWithDirectory:
         get = partial_simple(self.repository.get)
         tree = partial_simple(self.repository.tree)
         pwd = partial_simple(self.pwd)
+        home = partial_simple(self.init_home)
+        mv = partial_simple(self.repository.mv)
+        cp = partial_simple(self.repository.cp)
 
         set_functions({'cd': cd,
                        'ls': ls,
                        'll': ll,
                        'get': get,
                        'tree': tree,
-                       'pwd': pwd
+                       'pwd': pwd,
+                       'home': home,
+                       'mv': mv,
+                       'cp': cp,
                        }, cls)
 
     def pwd(self):
         return self.repository.full_path
 
+    def init_home(self, *path: Path):
+        self.repository.init_home(path)
+
     def set_shell_completions(self, cls):
-        set_completions({'cd': self.complete_cd}, cls)
+        set_completions({'cd': self.complete_cd,
+                         'mv': self.complete_cd,
+                         'cp': self.complete_cd,
+                         }, cls)
 
     def unset_cd_aliases(self):
         """Remove all custom do_{dirname} methods from self.shell.
@@ -106,5 +119,11 @@ class ShellWithDirectory:
     def complete_cd(self, text, line, begidx, endidx):
         """Filter the result of `ls` to match `text`.
         """
-        candidates = self.repository.ll(delimiter=' ')
-        return list(find_fuzzy_matches(text, candidates))
+        candidates = self.repository.ls()
+        results = list(find_fuzzy_matches(text, candidates))
+
+        if len(results) > 1:
+            if results[0].startswith(text) and not results[1].startswith(text):
+                return results[:1]
+
+        return results
