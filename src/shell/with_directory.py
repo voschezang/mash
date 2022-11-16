@@ -38,7 +38,7 @@ class ShellWithDirectory:
         cd = partial_simple(self.repository.cd)
         ls = partial_simple(self.repository.ll, delimiter=', ')
         ll = partial_simple(self.repository.ll)
-        get = partial_simple(self.repository.get)
+        get = partial_simple(self.get)
         tree = partial_simple(self.repository.tree)
         pwd = partial_simple(self.pwd)
         home = partial_simple(self.init_home)
@@ -58,6 +58,9 @@ class ShellWithDirectory:
 
     def pwd(self):
         return self.repository.full_path
+
+    def get(self, *path: str):
+        return self.repository.get(path)
 
     def init_home(self, *path: Path):
         self.repository.init_home(path)

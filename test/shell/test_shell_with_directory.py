@@ -31,6 +31,18 @@ def test_crud_ls():
     assert catch_output('ls abc', shell=shell) == ''
 
 
+def test_crud_get():
+    obj = init()
+    shell = obj.shell
+
+    s = "{'worlds': [{'name': 'earth', 'animals':"
+    assert s in catch_output('get', shell=shell)
+    s = "[{'name': 'earth', 'animals': [{'name': 'terrestrial',"
+    assert s in catch_output('get worlds', shell=shell)
+    s = "{'name': 'earth', 'animals':"
+    assert s in catch_output('get worlds earth', shell=shell)
+
+
 def test_crud_expansion():
     obj = init()
     shell = obj.shell
