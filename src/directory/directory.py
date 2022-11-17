@@ -6,6 +6,8 @@ from typing import Callable, Iterable, List, Union
 from util import accumulate_list, first, has_method, is_Dict_or_List, none
 from directory.view import NAME, Key, Path, View
 
+HIDE_PREFIX = '.'
+
 
 class Option(Enum):
     default = '~'
@@ -108,6 +110,7 @@ class Directory(dict):
         mv(*a, b) # move references *a to b
         ```
         """
+        # TODO rename copies as well. e.g. in self.prev
         self.state.mv(*references)
 
     def tree(self, *path: str) -> str:
@@ -117,11 +120,14 @@ class Directory(dict):
     def ls(self, *paths: Union[Path, str]) -> List[Key]:
         """List all objects in the dir associated with each path.
         If this dir is a path, then its properties are returned.
+        Objects that start with HIDE_PREFIX are ignored.
         """
         if not paths:
-            return list(self.state.ls())
+            items = self.state.ls()
+        else:
+            items = self._ls_inner(paths)
 
-        return list(self._ls_inner(paths))
+        return [item for item in items if not str(item).startswith(HIDE_PREFIX)]
 
     def ll(self, *path: str, delimiter='\n', include_list_indices=False) -> str:
         """Return a formatted result of ls(). 
@@ -150,18 +156,26 @@ class Directory(dict):
     def get(self, path: Union[Path, str], relative=True):
         """Return the value of the file associated with `path`.
         """
+        # TODO implement get('..') and get(['..', '1'])
         if relative:
             cwd = View(self.state.tree)
         else:
             cwd = View(self)
 
-        if path == ():
+        if path in [(), []]:
             return cwd.tree
+        elif isinstance(path, str):
+            path = [path]
+
+        if relative:
+            full_path = self.full_path[1:] + list(path)
+        else:
+            full_path = list(path)
 
         *parents, key = path
         self.traverse_view(parents, cwd)
 
-        key = self.get_hook(key, cwd)
+        key = self.get_hook(key, cwd, full_path)
         _, value = cwd.get(key)
         return value
 

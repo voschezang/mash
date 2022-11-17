@@ -5,6 +5,7 @@ from directory.view import Key, View
 
 from util import has_annotations, has_method, infer_inner_cls, is_Dict, is_Dict_or_List, is_callable
 from directory import Directory
+from directory.view import Path
 
 
 Method = Union[Callable, str]
@@ -18,9 +19,12 @@ class DiscoverableDirectory(Directory):
         self.get_values_method = get_values_method
         self.get_value_method = get_value_method
 
+        # TODO ensure that this index is updated if keys in self.state are renamed
+        self.initial_values = {}
+
         super().__init__(*args, get_hook=self.discover, **kwds)
 
-    def discover(self, k: Key, cwd: View = None):
+    def discover(self, k: Key, cwd: View = None, original_path: Path = None):
         if cwd is None:
             cwd = self.state
 
@@ -29,7 +33,48 @@ class DiscoverableDirectory(Directory):
 
         if data != initial_value:
             cwd.tree[k] = data
+
+            # TODO ensure that keys cannot contain '/'
+            # TODO handle edge cases of abs/rel/None paths
+            if original_path is None:
+                p = '/'.join(cwd.path + [k])
+            else:
+                p = '/'.join(original_path)
+
+            self.initial_values[p] = initial_value
+
         return k
+
+    def show(self, path: Path):
+        data = self.get(path)
+
+        # TODO refactor; create function discover_children(depth: int)
+        for k in list(data.keys()):
+            child = self.get([k])
+            if not has_method(child, 'keys'):
+                continue
+
+            for child_key in list(child.keys()):
+                grand_child = self.get([k, child_key])
+
+                if not has_method(grand_child, 'keys'):
+                    continue
+
+                for grand_child_key in list(grand_child.keys()):
+                    self.get([k, child_key, grand_child_key])
+
+        if len(self.full_path) <= 1:
+            return data
+
+        path = self.full_path[1:] + list(path)
+        p = '/'.join(path)
+
+        if p in self.initial_values:
+            cls = self.initial_values[p]
+            if has_method(cls, 'show'):
+                return cls.show(data)
+
+        return data
 
     def infer_data(self, k: Key, initial_value=None):
         if initial_value is None:

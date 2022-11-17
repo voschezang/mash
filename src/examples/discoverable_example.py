@@ -11,8 +11,6 @@ if __name__ == '__main__':
 
 
 from directory.view import Path
-from object_parser.factory import JSONFactory
-from object_parser.oas import OAS, path_create
 from shell import main
 from shell.with_directory import ShellWithDirectory
 
@@ -63,12 +61,24 @@ class Department:
         keys = generate('department')
         return {k: Department for k in keys}
 
+    # @staticmethod
+    # def show(department):
+    #     return {i: {'name': item, 'members': len(item['members'])}
+    #             for i, item in enumerate(department.teams)}
+    @staticmethod
+    def show(department: dict):
+        return {k: {'name': 'Team ' + k, '#members': len(v['members'].keys())} for k, v in department['teams'].items()}
+
 
 @dataclass
 class Organization:
     departments: Dict[str, Department]
     field1: str = 'abc'
     field2: str = 'abc'
+
+    @staticmethod
+    def show(organization: dict):
+        return {k: {'name': 'Dep ' + k, '#teams': len(v['teams'].keys())} for k, v in organization['departments'].items()}
 
 
 if __name__ == '__main__':

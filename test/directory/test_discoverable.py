@@ -65,3 +65,18 @@ def test_discoverable_ls_double():
 
     departments = d.ls(['repository', 'departments'])
     assert departments[0].startswith('department')
+
+
+def test_discoverable_show():
+    d = DiscoverableDirectory(repository=Organization)
+    d.cd('repo')
+    data = d.show(())
+    for v in data.values():
+        assert 'Dep department' in v['name']
+        assert v['#teams'] == 2
+
+    d.cd('dep', 'd')
+    data = d.show(())
+    for v in data.values():
+        assert 'Team t' in v['name']
+        assert v['#members'] == 2
