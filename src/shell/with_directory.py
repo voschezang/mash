@@ -1,12 +1,13 @@
 #!/usr/bin/python3
 from functools import partial
+import pandas as pd
+
 from directory import Directory, Options
 from directory.directory import Option
 from directory.discoverable import DiscoverableDirectory
 from directory.view import Path
-
 from shell import build, set_completions, set_functions
-from util import constant, find_fuzzy_matches, has_method, partial_simple
+from util import find_fuzzy_matches, has_method, partial_simple
 
 cd_aliasses = 'cd_aliasses'
 path_delimiter = '/'
@@ -44,6 +45,7 @@ class ShellWithDirectory:
         home = partial_simple(self.init_home)
         mv = partial_simple(self.repository.mv)
         cp = partial_simple(self.repository.cp)
+        show = partial_simple(self.show)
 
         set_functions({'cd': cd,
                        'ls': ls,
@@ -54,6 +56,7 @@ class ShellWithDirectory:
                        'home': home,
                        'mv': mv,
                        'cp': cp,
+                       'show': show
                        }, cls)
 
     def pwd(self):
@@ -62,6 +65,10 @@ class ShellWithDirectory:
     def get(self, *path: str):
         return self.repository.get(path)
 
+    def show(self):
+        # Do not pass any path as arg to avoid the need to run word completions
+        return self.repository.show()
+
     def init_home(self, *path: Path):
         self.repository.init_home(path)
 
@@ -69,6 +76,9 @@ class ShellWithDirectory:
         set_completions({'cd': self.complete_cd,
                          'mv': self.complete_cd,
                          'cp': self.complete_cd,
+                         'get': self.complete_cd,
+                         'tree': self.complete_cd,
+                         'show': self.complete_cd,
                          }, cls)
 
     def unset_cd_aliases(self):

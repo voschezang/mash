@@ -5,6 +5,7 @@ from json import dumps
 from random import randint
 from typing import Dict, List
 import sys
+import pandas as pd
 
 if __name__ == '__main__':
     sys.path.append('src')
@@ -61,13 +62,11 @@ class Department:
         keys = generate('department')
         return {k: Department for k in keys}
 
-    # @staticmethod
-    # def show(department):
-    #     return {i: {'name': item, 'members': len(item['members'])}
-    #             for i, item in enumerate(department.teams)}
     @staticmethod
     def show(department: dict):
-        return {k: {'name': 'Team ' + k, '#members': len(v['members'].keys())} for k, v in department['teams'].items()}
+        data = {k: {'name': 'Team ' + k, '#members': len(v['members'].keys())}
+                for k, v in department['teams'].items()}
+        return pd.DataFrame(data).T
 
 
 @dataclass
@@ -78,7 +77,9 @@ class Organization:
 
     @staticmethod
     def show(organization: dict):
-        return {k: {'name': 'Dep ' + k, '#teams': len(v['teams'].keys())} for k, v in organization['departments'].items()}
+        data = {k: {'name': 'Dep ' + k, '#teams': len(v['teams'].keys())}
+                for k, v in organization['departments'].items()}
+        return pd.DataFrame(data).T
 
 
 if __name__ == '__main__':

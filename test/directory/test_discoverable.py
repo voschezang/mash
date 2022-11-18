@@ -71,12 +71,16 @@ def test_discoverable_show():
     d = DiscoverableDirectory(repository=Organization)
     d.cd('repo')
     data = d.show(())
-    for v in data.values():
-        assert 'Dep department' in v['name']
-        assert v['#teams'] == 2
+    assert data.values[0][0].startswith('Dep department_')
+    assert data['#teams'][0] == 2
 
-    d.cd('dep', 'd')
+    d.cd('dep')
+    items = d.ls()
+    data = d.show(items[:1])
+    assert data.values[0][0].startswith('Team t')
+    assert data['#members'][0] == 2
+
+    d.cd('d')
     data = d.show(())
-    for v in data.values():
-        assert 'Team t' in v['name']
-        assert v['#members'] == 2
+    assert data.values[0][0].startswith('Team t')
+    assert data['#members'][0] == 2

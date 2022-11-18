@@ -1,11 +1,10 @@
 #!/usr/bin/python3
 from typing import Callable,  Union
 from copy import deepcopy
-from directory.view import Key, View
 
 from util import has_annotations, has_method, infer_inner_cls, is_Dict, is_Dict_or_List, is_callable
 from directory import Directory
-from directory.view import Path
+from directory.view import Path, Key, View
 
 
 Method = Union[Callable, str]
@@ -45,30 +44,39 @@ class DiscoverableDirectory(Directory):
 
         return k
 
-    def show(self, path: Path):
-        data = self.get(path)
+    def show(self, path: Path = None):
+        # TODO keys in path are not autocompleted
+        if path is None:
+            path = self.full_path[1:]
+            print('p1', path)
+        #     data = self.get(path, relative=False)
+        else:
+            path = self.full_path[1:] + list(path)
+            # path = list(path)
+        #     print('p2', path)
+        #     data = self.get(path)
+        data = self.get(path, relative=False)
 
         # TODO refactor; create function discover_children(depth: int)
         for k in list(data.keys()):
-            child = self.get([k])
+            child = self.get(path + [k], relative=False)
             if not has_method(child, 'keys'):
                 continue
 
             for child_key in list(child.keys()):
-                grand_child = self.get([k, child_key])
+                grand_child = self.get(path + [k, child_key], relative=False)
 
                 if not has_method(grand_child, 'keys'):
                     continue
 
                 for grand_child_key in list(grand_child.keys()):
-                    self.get([k, child_key, grand_child_key])
+                    self.get(
+                        path + [k, child_key, grand_child_key], relative=False)
 
         if len(self.full_path) <= 1:
             return data
 
-        path = self.full_path[1:] + list(path)
         p = '/'.join(path)
-
         if p in self.initial_values:
             cls = self.initial_values[p]
             if has_method(cls, 'show'):
