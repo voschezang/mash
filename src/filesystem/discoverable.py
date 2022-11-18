@@ -3,14 +3,14 @@ from typing import Callable,  Union
 from copy import deepcopy
 
 from util import has_annotations, has_method, infer_inner_cls, is_Dict, is_Dict_or_List, is_callable
-from directory import Directory
-from directory.view import Path, Key, View
+from filesystem import FileSystem
+from filesystem.view import Path, Key, View
 
 
 Method = Union[Callable, str]
 
 
-class DiscoverableDirectory(Directory):
+class DiscoverableDirectory(FileSystem):
     def __init__(self, *args,
                  get_values_method: Method = 'get_all',
                  get_value_method: Method = 'get_value', **kwds):

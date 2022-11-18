@@ -1,7 +1,7 @@
 from copy import deepcopy
 from pytest import raises
 
-from directory import Directory, Option
+from filesystem import FileSystem
 
 root = {'a': {'1': '1', '2': 2, '3': ['A', 'B', 10, 20, [30]]},
         'b': [{'1': '1'}, {'2': 2}],
@@ -15,7 +15,7 @@ indices_b = [0, 1]
 
 
 def init(**kwds):
-    return Directory(deepcopy(root), **kwds)
+    return FileSystem(deepcopy(root), **kwds)
 
 
 def test_get_exact():

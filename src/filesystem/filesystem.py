@@ -1,10 +1,13 @@
 #!/usr/bin/python3
+"""A filesystem-like interface for static and dynamic data.
+This can be used to e.g. browse REST APIs.
+"""
 from enum import Enum
 from pprint import pformat
 from typing import Callable, Iterable, List, Union
 
 from util import accumulate_list, first, has_method, is_Dict_or_List, none
-from directory.view import NAME, Key, Path, View
+from filesystem.view import NAME, Key, Path, View
 
 HIDE_PREFIX = '.'
 
@@ -32,14 +35,13 @@ class Option(Enum):
 Options = [o.value for o in Option]
 
 
-class Directory:
+class FileSystem:
     def __init__(self, *args,
                  home: Path = None,
                  get_hook: Callable[[Key, View], Key] = first,
                  post_cd_hook: Callable = none,
                  **kwds):
         self.root = dict(*args, **kwds)
-        # super().__init__(*args, **kwds)
 
         self.get_hook = get_hook
         self.post_cd_hook = post_cd_hook

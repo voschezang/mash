@@ -9,7 +9,7 @@ import pandas as pd
 if __name__ == '__main__':
     import _extend_path
 
-from directory.view import Path
+from filesystem.view import Path
 from shell import main
 from shell.with_directory import ShellWithDirectory
 

@@ -1,7 +1,7 @@
 from pytest import raises
 
 from examples.discoverable_example import Organization
-from directory.discoverable import DiscoverableDirectory
+from filesystem.discoverable import DiscoverableDirectory
 
 
 def test_discoverable_ll():

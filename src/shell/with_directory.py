@@ -2,10 +2,10 @@
 from functools import partial
 import pandas as pd
 
-from directory import Directory, Options
-from directory.directory import Option
-from directory.discoverable import DiscoverableDirectory
-from directory.view import Path
+from filesystem import FileSystem, Options
+from filesystem.filesystem import Option
+from filesystem.discoverable import DiscoverableDirectory
+from filesystem.view import Path
 from shell import build, set_completions, set_functions
 from util import find_fuzzy_matches, has_method, partial_simple
 
@@ -14,7 +14,7 @@ path_delimiter = '/'
 
 
 class ShellWithDirectory:
-    def __init__(self, data={}, repository: Directory = None, **kwds):
+    def __init__(self, data={}, repository: FileSystem = None, **kwds):
         if repository is None:
             repository = DiscoverableDirectory(
                 data, post_cd_hook=self.update_prompt, **kwds)
