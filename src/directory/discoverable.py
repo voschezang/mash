@@ -18,6 +18,8 @@ class DiscoverableDirectory(Directory):
         self.get_values_method = get_values_method
         self.get_value_method = get_value_method
 
+        # An index of initial values.
+        # Storing this information in a separate index prevents the need for self.root to be mutable
         # TODO ensure that this index is updated if keys in self.state are renamed
         self.initial_values = {}
 

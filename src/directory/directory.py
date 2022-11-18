@@ -32,13 +32,14 @@ class Option(Enum):
 Options = [o.value for o in Option]
 
 
-class Directory(dict):
+class Directory:
     def __init__(self, *args,
                  home: Path = None,
                  get_hook: Callable[[Key, View], Key] = first,
                  post_cd_hook: Callable = none,
                  **kwds):
-        super().__init__(*args, **kwds)
+        self.root = dict(*args, **kwds)
+        # super().__init__(*args, **kwds)
 
         self.get_hook = get_hook
         self.post_cd_hook = post_cd_hook
@@ -62,8 +63,8 @@ class Directory(dict):
         self.cd()
 
     def init_states(self):
-        self.state = View(self)
-        self.prev = View(self)
+        self.state = View(self.root)
+        self.prev = View(self.root)
 
     @property
     def path(self) -> Path:
@@ -160,7 +161,7 @@ class Directory(dict):
         if relative:
             cwd = View(self.state.tree)
         else:
-            cwd = View(self)
+            cwd = View(self.root)
 
         if path in [(), []]:
             return cwd.tree
@@ -279,9 +280,9 @@ class Directory(dict):
             return
 
         if path:
-            view = self.traverse_view(self._home, View(self))
+            view = self.traverse_view(self._home, View(self.root))
         else:
-            view = View(self)
+            view = View(self.root)
 
         self.prev = self.state
         self.state = view
@@ -309,3 +310,9 @@ class Directory(dict):
                     results = [result]
 
             yield from results
+
+    def __getitem__(self, k):
+        return self.root[k]
+
+    def __contains__(self, k):
+        return k in self.root
