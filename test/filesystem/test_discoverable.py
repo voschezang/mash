@@ -1,6 +1,6 @@
 from pytest import raises
 
-from examples.discoverable_example import Organization
+from examples.discoverable_example import Organization, generate
 from filesystem.discoverable import Discoverable
 
 
@@ -84,3 +84,25 @@ def test_discoverable_show():
     data = d.show(())
     assert data.values[0][0].startswith('Team t')
     assert data['#members'][0] == 2
+
+
+def test_discoverable_load_snapshot():
+    fn = '.pytest.discoverable.pickle'
+    path = ['repository', 'departments']
+
+    d = Discoverable(repository=Organization)
+    items = d.ls(path)
+
+    d.snapshot(fn)
+
+    d = Discoverable(repository=Organization)
+    assert d.ls(path) == items
+
+    # invalidating cache should result in mismatching data
+    generate.cache_clear()
+
+    d = Discoverable(repository=Organization)
+    assert d.ls(path) != items
+
+    d.load(fn)
+    assert d.ls(path) == items

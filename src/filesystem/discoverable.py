@@ -1,4 +1,5 @@
 #!/usr/bin/python3
+from pickle import dumps, loads
 from typing import Callable,  Union
 from copy import deepcopy
 
@@ -8,6 +9,8 @@ from filesystem.view import Path, Key, View
 
 
 Method = Union[Callable, str]
+
+default_snapshot_filename = '.snapshot.pickle'
 
 
 class Discoverable(FileSystem):
@@ -130,3 +133,14 @@ class Discoverable(FileSystem):
             return cls.__annotations__.copy()
 
         return cls
+
+    def snapshot(self, filename=default_snapshot_filename) -> bytes:
+        with open(filename, 'wb') as f:
+            f.write(dumps((self.root, self.initial_values)))
+
+    def load(self, filename=default_snapshot_filename):
+        print('load', filename)
+        with open(filename, 'rb') as f:
+            self.root, self.initial_values = loads(f.read())
+
+        self.cd()

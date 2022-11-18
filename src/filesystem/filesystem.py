@@ -3,6 +3,7 @@
 This can be used to e.g. browse REST APIs.
 """
 from enum import Enum
+from pickle import dumps, loads
 from pprint import pformat
 from typing import Callable, Iterable, List, Union
 
@@ -10,6 +11,7 @@ from util import accumulate_list, first, has_method, is_Dict_or_List, none
 from filesystem.view import NAME, Key, Path, View
 
 HIDE_PREFIX = '.'
+
 
 
 class Option(Enum):
@@ -25,9 +27,9 @@ class Option(Enum):
     @staticmethod
     def verify(value):
         try:
-            option = Option(value)
+            Option(value)
         except ValueError:
-            # conversion failed means that `value` is not an Option
+            # failed conversion implies that `value` was not an Option
             return False
         return True
 
@@ -37,11 +39,14 @@ Options = [o.value for o in Option]
 
 class FileSystem:
     def __init__(self, *args,
+                 root: dict = None,
                  home: Path = None,
                  get_hook: Callable[[Key, View], Key] = first,
                  post_cd_hook: Callable = none,
                  **kwds):
-        self.root = dict(*args, **kwds)
+
+        if root is None:
+            self.root = dict(*args, **kwds)
 
         self.get_hook = get_hook
         self.post_cd_hook = post_cd_hook
@@ -243,6 +248,20 @@ class FileSystem:
             return value
         return str(k)
 
+
+    def snapshot(self) -> bytes:
+        return dumps(self.root)
+
+    def load(self, snapshot: bytes):
+        self.root = loads(snapshot)
+        self.cd()
+
+    def __getitem__(self, k):
+        return self.root[k]
+
+    def __contains__(self, k):
+        return k in self.root
+
     ############################################################################
     # Internals
     ############################################################################
@@ -312,9 +331,3 @@ class FileSystem:
                     results = [result]
 
             yield from results
-
-    def __getitem__(self, k):
-        return self.root[k]
-
-    def __contains__(self, k):
-        return k in self.root

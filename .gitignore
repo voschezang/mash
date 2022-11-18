@@ -1,5 +1,6 @@
 *.png
 *.pyc
+*.pickle
 *__pycache__
 .DS_Store
 .ipynb_checkpoints
