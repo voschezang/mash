@@ -2,7 +2,14 @@
 
 A tool to generate a [Domain-specific Language](https://en.wikipedia.org/wiki/Domain-specific_language) (DSL).  It can be used as a command line program or interactively as a subshell/repl.
 
-<img src="img/shell_dropdown.png" style="max-width: 10%" alt="Example of a shell with a dropdown completion menu">
+## Table of Contents
+
+- [Overview](#Overview)
+- [Modules](#Modules)
+- [Usage](#Usage)
+- [Usage Examples](#Usage%20Examples)
+
+<img src="img/shell_dropdown.png" style="width: 30%" alt="Example of a shell with a dropdown completion menu">
 
 ## Overview
 
