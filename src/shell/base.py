@@ -358,16 +358,13 @@ class BaseShell(Cmd):
         prefixes, line, infix_operator_args = self.parse_single_command(
             command_and_args)
 
-        print('prefixes, line, infix_operator_args',
-              prefixes, line, infix_operator_args)
         if prefixes:
             if prefixes[-1] in bash_delimiters:
                 return self.pipe_cmd_sh(line, result, delimiter=prefixes[-1])
 
             elif prefixes[-1] == '->':
                 # TODO verify syntax
-                print('set_env_variable ->')
-                assert line
+                assert ' ' not in line
                 return self.set_env_variable(line, result)
 
         if infix_operator_args:

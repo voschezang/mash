@@ -64,8 +64,12 @@ def test_pipe_unix():
 def test_pipe_input():
     assert catch_output('print abc | grep abc') == 'abc'
 
+    # fail in strict mode
     with raises(ShellError):
-        catch_output('echo abc | grep def', strict=False)
+        catch_output('echo abc | grep def', strict=True)
+
+    # fail silently without in strict mode
+    assert catch_output('echo abc | grep def', strict=False) == ''
 
 
 def test_add_cli_args():
@@ -127,7 +131,7 @@ def test_cli_pipe_interop():
     shell.add_functions({'custom_func': identity})
     cmd = 'print abc | grep abc | custom_func'
     with raises(ShellError):
-        catch_output(cmd)
+        catch_output(cmd, strict=True)
 
 
 def test_pipe_to_file():
