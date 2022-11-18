@@ -1,7 +1,6 @@
 #!/usr/bin/python3
-import sys
 if __name__ == '__main__':
-    sys.path.append('src')
+    import _extend_path
 
 from dataclasses import dataclass
 from enum import auto, Enum
@@ -12,6 +11,7 @@ from object_parser.oas import OAS, path_create
 from object_parser import JSONFactory
 from object_parser.spec import Spec
 from object_parser.errors import SpecError
+
 
 @dataclass
 class B:

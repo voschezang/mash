@@ -4,12 +4,10 @@ from functools import lru_cache
 from json import dumps
 from random import randint
 from typing import Dict, List
-import sys
 import pandas as pd
 
 if __name__ == '__main__':
-    sys.path.append('src')
-
+    import _extend_path
 
 from directory.view import Path
 from shell import main

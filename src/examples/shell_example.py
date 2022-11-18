@@ -1,7 +1,6 @@
 #!/usr/bin/python3
-import sys
 if __name__ == '__main__':
-    sys.path.append('src')
+    import _extend_path
 
 import rich
 from shell.shell import Function, Shell, has_input, set_cli_args, sh_to_py, main

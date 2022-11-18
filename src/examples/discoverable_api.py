@@ -1,7 +1,6 @@
 #!/usr/bin/python3
-import sys
 if __name__ == '__main__':
-    sys.path.append('src')
+    import _extend_path
 
 from functools import lru_cache
 from urllib.parse import quote_plus

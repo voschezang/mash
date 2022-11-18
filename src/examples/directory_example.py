@@ -1,15 +1,16 @@
 #!/usr/bin/python3
-import sys
 if __name__ == '__main__':
-    sys.path.append('src')
+    import _extend_path
 
 from typing import Any, Dict
 
 from shell.with_directory import ShellWithDirectory
 from shell import main
+from util import constant
 
+add_custom_commands = True
 
-# example data with dicts and lists
+# example data with a mix of dicts and lists
 Data = Dict[str, Any]
 repository: Data = {'worlds': [
     {'name': 'earth',
@@ -24,4 +25,8 @@ repository: Data = {'worlds': [
 
 if __name__ == '__main__':
     obj = ShellWithDirectory(data=repository)
+
+    if add_custom_commands:
+        obj.init_shell(functions={'info': constant('This is a usage example')})
+
     main(shell=obj.shell)

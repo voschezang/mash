@@ -28,13 +28,13 @@ class ShellWithDirectory:
 
     def init_shell(self, *build_args, **build_kwds):
         cls = build(*build_args, instantiate=False, **build_kwds)
-        self.set_shell_functions(cls)
+        self._set_shell_functions(cls)
         self.set_shell_completions(cls)
 
         self.shell = cls()
         self.shell.set_do_char_method(self.repository.cd, Options)
 
-    def set_shell_functions(self, cls):
+    def _set_shell_functions(self, cls):
         # convert methods to functions
         cd = partial_simple(self.repository.cd)
         ls = partial_simple(self.repository.ll, delimiter=', ')

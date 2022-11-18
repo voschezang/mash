@@ -9,12 +9,14 @@ matplotlib
 mistletoe
 nltk
 numpy
+pandas
 pytest
 pytest-cov
 pytest-xdist
 pyyaml
 quo==2022.8.2
 rich
+requests
 scipy
 sklearn
 termcolor
