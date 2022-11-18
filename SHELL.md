@@ -150,3 +150,21 @@ $ python src/src/directory_example.py 'cd world; cd a; cd t; cd snakes; ll'
 python
 cobra
 ```
+
+### With Dynamic Data
+
+See `examples/discoverable_example.py`.
+
+```sh
+# list remote/auto-generated data
+$ python src/examples/discoverable_example.py 'ls'
+department_805, department_399
+
+# refresh data, then save
+$ py src/examples/discoverable_example.py 'ls ; save'
+department_750, department_14
+
+# reload data
+$ python src/examples/discoverable_example.py 'ls'
+department_750, department_14
+```

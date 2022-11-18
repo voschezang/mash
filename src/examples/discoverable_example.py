@@ -84,8 +84,6 @@ if __name__ == '__main__':
     shell = ShellWithFileSystem(data={'repository': Organization})
     obj = shell.repository
     result = obj.ll()
-    print('Org')
-    print(result)
     obj.init_home(['repository'])
 
     path = []
