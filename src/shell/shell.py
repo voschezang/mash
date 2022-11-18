@@ -31,6 +31,20 @@ Run multiple Python commands by separating each command with colons or newlines.
 E.g.
     ./shell.py 'print abc; print def \n print ghi'
 
+{bold('Variables')}
+Assignment constants or evaluate expressiosn:
+```
+a = 100
+b <- print $a
+echo $a $b
+```
+
+Store expression results:
+```
+echo 100 -> a
+echo $a
+```
+
 {bold('Interopability')}
 Interopability with Bash can be done with pipes:
     `|>` for Python.

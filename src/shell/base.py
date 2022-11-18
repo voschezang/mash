@@ -12,11 +12,12 @@ import subprocess
 
 import io_util
 from io_util import log, shell_ready_signal, print_shell_ready_signal, check_output
-from util import for_any, is_alpha, is_globbable, omit_prefixes, split_prefixes, split_sequence, glob
+from util import for_any, identity, is_alpha, is_globbable, omit_prefixes, split_prefixes, split_sequence, glob
 
 confirmation_mode = False
 bash_delimiters = ['|', '>', '>>', '1>', '1>>', '2>', '2>>']
 py_delimiters = [';', '|>']
+other_delimiters = ['=', '<-', '->']
 default_session_filename = '.shell_session.json'
 
 
@@ -24,6 +25,10 @@ Command = Callable[[Cmd, str], str]
 
 
 class ShellError(RuntimeError):
+    pass
+
+
+class ShellPipeError(RuntimeError):
     pass
 
 
@@ -46,7 +51,9 @@ class BaseShell(Cmd):
 
     # TODO save stdout in a tmp file
 
-    def __init__(self, *args, env: Dict[str, Any] = None, **kwds):
+    def __init__(self, *args, env: Dict[str, Any] = None,
+                 save_session_prehook=identity,
+                 load_session_posthook=identity, **kwds):
         """
         Parameters
         ----------
@@ -54,6 +61,8 @@ class BaseShell(Cmd):
                 Must be JSON serializable
         """
         super().__init__(*args, **kwds)
+        self.save_session_prehook = save_session_prehook
+        self.load_session_posthook = load_session_posthook
 
         # fill this list to customize autocomplete behaviour
         self.completenames_options: List[Command] = []
@@ -78,7 +87,7 @@ class BaseShell(Cmd):
     @property
     def delimiters(self):
         # Return the latest values of these lists
-        return py_delimiters + bash_delimiters
+        return py_delimiters + bash_delimiters + ['->']
 
     def set_infix_operators(self):
         # use this for infix operators, e.g. `a = 1`
@@ -133,6 +142,10 @@ class BaseShell(Cmd):
 
         self.onecmd(line)
 
+        # verify result
+        if k not in self.env:
+            raise ShellError('eval() failed')
+
         # retrieve result
         result = self.env[k]
         del self.env[k]
@@ -148,7 +161,12 @@ class BaseShell(Cmd):
     def eval_and_set_env_variable(self, k: str, *values: str):
         """Evaluate `values` as an expression and store the result in the variable `k`
         """
-        result = self.eval(values)
+        try:
+            result = self.eval(values)
+        except ShellError:
+            log(f'Error, cannot set {k}')
+            return
+
         self.set_env_variable(k, result)
         return k
 
@@ -175,6 +193,8 @@ class BaseShell(Cmd):
         return line
 
     def save_session(self, session=default_session_filename):
+        self.save_session_prehook()
+
         if not self.env:
             logging.info('No env data to save')
             return
@@ -215,17 +235,22 @@ class BaseShell(Cmd):
         log(f'Using session: {session}')
         self.show_env(env)
 
-        # TODO handle conflicts
+        # TODO handle key conflicts
         self.update_env(env)
 
+        self.load_session_posthook()
+
     ############################################################################
-    # Overrides - do_*
+    # Commands: do_*
     ############################################################################
 
     def do_export(self, args: str):
         """Set an environment variable.
         `export(k, *values)`
         """
+        if not args:
+            return ''
+
         k, *values = args.split()
 
         if len(values) == 0:
@@ -308,9 +333,19 @@ class BaseShell(Cmd):
             try:
                 result = self.run_single_command(line, result)
 
+            except ShellPipeError as e:
+                if self.ignore_invalid_syntax:
+                    log(e)
+                    return
+
+                raise ShellError(e)
+
             except subprocess.CalledProcessError as e:
                 returncode, stderr = e.args
                 log(f'Shell exited with {returncode}: {stderr}')
+
+                if self.ignore_invalid_syntax:
+                    return
 
                 raise ShellError(str(e))
 
@@ -323,8 +358,17 @@ class BaseShell(Cmd):
         prefixes, line, infix_operator_args = self.parse_single_command(
             command_and_args)
 
-        if prefixes and prefixes[-1] in bash_delimiters:
-            return self.pipe_cmd_sh(line, result, delimiter=prefixes[-1])
+        print('prefixes, line, infix_operator_args',
+              prefixes, line, infix_operator_args)
+        if prefixes:
+            if prefixes[-1] in bash_delimiters:
+                return self.pipe_cmd_sh(line, result, delimiter=prefixes[-1])
+
+            elif prefixes[-1] == '->':
+                # TODO verify syntax
+                print('set_env_variable ->')
+                assert line
+                return self.set_env_variable(line, result)
 
         if infix_operator_args:
             return self.infix_command(*infix_operator_args)
@@ -340,7 +384,7 @@ class BaseShell(Cmd):
             result = ''
 
         elif result is None:
-            raise ShellError('Last return value was absent')
+            raise ShellPipeError('Last return value was absent')
 
         return result
 
