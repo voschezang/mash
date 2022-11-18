@@ -8,6 +8,29 @@ A tool to generate a [Domain-specific Language](https://en.wikipedia.org/wiki/Do
 
 By default, it provides piping and Bash-like functionality. It can be extended with custom functions.
 
+### Modules
+
+```sh
+shell/
+    base.BaseShell # A bare-bone Shell. It is a subclass of Cmd that overrides some methods.
+    shell.Shell # A functional extension of BaseShell.
+    function.ShellFunction # A wrapper for "normal" Python functions that includes error handling.
+
+filesystem/
+    filesystem.FileSystem # A file system simulation that provides an interface to data.
+    discoverable.py # A subclass that extends Directory with lazy data loading.
+    view.View # A datastructure that provides a view of internal data.
+  
+examples/ # Usage examples
+  filesystem_example.py # An example with a directory-like repository
+  discoverable_example.py
+  discoverable_api.py
+  shell_example.py
+
+cli.py # A CLI that combines Shell with quo.Prompt
+subhsell.py # A shell that runs in a dedicated OS process
+```
+
 ## Setup
 
 A client just has to define a mapping between commands and functions. The corresponding documentation is automatically generated from the docstrings and type annotations.
@@ -81,13 +104,34 @@ g x [y]
   y
 ```
 
-### Example 2: Directory Simulation
+### Example 2: Commands
 
-See `src/crud_example.py`. This simulates a REST resources with a directory hierarchy.
+Run commands from a file with `python src/shell -f FILE` or `python -m src.shell -f FILE`.
+
+```sh
+# write to file
+print A sentence. > out.txt 
+!cat out.txt |> export x # save text from file
+print $x
+
+y <- shell expr 2 + 2 # store result in variable $y
+print "result:" $y # prints "result: 4
+
+shell expr 2 + 2 -> z # store result in variable $z
+print "result:" $z # prints "result: 4
+```
+
+### Example 3: File System Simulation
+
+Support both static and dynamic data.
+
+#### With Static Data
+
+See `examples/filesystem_example.py`. This simulates a REST resources with a directory hierarchy.
 In addition, it provides fuzzy name completion.
 
 ```sh
-$ py src/crud_example.py tree
+$ python src/crud_example.py tree
 # example data with dicts and lists
 repository = {'worlds': [
     {'name': 'earth',
@@ -102,42 +146,7 @@ repository = {'worlds': [
 
 ```sh
 # note the autocompletion
-$ py src/src/directory_example.py 'cd world; cd a; cd t; cd snakes; ll'
+$ python src/src/directory_example.py 'cd world; cd a; cd t; cd snakes; ll'
 python
 cobra
-```
-
-### Example 3: Commands
-
-Run commands from a file with `python src/shell -f FILE` or `python -m src.shell -f FILE`.
-
-```sh
-# write to file
-print A sentence. > out.txt 
-!cat out.txt |> export x # save text from file
-print $x
-
-y <- shell expr 2 + 2 # store result in variable $y
-print "result:" $y # prints "result: 4
-```
-
-## Implementation
-
-Modules:
-
-```sh
-shell/
-    base.BaseShell # A subclass of Cmd that overrides some methods.
-    shell.Shell # An extension of BaseShell.
-    function.ShellFunction # A wrapper for "normal" Python functions that includes error handling.
-
-directory
-    directory.Directory # A directory simulation that provides an interface to data..
-    discoverable.py # A subclass that extends Directory with lazy data loading.
-    view # A view of internal data.
-
-cli.py # a CLI that combines Shell with quo.Prompt
-directory_example # An example with a directory-like repository
-discoverable_example
-shell_example.py
 ```

@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 from functools import partial
+from pickle import dumps
 import pandas as pd
 
 from filesystem import FileSystem, Options
@@ -16,10 +17,8 @@ path_delimiter = '/'
 class ShellWithFileSystem:
     def __init__(self, data={}, repository: FileSystem = None, **kwds):
         if repository is None:
-            repository = Discoverable(
+            self.repository = Discoverable(
                 data, post_cd_hook=self.update_prompt, **kwds)
-
-        self.repository = repository
 
         self.init_shell()
 
@@ -31,7 +30,8 @@ class ShellWithFileSystem:
         self._set_shell_functions(cls)
         self.set_shell_completions(cls)
 
-        self.shell = cls()
+        self.shell = cls(save_session_prehook=self.repository.snapshot,
+                         load_session_posthook=self.repository.load)
         self.shell.set_do_char_method(self.repository.cd, Options)
 
     def _set_shell_functions(self, cls):

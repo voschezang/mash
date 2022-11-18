@@ -1,7 +1,7 @@
 from pytest import raises
 
 from shell.with_filesystem import ShellWithFileSystem
-from examples.directory_example import repository
+from examples.filesystem_example import repository
 from shell.shell import run_command
 import io_util
 
