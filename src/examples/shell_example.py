@@ -2,6 +2,7 @@
 if __name__ == '__main__':
     import _extend_path
 
+import sys
 import rich
 from shell.shell import Function, Shell, has_input, set_cli_args, sh_to_py, main
 from io_util import has_output
