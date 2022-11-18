@@ -4,7 +4,7 @@ if __name__ == '__main__':
 
 from typing import Any, Dict
 
-from shell.with_directory import ShellWithDirectory
+from shell.with_filesystem import ShellWithFileSystem
 from shell import main
 from util import constant
 
@@ -24,7 +24,7 @@ repository: Data = {'worlds': [
 
 
 if __name__ == '__main__':
-    obj = ShellWithDirectory(data=repository)
+    obj = ShellWithFileSystem(data=repository)
 
     if add_custom_commands:
         obj.init_shell(functions={'info': constant('This is a usage example')})

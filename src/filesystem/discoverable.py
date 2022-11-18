@@ -10,7 +10,7 @@ from filesystem.view import Path, Key, View
 Method = Union[Callable, str]
 
 
-class DiscoverableDirectory(FileSystem):
+class Discoverable(FileSystem):
     def __init__(self, *args,
                  get_values_method: Method = 'get_all',
                  get_value_method: Method = 'get_value', **kwds):

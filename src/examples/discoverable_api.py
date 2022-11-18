@@ -6,7 +6,7 @@ from functools import lru_cache
 from urllib.parse import quote_plus
 import requests
 
-from shell.with_directory import ShellWithDirectory
+from shell.with_filesystem import ShellWithFileSystem
 from shell import main
 
 
@@ -28,8 +28,8 @@ def get(url, *args):
 
 
 if __name__ == '__main__':
-    obj = ShellWithDirectory(data={'repository': 'https://api.github.com/'},
-                             get_value_method=retrieve_data)
+    obj = ShellWithFileSystem(data={'repository': 'https://api.github.com/'},
+                              get_value_method=retrieve_data)
     obj.repository.ll()
     obj.repository.ll('repo', 'events_url')
 

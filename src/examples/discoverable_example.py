@@ -11,7 +11,7 @@ if __name__ == '__main__':
 
 from filesystem.view import Path
 from shell import main
-from shell.with_directory import ShellWithDirectory
+from shell.with_filesystem import ShellWithFileSystem
 
 
 @lru_cache
@@ -81,9 +81,8 @@ class Organization:
 
 
 if __name__ == '__main__':
-    shell = ShellWithDirectory(data={'repository': Organization})
+    shell = ShellWithFileSystem(data={'repository': Organization})
     obj = shell.repository
-    # obj = DiscoverableDirectory(repository=Organization)
     result = obj.ll()
     print('Org')
     print(result)

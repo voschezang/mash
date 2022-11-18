@@ -1,13 +1,13 @@
 from pytest import raises
 
-from shell.with_directory import ShellWithDirectory
+from shell.with_filesystem import ShellWithFileSystem
 from examples.directory_example import repository
 from shell.shell import run_command
 import io_util
 
 
 def init(**kwds):
-    return ShellWithDirectory(data=repository, **kwds)
+    return ShellWithFileSystem(data=repository, **kwds)
 
 
 def catch_output(line='', func=run_command, **func_kwds) -> str:

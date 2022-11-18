@@ -1,18 +1,18 @@
 from pytest import raises
 
 from examples.discoverable_example import Organization
-from filesystem.discoverable import DiscoverableDirectory
+from filesystem.discoverable import Discoverable
 
 
 def test_discoverable_ll():
     k = 'repository'
-    d = DiscoverableDirectory(repository=Organization)
+    d = Discoverable(repository=Organization)
     assert d.ll() == k
 
 
 def test_discoverable_unhappy():
     k = 'repository'
-    d = DiscoverableDirectory(repository=Organization)
+    d = Discoverable(repository=Organization)
 
     with raises(TypeError):
         d.get(int)
@@ -31,7 +31,7 @@ def test_discoverable_unhappy():
 
 def test_discoverable_cd():
     k = 'repository'
-    d = DiscoverableDirectory(repository=Organization)
+    d = Discoverable(repository=Organization)
     d.cd(k)
     assert d.ls() == ['departments', 'field1', 'field2']
 
@@ -61,14 +61,14 @@ def test_discoverable_cd():
 
 
 def test_discoverable_ls_double():
-    d = DiscoverableDirectory(repository=Organization)
+    d = Discoverable(repository=Organization)
 
     departments = d.ls(['repository', 'departments'])
     assert departments[0].startswith('department')
 
 
 def test_discoverable_show():
-    d = DiscoverableDirectory(repository=Organization)
+    d = Discoverable(repository=Organization)
     d.cd('repo')
     data = d.show(())
     assert data.values[0][0].startswith('Dep department_')
