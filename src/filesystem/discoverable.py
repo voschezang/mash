@@ -28,24 +28,31 @@ class Discoverable(FileSystem):
 
         super().__init__(*args, get_hook=self.discover, **kwds)
 
-    def discover(self, k: Key, cwd: View = None, original_path: Path = None):
-        if cwd is None:
+    def discover(self, k: Key, cwd: View = None):
+        if k is None:
+            if not cwd.path:
+                # TODO use k = '/'
+                return
+
+            k = cwd.up()
+
+        elif cwd is None:
             cwd = self.state
 
         k, initial_value = cwd.get(k)
-        data = self.infer_data(k, initial_value)
+
+        # TODO ensure that keys cannot contain '/'
+        # TODO handle edge cases of abs/rel/None paths
+        initial_values_key = '/'.join([str(v) for v in cwd.path + [k]])
+
+        data = self.infer_data(k, initial_value, initial_values_key)
 
         if data != initial_value:
+            # TODO ensure view.state and view.prev are consistent; update traces
             cwd.tree[k] = data
 
-            # TODO ensure that keys cannot contain '/'
-            # TODO handle edge cases of abs/rel/None paths
-            if original_path is None:
-                p = '/'.join(cwd.path + [k])
-            else:
-                p = '/'.join(original_path)
-
-            self.initial_values[p] = initial_value
+            if initial_values_key not in self.initial_values:
+                self.initial_values[initial_values_key] = initial_value
 
         return k
 
@@ -53,13 +60,9 @@ class Discoverable(FileSystem):
         # TODO keys in path are not autocompleted
         if path is None:
             path = self.full_path[1:]
-            print('p1', path)
-        #     data = self.get(path, relative=False)
         else:
             path = self.full_path[1:] + list(path)
-            # path = list(path)
-        #     print('p2', path)
-        #     data = self.get(path)
+
         data = self.get(path, relative=False)
 
         # TODO refactor; create function discover_children(depth: int)
@@ -75,8 +78,8 @@ class Discoverable(FileSystem):
                     continue
 
                 for grand_child_key in list(grand_child.keys()):
-                    self.get(
-                        path + [k, child_key, grand_child_key], relative=False)
+                    self.get(path + [k, child_key, grand_child_key],
+                             relative=False)
 
         if len(self.full_path) <= 1:
             return data
@@ -89,7 +92,7 @@ class Discoverable(FileSystem):
 
         return data
 
-    def infer_data(self, k: Key, initial_value=None):
+    def infer_data(self, k: Key, initial_value=None, initial_values_key: str = None):
         if initial_value is None:
             data = self.get([k])
         else:
@@ -108,6 +111,19 @@ class Discoverable(FileSystem):
 
         if isinstance(cls, type):
             return self._get_values(cls, k, container_cls)
+
+        if initial_values_key and initial_values_key in self.initial_values:
+            obj = self.initial_values[initial_values_key]
+            cls = obj
+            if is_Dict_or_List(cls):
+                cls = infer_inner_cls(cls)
+
+            if has_method(cls, 'refresh') and cls.refresh():
+                # try again using a new initial value
+                # TODO don't unnecessary override child values
+                # e.g. instead limit updates to append
+                # e.g. don't override data with initial_values
+                return self.infer_data(k, obj, initial_values_key=None)
 
         return data
 
@@ -136,11 +152,11 @@ class Discoverable(FileSystem):
 
     def snapshot(self, filename=default_snapshot_filename) -> bytes:
         with open(filename, 'wb') as f:
-            f.write(dumps((self.root, self.initial_values)))
+            f.write(dumps((self.root, self.initial_values, self.home)))
 
     def load(self, filename=default_snapshot_filename):
         print('load', filename)
         with open(filename, 'rb') as f:
-            self.root, self.initial_values = loads(f.read())
+            root, self.initial_values, home = loads(f.read())
 
-        self.cd()
+        self.__init__(root=root, home=home)

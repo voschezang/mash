@@ -56,6 +56,11 @@ class Department:
     teams: List[Team]
 
     @staticmethod
+    def refresh(*_) -> bool:
+        # generate.cache_clear()
+        return 0
+
+    @staticmethod
     def get_all(*_) -> Dict[str, type]:
         keys = generate('department')
         return {k: Department for k in keys}

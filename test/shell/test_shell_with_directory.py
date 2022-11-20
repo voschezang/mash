@@ -18,6 +18,7 @@ def test_crud_ls():
     obj = init()
     shell = obj.shell
 
+    assert catch_output('ls', shell=shell) == 'worlds'
     assert catch_output('ls worlds', shell=shell) == 'earth'
     assert catch_output('ll worlds', shell=shell) == 'earth'
 

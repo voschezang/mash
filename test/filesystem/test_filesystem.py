@@ -1,7 +1,7 @@
 from copy import deepcopy
 from pytest import raises
 
-from filesystem import FileSystem
+from filesystem import FileSystem, Option, OPTIONS
 
 root = {'a': {'1': '1', '2': 2, '3': ['A', 'B', 10, 20, [30]]},
         'b': [{'1': '1'}, {'2': 2}],
@@ -16,6 +16,18 @@ indices_b = [0, 1]
 
 def init(**kwds):
     return FileSystem(deepcopy(root), **kwds)
+
+
+def test_Option():
+    for op in OPTIONS:
+        assert Option.verify(op)
+
+    assert not Option.verify('=')
+    assert not Option.verify('$')
+
+    assert Option('..') == Option.up
+    assert Option('~') == Option.home
+    assert Option.default == Option.home
 
 
 def test_get_exact():
@@ -203,6 +215,46 @@ def test_cd_up_down():
 
     d.cd(*path)
     assert d.path == path
+
+
+def test_copy():
+    d = init()
+    e = d.copy()
+    e.cd('a')
+    assert d.path != e.path
+    assert e.path == ['a']
+
+
+def test_simulate_cd():
+    d = init()
+    d.cd('a')
+    view = d.simulate_cd('3', relative=True)
+    assert view.path == ['a', '3']
+    view = d.simulate_cd(['..'], relative=True)
+    assert view.path == []
+    view = d.simulate_cd(['..', 'a', '3'], relative=True)
+    assert view.path == ['a', '3']
+    view = d.simulate_cd(['..', 'a', '3', '..'], relative=True)
+    assert view.path == ['a']
+
+
+def test_ls_after_cd():
+    d = init()
+    path = ['a', '3']
+    d.cd(*path)
+    assert d.ls() == indices_a
+
+
+def test_ls_up():
+    d = init()
+    path = ['a', '3']
+    d.cd(*path)
+    assert d.get('..') == root['a']
+    assert d.ls('..') == inner_keys
+    assert d.ls('...') == keys
+    assert d.ls(['..', '..', '.']) == keys
+    assert d.ls(['...'] + path) == indices_a
+    assert d.ls(['...'] + path + ['..']) == inner_keys
 
 
 def test_cd_home():

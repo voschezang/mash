@@ -15,7 +15,7 @@ NAME = 'name'
 
 @dataclass
 class View:
-    """A tree of dict's. Tree traversal is managed with the methods cd, up.
+    """A tree of dict's. Tree traversal is exposed through the methods `up` and `down`.
     """
     tree: Data
     _trace: Trace = field(default_factory=list)
@@ -31,6 +31,9 @@ class View:
         return [k for k, _ in self.trace]
 
     def up(self) -> Key:
+        """Change view the parent directory.
+        Raises IndexError if there is not parent directory.
+        """
         key, self.tree = self._trace.pop()
         return key
 
@@ -41,10 +44,13 @@ class View:
         self._trace.append((key, self.tree))
         self.tree = value
 
-    def get(self, k: Key) -> Tuple[Key, Any]:
+    def get(self, k: Key=None) -> Tuple[Key, Any]:
         """Return the value that is refrences by k.
         May raises ValueError.
         """
+        if k is None:
+            return k, self.tree
+
         if isinstance(self.tree, list):
             return self._get_from_list(k)
         return self._get_from_dict(k)
@@ -81,6 +87,14 @@ class View:
         for src in src:
             if src != dst and src in self.tree:
                 del self.tree[src]
+
+    def copy(self):
+        trace = []
+        # copy inner values to avoid side-effects of mutated tuples
+        for k, ref in self._trace:
+            trace.append((k, ref))
+
+        return View(self.tree, trace)
 
     ############################################################################
     # Internals

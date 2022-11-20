@@ -5,13 +5,12 @@ This can be used to e.g. browse REST APIs.
 from enum import Enum
 from pickle import dumps, loads
 from pprint import pformat
-from typing import Callable, Iterable, List, Union
+from typing import Callable, Iterable, List, Tuple, Union
 
 from util import accumulate_list, first, has_method, is_Dict_or_List, none
 from filesystem.view import NAME, Key, Path, View
 
 HIDE_PREFIX = '.'
-
 
 
 class Option(Enum):
@@ -34,19 +33,21 @@ class Option(Enum):
         return True
 
 
-Options = [o.value for o in Option]
+OPTIONS = [o.value for o in Option]
 
 
 class FileSystem:
-    def __init__(self, *args,
+    def __init__(self,
                  root: dict = None,
                  home: Path = None,
                  get_hook: Callable[[Key, View], Key] = first,
                  post_cd_hook: Callable = none,
-                 **kwds):
+                 **dict_kwds):
 
         if root is None:
-            self.root = dict(*args, **kwds)
+            self.root = dict(**dict_kwds)
+        else:
+            self.root = root
 
         self.get_hook = get_hook
         self.post_cd_hook = post_cd_hook
@@ -55,14 +56,14 @@ class FileSystem:
         self.init_home(home)
 
     def init_home(self, home: Path):
-        # set tmp default
+        # set temporary default
         self._home = []
 
         if home is None:
             home = []
 
-        self.cd(Option.root.value)
-        self.cd(*home)
+        abs_path = [Option.root.value] + home
+        self.cd(*abs_path)
 
         self._home = self.state.path
 
@@ -88,6 +89,12 @@ class FileSystem:
     @property
     def home(self) -> Path:
         return self._home
+
+    @property
+    def cwd(self) -> View:
+        """A shallow copy of the current working directory.
+        """
+        return self.state.copy()
 
     def in_home(self) -> bool:
         """Check whether home is in cwd.
@@ -131,6 +138,7 @@ class FileSystem:
         Objects that start with HIDE_PREFIX are ignored.
         """
         if not paths:
+            self.get_hook(None, self.cwd)
             items = self.state.ls()
         else:
             items = self._ls_inner(paths)
@@ -164,37 +172,10 @@ class FileSystem:
     def get(self, path: Union[Path, str], relative=True):
         """Return the value of the file associated with `path`.
         """
-        # TODO implement get('..') and get(['..', '1'])
-        if relative:
-            cwd = View(self.state.tree)
-        else:
-            cwd = View(self.root)
-
-        if path in [(), []]:
-            return cwd.tree
-        elif isinstance(path, str):
-            path = [path]
-
-        if relative:
-            full_path = self.full_path[1:] + list(path)
-        else:
-            full_path = list(path)
-
-        *parents, key = path
-        self.traverse_view(parents, cwd)
-
-        key = self.get_hook(key, cwd, full_path)
+        key, cwd = self._get_inner(path, relative)
+        key = self.get_hook(key, cwd)
         _, value = cwd.get(key)
         return value
-
-    def traverse_view(self, path: Path, cwd: View) -> View:
-        """Return a view of `path`
-        """
-        for key in path:
-            key = self.get_hook(key, cwd)
-            cwd.down(key)
-
-        return cwd
 
     def append(self, k, v):
         """Associate key k with value v and then change the working directory to k 
@@ -205,20 +186,21 @@ class FileSystem:
     def cd(self, *path: Key):
         """Change working directory to `path`.
         """
-        if not path:
-            self.cd_option(Option.default)
-            self.post_cd_hook()
-            return
-
         # cache current position
-        origin = View(self.state.tree, self.state.trace)
+        origin = self.cwd
 
-        # change dirs
-        for k in path:
-            self._cd_step(k)
+        if path:
+            # step through path
+            for k in path:
+                self.cd_step(k)
+
+        else:
+            self.cd_option(Option.default)
 
         # store origin
         self.prev = origin
+
+        self.post_cd_hook()
 
     @property
     def semantic_path(self) -> Path:
@@ -230,6 +212,43 @@ class FileSystem:
             result[i] = self.infer_key_name(path, key, relative=False)
 
         return result
+
+    def simulate_cd(self, path: Path, relative: bool) -> View:
+        view = self.copy(post_cd_hook=none)
+
+        if not relative:
+            view.cd(Option.root.value)
+
+        if path:
+            view.cd(*path)
+
+        return view.cwd
+
+    def snapshot(self) -> bytes:
+        return dumps(self.root)
+
+    def load(self, snapshot: bytes):
+        self.root = loads(snapshot)
+        self.cd()
+
+    def copy(self, post_cd_hook=None):
+        if post_cd_hook is None:
+            post_cd_hook = self.post_cd_hook
+
+        fs = FileSystem(self.root, self.home, self.get_hook, post_cd_hook)
+        fs.state = self.state.copy()
+        fs.prev = self.prev.copy()
+        return fs
+
+    def __getitem__(self, k):
+        return self.root[k]
+
+    def __contains__(self, k):
+        return k in self.root
+
+    ############################################################################
+    # Internals
+    ############################################################################
 
     def infer_key_name(self, path: Path, k: Key, relative=True) -> str:
         if isinstance(k, int):
@@ -248,38 +267,32 @@ class FileSystem:
             return value
         return str(k)
 
-
-    def snapshot(self) -> bytes:
-        return dumps(self.root)
-
-    def load(self, snapshot: bytes):
-        self.root = loads(snapshot)
-        self.cd()
-
-    def __getitem__(self, k):
-        return self.root[k]
-
-    def __contains__(self, k):
-        return k in self.root
-
-    ############################################################################
-    # Internals
-    ############################################################################
-
-    def _cd_step(self, k: Key):
+    def cd_step(self, k: Key):
         if Option.verify(k):
-            self.cd_option(Option(k))
-            self.post_cd_hook()
+            k = Option(k)
+            if k == Option.home:
+                self.cd_option(Option.root)
+                self.cd(*self._home)
+            else:
+                self.cd_option(k)
+
         else:
-            k = self.get_hook(k)
+            # TODO ensure that get_hook is not bound to another instance
+            k = self.get_hook(k, self.cwd)
             self.state.down(k)
-            self.post_cd_hook()
 
     def cd_option(self, option: Option):
+        # Note that Option default will be matched to another value
         if option == Option.root:
-            self.goto([])
+            if self.state._trace:
+                _, tree = self.state._trace[0]
+                self.state.tree = tree
+                self.state._trace = []
+
         elif option == Option.home:
-            self.goto(self._home)
+            if self.path != self.home:
+                self.cd_option(Option.root)
+                self.cd(*self._home)
 
         elif option == Option.switch:
             self.state, self.prev = self.prev, self.state
@@ -288,25 +301,32 @@ class FileSystem:
             self.state.up()
 
         elif option == Option.upup:
-            self.cd_option(Option.up)
-            self.cd_option(Option.up)
+            self.state.up()
+            self.state.up()
 
         elif option == Option.upupup:
-            self.cd_option(Option.up)
-            self.cd_option(Option.up)
-            self.cd_option(Option.up)
+            self.state.up()
+            self.state.up()
+            self.state.up()
 
-    def goto(self, path: Path):
-        if self.full_path == path:
-            return
-
-        if path:
-            view = self.traverse_view(self._home, View(self.root))
+    def _get_inner(self, path: Path, relative: bool) -> Tuple[Key, View]:
+        if isinstance(path, str):
+            path = [path]
         else:
-            view = View(self.root)
+            path = list(path)
 
-        self.prev = self.state
-        self.state = view
+        parents, key = path, None
+        if path:
+            key_is_option = Option.verify(path[-1])
+            if not key_is_option:
+                *parents, key = path
+
+        if parents or not relative:
+            cwd = self.simulate_cd(parents, relative)
+        else:
+            cwd = self.cwd
+
+        return key, cwd
 
     def _ls_inner(self, paths: Iterable[Union[Path, str]]) -> Iterable[Key]:
         """A helper method for self.ls()
