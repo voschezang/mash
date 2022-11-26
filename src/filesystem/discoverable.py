@@ -17,10 +17,10 @@ class Discoverable(FileSystem):
     def __init__(self, *args,
                  get_value_method: Method = None,
                  **kwds):
-        super().__init__(*args, get_hook = self.discover, **kwds)
-
         self.get_value_method = get_value_method
         self.initial_values = {}
+
+        super().__init__(*args, get_hook = self.discover, **kwds)
 
     def snapshot(self, filename=default_snapshot_filename) -> bytes:
         with open(filename, 'wb') as f:
