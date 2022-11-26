@@ -3,7 +3,7 @@ from pickle import dumps, loads
 from typing import Callable,  Union
 from copy import deepcopy
 
-from util import has_annotations, has_method, identity, infer_inner_cls, is_Dict, is_Dict_or_List, is_callable
+from util import has_annotations, has_method, infer_inner_cls, is_Dict, is_Dict_or_List
 from filesystem import FileSystem
 from filesystem.view import Data, Path, Key, View
 
@@ -20,7 +20,7 @@ class Discoverable(FileSystem):
         self.get_value_method = get_value_method
         self.initial_values = {}
 
-        super().__init__(*args, get_hook = self.discover, **kwds)
+        super().__init__(*args, get_hook=self.discover, **kwds)
 
     def snapshot(self, filename=default_snapshot_filename) -> bytes:
         with open(filename, 'wb') as f:
@@ -34,20 +34,77 @@ class Discoverable(FileSystem):
         self.__init__(root=root, home=home)
 
     def discover(self, k: Key, cwd: View = None):
+        if cwd is None:
+            cwd = self.cwd
+
         if k is None:
             if cwd.path:
                 k = cwd.up()
             else:
                 return
-        elif cwd is None:
-            cwd = self.cwd
 
         k, initial_value = cwd.get(k)
         observed_value = self.observe(k, initial_value, cwd)
-        self.save_discovered_value(k, initial_value, observed_value, cwd)
+        self.save_observed_value(k, initial_value, observed_value, cwd)
         return k
 
-    def save_discovered_value(self, k: Key, initial_value=None, observed_value=None, cwd: View = None):
+    def undiscover(self, k: Key = None, cwd: View = None):
+        if cwd is None:
+            cwd = self.cwd
+
+        if k is None:
+            if cwd.path:
+                k = cwd.up()
+            else:
+                return
+
+        initial_values_key = infer_initial_value_key(k, cwd)
+        if initial_values_key in self.initial_values:
+            initial_value = self.initial_values[initial_values_key]
+            # cwd.set(k, initial_value)
+            self.set(k, initial_value, cwd)
+
+
+    def reset(self, *path: str):
+        if not path:
+            self.undiscover()
+            return
+
+        cwd: View = self.cwd
+        k, *parents = path
+
+        for parent in parents:
+            path.cd(parent)
+
+        self.undiscover(k, cwd)
+
+    def set(self, k, value: Data, cwd: View = None):
+        if cwd is None:
+            cwd = self.cwd
+
+        path = self.path
+        prev = self.prev.path
+
+        cwd.set(k, value)
+        self.init_states()
+
+        # reset self.prev
+        if k not in prev:
+            self.cd(*prev)
+        else:
+            self.cd()
+
+        # reset self.state
+        self.cd('-')
+        self.cd(*path)
+
+    def observe(self, k: Key, initial_value=None, cwd: View = None):
+        if self.get_value_method:
+            return self.get_value_method(self, k, initial_value, cwd)
+
+        return initial_value
+
+    def save_observed_value(self, k: Key, initial_value=None, observed_value=None, cwd: View = None):
         if observed_value == initial_value:
             return
 
@@ -58,22 +115,29 @@ class Discoverable(FileSystem):
         if initial_values_key not in self.initial_values:
             self.initial_values[initial_values_key] = initial_value
 
-    def observe(self, k: Key, initial_value=None, cwd: View = None):
-        if self.get_value_method:
-            return self.get_value_method(self, k, initial_value, cwd)
-
-        return initial_value
-
-    def show(self, path: Path = None):
+    def show(self, *path: str):
         # TODO keys in path are not autocompleted
-        if path is None:
+        if path == ((),):
             path = self.full_path[1:]
         else:
             path = self.full_path[1:] + list(path)
 
+        data = self.observe_child_fields(path)
+
+        if len(self.full_path) <= 1:
+            return data
+
+        p = '/'.join(path)
+        if p in self.initial_values:
+            cls = self.initial_values[p]
+            if has_method(cls, 'show'):
+                return cls.show(data)
+
+        return data
+
+    def observe_child_fields(self, path: Path):
         data = self.get(path, relative=False)
 
-        # TODO refactor; create function discover_children(depth: int)
         for k in list(data.keys()):
             child = self.get(path + [k], relative=False)
             if not has_method(child, 'keys'):
@@ -88,15 +152,6 @@ class Discoverable(FileSystem):
                 for grand_child_key in list(grand_child.keys()):
                     self.get(path + [k, child_key, grand_child_key],
                              relative=False)
-
-        if len(self.full_path) <= 1:
-            return data
-
-        p = '/'.join(path)
-        if p in self.initial_values:
-            cls = self.initial_values[p]
-            if has_method(cls, 'show'):
-                return cls.show(data)
 
         return data
 
@@ -120,6 +175,7 @@ def observe(repository: FileSystem, k: Key, initial_value=None, cwd: View = None
     if initial_values_key and initial_values_key in repository.initial_values:
         obj = repository.initial_values[initial_values_key]
         cls = obj
+        is_directory = is_Dict(cls)
         if is_Dict_or_List(cls):
             cls = infer_inner_cls(cls)
 
@@ -128,7 +184,22 @@ def observe(repository: FileSystem, k: Key, initial_value=None, cwd: View = None
             # TODO don't unnecessary override child values
             # e.g. instead limit updates to append
             # e.g. don't override data with initial_values
-            return observe(repository, k, obj, initial_values_key=None)
+            new_data = observe(repository, k, obj, initial_values_key=None)
+
+            if not is_directory:
+                return new_data
+
+            # add new values
+            for k in new_data:
+                # skip values that have not been changed
+                # assume data[k] == new_data[k]
+                if k not in data:
+                    data[k] = new_data[k]
+
+            # rm absent values
+            for k in data:
+                if k not in new_data:
+                    del data[k]
 
     return data
 

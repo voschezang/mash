@@ -172,7 +172,7 @@ class FileSystem:
         except TypeError:
             return delimiter.join((str(k) for k in keys))
 
-    def get(self, path: Union[Path, str], relative=True):
+    def get(self, path: Path, relative=True):
         """Return the value of the file associated with `path`.
         """
         key, cwd = self._get_inner(path, relative)

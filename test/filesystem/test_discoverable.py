@@ -73,6 +73,26 @@ def test_discoverable_ls_double():
     assert departments[0].startswith('department')
 
 
+def test_discoverable_reset():
+    d = init()
+    path = ['repository', 'departments']
+    d.cd(*path)
+    items = d.ls()
+
+    d.cd(items[0])
+    inner_items = d.ls()
+    d.cd('-')
+
+    d.reset()
+    new_items = d.ls()
+    assert new_items != items
+
+    d.cd(new_items[0]) != inner_items
+
+    # verify that the prev working directory is reset
+    d.cd('-')
+
+
 def test_discoverable_show():
     d = init()
     d.cd('repo')
@@ -82,7 +102,7 @@ def test_discoverable_show():
 
     d.cd('dep')
     items = d.ls()
-    data = d.show(items[:1])
+    data = d.show(items[0])
     assert data.values[0][0].startswith('Team t')
     assert data['#members'][0] == 2
 
@@ -100,12 +120,6 @@ def test_discoverable_load_snapshot():
     items = d.ls(path)
 
     d.snapshot(fn)
-
-    d = init()
-    assert d.ls(path) == items
-
-    # invalidating cache should result in mismatching data
-    generate.cache_clear()
 
     d = init()
     assert d.ls(path) != items

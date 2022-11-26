@@ -1,6 +1,5 @@
 #!/usr/bin/python3
 from dataclasses import dataclass
-from functools import lru_cache
 from json import dumps
 from random import randint
 from typing import Dict, List
@@ -15,7 +14,6 @@ from shell import main
 from shell.with_filesystem import ShellWithFileSystem
 
 
-@lru_cache
 def generate(prefix: str, n=2):
     return [f'{prefix}_{randint(0, 1000)}' for i in range(n)]
 
@@ -88,7 +86,7 @@ class Organization:
 
 if __name__ == '__main__':
     shell = ShellWithFileSystem(data={'repository': Organization},
-        get_value_method=observe)
+                                get_value_method=observe)
     obj = shell.repository
     result = obj.ll()
     obj.init_home(['repository'])
