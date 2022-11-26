@@ -4,6 +4,7 @@ from cmd import Cmd
 from collections import defaultdict
 from copy import deepcopy
 from pathlib import Path
+from time import sleep
 from typing import Callable, Dict, List, Tuple
 import logging
 import os
@@ -18,6 +19,7 @@ from shell.function import ShellFunction as Function
 import shell.function as func
 from shell.base import BaseShell, ShellError
 
+yield_map_result = True
 
 description = 'If no positional arguments are given then an interactive subshell is started.'
 epilog = f"""
@@ -114,6 +116,78 @@ class Shell(BaseShell):
 
         return data
 
+    def do_map(self, args: str, delimiter='\n', prefix_args=True):
+        """Apply a function to every line.
+
+        Usage
+        ```sh
+        echo a b |> flatten |> map echo
+        echo a b |> flatten |> map echo prefix $ suffix
+        ```
+        """
+        lines = args.split(delimiter)
+        msg = 'Not enough arguments. Usage: `map f [args] *`.'
+        if len(lines) <= 1:
+            log(msg)
+            return
+
+        items = lines[0].split(' ')
+        if len(items) <= 1:
+            log(msg)
+            return
+
+        f, *args, line = items
+        lines = [line] + lines[1:]
+
+        method = Shell.get_method(f)
+        if not method:
+            log(f'Invalid method {f}.')
+            return
+
+        if '$' in args:
+            i = args.index('$')
+        else:
+            i = -1
+
+        # collect all results
+        results = []
+        for line in lines:
+            local_args = args.copy()
+            line = line.split(' ')
+
+            if i == -1:
+                local_args += line
+            else:
+                local_args[i:i+1] = line
+
+            line = [f] + local_args
+
+            results.append(self.run_single_command(line))
+
+            if yield_map_result:
+                print(', '.join([str(result) for result in results]), end='\r')
+
+        if yield_map_result:
+            print()
+
+        return delimiter.join([str(result) for result in results])
+
+    def do_foreach(self, args):
+        """Apply a function to every term or word.
+
+        Usage
+        ```sh
+        echo a b |> foreach echo
+        echo a b |> foreach echo prefix $ suffix
+        ```
+        """
+        f, *args = args.split(' ')
+        args = '\n'.join(args)
+        return self.do_map(f'{f} {args}')
+
+    def do_flatten(self, args):
+        return '\n'.join(args.split(' '))
+
     def do_E(self, args):
         """Show the last exception
         """
@@ -143,7 +217,7 @@ class Shell(BaseShell):
         cmd = self.lastcmd.split()[0]
         return Shell.get_method(cmd)
 
-    @staticmethod
+    @ staticmethod
     def get_method(method_suffix: str):
         method_name = f'do_{method_suffix}'
         if not has_method(Shell, method_name):

@@ -4,11 +4,11 @@ from json import dumps
 from random import randint
 from typing import Dict, List
 import pandas as pd
-from filesystem.discoverable import observe
 
 if __name__ == '__main__':
     import _extend_path
 
+from filesystem.discoverable import observe
 from filesystem.view import Path
 from shell import main
 from shell.with_filesystem import ShellWithFileSystem

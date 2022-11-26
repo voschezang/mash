@@ -45,7 +45,9 @@ class ShellWithFileSystem:
         home = partial_simple(self.init_home)
         mv = partial_simple(self.repository.mv)
         cp = partial_simple(self.repository.cp)
-        show = partial_simple(self.show)
+        # show = partial_simple(self.show)
+        show = partial_simple(self.repository.show)
+        reset = partial_simple(self.repository.reset)
 
         set_functions({'cd': cd,
                        'ls': ls,
@@ -56,7 +58,8 @@ class ShellWithFileSystem:
                        'home': home,
                        'mv': mv,
                        'cp': cp,
-                       'show': show
+                       'show': show,
+                       'reset': reset,
                        }, cls)
 
     def pwd(self):
@@ -64,10 +67,6 @@ class ShellWithFileSystem:
 
     def get(self, *path: str):
         return self.repository.get(path)
-
-    def show(self):
-        # Do not pass any path as arg to avoid the need to run word completions
-        return self.repository.show()
 
     def init_home(self, *path: Path):
         self.repository.init_home(path)
