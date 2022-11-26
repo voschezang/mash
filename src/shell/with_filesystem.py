@@ -3,7 +3,7 @@ from functools import partial
 from pickle import dumps
 import pandas as pd
 
-from filesystem import FileSystem, Options
+from filesystem import FileSystem, OPTIONS
 from filesystem.filesystem import Option
 from filesystem.discoverable import Discoverable
 from filesystem.view import Path
@@ -32,7 +32,7 @@ class ShellWithFileSystem:
 
         self.shell = cls(save_session_prehook=self.repository.snapshot,
                          load_session_posthook=self.repository.load)
-        self.shell.set_do_char_method(self.repository.cd, Options)
+        self.shell.set_do_char_method(self.repository.cd, OPTIONS)
 
     def _set_shell_functions(self, cls):
         # convert methods to functions

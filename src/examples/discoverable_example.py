@@ -5,6 +5,7 @@ from json import dumps
 from random import randint
 from typing import Dict, List
 import pandas as pd
+from filesystem.discoverable import observe
 
 if __name__ == '__main__':
     import _extend_path
@@ -86,7 +87,8 @@ class Organization:
 
 
 if __name__ == '__main__':
-    shell = ShellWithFileSystem(data={'repository': Organization})
+    shell = ShellWithFileSystem(data={'repository': Organization},
+        get_value_method=observe)
     obj = shell.repository
     result = obj.ll()
     obj.init_home(['repository'])
