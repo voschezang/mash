@@ -56,6 +56,9 @@ class FileSystem:
         self.init_home(home)
 
     def init_home(self, home: Path):
+        if isinstance(home, str):
+            home = [home]
+
         # set temporary default
         self._home = []
 

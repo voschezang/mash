@@ -1,7 +1,12 @@
 from pytest import raises
 
 from examples.discoverable_example import Organization, generate
-from filesystem.discoverable import Discoverable
+from filesystem.discoverable import Discoverable, observe
+
+
+def init():
+    return Discoverable(repository=Organization,
+                        get_value_method=observe)
 
 
 def test_discoverable_ll():
@@ -31,7 +36,8 @@ def test_discoverable_unhappy():
 
 def test_discoverable_cd():
     k = 'repository'
-    d = Discoverable(repository=Organization)
+    d = init()
+
     d.cd(k)
     assert d.ls() == ['departments', 'field1', 'field2']
 
@@ -61,14 +67,14 @@ def test_discoverable_cd():
 
 
 def test_discoverable_ls_double():
-    d = Discoverable(repository=Organization)
+    d = init()
 
     departments = d.ls(['repository', 'departments'])
     assert departments[0].startswith('department')
 
 
 def test_discoverable_show():
-    d = Discoverable(repository=Organization)
+    d = init()
     d.cd('repo')
     data = d.show(())
     assert data.values[0][0].startswith('Dep department_')
@@ -90,18 +96,18 @@ def test_discoverable_load_snapshot():
     fn = '.pytest.discoverable.pickle'
     path = ['repository', 'departments']
 
-    d = Discoverable(repository=Organization)
+    d = init()
     items = d.ls(path)
 
     d.snapshot(fn)
 
-    d = Discoverable(repository=Organization)
+    d = init()
     assert d.ls(path) == items
 
     # invalidating cache should result in mismatching data
     generate.cache_clear()
 
-    d = Discoverable(repository=Organization)
+    d = init()
     assert d.ls(path) != items
 
     d.load(fn)

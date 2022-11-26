@@ -8,7 +8,7 @@ from util import crop, find_fuzzy_matches, find_prefix_matches, is_digit, take, 
 Key = Union[str, int]
 Data = Union[dict, list]
 Trace = List[Tuple[Key, Data]]
-Path = List[Union[list, str]]
+Path = List[Union[List[str], str]]
 
 NAME = 'name'
 
@@ -54,6 +54,9 @@ class View:
         if isinstance(self.tree, list):
             return self._get_from_list(k)
         return self._get_from_dict(k)
+
+    def set(self, k: Key, value):
+        self.tree[k] = value
 
     def ls(self) -> Iterable[Key]:
         try:
