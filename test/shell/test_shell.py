@@ -357,6 +357,32 @@ def test_set_do_char_method():
         assert catch_output(op, shell=shell, strict=True).strip() == op
 
 
+def test_set_do_map():
+    shell = Shell()
+    line = 'echo a b |> flatten |> map echo'
+    assert catch_output(line, shell=shell, strict=True) == 'a\nb'
+
+    line = 'echo a b |> flatten |> map echo [ $ ]'
+    assert catch_output(line, shell=shell, strict=True) == '[ a ]\n[ b ]'
+
+
+def test_set_do_pipe_map():
+    shell = Shell()
+    line = 'echo a b |> flatten >>= echo'
+    assert catch_output(line, shell=shell, strict=True) == 'a\nb'
+
+    line = 'echo a b |> flatten >>= echo [ $ ]'
+    assert catch_output(line, shell=shell, strict=True) == '[ a ]\n[ b ]'
+
+def test_set_do_foreach():
+    shell = Shell()
+    line = 'echo a b |> foreach echo'
+    assert catch_output(line, shell=shell, strict=True) == 'a\nb'
+
+    line = 'echo 1 2 |> foreach echo 0'
+    assert catch_output(line, shell=shell, strict=True) == '0\n1\n2'
+
+
 def test_save_and_load_session():
     filename = '.pytest_session_file.json'
     Path(filename).unlink(True)

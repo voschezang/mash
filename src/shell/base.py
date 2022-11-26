@@ -16,7 +16,7 @@ from util import for_any, identity, is_alpha, is_globbable, omit_prefixes, split
 
 confirmation_mode = False
 bash_delimiters = ['|', '>', '>>', '1>', '1>>', '2>', '2>>']
-py_delimiters = [';', '|>']
+py_delimiters = [';', '|>', '>>=']
 other_delimiters = ['=', '<-', '->']
 default_session_filename = '.shell_session.json'
 
@@ -270,6 +270,70 @@ class BaseShell(Cmd):
         logging.info(f'Cmd = !{args}')
         return check_output(args)
 
+    def do_map(self, args: str, delimiter='\n'):
+        """Apply a function to every line.
+        If `$` is present, then each line from stdin is inserted there. 
+        Otherwise each line is appended.
+
+        Usage
+        -----
+        ```sh
+        echo a b |> flatten |> map echo
+        echo a b |> flatten |> map echo prefix $ suffix
+        ```
+        """
+        lines = args.split(delimiter)
+        msg = 'Not enough arguments. Usage: `map f [args] *`.'
+        if len(lines) <= 1:
+            log(msg)
+            return
+
+        items = lines[0].split(' ')
+        if len(items) <= 1:
+            log(msg)
+            return
+
+        f, *args, line = items
+        lines = [line] + lines[1:]
+
+        if '$' in args:
+            i = args.index('$')
+        else:
+            i = -1
+
+        # collect all results
+        results = []
+        for line in lines:
+            local_args = args.copy()
+            line = line.split(' ')
+
+            if i == -1:
+                local_args += line
+            else:
+                local_args[i:i+1] = line
+
+            line = [f] + local_args
+
+            results.append(self.run_single_command(line))
+
+        return delimiter.join([str(result) for result in results])
+
+    def do_foreach(self, args):
+        """Apply a function to every term or word.
+
+        Usage
+        ```sh
+        echo a b |> foreach echo
+        echo a b |> foreach echo prefix $ suffix
+        ```
+        """
+        f, *args = args.split(' ')
+        args = '\n'.join(args)
+        return self.do_map(f'{f} {args}')
+
+    def do_flatten(self, args):
+        return '\n'.join(args.split(' '))
+
     ############################################################################
     # Overrides
     ############################################################################
@@ -361,6 +425,11 @@ class BaseShell(Cmd):
         if prefixes:
             if prefixes[-1] in bash_delimiters:
                 return self.pipe_cmd_sh(line, result, delimiter=prefixes[-1])
+
+            elif prefixes[-1] == '>>=':
+                # monadic bind
+                line = f'map {line}'
+                return self.pipe_cmd_py(line, result)
 
             elif prefixes[-1] == '->':
                 # TODO verify syntax
