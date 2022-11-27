@@ -124,10 +124,8 @@ class BaseShell(Cmd):
         if env is None:
             return
 
-        try:
-            env.update(self.env)
-        except (AttributeError, TypeError, ValueError):
-            for k in self.env:
+        for k in self.env:
+            if k not in env:
                 env[k] = self.env[k]
 
         self.env = env
@@ -214,7 +212,7 @@ class BaseShell(Cmd):
     def try_load_session(self, session=default_session_filename):
         self.load_session(session, strict=False)
 
-    def load_session(self, session: str, strict=True):
+    def load_session(self, session: str = None, strict=True):
         try:
             with open(session) as f:
                 data = f.read()
@@ -278,8 +276,8 @@ class BaseShell(Cmd):
         Usage
         -----
         ```sh
-        echo a b |> flatten |> map echo
-        echo a b |> flatten |> map echo prefix $ suffix
+        println a b |> map echo
+        println a b |> map echo prefix $ suffix
         ```
         """
         lines = args.split(delimiter)
@@ -331,7 +329,9 @@ class BaseShell(Cmd):
         args = '\n'.join(args)
         return self.do_map(f'{f} {args}')
 
-    def do_flatten(self, args):
+    def do_flatten(self, args: str) -> str:
+        """Convert a space-separated string to a newline-separates string.
+        """
         return '\n'.join(args.split(' '))
 
     ############################################################################
@@ -428,6 +428,7 @@ class BaseShell(Cmd):
 
             elif prefixes[-1] == '>>=':
                 # monadic bind
+                # https://en.wikipedia.org/wiki/Monad_(functional_programming)
                 line = f'map {line}'
                 return self.pipe_cmd_py(line, result)
 

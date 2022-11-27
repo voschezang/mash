@@ -34,6 +34,11 @@ def test_onecmd_output():
         run_command('aaaa a', strict=True)
 
 
+def test_println():
+    assert catch_output('print 1 2') == '1 2'
+    assert catch_output('println 1 2') == '1\n2'
+
+
 def test_onecmd_syntax():
     # ignore invalid syntax in strict mode
     run_command('print "\""', strict=False)
@@ -373,6 +378,7 @@ def test_set_do_pipe_map():
 
     line = 'echo a b |> flatten >>= echo [ $ ]'
     assert catch_output(line, shell=shell, strict=True) == '[ a ]\n[ b ]'
+
 
 def test_set_do_foreach():
     shell = Shell()

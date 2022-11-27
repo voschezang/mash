@@ -89,13 +89,19 @@ class Shell(BaseShell):
         return ''.join((Path(f).read_text() for f in filename.split()))
 
     def do_print(self, args):
-        """Mimic Python's print function
+        """Mimic Python's print function.
         """
         logging.info(f'Cmd: print {args}')
         return args
 
+    def do_println(self, args):
+        """Print each arg on a new line.
+        """
+        logging.info(f'Cmd: println {args}')
+        return self.do_flatten(args)
+
     def do_echo(self, args):
-        """Mimic Bash's print function
+        """Mimic Bash's print function.
         """
         logging.info(f'Cmd: echo {args}')
         return args
@@ -121,12 +127,27 @@ class Shell(BaseShell):
             type(func.last_exception), func.last_exception, func.last_traceback)
 
     def do_save(self, _):
+        """Save the current session.
+        """
         self.save_session()
 
     def do_reload(self, _):
-        self.load_session()
+        """Reload the current session.
+        """
+        self.try_load_session()
 
     def do_undo(self, _):
+        """Undo the previous command
+        """
+        if not self.lastcmd:
+            return
+
+        f = self.lastcmd.split()[0]
+
+        method = f'undo_{f}'
+        if has_method(self, f'undo_{f}'):
+            return getattr(self, method)()
+
         raise NotImplementedError()
 
     def last_method(self):
