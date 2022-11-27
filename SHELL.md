@@ -2,7 +2,7 @@
 
 A tool to generate a [Domain-specific Language](https://en.wikipedia.org/wiki/Domain-specific_language) (DSL).  It can be used as a command line program or interactively as a subshell/repl.
 
-## Table of Contents
+**Table of Contents**
 
 - [Overview](#Overview)
 - [Modules](#Modules)
@@ -13,9 +13,15 @@ A tool to generate a [Domain-specific Language](https://en.wikipedia.org/wiki/Do
 
 ## Overview
 
-By default, it provides piping and Bash-like functionality. It can be extended with custom functions.
+Main features
 
-### Modules
+- A CLI. Provide an interface to user-defined commands.
+- A file-browser. Query both static datastructures and APIs.
+- An automation tool. Pass user-defined commands to other programs, such as Bash functions.
+
+See [reference](SHELL_REFERENCE.md).
+
+## Modules
 
 ```sh
 shell/
@@ -178,3 +184,4 @@ department_750, department_14
 $ python src/examples/discoverable_example.py 'ls'
 department_750, department_14
 ```
+

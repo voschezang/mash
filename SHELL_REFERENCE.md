@@ -15,12 +15,12 @@ There are build-in methods and user-defined methods. Commands such as `print` ar
 
 #### Maps and Loops
 
-| Example                                    | Description                                                  |
-| ------------------------------------------ | ------------------------------------------------------------ |
-| `print 1 2 |> foreach print`               | Run a command for each term of the output of the previous expression. |
-| `println 1 2 |> map print`                 | Run a command for each line of the previous output.          |
-| `println 1 2 |> map print prefix $ suffix` | Insert each line of the previous output into a new expression. |
-| `println 1 2 >>= print`                    | `>>=` is an alias for `|> map`                               |
+| Example                               | Description                                                  |
+| ------------------------------------- | ------------------------------------------------------------ |
+| `print 1 2 |> foreach print`          | Run a command for each term of the output of the previous expression. |
+| `println 1 2 |> map print`            | Run a command for each line of the previous output.          |
+| `println 1 2 |> map print pre $ post` | Insert each line of the previous output into a new expression. |
+| `println 1 2 >>= print`               | `>>=` is an alias for `|> map`                               |
 
 #### Shell Interop
 
@@ -70,7 +70,7 @@ An environment is a key-value map.
 
 
 
-### Symbol Reference
+### Symbols
 
 **Variable assignment**
 `=` `->` `<-` `$`
