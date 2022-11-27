@@ -79,6 +79,9 @@ optional arguments:
   --session SESSION     Use session SESSION
 ```
 
+See [reference](SHELL_REFERENCE.md).
+
+
 ## Usage Examples
 
 ### Example 1
