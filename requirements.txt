@@ -8,7 +8,6 @@ flask
 matplotlib
 mistletoe
 nltk
-numpy
 pandas
 pytest
 pytest-cov
@@ -18,5 +17,4 @@ quo==2022.8.2
 rich
 requests
 scipy
-sklearn
 termcolor
