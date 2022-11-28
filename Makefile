@@ -9,12 +9,16 @@ format:
 
 clean:
 	find . -name '__pycache__' | xargs rm -rf {1}
+	#find . -name '__pycache__' -exec rm -rf {} \;
 
 setup:
 	pip3 install -r requirements.txt
 
 install:
 	python3 -m pip install .
+
+build:
+	python3 -m build
 
 docs-init:
 	mkdir -p docs
