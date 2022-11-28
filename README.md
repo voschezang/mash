@@ -2,8 +2,6 @@
 
 # Overview
 
-This repository originally contained a number of computational models which can be used for data science.
-
 In addition, there are some utilities.
 
 In `src`:
@@ -14,15 +12,13 @@ In `src`:
 - A shell that can interpret a domain-specific language: `shell.py`.
 - A subshell wrapper, to redirect the output of shell scripts: `subshell.py`.
 
-# Usage
 
-## List supported modules
+# Shell
 
-```sh
-./main <TAB>
-# this will list the support modules
-echo            fft             linear_fit      random_walk     semilinear_fit
-```
+See [shell](SHELL.md) and [reference](SHELL_REFERENCE.md).
+
+<img src="img/shell_dropdown.png" style="max-width: 10%" alt="Example of a shell with a dropdown completion menu">
+
 
 # Setup
 
@@ -88,8 +84,3 @@ curl -X 'POST' 'http://localhost:5000/v1/organizations' \
   -d '{ "board": [ "string" ], "ceo": "string", "departments": [ { "manager": "string", "teams": [ { "manager": "string", "members": [ "string" ], "team_type": "A", "active": true, "capacity": 0, "value": 0 } ] } ] }'
 ```
 
-# Shell
-
-See [shell](SHELL.md).
-
-<img src="img/shell_dropdown.png" style="max-width: 10%" alt="Example of a shell with a dropdown completion menu">

@@ -20,6 +20,7 @@ install:
 	python3 -m pip install .
 
 build:
+	make clean
 	python3 -m build
 
 docs-init:
