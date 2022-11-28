@@ -7,7 +7,7 @@ from urllib.parse import quote_plus
 import requests
 
 from mess.shell.with_filesystem import ShellWithFileSystem
-from mess.shell import main
+from mess.shell.shell import main
 
 
 def retrieve_data(_fs, _key, url, *_args):

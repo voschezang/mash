@@ -4,9 +4,7 @@ from dataclasses import dataclass
 from typing import Dict, List
 import mistletoe
 
-from object_parser import JSONFactory
-
-
+from object_parser.factory import JSONFactory
 
 
 HeadingKey = str

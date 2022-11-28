@@ -3,11 +3,10 @@ from functools import partial
 from pickle import dumps
 import pandas as pd
 
-from filesystem import FileSystem, OPTIONS
-from filesystem.filesystem import Option
+from filesystem.filesystem import FileSystem, OPTIONS, Option
 from filesystem.discoverable import Discoverable
 from filesystem.view import Path
-from shell import build, set_completions, set_functions
+from shell.shell import build, set_completions, set_functions
 from util import find_fuzzy_matches, has_method, partial_simple
 
 cd_aliasses = 'cd_aliasses'

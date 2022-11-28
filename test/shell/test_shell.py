@@ -11,7 +11,7 @@ from shell.base import ShellError, bash_delimiters, py_delimiters
 from util import identity
 
 
-run = 'python src/examples/shell_example.py '
+run = 'python src/mess/examples/shell_example.py '
 
 
 def catch_output(line='', func=run_command, **kwds) -> str:

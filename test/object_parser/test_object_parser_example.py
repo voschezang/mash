@@ -2,7 +2,7 @@ from copy import deepcopy
 from typing import Dict, List
 import pytest
 
-from object_parser import JSONFactory
+from object_parser.factory import JSONFactory
 from object_parser.spec import init_recursively
 from object_parser.errors import SpecError
 from examples.object_parser_example import A, B, Department, DepartmentData, Organization, OrganizationData, SuperUser, Team, TeamType, User, example_data

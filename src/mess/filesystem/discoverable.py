@@ -4,7 +4,7 @@ from typing import Callable,  Union
 from copy import deepcopy
 
 from util import has_annotations, has_method, infer_inner_cls, is_Dict, is_Dict_or_List
-from filesystem import FileSystem
+from filesystem.filesystem import FileSystem
 from filesystem.view import Data, Path, Key, View
 
 
@@ -63,7 +63,6 @@ class Discoverable(FileSystem):
             initial_value = self.initial_values[initial_values_key]
             # cwd.set(k, initial_value)
             self.set(k, initial_value, cwd)
-
 
     def reset(self, *path: str):
         if not path:

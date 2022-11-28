@@ -2,9 +2,9 @@
 *.pyc
 *.pickle
 *__pycache__
+*.egg-info
 .DS_Store
 .ipynb_checkpoints
-templates
 test-results-*.xml
 tmp*
 .shell_session.json

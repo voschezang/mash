@@ -1,7 +1,7 @@
 from copy import deepcopy
 from pytest import raises
 
-from filesystem import FileSystem, Option, OPTIONS
+from filesystem.filesystem import FileSystem, Option, OPTIONS
 
 root = {'a': {'1': '1', '2': 2, '3': ['A', 'B', 10, 20, [30]]},
         'b': [{'1': '1'}, {'2': 2}],

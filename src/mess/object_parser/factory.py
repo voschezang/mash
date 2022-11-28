@@ -3,7 +3,7 @@ from enum import Enum
 from abc import ABC, abstractmethod
 import logging
 
-from object_parser import find_synonym, parse_field_keys, verify_key_format
+from object_parser.object_parser import find_synonym, parse_field_keys, verify_key_format
 from object_parser.errors import BuildError, BuildErrors, ErrorMessages, SpecError
 from object_parser.spec import Spec
 from util import has_annotations, has_method, infer_inner_cls, is_Dict_or_List, is_Dict, is_List, is_enum

@@ -10,7 +10,7 @@ if __name__ == '__main__':
 
 from filesystem.discoverable import observe
 from filesystem.view import Path
-from shell import main
+from shell.shell import main
 from shell.with_filesystem import ShellWithFileSystem
 
 
