@@ -1,2 +1,2 @@
 import sys
-sys.path.append('src/mess')
+sys.path.append('src/mash')

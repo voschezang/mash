@@ -3,7 +3,7 @@ requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "mess-shell"
+name = "mash-shell"
 version = "0.0.1"
 authors = [
   { name="voschezang", email="mark.voschezang@student.uva.nl" },
@@ -16,22 +16,20 @@ dependencies = [
     'braceexpand',
     'django',
     'dominate',
-    'flake8',
     'flask',
-    'matplotlib',
     'mistletoe',
-    'nltk',
     'numpy',
     'pandas',
     'PyYAML',
-    'quo == 2022.8.2',
+    'quo',
     'rich',
     'requests',
     'termcolor',
 ]
 classifiers = [
     "Programming Language :: Python :: 3",
-    "License :: OSI Approved :: GNU General Public License v3",
+    "Topic :: System :: Shells",
+    "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
     "Operating System :: OS Independent",
 ]
 

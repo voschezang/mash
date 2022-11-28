@@ -1,9 +1,9 @@
-from shell.shell import Function
+from shell.function import ShellFunction
 
 
 def test_Function_args():
     synopsis = 'list'
-    func = Function(list, args=[], synopsis=synopsis, doc='')
+    func = ShellFunction(list, args=[], synopsis=synopsis, doc='')
     assert func.func == list
     assert func.help == synopsis
 
@@ -11,7 +11,7 @@ def test_Function_args():
 def test_Function_call():
     value = '1'
 
-    f = Function(int, args=[], synopsis='')
+    f = ShellFunction(int, args=[], synopsis='')
 
     assert f(value) in [int(value), value + '\n']
     assert f() == 0

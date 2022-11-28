@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from enum import Enum
 from functools import partial
 from itertools import accumulate, dropwhile, takewhile
-from nltk.metrics.distance import edit_distance
+from scipy.spatial import distance
 from operator import contains
 from queue import Queue
 from typing import Any, Callable, Dict, Generator, Iterable, List, MappingView, Sequence, Tuple, TypeVar, Union
@@ -316,7 +316,7 @@ def find_fuzzy_matches(element: str, elements: List[str]):
     scores: List[Tuple[str, str]] = []
 
     for i, other in enumerate(elements):
-        score = edit_distance(element, other)
+        score = hamming(element, other)
         scores.append((score, other))
 
     ordered = [value for _, value in sorted(scores)]
@@ -387,6 +387,20 @@ def glob(value: str, options: List[str] = [], strict=False) -> Iterable[str]:
             if strict and is_globbable(value):
                 raise ValueError(f'No matches found: {value}')
             yield value
+
+
+def hamming(a: str, b: str) -> float:
+    """Approximate the Hamming distance of two strings.
+    """
+    # add padding
+    n = max(len(a), len(b))
+    a = f'{a:{n}}'
+    b = f'{b:{n}}'
+
+    # add a case-insentive component
+    a = a + a.lower()
+    b = b + b.lower()
+    return distance.hamming(list(a), list(b))
 
 ################################################################################
 # Inspection helpers
@@ -528,15 +542,19 @@ def is_digit(s: str) -> bool:
         return True
     except ValueError:
         return False
-    
+
+
 def is_Dict(cls):
     return getattr(cls, '_name', '') == 'Dict'
+
 
 def is_List(cls):
     return getattr(cls, '_name', '') == 'List'
 
+
 def is_Dict_or_List(cls):
     return is_Dict(cls) or is_List(cls)
+
 
 def is_globbable(value: str) -> bool:
     return for_any(GLOB_CHARS, contains, value)

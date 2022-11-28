@@ -5,15 +5,13 @@ django
 dominate
 flake8
 flask
-matplotlib
 mistletoe
-nltk
 pandas
 pytest
 pytest-cov
 pytest-xdist
 pyyaml
-quo==2022.8.2
+quo
 rich
 requests
 scipy

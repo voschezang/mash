@@ -10,6 +10,8 @@ format:
 clean:
 	find . -name '__pycache__' | xargs rm -rf {1}
 	#find . -name '__pycache__' -exec rm -rf {} \;
+	rm -rf dist
+	rm -rf src/*.egg-info
 
 setup:
 	pip3 install -r requirements.txt
