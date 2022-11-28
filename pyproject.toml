@@ -11,6 +11,24 @@ authors = [
 description = "A shell and other utils"
 readme = "README.md"
 requires-python = ">=3.8"
+dependencies = [
+    'aiohttp',
+    'braceexpand',
+    'django',
+    'dominate',
+    'flake8',
+    'flask',
+    'matplotlib',
+    'mistletoe',
+    'nltk',
+    'numpy',
+    'pandas',
+    'PyYAML',
+    'quo == 2022.8.2',
+    'rich',
+    'requests',
+    'termcolor',
+]
 
 [project.urls]
 "Homepage" = "https://github.com/voschezang/mess"
