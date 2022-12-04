@@ -1,4 +1,7 @@
 ![workflow-badge](https://github.com/voschezang/mash/actions/workflows/python-app.yml/badge.svg)
+![py-versions](https://img.shields.io/badge/python-3.8%20|%203.10%20|%203.11-blue)
+<a href="https://pypi.org/project/mash-shell" title="Python versions"><img src="[https://img.shields.io/badge/pypi-v0.1.0-blue](https://img.shields.io/badge/python-3.8%20|%203.10%20|%203.11-blue)"/></a>
+<a href="https://pypi.org/project/mash-shell" title="PyPI"><img src="https://img.shields.io/badge/pypi-v0.1.0-blue"/></a>
 
 # Overview
 
