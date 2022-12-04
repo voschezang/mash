@@ -11,6 +11,8 @@ import fnmatch
 import sys
 import traceback
 
+import io_util
+
 T = TypeVar('T')
 
 AdjacencyList = Dict[str, List[str]]
@@ -41,7 +43,7 @@ class DataClassHelper:
         self.verify_context_key(key)
         msg = f'Missing context: {key}'
 
-        if not interactive:
+        if not io_util.interactive:
             raise ValueError(msg)
 
         print(msg)
