@@ -1,4 +1,4 @@
-![workflow-badge](https://github.com/voschezang/mess/actions/workflows/python-app.yml/badge.svg)
+![workflow-badge](https://github.com/voschezang/mash/actions/workflows/python-app.yml/badge.svg)
 
 # Overview
 
