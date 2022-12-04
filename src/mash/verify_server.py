@@ -2,7 +2,7 @@ import socket
 import ssl
 from django.core.validators import URLValidator, validate_ipv4_address, validate_ipv6_address
 from django.core.exceptions import ValidationError
-from urllib.parse import urlparse, quote_plus, ParseResult
+from urllib.parse import urlparse, quote_plus
 
 
 class VerificationException(Exception):

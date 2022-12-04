@@ -1,8 +1,8 @@
 from typing import _GenericAlias
 
-from object_parser.object_parser import parse_field_keys, verify_key_format
-from object_parser.errors import ErrorMessages, SpecError
-from util import has_annotations, has_method, infer_inner_cls, is_Dict, is_enum
+from mash.object_parser.object_parser import parse_field_keys, verify_key_format
+from mash.object_parser.errors import ErrorMessages, SpecError
+from mash.util import has_annotations, has_method, infer_inner_cls, is_Dict, is_enum
 
 
 def init_recursively(cls, data={}):

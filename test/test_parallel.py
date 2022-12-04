@@ -1,10 +1,10 @@
 import pytest
 
 from aiohttp import ClientSession
-from parallel import *
+from mash.parallel import *
 
 
-#class Test(pytest.testcase):
+# class Test(pytest.testcase):
 #    def test_parallel(self):
 #        q = queue.Queue()
 #        n = 8
@@ -25,7 +25,7 @@ from parallel import *
 #        res = asynchronous(stub, in_queue, out_queue)
 #        self.assertEqual(len(res), n)
 #
-#def asynchronous(func, in_queue, out_queue, kwds):
+# def asynchronous(func, in_queue, out_queue, kwds):
 #
 #    def test_worker(self):
 #        q = queue.Queue()
@@ -35,7 +35,8 @@ from parallel import *
 class NoResult(Exception):
     pass
 
-async def stub(session: ClientSession, i:int, url=''):
+
+async def stub(session: ClientSession, i: int, url=''):
     raise NoResult()
 
 # def queues():

@@ -1,10 +1,10 @@
 from functools import partial
 
-from filesystem.filesystem import FileSystem, OPTIONS, Option
-from filesystem.discoverable import Discoverable
-from filesystem.view import Path
-from shell.shell import build, set_completions, set_functions
-from util import find_fuzzy_matches, has_method, partial_simple
+from mash.filesystem.filesystem import FileSystem, OPTIONS, Option
+from mash.filesystem.discoverable import Discoverable
+from mash.filesystem.view import Path
+from mash.shell.shell import build, set_completions, set_functions
+from mash.util import find_fuzzy_matches, has_method, partial_simple
 
 cd_aliasses = 'cd_aliasses'
 path_delimiter = '/'

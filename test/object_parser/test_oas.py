@@ -1,5 +1,5 @@
-from src.examples.object_parser_example import SuperUser, example_data, Organization, Capacity
-from src.mash.object_parser.oas import OAS
+from examples.object_parser_example import SuperUser, example_data, Organization, Capacity
+from mash.object_parser.oas import OAS
 
 json = example_data
 

@@ -6,8 +6,8 @@ from functools import lru_cache
 from urllib.parse import quote_plus
 import requests
 
-from mess.shell.with_filesystem import ShellWithFileSystem
-from mess.shell.shell import main
+from mash.shell.with_filesystem import ShellWithFileSystem
+from mash.shell.shell import main
 
 
 def retrieve_data(_fs, _key, url, *_args):

@@ -5,7 +5,8 @@ from werkzeug.utils import secure_filename
 import numpy as np
 import os
 import time
-import verify_server
+
+from mash import verify_server
 
 UPLOAD_FOLDER = 'tmp/flask-app'
 

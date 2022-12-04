@@ -4,9 +4,9 @@ if __name__ == '__main__':
 
 from typing import Any, Dict
 
-from shell.with_filesystem import ShellWithFileSystem
-from shell.shell import main
-from util import constant
+from mash.shell.with_filesystem import ShellWithFileSystem
+from mash.shell.shell import main
+from mash.util import constant
 
 add_custom_commands = True
 

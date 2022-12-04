@@ -7,8 +7,8 @@ from pickle import dumps, loads
 from pprint import pformat
 from typing import Callable, Iterable, List, Tuple, Union
 
-from util import accumulate_list, first, has_method, is_Dict_or_List, none
-from filesystem.view import NAME, Key, Path, View
+from mash.util import accumulate_list, first, has_method, is_Dict_or_List, none
+from mash.filesystem.view import NAME, Key, Path, View
 
 HIDE_PREFIX = '.'
 

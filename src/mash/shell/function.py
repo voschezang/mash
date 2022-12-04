@@ -3,8 +3,8 @@ from types import TracebackType
 from typing import Dict
 import logging
 import sys
-from doc_inference import generate_docs
 
+from mash.doc_inference import generate_docs
 from mash.io_util import log
 from mash import util
 

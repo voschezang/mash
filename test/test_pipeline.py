@@ -2,7 +2,7 @@ import pytest
 from queue import Empty
 import multiprocessing as mp
 
-from pipeline import *
+from mash.pipeline import *
 
 
 def test_Resource():

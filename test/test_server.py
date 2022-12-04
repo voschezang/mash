@@ -1,12 +1,10 @@
 import json
-import flask
 from flask.testing import FlaskClient
-import pytest
 import os
 from io import BytesIO
-import server
-from server import basepath
 from http import HTTPStatus
+
+from mash.server import basepath, init as server_init, UPLOAD_FOLDER
 
 LARGE_N = 1000
 
@@ -83,7 +81,7 @@ def test_route_echo_int():
 def test_document_post():
     client = init()
     fn = 'myfile.txt'
-    out_fn = server.UPLOAD_FOLDER + '/' + fn
+    out_fn = UPLOAD_FOLDER + '/' + fn
     try:
         os.remove(out_fn)
     except FileNotFoundError:
@@ -94,18 +92,18 @@ def test_document_post():
     file = (BytesIO(body), fn)
     res = client.post(basepath + 'document', data={'file': file})
     assert_response(res, expected_data.encode())
-    assert fn in os.listdir(server.UPLOAD_FOLDER)
+    assert fn in os.listdir(UPLOAD_FOLDER)
 
 
 def test_document_del():
     client = init()
-    fn = server.UPLOAD_FOLDER + '/anotherfile.csv'
+    fn = UPLOAD_FOLDER + '/anotherfile.csv'
     with open(fn, 'w') as f:
         f.write('abc,def')
 
     res = client.delete(basepath + 'document')
     assert_response(res)
-    assert fn not in os.listdir(server.UPLOAD_FOLDER)
+    assert fn not in os.listdir(UPLOAD_FOLDER)
 
 
 def test_route_verify_server():
@@ -149,7 +147,7 @@ def requests(url='', N=LARGE_N, client: FlaskClient = None, **kwds):
 
 
 def init():
-    app = server.init()
+    app = server_init()
     client = app.test_client()
     return client
 

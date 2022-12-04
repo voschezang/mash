@@ -8,10 +8,10 @@ import pandas as pd
 if __name__ == '__main__':
     import _extend_path
 
-from filesystem.discoverable import observe
-from filesystem.view import Path
-from shell.shell import main
-from shell.with_filesystem import ShellWithFileSystem
+from mash.filesystem.discoverable import observe
+from mash.filesystem.view import Path
+from mash.shell.shell import main
+from mash.shell.with_filesystem import ShellWithFileSystem
 
 
 def generate(prefix: str, n=2):

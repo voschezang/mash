@@ -11,7 +11,7 @@ import numpy as np
 import sys
 import time
 
-import util
+from mash import util
 
 ################################################################################
 # Use-cases

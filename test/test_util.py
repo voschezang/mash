@@ -1,7 +1,7 @@
 from operator import contains, eq
 from pytest import raises
 
-from util import concat, constant, equals, find_prefix_matches, find_fuzzy_matches, for_all, for_any, glob, identity, is_alpha, is_digit, list_prefix_matches, not_equals, split, split_sequence, split_tips
+from mash.util import concat, constant, equals, find_prefix_matches, find_fuzzy_matches, for_all, for_any, glob, identity, is_alpha, is_digit, list_prefix_matches, not_equals, split, split_sequence, split_tips
 
 
 def test_concat_empty_container():

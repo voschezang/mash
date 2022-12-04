@@ -1,10 +1,10 @@
 """Generate a OAS/Swagger component
 See: [OAS](https://swagger.io/specification/)
 """
-
-from object_parser.spec import Spec
-from util import is_enum
 from typing import _GenericAlias
+
+from mash.object_parser.spec import Spec
+from mash.util import is_enum
 
 
 # OAS basic types, excluding containers  (e.g. dict, list)

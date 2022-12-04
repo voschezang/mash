@@ -3,9 +3,9 @@ from pickle import dumps, loads
 from typing import Callable,  Union
 from copy import deepcopy
 
-from util import has_annotations, has_method, infer_inner_cls, is_Dict, is_Dict_or_List
-from filesystem.filesystem import FileSystem
-from filesystem.view import Data, Path, Key, View
+from mash.util import has_annotations, has_method, infer_inner_cls, is_Dict, is_Dict_or_List
+from mash.filesystem.filesystem import FileSystem
+from mash.filesystem.view import Data, Path, Key, View
 
 
 Method = Union[Callable[[FileSystem, Key, Data, View], Data], str]

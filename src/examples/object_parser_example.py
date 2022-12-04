@@ -7,10 +7,10 @@ from enum import auto, Enum
 from json import dumps
 from typing import Dict, List
 
-from object_parser.oas import OAS, path_create
-from object_parser.factory import JSONFactory
-from object_parser.spec import Spec
-from object_parser.errors import SpecError
+from mash.object_parser.oas import OAS, path_create
+from mash.object_parser.factory import JSONFactory
+from mash.object_parser.spec import Spec
+from mash.object_parser.errors import SpecError
 
 
 @dataclass

@@ -7,9 +7,9 @@
 - `errors.ErrorMessages` exposes a few custom strings.
 - `spec.Spec` is a legacy alternative to dataclasses that provides a simplified constructor.
 """
-from object_parser.errors import BuildError, ErrorMessages, SpecError
 
-from util import has_annotations, has_method, is_Dict, is_Dict_or_List, is_List, is_valid_method_name
+from mash.object_parser.errors import BuildError, ErrorMessages, SpecError
+from mash.util import has_annotations, has_method, is_Dict, is_Dict_or_List, is_List, is_valid_method_name
 
 
 def parse_field_keys(cls, data) -> dict:

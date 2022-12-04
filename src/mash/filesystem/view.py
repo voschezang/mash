@@ -3,7 +3,7 @@ from dataclasses import dataclass, field
 import logging
 from typing import Any, Iterable, List, Tuple, Union
 
-from util import crop, find_fuzzy_matches, find_prefix_matches, is_digit, take, is_Dict_or_List
+from mash.util import crop, find_fuzzy_matches, find_prefix_matches, is_digit, take, is_Dict_or_List
 
 Key = Union[str, int]
 Data = Union[dict, list]

@@ -5,10 +5,10 @@ from aiohttp import ClientSession
 import time
 import random
 
-import util
-from server import basepath
-from parallel import asynchronous
-from pipeline import Processor, PushPull, identity, constant, duplicate
+from mash import util
+from mash.server import basepath
+from mash.parallel import asynchronous
+from mash.pipeline import Processor, PushPull, identity, constant, duplicate
 
 url = 'http://localhost:5000' + basepath
 

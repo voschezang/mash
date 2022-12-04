@@ -7,10 +7,10 @@ import dominate
 from dominate.tags import table, tbody, th, tr, td, style
 from dominate.util import raw
 
-import io_util
-from io_util import has_argument
-from io_util import ArgparseWrapper, has_argument
-from html_table_data import HTMLTableData, example_yaml_data, parse_json
+from mash import io_util
+from mash.io_util import has_argument
+from mash.io_util import ArgparseWrapper, has_argument
+from mash.html_table_data import HTMLTableData, example_yaml_data, parse_json
 
 
 def parse_cell(text: str, rowspan=1):

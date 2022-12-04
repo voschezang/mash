@@ -1,4 +1,4 @@
-from verify_server import VerificationException, resolve, connect, parse_hostname, parse_port
+from mash.verify_server import VerificationException, resolve, connect, parse_hostname, parse_port
 import pytest
 
 localhost = '127.0.0.1'

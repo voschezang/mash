@@ -9,9 +9,9 @@ import logging
 import shlex
 import subprocess
 
-import io_util
-from io_util import log, shell_ready_signal, print_shell_ready_signal, check_output
-from util import for_any, identity, is_alpha, is_globbable, omit_prefixes, split_prefixes, split_sequence, glob
+from mash import io_util
+from mash.io_util import log, shell_ready_signal, print_shell_ready_signal, check_output
+from mash.util import for_any, identity, is_alpha, is_globbable, omit_prefixes, split_prefixes, split_sequence, glob
 
 confirmation_mode = False
 bash_delimiters = ['|', '>', '>>', '1>', '1>>', '2>', '2>>']
