@@ -13,6 +13,10 @@ A subshell and various utilities.
 - An OAS-generator for Python classes: `oas.py`.
 - A parallelization framework for load testing: `parallel.py`.
 
+Links
+- [PyPI](https://pypi.org/project/mash-shell)
+- [data-science-templates](https://github.com/voschezang/data-science-templates)
+
 ## Shell
 
 See [shell](SHELL.md) and [reference](SHELL_REFERENCE.md).
