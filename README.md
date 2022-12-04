@@ -2,21 +2,28 @@
 
 # Overview
 
-In addition, there are some utilities.
+A subshell and various utilities.
 
-In `src`:
-
+- A shell that can interpret a domain-specific language: `shell.py`.
+- A subshell wrapper, to redirect the output of shell scripts: `subshell.py`.
 - An object parser which converts JSON data to Python classes: `object_parser.py`.
 - An OAS-generator for Python classes: `oas.py`.
 - A parallelization framework for load testing: `parallel.py`.
-- A shell that can interpret a domain-specific language: `shell.py`.
-- A subshell wrapper, to redirect the output of shell scripts: `subshell.py`.
 
-# Shell
+## Shell
 
 See [shell](SHELL.md) and [reference](SHELL_REFERENCE.md).
 
 <img src="img/shell_dropdown.png" style="max-width: 10%" alt="Example of a shell with a dropdown completion menu">
+
+## Usage
+
+```sh
+pip install mash-shell
+python -m mash
+```
+
+See `src/examples` for advances usages.
 
 # Setup
 
@@ -50,7 +57,7 @@ python3 src/parallel.py -v
 - [src/object_parser/object_parser.py](object_parser.py) parses JSON data and instantiate Python objects.
 - [src/object_parser/oas.py](oas.py) converts domain-models to OAS.
 
-## Exammple
+## Example
 
 ```sh
 python src/object_parser_example.py
