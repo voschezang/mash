@@ -4,7 +4,6 @@ from cmd import Cmd
 from collections import defaultdict
 from copy import deepcopy
 from pathlib import Path
-from time import sleep
 from typing import Callable, Dict, List, Tuple
 import logging
 import os

@@ -1,4 +1,4 @@
-from shell.function import ShellFunction
+from src.mash.shell.function import ShellFunction
 
 
 def test_Function_args():

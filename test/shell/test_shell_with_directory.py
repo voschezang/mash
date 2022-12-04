@@ -1,9 +1,9 @@
 from pytest import raises
 
-from shell.with_filesystem import ShellWithFileSystem
-from examples.filesystem_example import repository
-from shell.shell import run_command
-import io_util
+from src.examples.filesystem_example import repository
+from src.mash.shell.shell import run_command
+from src.mash.shell.with_filesystem import ShellWithFileSystem
+from src.mash import io_util
 
 
 def init(**kwds):

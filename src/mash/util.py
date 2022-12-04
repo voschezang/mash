@@ -11,9 +11,6 @@ import fnmatch
 import sys
 import traceback
 
-# backwards compatibility
-from io_util import interactive
-
 T = TypeVar('T')
 
 AdjacencyList = Dict[str, List[str]]

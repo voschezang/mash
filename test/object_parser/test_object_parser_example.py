@@ -2,10 +2,12 @@ from copy import deepcopy
 from typing import Dict, List
 import pytest
 
-from object_parser.factory import JSONFactory
-from object_parser.spec import init_recursively
+# TODO avoid the need for relative imports
 from object_parser.errors import SpecError
-from examples.object_parser_example import A, B, Department, DepartmentData, Organization, OrganizationData, SuperUser, Team, TeamType, User, example_data
+
+from src.mash.object_parser.factory import JSONFactory
+from src.mash.object_parser.spec import init_recursively
+from src.examples.object_parser_example import A, B, Department, DepartmentData, Organization, OrganizationData, SuperUser, Team, TeamType, User, example_data
 
 json = example_data
 

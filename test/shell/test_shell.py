@@ -4,14 +4,19 @@ from pathlib import Path
 from pytest import raises
 from time import perf_counter
 
-import io_util
-from io_util import check_output, read_file, run_subprocess
-from shell.shell import Shell, add_cli_args, run_command
-from shell.base import ShellError, bash_delimiters, py_delimiters
-from util import identity
+# TODO avoid the need for relative imports
+from shell.base import ShellError
+
+from src.mash import io_util
+from src.mash.io_util import check_output, read_file, run_subprocess
+from src.mash.shell.shell import Shell, add_cli_args, run_command
+from src.mash.shell.base import bash_delimiters, py_delimiters
+from src.mash.util import identity
 
 
-run = 'python src/mash/examples/shell_example.py '
+# Note the trailing space
+# run = 'python src/mash/examples/shell_example.py '
+run = 'python src/examples/shell_example.py '
 
 
 def catch_output(line='', func=run_command, **kwds) -> str:

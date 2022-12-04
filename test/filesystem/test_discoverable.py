@@ -1,7 +1,7 @@
 from pytest import raises
 
-from examples.discoverable_example import Organization, generate
-from filesystem.discoverable import Discoverable, observe
+from src.examples.discoverable_example import Organization
+from src.mash.filesystem.discoverable import Discoverable, observe
 
 
 def init():
