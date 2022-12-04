@@ -8,21 +8,21 @@ There are build-in methods and user-defined methods. Commands such as `print` ar
 
 ### Standard Expressions
 
-| Example                 | Description                                                  |
-| ----------------------- | ------------------------------------------------------------ |
-| `print hi hello`        | Run the method `do_print()` with arguments `"hi"` and `"hello"`. |
-| `println 1 2 3`         | Print separated arguments on new lines.                      |
-| `print 1, print 2`      | Run multiple methods.                                        |
-| `print 1 &vert;> print` | Pipe the output of one expression to another expression.     |
+| Example                   | Description                                                  |
+| ------------------------- | ------------------------------------------------------------ |
+| `print hi hello`          | Run the method `do_print()` with arguments `"hi"` and `"hello"`. |
+| `println 1 2 3`           | Print separated arguments on new lines.                      |
+| `print 1, print 2`        | Run multiple methods.                                        |
+| `print 1 `&vert;`> print` | Pipe the output of one expression to another expression.     |
 
 ### Maps and Loops
 
 | Example                                    | Description                                                  |
 | ------------------------------------------ | ------------------------------------------------------------ |
-| `print 1 2 &vert;> foreach print`          | Run a command for each term of the output of the previous expression. |
-| `println 1 2 &vert;> map print`            | Run a command for each line of the previous output.          |
-| `println 1 2 &vert;> map print pre $ post` | Insert each line of the previous output into a new expression. |
-| `println 1 2 >>= print`                    | `>>=` is an alias for `&vert;> map`                          |
+| `print 1 2 `&vert;`> foreach print`         | Run a command for each term of the output of the previous expression. |
+| `println 1 2 `&vert;`> map print`            | Run a command for each line of the previous output.          |
+| `println 1 2 `&vert;`> map print pre $ post` | Insert each line of the previous output into a new expression. |
+| `println 1 2 >>= print`                    | `>>=` is an alias for &vert;`> map`                          |
 
 ### Shell Interop
 
@@ -31,7 +31,7 @@ Commands can be chained, similar to *Bash*. The main output `stdout` is used.
 | Example                    | Description                                      |
 | -------------------------- | ------------------------------------------------ |
 | `!echo hello`              | Invoke a system shell and run `echo hello` there |
-| `print 1 &vert; echo`     | Pipe the output of                               |
+| `print 1 `&vert;` echo`     | Pipe the output of                               |
 | `print 1 > somefilename`  | Write the output of an expression to a file      |
 | `print 1 >> somefilename` | Append the output of an expression to a file     |
 
