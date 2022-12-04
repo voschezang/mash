@@ -87,7 +87,6 @@ optional arguments:
 
 See [reference](SHELL_REFERENCE.md).
 
-
 ## Usage Examples
 
 ### Example 1
@@ -184,4 +183,3 @@ department_750, department_14
 $ python src/examples/discoverable_example.py 'ls'
 department_750, department_14
 ```
-

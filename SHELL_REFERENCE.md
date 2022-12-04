@@ -1,10 +1,12 @@
-## Syntax
+# Syntax
 
 There are build-in methods and user-defined methods. Commands such as `print` are bound to methods with the name `do_print`.
 
-### By Type
+[toc]
 
-#### Standard Expressions
+## By Type
+
+### Standard Expressions
 
 | Example            | Description                                                  |
 | ------------------ | ------------------------------------------------------------ |
@@ -13,7 +15,7 @@ There are build-in methods and user-defined methods. Commands such as `print` ar
 | `print 1, print 2` | Run multiple methods.                                        |
 | `print 1 |> print` | Pipe the output of one expression to another expression.     |
 
-#### Maps and Loops
+### Maps and Loops
 
 | Example                               | Description                                                  |
 | ------------------------------------- | ------------------------------------------------------------ |
@@ -22,7 +24,7 @@ There are build-in methods and user-defined methods. Commands such as `print` ar
 | `println 1 2 |> map print pre $ post` | Insert each line of the previous output into a new expression. |
 | `println 1 2 >>= print`               | `>>=` is an alias for `|> map`                               |
 
-#### Shell Interop
+### Shell Interop
 
 Commands can be chained, similar to *Bash*. The main output `stdout` is used.
 
@@ -30,10 +32,10 @@ Commands can be chained, similar to *Bash*. The main output `stdout` is used.
 | -------------------------- | ------------------------------------------------ |
 | `!echo hello`              | Invoke a system shell and run `echo hello` there |
 | `print 1 | echo`           | Pipe the output of                               |
-| `print 1 > somefilename `  | Write the output of an expression to a file      |
-| `print 1 >> somefilename ` | Append the output of an expression to a file     |
+| `print 1 > somefilename`  | Write the output of an expression to a file      |
+| `print 1 >> somefilename` | Append the output of an expression to a file     |
 
-#### Environment Variables
+### Environment Variables
 
 | Example         | Description                                                  |
 | --------------- | ------------------------------------------------------------ |
@@ -42,7 +44,8 @@ Commands can be chained, similar to *Bash*. The main output `stdout` is used.
 | `print 20 -> c` | Assign the result of the right-hand-side expression to the variable `b` |
 | `print $a $b`   | Pass the values of the variables `a` and `b` to the command `print` |
 
-**Environments**
+#### Environments
+
 An environment is a key-value map.
 
 | Command  | Description                             |
@@ -51,14 +54,14 @@ An environment is a key-value map.
 | `save`   | Copy the current environment to a file. |
 | `reload` | Reload the default environment.         |
 
-#### Globbing
+### Globbing
 
 | Example     | Description                                                |
 | ----------- | ---------------------------------------------------------- |
 | `print *`   | `*` is replaced with all items from the autocomplete list. |
 | `print ab?` | `?` is a wildcard for a single character.                  |
 
-#### Built-in Commands
+### Built-in Commands
 
 | Command             | Description                                           |
 | ------------------- | ----------------------------------------------------- |
@@ -68,9 +71,7 @@ An environment is a key-value map.
 | `print SOME TEXT`   | Print the words `SOME` and `TEXT`                     |
 | `println SOME TEXT` | Print the words `SOME` and `TEXT` on different lines. |
 
-
-
-### Symbols
+## Symbols
 
 **Variable assignment**
 `=` `->` `<-` `$`
@@ -80,4 +81,3 @@ An environment is a key-value map.
 
 **Pipes (Python)**
  `|>` `>>=`
-

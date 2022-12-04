@@ -6,9 +6,9 @@ from quo.history import MemoryHistory
 from quo.prompt import Prompt
 from quo.text import Text
 
-from shell.shell import Shell, all_commands, run_command, main as shell_main
-from shell.base import ShellError
-from doc_inference import infer_synopsis
+from mash.shell.shell import Shell, all_commands, run_command, main as shell_main
+from mash.shell.base import ShellError
+from mash.doc_inference import infer_synopsis
 
 rprompt_init = 'Type any command to continue'
 rprompt_default = ''

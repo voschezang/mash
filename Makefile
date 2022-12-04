@@ -23,6 +23,14 @@ build:
 	make clean
 	python3 -m build
 
+upload-test:
+	make build
+	python3 -m twine upload --repository testpypi dist/* -u voschezang
+
+upload:
+	make build
+	 python3 -m twine upload dist/* -u voschezang
+
 docs-init:
 	mkdir -p docs
 	cd docs && yes y | make sphinx-quickstart

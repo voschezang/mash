@@ -1,4 +1,3 @@
-#!/usr/bin/python3
 from argparse import ArgumentParser
 from cmd import Cmd
 from collections import defaultdict
@@ -10,13 +9,13 @@ import os
 import sys
 import traceback
 
-import io_util
-from io_util import ArgparseWrapper, bold, has_argument, has_output, log, read_file
-from util import has_method, is_valid_method_name
+from mash import io_util
+from mash.io_util import ArgparseWrapper, bold, has_argument, has_output, log, read_file
+from mash.util import has_method, is_valid_method_name
 
-from shell.function import ShellFunction as Function
-import shell.function as func
-from shell.base import BaseShell, ShellError
+from mash.shell.function import ShellFunction as Function
+import mash.shell.function as func
+from mash.shell.base import BaseShell, ShellError
 
 description = 'If no positional arguments are given then an interactive subshell is started.'
 epilog = f"""

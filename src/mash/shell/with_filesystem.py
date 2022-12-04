@@ -1,7 +1,4 @@
-#!/usr/bin/python3
 from functools import partial
-from pickle import dumps
-import pandas as pd
 
 from filesystem.filesystem import FileSystem, OPTIONS, Option
 from filesystem.discoverable import Discoverable

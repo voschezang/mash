@@ -12,13 +12,11 @@ In `src`:
 - A shell that can interpret a domain-specific language: `shell.py`.
 - A subshell wrapper, to redirect the output of shell scripts: `subshell.py`.
 
-
 # Shell
 
 See [shell](SHELL.md) and [reference](SHELL_REFERENCE.md).
 
 <img src="img/shell_dropdown.png" style="max-width: 10%" alt="Example of a shell with a dropdown completion menu">
-
 
 # Setup
 
@@ -29,14 +27,6 @@ make install
 make test
 ```
 
-## Optional
-
-Setup completions
-
-```sh
-source setup/setup.sh
-```
-
 # Parallelization Utilities
 
 Some experiments with parallelization, concurrency and `asyncio` in Python.
@@ -45,13 +35,13 @@ Some experiments with parallelization, concurrency and `asyncio` in Python.
 
 Start a dummy server.
 
-```
+```sh
 python3 src/server.py
 ```
 
 Do a simple load test
 
-```
+```sh
 python3 src/parallel.py -v
 ```
 
@@ -83,4 +73,3 @@ curl -X 'POST' 'http://localhost:5000/v1/organizations' \
   -H 'Content-Type: application/json' \
   -d '{ "board": [ "string" ], "ceo": "string", "departments": [ { "manager": "string", "teams": [ { "manager": "string", "members": [ "string" ], "team_type": "A", "active": true, "capacity": 0, "value": 0 } ] } ] }'
 ```
-

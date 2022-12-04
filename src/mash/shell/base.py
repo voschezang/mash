@@ -1,4 +1,3 @@
-#!/usr/bin/python3
 from asyncio import CancelledError
 from cmd import Cmd
 from dataclasses import asdict

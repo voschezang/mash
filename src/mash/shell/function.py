@@ -5,8 +5,8 @@ import logging
 import sys
 from doc_inference import generate_docs
 
-from io_util import log
-import util
+from mash.io_util import log
+from mash import util
 
 # this data is impacts by both the classes Function and Shell, hence it should be global
 exception_hint = '(run `E` for details)'
