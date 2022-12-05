@@ -37,6 +37,8 @@ Commands can be chained, similar to *Bash*. The main output `stdout` is used.
 
 ### Environment Variables
 
+The operator `=` is used for variable assignment. The operator `<-` is used for post-evaluation assignment (borrowed from [R](https://www.r-project.org/)). `$`-referenced variables are expanded immediately, prior to function invocation.
+
 | Example         | Description                                                  |
 | --------------- | ------------------------------------------------------------ |
 | `a = 100`       | Assign the value `100`  to the variable `a`                  |
@@ -81,3 +83,75 @@ An environment is a key-value map.
 
 **Pipes (Python)**
  `|>` `>>=`
+
+
+
+## Proposals
+
+**User-definable Functions**
+
+Avoid shell expansion (`$var`, `*`, `a??`), as it would complicate lazy evaluation of functions. Treat `$` as macro's.
+
+- Syntax for constant variables: `x = 1 ; a = $x`
+- Syntax for functions: `f x = x` - without `$`
+
+The latter requires "local" variable scopes. *Proposal: use the class `FileSystem` for this.*
+
+
+
+**Basic Functions**
+
+Identity: `f x = x`  - and not `f x = $x`
+
+Constant: `k x = "a"` for a constant string,  `k x = a` for a constant variable.
+
+Duplicate `r x = x x` or `r *x = *x *x`
+
+Inf loop: `f x = f x |> repeat x` 
+
+Range `g x n = `
+
+Append: `append a b = $b "$a"`
+
+
+
+**Unpack sequences**
+
+*Proposal: Never expand RHS `*` symbols.*
+
+````python
+f *x = x
+print <| f 1 2 3 # "1 2 3"
+````
+
+Alternative syntax:
+
+```python
+head x @xs = x
+tail x @xs = xs
+end @xs x = x
+```
+
+
+
+**Math**
+
+Numbers: `int 1`, `float 1.0` 
+
+Shorthand notation:  `a = $100.0`, `b = $2e3`, `c = $2^2`
+
+Math evaluation:
+
+````
+x <- int 10
+y <- float 2.5
+print <| math x + y # 12.5
+````
+
+Using [Polish notation](https://en.wikipedia.org/wiki/Polish_notation):
+
+```python
++ x y # addition
+- x y # subtraction
+```
+
