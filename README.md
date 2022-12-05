@@ -3,10 +3,10 @@
 <a href="https://pypi.org/project/mash-shell" title="Python versions"><img src="[https://img.shields.io/badge/pypi-v0.1.0-blue](https://img.shields.io/badge/python-3.8%20|%203.10%20|%203.11-blue)"/></a>
 <a href="https://pypi.org/project/mash-shell" title="PyPI"><img src="https://img.shields.io/badge/pypi-v0.1.0-blue"/></a>
 
-**Docs**
-- [MAIN.md](MAIN.md)
-- [SHELL.md](SHELL.md)
-- [REFERENCE.md](SHELL_REFERENCE.md)
+**Docs**:
+[MAIN.md](https://github.com/voschezang/mash/blob/main/README.md) 
+| [SHELL.md](https://github.com/voschezang/mash/blob/main/SHELL.md)
+| [REFERENCE.md](https://github.com/voschezang/mash/blob/main/SHELL_REFERENCE.md)
 
 # Overview
 
@@ -24,7 +24,7 @@ Links
 
 ## Shell
 
-See [shell](SHELL.md) and [reference](SHELL_REFERENCE.md).
+See [SHELL.md](https://github.com/voschezang/mash/blob/main/SHELL.md) and [REFERENCE.md](https://github.com/voschezang/mash/blob/main/SHELL_REFERENCE.md).
 
 <img src="img/shell_dropdown.png" style="max-width: 10%" alt="Example of a shell with a dropdown completion menu">
 
