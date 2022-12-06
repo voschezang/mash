@@ -68,10 +68,11 @@ An environment is a key-value map.
 | Command             | Description                                           |
 | ------------------- | ----------------------------------------------------- |
 | `help`              | Show info.                                            |
-| `help CMD`          | Show the usage of the command `CMD`                   |
+| `help CMD`          | Show the usage of the command `CMD`.                  |
 | `E`                 | Show details of the last error message.               |
-| `print SOME TEXT`   | Print the words `SOME` and `TEXT`                     |
+| `print SOME TEXT`   | Print the words `SOME` and `TEXT`.                    |
 | `println SOME TEXT` | Print the words `SOME` and `TEXT` on different lines. |
+| `math 1 + 10`       | Evaluate math expressions.                            |
 
 ## Symbols
 
