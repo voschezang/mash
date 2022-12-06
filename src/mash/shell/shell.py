@@ -3,6 +3,7 @@ from cmd import Cmd
 from collections import defaultdict
 from copy import deepcopy
 from pathlib import Path
+import re
 from typing import Callable, Dict, List, Tuple
 import logging
 import os
@@ -147,6 +148,34 @@ class Shell(BaseShell):
             return getattr(self, method)()
 
         raise NotImplementedError()
+
+    def do_math(self, args: str) -> str:
+        operators = ['-', '\\+', '\\*', '%']
+        delimiters = ['\\(', '\\)']
+        regex = '(' + '|'.join(operators + delimiters) + ')'
+        terms = re.split(regex, args)
+        return self._eval_terms(terms)
+
+    def _eval_terms(self, terms=List[str]) -> str:
+        line = ''.join(self._translate_terms(terms))
+        log(line)
+
+        try:
+            result = eval(line)
+        except (NameError, SyntaxError) as e:
+            raise ShellError(e)
+
+        self._save_result(result)
+        return str(result)
+
+    def _translate_terms(self, terms: List[str]):
+        for term in terms:
+            term = term.strip()
+            if term in self.env:
+                yield str(self.env[term])
+                continue
+
+            yield term
 
     def last_method(self):
         """Find the method corresponding to the last command run in `shell`.

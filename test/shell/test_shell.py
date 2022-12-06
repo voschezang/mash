@@ -348,6 +348,31 @@ def test_variable_expansion_regex():
     # assert catch_output('echo \{1..3}\"', shell=shell) == '{1..3}'
 
 
+def test_shell_do_math():
+    shell = Shell()
+    catch_output(f'math 1 + 10', shell=shell) == '11'
+    catch_output(f'math 1 + 2 * 3', shell=shell) == '7'
+
+
+def test_shell_numbers():
+    shell = Shell()
+    run_command(f'x <- int 10', shell=shell)
+    run_command(f'y <- float 1.5', shell=shell)
+    run_command(f'z <- math x + y', shell=shell)
+
+    assert catch_output(f'math x + 10', shell=shell) == '20'
+    assert catch_output('math x + y', shell=shell) == '11.5'
+    assert catch_output('math x + z', shell=shell) == '21.5'
+
+    # catch NameError
+    with raises(ShellError):
+        run_command(f'math x + +', shell=shell)
+
+    # catch SyntaxError
+    with raises(ShellError):
+        run_command(f'math abc', shell=shell)
+
+
 def test_set_do_char_method():
     shell = Shell()
     op = '~'

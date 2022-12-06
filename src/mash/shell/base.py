@@ -4,7 +4,7 @@ from dataclasses import asdict
 from itertools import chain
 from json import dumps, loads
 from operator import contains
-from typing import Any, Callable, Dict, Iterable, List, Tuple
+from typing import Any, Callable, Dict, Iterable, List, Tuple, Union
 import logging
 import shlex
 import subprocess
@@ -21,6 +21,7 @@ default_session_filename = '.shell_session.json'
 
 
 Command = Callable[[Cmd, str], str]
+Types = Union[str, bool, int, float]
 
 
 class ShellError(RuntimeError):
@@ -78,6 +79,7 @@ class BaseShell(Cmd):
         # internals
         self._do_char_method = self.none
         self._chars_allowed_for_char_method: List[str] = []
+        self._last_results = None
 
         self.set_infix_operators()
         if self.auto_reload:
@@ -129,25 +131,37 @@ class BaseShell(Cmd):
 
         self.env = env
 
-    def eval(self, args: Iterable[str]) -> str:
+    def eval(self, args: Iterable[str]) -> Types:
         """Evaluate / run `args` and return the result.
         """
         # convert args to a shell command
+
         k = '_eval_output'
+
         args = ' '.join(shlex.quote(arg) for arg in args)
         line = f'{args} |> export {k}'
 
         self.onecmd(line)
 
         # verify result
-        if k not in self.env:
+        if k not in self.env and not self._last_results:
             raise ShellError('eval() failed')
 
-        # retrieve result
-        result = self.env[k]
-        del self.env[k]
+        result = self._retrieve_eval_result(k)
+
+        if k in self.env:
+            del self.env[k]
 
         return result
+
+    def _retrieve_eval_result(self, k):
+        if k in self.env:
+            return self.env[k]
+
+        elif self._last_results:
+            return self._last_results.pop()
+
+        raise RuntimeError('Cannot retrieve result')
 
     def set_env_variable(self, k: str, *values: str):
         """Set the variable `k` to `values`
@@ -164,7 +178,7 @@ class BaseShell(Cmd):
             log(f'Error, cannot set {k}')
             return
 
-        self.set_env_variable(k, result)
+        self.env[k] = result
         return k
 
     def show_env(self, env=None):
@@ -255,7 +269,7 @@ class BaseShell(Cmd):
             if k in self.env:
                 del self.env[k]
             else:
-                log('Invalid key')
+                logging.warn('Invalid key')
             return
 
         log(f'set {k}')
@@ -332,6 +346,18 @@ class BaseShell(Cmd):
         """Convert a space-separated string to a newline-separates string.
         """
         return '\n'.join(args.split(' '))
+
+    def do_int(self, args: str) -> str:
+        self._save_result(int(args))
+        return ''
+
+    def do_float(self, args: str) -> str:
+        self._save_result(float(args))
+        return ''
+
+    def do_bool(self, args: str) -> str:
+        self._save_result(bool(args))
+        return ''
 
     ############################################################################
     # Overrides
@@ -619,3 +645,9 @@ class BaseShell(Cmd):
         This is a default value for self._do_char_method.
         """
         return ''
+
+    def _save_result(self, value, overwrite=True):
+        if overwrite:
+            self._last_results = [value]
+        else:
+            self._last_results.append(value)
