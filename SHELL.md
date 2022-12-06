@@ -35,8 +35,8 @@ filesystem/
     view.View # A datastructure that provides a view of internal data.
   
 examples/ # Usage examples
-  filesystem_example.py # An example with a directory-like repository
-  discoverable_example.py
+  filesystem.py # An example with a directory-like repository
+  discoverable.py
   discoverable_api.py
   shell_example.py
 
@@ -146,7 +146,7 @@ See `examples/filesystem_example.py`. This simulates a REST resources with a dir
 In addition, it provides fuzzy name completion.
 
 ```sh
-$ python src/crud_example.py tree
+$ python src/examples/shell_example.py tree
 # example data with dicts and lists
 repository = {'worlds': [
     {'name': 'earth',
@@ -161,25 +161,25 @@ repository = {'worlds': [
 
 ```sh
 # note the autocompletion
-$ python src/src/directory_example.py 'cd world; cd a; cd t; cd snakes; ll'
+$ python src/examples/filesystem.py 'cd world; cd a; cd t; cd snakes; ll'
 python
 cobra
 ```
 
 ### With Dynamic Data
 
-See `examples/discoverable_example.py`.
+See `examples/discoverable.py`.
 
 ```sh
 # list remote/auto-generated data
-$ python src/examples/discoverable_example.py 'ls'
+$ python src/examples/discoverable.py 'ls'
 department_805, department_399
 
 # refresh data, then save
-$ py src/examples/discoverable_example.py 'ls ; save'
+$ py src/examples/discoverable.py 'ls ; save'
 department_750, department_14
 
 # reload data
-$ python src/examples/discoverable_example.py 'ls'
+$ python src/examples/discoverable.py 'ls'
 department_750, department_14
 ```
