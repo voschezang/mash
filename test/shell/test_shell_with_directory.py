@@ -1,6 +1,6 @@
 from pytest import raises
 
-from src.examples.filesystem_example import repository
+from examples.filesystem import repository
 from src.mash.shell.shell import run_command
 from src.mash.shell.with_filesystem import ShellWithFileSystem
 from src.mash import io_util

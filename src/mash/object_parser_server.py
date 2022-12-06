@@ -1,6 +1,6 @@
 from flask import Flask, request
 
-from examples.object_parser_example import Organization
+from examples.object_parser import Organization
 
 basepath = '/v1/'
 

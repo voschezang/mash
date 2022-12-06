@@ -1,4 +1,4 @@
-from examples.object_parser_example import SuperUser, example_data, Organization, Capacity
+from examples.object_parser import SuperUser, example_data, Organization, Capacity
 from mash.object_parser.oas import OAS
 
 json = example_data

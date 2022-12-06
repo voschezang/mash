@@ -6,7 +6,7 @@ import pytest
 from mash.object_parser.errors import SpecError
 from mash.object_parser.factory import JSONFactory
 from mash.object_parser.spec import init_recursively
-from examples.object_parser_example import A, B, Department, DepartmentData, Organization, OrganizationData, SuperUser, Team, TeamType, User, example_data
+from examples.object_parser import A, B, Department, DepartmentData, Organization, OrganizationData, SuperUser, Team, TeamType, User, example_data
 
 json = example_data
 
