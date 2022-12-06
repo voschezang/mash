@@ -41,13 +41,13 @@ class Team:
         return generate('t')
 
 
-@dataclass
-class Department:
-    teams: List[Team]
+# @dataclass
+# class Department:
+#     teams: List[Team]
 
-    @staticmethod
-    def get_all(*_) -> List[type]:
-        return generate('department')
+#     @staticmethod
+#     def get_all(*_) -> List[type]:
+#         return generate('department')
 
 
 @dataclass

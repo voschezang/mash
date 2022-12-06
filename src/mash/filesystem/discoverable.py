@@ -1,4 +1,5 @@
 #!/usr/bin/python3
+from dataclasses import _MISSING_TYPE
 from pickle import dumps, loads
 from typing import Callable,  Union
 from copy import deepcopy
@@ -222,9 +223,18 @@ def discover_using_cls(cls: type, k: Key, container_cls: type, full_path):
         return items
 
     if has_annotations(cls):
-        return cls.__annotations__.copy()
+        data = cls.__annotations__.copy()
+        infer_defaults(cls, data)
+        return data
 
     return cls
+
+
+def infer_defaults(cls: type, data: dict):
+    if hasattr(cls, '__dataclass_fields__'):
+        for k, v in cls.__dataclass_fields__.items():
+            if not isinstance(v.default, _MISSING_TYPE):
+                data[k] = v.default
 
 
 def infer_initial_value_key(k: Key, cwd: View):

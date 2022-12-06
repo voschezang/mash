@@ -160,14 +160,12 @@ class JSONFactory(Factory):
                 errors.append(e)
 
         if errors:
-            raise BuildErrors(errors)
+            if not is_Dict_or_List(self.cls) or len(errors) == len(keys):
+                raise BuildErrors(errors)
 
         return result
 
     def build_field(self, key, data):
-        if key == 'row':
-            x = 1
-
         if key in data:
             self.verify_key_format(key)
 
@@ -177,6 +175,10 @@ class JSONFactory(Factory):
                 inner_cls = infer_inner_cls(self.cls)
 
             factory = JSONFactory(inner_cls)
+            if isinstance(data[key], type):
+                raise BuildError(
+                    f'Data must be instantiated. Types are not supported. Got {data[key]}')
+
             return factory.build(data[key])
 
         elif hasattr(self.cls, key):
@@ -218,8 +220,8 @@ class JSONFactory(Factory):
                 result[k] = factory.build(v)
             except BuildErrors as e:
                 logging.debug(
-                        f'build_list: factory({inner_cls}).build({v}) failed: {e}')
-                    
+                    f'build_list: factory({inner_cls}).build({v}) failed: {e}')
+
         return result
 
     def build_list(self, items: list) -> list:
@@ -247,4 +249,7 @@ class JSONFactory(Factory):
         if has_method(self.cls, 'parse_value'):
             data = self.cls.parse_value(data)
 
-        return self.cls(data)
+        try:
+            return self.cls(data)
+        except TypeError as e:
+            raise BuildError(e)

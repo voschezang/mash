@@ -31,9 +31,7 @@ class V:
     """
     @staticmethod
     def ref(item=''):
-        # return f'$ref: #/components/schemas/{item}'
         return f'#/components/schemas/{item}'
-        # return {'$ref': '#/components/schemas/{item}'}
 
 
 template = {
@@ -72,8 +70,8 @@ class OAS(dict):
     def components(self):
         return self[K.components][K.schemas]
 
-    def extend(self, obj: Spec):
-        """Generate OAS/Swagger components from a Spec
+    def extend(self, obj: object):
+        """Generate OAS/Swagger components from a class
         See: [OAS](https://swagger.io/specification/)
         E.g.
         ```yml
@@ -95,6 +93,10 @@ class OAS(dict):
             return
 
         for k in obj.__annotations__:
+            try:
+                v = getattr(obj, k)
+            except AttributeError as e:
+                e
             v = getattr(obj, k)
             item_type = infer_oas_type(v)
 
