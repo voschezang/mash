@@ -1,5 +1,6 @@
 from asyncio import CancelledError
 from cmd import Cmd
+from collections import defaultdict
 from dataclasses import asdict
 from itertools import chain
 from json import dumps, loads
@@ -10,8 +11,10 @@ import shlex
 import subprocess
 
 from mash import io_util
+from mash.filesystem.filesystem import FileSystem
 from mash.io_util import log, shell_ready_signal, print_shell_ready_signal, check_output
-from mash.util import for_any, identity, is_alpha, is_globbable, omit_prefixes, split_prefixes, split_sequence, glob
+from mash.util import for_any, has_method, identity, is_alpha, is_globbable, omit_prefixes, split_prefixes, split_sequence, glob
+from mash.shell.function import InlineFunction
 
 confirmation_mode = False
 bash_delimiters = ['|', '>', '>>', '1>', '1>>', '2>', '2>>']
@@ -71,6 +74,7 @@ class BaseShell(Cmd):
         self.ignore_invalid_syntax = True
 
         self.env = {}
+        self.locals = FileSystem(defaultdict(dict))
         self.update_env(env)
 
         self.auto_save = False
@@ -92,7 +96,7 @@ class BaseShell(Cmd):
 
     def set_infix_operators(self):
         # use this for infix operators, e.g. `a = 1`
-        self.infix_operators = {'=': self.set_env_variable,
+        self.infix_operators = {'=': self.handle_equation,
                                 '<-': self.eval_and_set_env_variable}
         # the sign to indicate that a variable should be expanded
         self.variable_prefix = '$'
@@ -163,15 +167,56 @@ class BaseShell(Cmd):
 
         raise RuntimeError('Cannot retrieve result')
 
+    def handle_equation(self, lhs: Tuple[str], *rhs: str):
+        if len(lhs) == 1:
+            k = lhs[0]
+            return self.set_env_variable(k, *rhs)
+
+        f, *args = lhs
+        implementation = ' '.join(rhs[1:])
+        return self.add_inline_function(f, args, implementation)
+
+    def add_inline_function(self, f, args, implementation) -> str:
+        if has_method(self, f'do_{f}'):
+            raise ShellError(
+                f'Name conflict: Cannot define inline function {f}, '
+                'because there already exists a method do_{f}.')
+
+        # TODO use custom class with attr .functions
+        self.locals['functions'][f] = InlineFunction(implementation, *args)
+
+        positionals = ' '.join(args)
+        log(f'function {f}({positionals});')
+        return ''
+
+    def call_inline_function(self, f: InlineFunction, *args: str):
+        translations = {}
+
+        for i, k in enumerate(f.args):
+            translations[k] = args[i]
+
+        terms = list(self.translate_terms(f.command.split(' '), translations))
+        line = ' '.join(terms)
+
+        first_func = terms[0]
+        if not has_method(self, f'do_{first_func}') \
+                and first_func not in self.locals['functions']:
+            terms = ['print'] + terms
+
+        line = ' '.join(terms)
+        return super().onecmd(line)
+
     def set_env_variable(self, k: str, *values: str):
         """Set the variable `k` to `values`
         """
         self.env[k] = ' '.join(values)
         return k
 
-    def eval_and_set_env_variable(self, k: str, *values: str):
+    def eval_and_set_env_variable(self, k: Tuple[str], *values: str):
         """Evaluate `values` as an expression and store the result in the variable `k`
         """
+        k: str = k[0]
+
         try:
             result = self.eval(values)
         except ShellError:
@@ -399,6 +444,11 @@ class BaseShell(Cmd):
         return super().completenames(text, *ignored)
 
     def default(self, line: str):
+        head, *tail = line.split(' ')
+        if head in self.locals['functions']:
+            f = self.locals['functions'][head]
+            return self.call_inline_function(f, *tail)
+
         if line in self._chars_allowed_for_char_method:
             return self._do_char_method(line)
 
@@ -581,7 +631,7 @@ class BaseShell(Cmd):
                 continue
 
             try:
-                lhs, _, *rhs = args
+                lhs, rhs = self.infer_infix_args(op, *args)
             except ValueError:
                 msg = f'Invalid syntax for infix operator {op}'
                 if self.ignore_invalid_syntax:
@@ -592,6 +642,16 @@ class BaseShell(Cmd):
             return method(lhs, *rhs)
 
         raise ValueError()
+
+    def infer_infix_args(self, op: str, *args: str) -> Tuple[Tuple[str], Tuple[str]]:
+        if args[1] == op:
+            lhs, _, *rhs = args
+            lhs = (lhs,)
+        else:
+            i = args.index(op)
+            lhs = args[:i]
+            rhs = args[i:]
+        return lhs, rhs
 
     def expand_variables(self, variables: List[str]) -> Iterable[str]:
         """Replace variables with their values. 
@@ -651,3 +711,12 @@ class BaseShell(Cmd):
             self._last_results = [value]
         else:
             self._last_results.append(value)
+
+    def translate_terms(self, terms: Iterable[str], translations: dict):
+        for term in terms:
+            term = term.strip()
+            if term in translations:
+                yield str(translations[term])
+                continue
+
+            yield term

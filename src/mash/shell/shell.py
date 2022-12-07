@@ -157,7 +157,7 @@ class Shell(BaseShell):
         return self._eval_terms(terms)
 
     def _eval_terms(self, terms=List[str]) -> str:
-        line = ''.join(self._translate_terms(terms))
+        line = ''.join(self.translate_terms(terms, self.env))
         log(line)
 
         try:
@@ -167,15 +167,6 @@ class Shell(BaseShell):
 
         self._save_result(result)
         return str(result)
-
-    def _translate_terms(self, terms: List[str]):
-        for term in terms:
-            term = term.strip()
-            if term in self.env:
-                yield str(self.env[term])
-                continue
-
-            yield term
 
     def last_method(self):
         """Find the method corresponding to the last command run in `shell`.
@@ -191,7 +182,7 @@ class Shell(BaseShell):
         cmd = self.lastcmd.split()[0]
         return Shell.get_method(cmd)
 
-    @ staticmethod
+    @staticmethod
     def get_method(method_suffix: str):
         method_name = f'do_{method_suffix}'
         if not has_method(Shell, method_name):

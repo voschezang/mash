@@ -63,6 +63,14 @@ An environment is a key-value map.
 | `print *`   | `*` is replaced with all items from the autocomplete list. |
 | `print ab?` | `?` is a wildcard for a single character.                  |
 
+### Functions
+
+| Example                | Description                        |
+| ---------------------- | ---------------------------------- |
+| `f x = x`              | Identity function. Echo the input. |
+| `triple i = i i i`     | Repeat a term.                     |
+| `add a b = math a + b` | Arithmetic.                        |
+
 ### Built-in Commands
 
 | Command             | Description                                           |
@@ -102,7 +110,30 @@ The latter requires "local" variable scopes. *Proposal: use the class `FileSyste
 
 **Basic Functions**
 
-Identity: `f x = x`  - and not `f x = $x`
+Options for syntax.
+
+- Constants
+
+    -  `f x = x`
+
+    -  `f x = $x`
+
+    - `f x = print x`
+
+    - `f x = print $x`
+
+- Expressions
+
+    - `f x = math x + 10`
+    - `f x = math $x + 10`
+
+
+
+
+
+Identity: `f x = x` or `f x = print x`
+
+- but not `f x = $x`
 
 Constant: `k x = "a"` for a constant string,  `k x = a` for a constant variable.
 
@@ -113,6 +144,16 @@ Inf loop: `f x = f x |> repeat x`
 Range `g x n = `
 
 Append: `append a b = $b "$a"`
+
+
+
+Multiline functions
+
+```haskell
+f x = x
+	|> repeat
+	|> tail
+```
 
 
 
@@ -140,14 +181,6 @@ end @xs x = x
 Numbers: `int 1`, `float 1.0` 
 
 Shorthand notation:  `a = $100.0`, `b = $2e3`, `c = $2^2`
-
-Math evaluation:
-
-````
-x <- int 10
-y <- float 2.5
-print <| math x + y # 12.5
-````
 
 Using [Polish notation](https://en.wikipedia.org/wiki/Polish_notation):
 

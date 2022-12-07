@@ -1,6 +1,6 @@
 from copy import deepcopy
 from types import TracebackType
-from typing import Dict
+from typing import Dict, Tuple
 import logging
 import sys
 
@@ -53,3 +53,9 @@ class ShellFunction:
         log(etype.__name__, exception_hint)
         if str(last_exception):
             log('\t', last_exception)
+
+
+class InlineFunction:
+    def __init__(self, command: str, *args: str) -> None:
+        self.command = command
+        self.args = args
