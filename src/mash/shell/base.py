@@ -176,14 +176,16 @@ class BaseShell(Cmd):
         implementation = ' '.join(rhs[1:])
         return self.add_inline_function(f, args, implementation)
 
-    def add_inline_function(self, f, args, implementation) -> str:
+    def add_inline_function(self, f, args, inner) -> str:
         if has_method(self, f'do_{f}'):
             raise ShellError(
                 f'Name conflict: Cannot define inline function {f}, '
-                'because there already exists a method do_{f}.')
+                f'because there already exists a method do_{f}.')
 
-        # TODO use custom class with attr .functions
-        self.locals['functions'][f] = InlineFunction(implementation, *args)
+        inner = self.expand_variables_inline(inner)
+
+        # TODO use custom class with attr .functions instead of a string
+        self.locals['functions'][f] = InlineFunction(inner, *args)
 
         positionals = ' '.join(args)
         log(f'function {f}({positionals});')
@@ -662,9 +664,6 @@ class BaseShell(Cmd):
         ```
         """
         for v in variables:
-            # TODO expand variables that are in the middle of a line
-            # e.g. ".. $x"
-
             if len(v) >= 2 and v[0] == self.variable_prefix:
                 k = v[1:]
 
@@ -696,6 +695,14 @@ class BaseShell(Cmd):
                         raise ShellError(e)
 
             yield v
+
+    def expand_variables_inline(self, line: str):
+        """Expand $variables in `line`.
+        """
+        terms = line.split(' ')
+        expanded_terms = self.expand_variables(terms)
+        line = ' '.join(expanded_terms)
+        return line
 
     def variable_name_is_valid(self, k: str) -> bool:
         return is_alpha(k, ignore='_')

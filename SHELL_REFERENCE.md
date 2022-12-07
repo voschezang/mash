@@ -65,11 +65,12 @@ An environment is a key-value map.
 
 ### Functions
 
-| Example                | Description                        |
-| ---------------------- | ---------------------------------- |
-| `f x = x`              | Identity function. Echo the input. |
-| `triple i = i i i`     | Repeat a term.                     |
-| `add a b = math a + b` | Arithmetic.                        |
+| Example                | Description                                              |
+| ---------------------- | -------------------------------------------------------- |
+| `f x = x`              | Identity function. Echo the input.                       |
+| `triple i = i i i`     | Repeat a term.                                           |
+| `add a b = math a + b` | Arithmetic.                                              |
+| `f x = math x + $a`    | Combine positional arguments with environment variables. |
 
 ### Built-in Commands
 
@@ -109,27 +110,6 @@ The latter requires "local" variable scopes. *Proposal: use the class `FileSyste
 
 
 **Basic Functions**
-
-Options for syntax.
-
-- Constants
-
-    -  `f x = x`
-
-    -  `f x = $x`
-
-    - `f x = print x`
-
-    - `f x = print $x`
-
-- Expressions
-
-    - `f x = math x + 10`
-    - `f x = math $x + 10`
-
-
-
-
 
 Identity: `f x = x` or `f x = print x`
 
