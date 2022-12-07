@@ -98,26 +98,10 @@ An environment is a key-value map.
 
 ## Proposals
 
-**User-definable Functions**
-
-Avoid shell expansion (`$var`, `*`, `a??`), as it would complicate lazy evaluation of functions. Treat `$` as macro's.
-
-- Syntax for constant variables: `x = 1 ; a = $x`
-- Syntax for functions: `f x = x` - without `$`
-
-The latter requires "local" variable scopes. *Proposal: use the class `FileSystem` for this.*
-
+Proposals for future changes.
 
 
 **Basic Functions**
-
-Identity: `f x = x` or `f x = print x`
-
-- but not `f x = $x`
-
-Constant: `k x = "a"` for a constant string,  `k x = a` for a constant variable.
-
-Duplicate `r x = x x` or `r *x = *x *x`
 
 Inf loop: `f x = f x |> repeat x` 
 
