@@ -4,29 +4,13 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "mash-shell"
-version = "0.1.4"
+version = "0.1.5"
 authors = [
   { name="voschezang", email="mark.voschezang@student.uva.nl" },
 ]
 description = "A shell and other utils"
-readme = "README.md"
+dynamic = ["dependencies", "readme"]
 requires-python = ">=3.10"
-dependencies = [
-    'aiohttp',
-    'braceexpand',
-    'django',
-    'dominate',
-    'flask',
-    'mistletoe',
-    'numpy',
-    'pandas',
-    'PyYAML',
-    'quo',
-    'rich',
-    'requests',
-    'scipy',
-    'termcolor',
-]
 classifiers = [
     "Programming Language :: Python :: 3",
     "Topic :: System :: Shells",
@@ -37,3 +21,7 @@ classifiers = [
 [project.urls]
 "Homepage" = "https://github.com/voschezang/mash"
 "Bug Tracker" = "https://github.com/voschezang/mash/issues"
+
+[tool.setuptools.dynamic]
+readme = {file = ["README.md", "SHELL.md", "SHELL_REFERENCE.md"]}
+dependencies = {file = ["requirements.txt"]}

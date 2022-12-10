@@ -1,6 +1,5 @@
 #!/usr/bin/python3
 from dataclasses import dataclass
-from json import dumps
 from random import randint
 from typing import Dict, List
 import pandas as pd
@@ -41,22 +40,12 @@ class Team:
         return generate('t')
 
 
-# @dataclass
-# class Department:
-#     teams: List[Team]
-
-#     @staticmethod
-#     def get_all(*_) -> List[type]:
-#         return generate('department')
-
-
 @dataclass
 class Department:
     teams: List[Team]
 
     @staticmethod
     def refresh(*_) -> bool:
-        # generate.cache_clear()
         return 0
 
     @staticmethod

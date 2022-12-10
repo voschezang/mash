@@ -6,7 +6,7 @@ import pytest
 from mash.object_parser.errors import SpecError
 from mash.object_parser.factory import JSONFactory
 from mash.object_parser.spec import init_recursively
-from examples.object_parser import A, B, Department, DepartmentData, Organization, OrganizationData, SuperUser, Team, TeamType, User, example_data
+from examples.object_parser import A, B, C, Department, DepartmentData, Organization, OrganizationData, SuperUser, Team, TeamType, User, example_data
 
 json = example_data
 
@@ -145,9 +145,11 @@ def test_dataclass():
     b = {'c': False}
     b = init_recursively(B, b)
 
-    a = {'a': 1, 'b': 2, 'c': False}
+    d = {'x': 1, 'y': 10}
+
+    a = {'a': 1, 'b': 2, 'c': False, 'd': d}
     a = init_recursively(A, a)
 
-    a = {'a': 'nan', 'b': 2, 'c': 'yes'}
+    a = {'a': 'nan', 'b': 2, 'c': 'yes', 'd': d}
     with pytest.raises(SpecError):
         a = init_recursively(A, a)

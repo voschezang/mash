@@ -14,6 +14,12 @@ from mash.object_parser.errors import SpecError
 
 
 @dataclass
+class C:
+    x: int = 1
+    y = 2
+
+
+@dataclass
 class B:
     c: float
 
@@ -23,6 +29,7 @@ class A:
     a: int
     b: B
     c: bool
+    d: C
 
 
 class CustomSpec(Spec):
