@@ -85,7 +85,6 @@ class BaseShell(Cmd):
         self._do_char_method = self.none
         self._chars_allowed_for_char_method: List[str] = []
         self._last_results = None
-        self._last_assignment = None
 
         self.set_infix_operators()
         if self.auto_reload:
@@ -104,9 +103,7 @@ class BaseShell(Cmd):
 
     def set_infix_operators(self):
         # use this for infix operators, e.g. `a = 1`
-        self.infix_operators = {'=': self.handle_equation,
-                                # '<-': self.eval_and_set_env_variable
-                                }
+        self.infix_operators = {'=': self.handle_equation}
         # the sign to indicate that a variable should be expanded
         self.variable_prefix = '$'
 
@@ -176,14 +173,16 @@ class BaseShell(Cmd):
 
         raise RuntimeError('Cannot retrieve result')
 
-    def handle_equation(self, lhs: Tuple[str], *rhs: str):
+    def handle_equation(self, lhs: Tuple[str], *rhs: str) -> str:
         if len(lhs) == 1:
             k = lhs[0]
-            return self.set_env_variable(k, *rhs)
+            self.set_env_variable(k, *rhs)
+            return ''
 
         f, *args = lhs
         implementation = ' '.join(rhs[1:])
-        return self.add_inline_function(f, args, implementation)
+        self.add_inline_function(f, args, implementation)
+        return ''
 
     def add_inline_function(self, f, args, inner) -> str:
         if has_method(self, f'do_{f}'):
@@ -201,7 +200,6 @@ class BaseShell(Cmd):
 
         positionals = ' '.join(args)
         log(f'function {f}({positionals});')
-        return ''
 
     def call_inline_function(self, f: InlineFunction, *args: str):
         translations = {}
@@ -228,20 +226,6 @@ class BaseShell(Cmd):
 
         log(f'set {k}')
         self.env[k] = ' '.join(values)
-        return k
-
-    def eval_and_set_env_variable(self, k: Tuple[str], *values: str):
-        """Evaluate `values` as an expression and store the result in the variable `k`
-        """
-        k: str = k[0]
-
-        try:
-            result = self.eval(values)
-        except ShellError:
-            log(f'Error, cannot set {k}')
-            return
-
-        self.set_env_variable(k, result.split(' '))
         return k
 
     def show_env(self, env=None):
@@ -527,15 +511,7 @@ class BaseShell(Cmd):
                 raise ShellError(str(e))
 
         if 'assignee' in self.locals:
-            k = self.locals['assignee']
-
-            if result is None:
-                raise ShellError(f'Missing return value in assignment: {k}')
-            elif result == '' and self._last_results:
-                result = self._last_results.pop()
-
-            self.env[k] = result
-            self.locals.rm('assignee')
+            self._save_assignee(result)
 
         elif result is not None:
             print(result)
@@ -559,17 +535,32 @@ class BaseShell(Cmd):
             elif prefixes[-1] == '->':
                 # TODO verify syntax
                 assert ' ' not in line
-                return self.set_env_variable(line, result)
+                self.set_env_variable(line, result)
+                return ''
 
         if infix_operator_args:
             return self.infix_command(*infix_operator_args)
 
         return self.pipe_cmd_py(line, result)
 
+    def _save_assignee(self, result: str):
+        k = self.locals['assignee']
+
+        if result is None:
+            raise ShellError(f'Missing return value in assignment: {k}')
+        elif result == '' and self._last_results:
+            result = self._last_results.pop()
+
+        self.env[k] = result
+        self.locals.rm('assignee')
+
     def filter_result(self, command_and_args, result):
         if ';' in command_and_args:
-            # print prev result & discard it
-            if result is not None:
+            if 'assignee' in self.locals:
+                self._save_assignee(result)
+
+            elif result is not None:
+                # print prev result & discard it
                 print(result)
 
             result = ''

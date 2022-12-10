@@ -242,7 +242,7 @@ def test_set_variable_infix():
     k = 'some_key'
     v = '| ; 1 2   '
 
-    assert catch_output(f'{k} = "{v}"', shell=shell) == k
+    run_command(f'{k} = "{v}"', shell=shell)
     assert k in shell.env
     assert shell.env[k] == v
 
@@ -254,11 +254,11 @@ def test_set_variable_infix_multiple_values():
     k = 'some_key'
     v = '1 2'
 
-    assert catch_output(f'{k} = {v}', shell=shell) == k
+    run_command(f'{k} = {v}', shell=shell)
     assert k in shell.env
     assert shell.env[k] == v
 
-    assert catch_output(f'echo ${k}', shell=shell) == v
+    run_command(f'echo ${k}', shell=shell)
 
 
 def test_set_variable_infix_eval():
@@ -280,10 +280,12 @@ def test_set_variable_infix_eval():
 
 def test_assign_multicommand():
     shell = Shell()
-    # TODO
-    assert catch_output('assign x |> 10 ; print 20', shell=shell) == ''
-    # assert catch_output('assign x |> 10 ; print 20', shell=shell) == '20'
-    # assert shell.env['x'] == '10'
+    assert catch_output('assign x |> echo 10 ; print 20', shell=shell) == '20'
+    assert shell.env['x'] == '10'
+
+    assert catch_output('y <- echo 20 |> echo ; print 30',
+                        shell=shell) == '30'
+    assert shell.env['y'] == '20'
 
 
 def test_set_variable_infix_eval_with_pipes():
@@ -339,10 +341,10 @@ def test_do_export_after_pipe():
 
 def test_variable_expansion():
     shell = Shell()
-    assert catch_output('a = 2', shell=shell) == 'a'
+    run_command('a = 2', shell=shell)
     assert shell.env['a'] == '2'
 
-    assert catch_output('print $a', shell=shell) == '2'
+    run_command('print $a', shell=shell)
 
 
 def test_variable_expansion_regex():
@@ -364,7 +366,7 @@ def test_variable_expansion_regex():
 
 def test_variable_assignment_with_pipes():
     shell = Shell()
-    assert catch_output('a = 2', shell=shell) == 'a'
+    run_command('a = 2', shell=shell)
     assert shell.env['a'] == '2'
 
 

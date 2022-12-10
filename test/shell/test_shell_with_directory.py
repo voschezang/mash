@@ -186,7 +186,7 @@ def test_crud_env_expand():
 
     # set value using infix operator (`=`)
     line = f'{k} = {v}'
-    assert k in catch_output(line, shell=obj.shell, strict=True)
+    run_command(line, shell=obj.shell, strict=True)
 
     line = f'echo ${k}'
     assert v in catch_output(line, shell=obj.shell, strict=True)
