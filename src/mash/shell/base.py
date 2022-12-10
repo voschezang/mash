@@ -13,7 +13,7 @@ import subprocess
 from mash import io_util
 from mash.filesystem.filesystem import FileSystem
 from mash.io_util import log, shell_ready_signal, print_shell_ready_signal, check_output
-from mash.util import for_any, has_method, identity, is_alpha, is_globbable, omit_prefixes, split_prefixes, split_sequence, glob
+from mash.util import for_any, has_method, identity, is_alpha, is_globbable, is_valid_method_name, omit_prefixes, split_prefixes, split_sequence, glob
 from mash.shell.function import InlineFunction
 
 confirmation_mode = False
@@ -75,6 +75,7 @@ class BaseShell(Cmd):
 
         self.env = {}
         self.locals = FileSystem(defaultdict(dict))
+
         self.update_env(env)
 
         self.auto_save = False
@@ -84,6 +85,7 @@ class BaseShell(Cmd):
         self._do_char_method = self.none
         self._chars_allowed_for_char_method: List[str] = []
         self._last_results = None
+        self._last_assignment = None
 
         self.set_infix_operators()
         if self.auto_reload:
@@ -91,13 +93,20 @@ class BaseShell(Cmd):
 
     @property
     def delimiters(self):
-        # Return the latest values of these lists
-        return py_delimiters + bash_delimiters + ['->']
+        """Return the most recent values of the delimiters.
+        """
+        delimiters = py_delimiters + bash_delimiters + ['->']
+
+        # insert '<-' after ';'
+        delimiters.insert(1, '<-')
+
+        return delimiters
 
     def set_infix_operators(self):
         # use this for infix operators, e.g. `a = 1`
         self.infix_operators = {'=': self.handle_equation,
-                                '<-': self.eval_and_set_env_variable}
+                                # '<-': self.eval_and_set_env_variable
+                                }
         # the sign to indicate that a variable should be expanded
         self.variable_prefix = '$'
 
@@ -160,7 +169,7 @@ class BaseShell(Cmd):
 
     def _retrieve_eval_result(self, k):
         if k in self.env:
-            return self.env[k]
+            return str(self.env[k])
 
         elif self._last_results:
             return self._last_results.pop()
@@ -181,6 +190,9 @@ class BaseShell(Cmd):
             raise ShellError(
                 f'Name conflict: Cannot define inline function {f}, '
                 f'because there already exists a method do_{f}.')
+
+        if not is_valid_method_name(f):
+            raise ShellError(f'Invalid function name format: {f}')
 
         inner = self.expand_variables_inline(inner)
 
@@ -211,6 +223,10 @@ class BaseShell(Cmd):
     def set_env_variable(self, k: str, *values: str):
         """Set the variable `k` to `values`
         """
+        if not is_valid_method_name(k):
+            raise ShellError(f'Invalid variable name format: {k}')
+
+        log(f'set {k}')
         self.env[k] = ' '.join(values)
         return k
 
@@ -225,7 +241,7 @@ class BaseShell(Cmd):
             log(f'Error, cannot set {k}')
             return
 
-        self.env[k] = result
+        self.set_env_variable(k, result.split(' '))
         return k
 
     def show_env(self, env=None):
@@ -302,6 +318,23 @@ class BaseShell(Cmd):
     # Commands: do_*
     ############################################################################
 
+    def do_assign(self, args: str):
+        """Assign the result of an expression to an environment variable.
+        ```sh
+        assign a |> print 10
+        # results in a = 10
+        ```
+        """
+        k = args.split(' ')[0]
+
+        if not is_valid_method_name(k):
+            raise ShellError('Invalid variable name format: {k}')
+
+        self.locals.set('assignee', k)
+
+        # return value must be empty to prevent side-effects in the next command
+        return ''
+
     def do_export(self, args: str):
         """Set an environment variable.
         `export(k, *values)`
@@ -316,10 +349,9 @@ class BaseShell(Cmd):
             if k in self.env:
                 del self.env[k]
             else:
-                logging.warn('Invalid key')
+                logging.warning('Invalid key')
             return
 
-        log(f'set {k}')
         self.set_env_variable(k, *values)
 
     def do_shell(self, args):
@@ -416,7 +448,11 @@ class BaseShell(Cmd):
         """
         try:
             line = self.onecmd_prehook(line)
-            lines = self.parse_commands(line)
+            lines = list(self.parse_commands(line))
+
+            if any(line[0] == '<-' for line in lines):
+                lines[0] = ['assign'] + lines[0]
+
             self.run_commands(lines)
 
         except CancelledError:
@@ -490,7 +526,18 @@ class BaseShell(Cmd):
 
                 raise ShellError(str(e))
 
-        if result is not None:
+        if 'assignee' in self.locals:
+            k = self.locals['assignee']
+
+            if result is None:
+                raise ShellError(f'Missing return value in assignment: {k}')
+            elif result == '' and self._last_results:
+                result = self._last_results.pop()
+
+            self.env[k] = result
+            self.locals.rm('assignee')
+
+        elif result is not None:
             print(result)
 
     def run_single_command(self, command_and_args: List[str], result: str = '') -> str:
@@ -675,7 +722,7 @@ class BaseShell(Cmd):
                 error_msg = f'Variable `{v}` is not set'
 
                 if k in self.env:
-                    yield self.env[k]
+                    yield str(self.env[k])
                     continue
                 elif self.ignore_invalid_syntax:
                     log(error_msg)

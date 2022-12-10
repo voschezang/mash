@@ -268,14 +268,28 @@ def test_set_variable_infix_eval():
     k = 'some_key'
     v = '! expr 2 + 2'
 
-    assert catch_output(f'{k} <- {v}', shell=shell) == k
+    run_command(f'{k} <- {v}', shell=shell)
     assert k in shell.env
     assert shell.env[k] == '4'
 
     v = '! "x=$(( 2 + 2 )); echo $x"'
-    assert catch_output(f'{k} <- {v}', shell=shell) == k
+    run_command(f'{k} <- {v}', shell=shell)
     assert k in shell.env
     assert shell.env[k] == '4'
+
+
+def test_assign_multicommand():
+    shell = Shell()
+    # TODO
+    assert catch_output('assign x |> 10 ; print 20', shell=shell) == ''
+    # assert catch_output('assign x |> 10 ; print 20', shell=shell) == '20'
+    # assert shell.env['x'] == '10'
+
+
+def test_set_variable_infix_eval_with_pipes():
+    shell = Shell()
+    run_command('x <- print a |> print b', shell=shell)
+    assert shell.env['x'] == 'b a'
 
 
 def test_do_export():
@@ -348,6 +362,12 @@ def test_variable_expansion_regex():
     # assert catch_output('echo \{1..3}\"', shell=shell) == '{1..3}'
 
 
+def test_variable_assignment_with_pipes():
+    shell = Shell()
+    assert catch_output('a = 2', shell=shell) == 'a'
+    assert shell.env['a'] == '2'
+
+
 def test_shell_do_math():
     shell = Shell()
     catch_output(f'math 1 + 10', shell=shell) == '11'
@@ -357,10 +377,15 @@ def test_shell_do_math():
 def test_shell_numbers():
     shell = Shell()
     run_command(f'x <- int 10', shell=shell)
-    run_command(f'y <- float 1.5', shell=shell)
-    run_command(f'z <- math x + y', shell=shell)
+    assert 'x' in shell.env
 
-    assert catch_output(f'math x + 10', shell=shell) == '20'
+    run_command(f'y <- float 1.5', shell=shell)
+    assert 'y' in shell.env
+
+    run_command(f'z <- math x + y', shell=shell)
+    assert 'z' in shell.env
+
+    assert catch_output('math x + 10', shell=shell) == '20'
     assert catch_output('math x + y', shell=shell) == '11.5'
     assert catch_output('math x + z', shell=shell) == '21.5'
 
