@@ -56,6 +56,7 @@ An environment is a key-value map.
 | `save`   | Copy the current environment to a file. |
 | `reload` | Reload the default environment.         |
 
+
 ### Globbing
 
 | Example     | Description                                                |
@@ -79,6 +80,7 @@ An environment is a key-value map.
 | `help`              | Show info.                                            |
 | `help CMD`          | Show the usage of the command `CMD`.                  |
 | `E`                 | Show details of the last error message.               |
+| `echo [INPUT]`      | Return the input.                                     |
 | `print SOME TEXT`   | Print the words `SOME` and `TEXT`.                    |
 | `println SOME TEXT` | Print the words `SOME` and `TEXT` on different lines. |
 | `math 1 + 10`       | Evaluate math expressions.                            |
@@ -107,17 +109,28 @@ Inf loop: `f x = f x |> repeat x`
 
 Range `g x n = `
 
-Append: `append a b = $b "$a"`
 
 
-
-Multiline functions
+**Multiline functions**
 
 ```haskell
 f x = x
 	|> repeat
 	|> tail
 ```
+
+or
+
+```bash
+function f(x) { # ignore newlines in this scope
+  # local variable
+  a <- math 2 ** 3 ;
+  # use the last expression as return value
+  math x + a
+}
+```
+
+
 
 
 

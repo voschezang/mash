@@ -8,7 +8,7 @@ from pprint import pformat
 from typing import Callable, Iterable, List, Tuple, Union
 
 from mash.util import accumulate_list, first, has_method, is_Dict_or_List, none
-from mash.filesystem.view import NAME, Key, Path, View
+from mash.filesystem.view import Data, NAME, Key, Path, View
 
 HIDE_PREFIX = '.'
 
@@ -131,6 +131,11 @@ class FileSystem:
         # TODO rename copies as well. e.g. in self.prev
         self.state.mv(*references)
 
+    def rm(self, *references: Key):
+        """Remove references.
+        """
+        self.state.rm(*references)
+
     def tree(self, *path: str) -> str:
         cwd = self.get(path)
         return pformat(cwd, indent=2)
@@ -179,6 +184,28 @@ class FileSystem:
         key = self.get_hook(key, cwd)
         _, value = cwd.get(key)
         return value
+
+    def set(self, k, value: Data, cwd: View = None):
+        """Assign a value to the file k.
+        """
+        if cwd is None:
+            cwd = self.cwd
+
+        path = self.path
+        prev = self.prev.path
+
+        cwd.set(k, value)
+        self.init_states()
+
+        # reset self.prev
+        if k not in prev:
+            self.cd(*prev)
+        else:
+            self.cd()
+
+        # reset self.state
+        self.cd('-')
+        self.cd(*path)
 
     def append(self, k, v):
         """Associate key k with value v and then change the working directory to k 

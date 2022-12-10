@@ -78,26 +78,6 @@ class Discoverable(FileSystem):
 
         self.undiscover(k, cwd)
 
-    def set(self, k, value: Data, cwd: View = None):
-        if cwd is None:
-            cwd = self.cwd
-
-        path = self.path
-        prev = self.prev.path
-
-        cwd.set(k, value)
-        self.init_states()
-
-        # reset self.prev
-        if k not in prev:
-            self.cd(*prev)
-        else:
-            self.cd()
-
-        # reset self.state
-        self.cd('-')
-        self.cd(*path)
-
     def observe(self, k: Key, initial_value=None, cwd: View = None):
         if self.get_value_method:
             return self.get_value_method(self, k, initial_value, cwd)

@@ -1,3 +1,4 @@
+from copy import deepcopy
 from pytest import raises
 
 from examples.filesystem import repository
@@ -7,7 +8,7 @@ from src.mash import io_util
 
 
 def init(**kwds):
-    return ShellWithFileSystem(data=repository, **kwds)
+    return ShellWithFileSystem(data=deepcopy(repository), **kwds)
 
 
 def catch_output(line='', func=run_command, **func_kwds) -> str:
@@ -42,6 +43,17 @@ def test_crud_get():
     assert s in catch_output('get worlds', shell=shell)
     s = "{'name': 'earth', 'animals':"
     assert s in catch_output('get worlds earth', shell=shell)
+
+
+def test_crud_set():
+    obj = init()
+    shell = obj.shell
+
+    run_command('set x 10', shell=shell)
+    assert catch_output('get x', shell=shell) == '10'
+
+    run_command('set x 1 2 3', shell=shell)
+    assert catch_output('get x', shell=shell) == "['1', '2', '3']"
 
 
 def test_crud_expansion():

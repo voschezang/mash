@@ -21,6 +21,22 @@ Main features
 
 See [reference](SHELL_REFERENCE.md).
 
+
+
+### FileSystem Commands
+
+See `examples/filesystem.py` and `examples/discoverable.py`.
+
+| Example             | Description                                                  |
+| ------------------- | ------------------------------------------------------------ |
+| `ls`, `list [PATH]` | List the items in a directory. Use the current working directory by default. |
+| `cd`, `use [PATH]`  | Change the current working directory.                        |
+| `show [PATH]`       | Display detailed information about a directory.              |
+| `get`, `set`        | Modify a file.                                               |
+| `cp`, `mv`, `rm`    | Modify files.                                                |
+| `home [PATH]`       | Set home directory.                                          |
+| `reset`             | Refresh cached values.                                       |
+
 ## Modules
 
 ```sh

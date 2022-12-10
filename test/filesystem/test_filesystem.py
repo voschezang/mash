@@ -79,6 +79,15 @@ def test_get_index():
         d.get(['a', '3', 10])
 
 
+def test_set():
+    d = init()
+    assert 'x' not in d.ls()
+
+    d.set('x', 10)
+    assert 'x' in d.ls()
+    assert d.get('x') == 10
+
+
 def test_ls():
     d = init()
     assert d.ls() == keys
@@ -343,3 +352,11 @@ def test_mv_to():
     a = d['a']
     d.mv('a', 'a', 'c')
     assert d.get(['c', 'a']) == a
+
+
+def test_rm():
+    d = init()
+    assert 'a' in d.ls()
+
+    d.rm('a')
+    assert 'a' not in d.ls()

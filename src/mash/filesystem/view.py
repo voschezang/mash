@@ -98,6 +98,10 @@ class View:
             if src != dst and src in self.tree:
                 del self.tree[src]
 
+    def rm(self, *references: Key):
+        for k in references:
+            del self.tree[k]
+
     def copy(self):
         trace = []
         # copy inner values to avoid side-effects of mutated tuples

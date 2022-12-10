@@ -36,24 +36,30 @@ class ShellWithFileSystem:
         ls = partial_simple(self.repository.ll, delimiter=', ')
         ll = partial_simple(self.repository.ll)
         get = partial_simple(self.get)
+        set = partial_simple(self.set)
         tree = partial_simple(self.repository.tree)
         pwd = partial_simple(self.pwd)
         home = partial_simple(self.init_home)
-        mv = partial_simple(self.repository.mv)
         cp = partial_simple(self.repository.cp)
+        mv = partial_simple(self.repository.mv)
+        rm = partial_simple(self.repository.rm)
         # show = partial_simple(self.show)
         show = partial_simple(self.repository.show)
         reset = partial_simple(self.repository.reset)
 
         set_functions({'cd': cd,
+                       'use': cd,
+                       'list': ls,
                        'ls': ls,
                        'll': ll,
                        'get': get,
+                       'set': set,
                        'tree': tree,
                        'pwd': pwd,
                        'home': home,
-                       'mv': mv,
                        'cp': cp,
+                       'mv': mv,
+                       'rm': rm,
                        'show': show,
                        'reset': reset,
                        }, cls)
@@ -64,6 +70,14 @@ class ShellWithFileSystem:
     def get(self, *path: str):
         return self.repository.get(path)
 
+    def set(self, *args: str):
+        k, *values = args
+
+        if len(values) == 1:
+            self.repository.set(k, values[0])
+        elif len(values) > 1:
+            self.repository.set(k, values)
+
     def init_home(self, *path: Path):
         self.repository.init_home(path)
 
@@ -71,6 +85,7 @@ class ShellWithFileSystem:
         set_completions({'cd': self.complete_cd,
                          'mv': self.complete_cd,
                          'cp': self.complete_cd,
+                         'rm': self.complete_cd,
                          'get': self.complete_cd,
                          'tree': self.complete_cd,
                          'show': self.complete_cd,
