@@ -1,5 +1,4 @@
 from argparse import ArgumentParser, RawTextHelpFormatter
-from multiprocessing.sharedctypes import Value
 from pathlib import Path
 from pytest import raises
 from time import perf_counter
@@ -8,13 +7,12 @@ from time import perf_counter
 from mash import io_util
 from mash.io_util import check_output, read_file, run_subprocess
 from mash.shell.base import bash_delimiters, py_delimiters
-from mash.shell.base import ShellError
+from mash.shell import ShellError
 from mash.shell.shell import Shell, add_cli_args, run_command
 from mash.util import identity
 
 
-# Note the trailing space
-# run = 'python src/mash/examples/shell_example.py '
+# Beware of the trailing space
 run = 'python src/examples/shell_example.py '
 
 
@@ -27,7 +25,6 @@ def test_run_command():
 
     with raises(ShellError):
         run_command('echoooo a', strict=True)
-        0
 
 
 def test_onecmd_output():

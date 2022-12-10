@@ -11,7 +11,7 @@ if __name__ == '__main__':
 from mash.filesystem.discoverable import observe
 from mash.filesystem.view import Path
 from mash.shell.shell import main
-from mash.shell.with_filesystem import ShellWithFileSystem
+from mash.shell import ShellWithFileSystem
 
 
 def generate(prefix: str, n=2):

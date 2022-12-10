@@ -3,7 +3,7 @@ from pytest import raises
 
 from examples.filesystem import repository
 from src.mash.shell.shell import run_command
-from src.mash.shell.with_filesystem import ShellWithFileSystem
+from src.mash.shell import ShellWithFileSystem
 from src.mash import io_util
 
 

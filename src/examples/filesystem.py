@@ -4,7 +4,7 @@ if __name__ == '__main__':
 
 from typing import Any, Dict
 
-from mash.shell.with_filesystem import ShellWithFileSystem
+from mash.shell import ShellWithFileSystem
 from mash.shell.shell import main
 from mash.util import constant
 

@@ -7,7 +7,7 @@ if __name__ == '__main__':
 from mash.filesystem.discoverable import observe
 from mash.object_parser.factory import JSONFactory
 from mash.object_parser.oas import OAS, path_create
-from mash.shell.with_filesystem import ShellWithFileSystem
+from mash.shell import ShellWithFileSystem
 
 from examples.discoverable import Organization
 

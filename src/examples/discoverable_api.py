@@ -6,7 +6,7 @@ from functools import lru_cache
 from urllib.parse import quote_plus
 import requests
 
-from mash.shell.with_filesystem import ShellWithFileSystem
+from mash.shell import ShellWithFileSystem
 from mash.shell.shell import main
 
 

@@ -5,7 +5,8 @@ if __name__ == '__main__':
 import sys
 import rich
 
-from mash.shell.shell import Function, Shell, has_input, set_cli_args, sh_to_py, main
+from mash.shell.function import ShellFunction as Function
+from mash.shell.shell import Shell, has_input, set_cli_args, sh_to_py, main
 from mash.io_util import has_output
 from mash import cli
 
