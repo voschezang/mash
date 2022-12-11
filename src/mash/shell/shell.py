@@ -156,6 +156,13 @@ class Shell(BaseShell):
         terms = re.split(regex, args)
         return self._eval_terms(terms)
 
+    def do_range(self, args: str) -> str:
+        """range(start, stop, [step])
+        """
+        args = args.split(' ')
+        args = (int(a) for a in args)
+        return '\n'.join((str(i) for i in range(*args)))
+
     def _eval_terms(self, terms=List[str]) -> str:
         line = ''.join(self.translate_terms(terms, self.env))
         log(line)

@@ -263,16 +263,32 @@ def test_set_variable_infix_eval():
     shell.ignore_invalid_syntax = False
 
     k = 'some_key'
-    v = '! expr 2 + 2'
+    v = '! expr 1 + 2'
 
     run_command(f'{k} <- {v}', shell=shell)
     assert k in shell.env
+    assert shell.env[k] == '3'
+
+    # variables in `${ }` notations should not be expanded
+    v = '! "x=$(( 2 + 2 )); echo ${x}"'
+    run_command(f'{k} <- {v}', shell=shell)
     assert shell.env[k] == '4'
 
-    v = '! "x=$(( 2 + 2 )); echo $x"'
+    # without `${ }` notation
+    # $x should be set to a constant value at compile time
+    # the result of the previous expression should be ignored
+    v = '! "x=$(( 2 + 3 )); echo $x"'
+
+    # x is not defined at "compile" time
+    with raises(ShellError):
+        run_command(f'{k} <- {v}', shell=shell)
+
+    # set x to a dummy value
+    run_command(f'x = a constant', shell=shell)
+    assert shell.env['x'] == 'a constant'
+
     run_command(f'{k} <- {v}', shell=shell)
-    assert k in shell.env
-    assert shell.env[k] == '4'
+    assert shell.env[k] == 'a constant'
 
 
 def test_assign_multicommand():
@@ -382,6 +398,13 @@ def test_shell_do_math():
     catch_output(f'math 1 + 2 * 3', shell=shell) == '7'
 
 
+def test_shell_range():
+    shell = Shell()
+    assert catch_output('range 1 3', shell=shell) == '1\n2'
+    assert catch_output('range 2', shell=shell) == '0\n1'
+    assert catch_output('range 3 1 -1', shell=shell) == '3\n2'
+
+
 def test_shell_numbers():
     shell = Shell()
     run_command(f'x <- int 10', shell=shell)
@@ -442,6 +465,16 @@ def test_shell_inline_function_with_macros():
     assert catch_output('f 2', shell=shell) == '10 2'
 
 
+def test_shell_inline_function_with_map():
+    shell = Shell()
+    # TODO implement pipe support for inline functions
+    line = 'f n = range n >>= echo $'
+    x = catch_output(line, shell=shell, strict=True)
+    line = 'f 3'
+    y = catch_output(line, shell=shell, strict=True)
+    assert catch_output(line, shell=shell, strict=True)
+
+
 def test_set_do_char_method():
     shell = Shell()
     op = '~'
@@ -468,6 +501,9 @@ def test_set_do_map():
 
     line = 'echo a b |> flatten |> map echo [ $ ]'
     assert catch_output(line, shell=shell, strict=True) == '[ a ]\n[ b ]'
+
+    line = 'range 3 |> map echo $'
+    assert catch_output(line, shell=shell, strict=True) == '0\n1\n2'
 
 
 def test_set_do_pipe_map():

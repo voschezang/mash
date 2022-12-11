@@ -512,6 +512,7 @@ class BaseShell(Cmd):
 
         if 'assignee' in self.locals:
             self._save_assignee(result)
+            result = ''
 
         elif result is not None:
             print(result)
