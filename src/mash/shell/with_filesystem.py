@@ -37,6 +37,7 @@ class ShellWithFileSystem:
         ll = partial_simple(self.repository.ll)
         get = partial_simple(self.get)
         set = partial_simple(self.set)
+        new = partial_simple(self.new)
         tree = partial_simple(self.repository.tree)
         pwd = partial_simple(self.pwd)
         home = partial_simple(self.init_home)
@@ -54,6 +55,7 @@ class ShellWithFileSystem:
                        'll': ll,
                        'get': get,
                        'set': set,
+                       'new': new,
                        'tree': tree,
                        'pwd': pwd,
                        'home': home,
@@ -65,7 +67,7 @@ class ShellWithFileSystem:
                        }, cls)
 
     def pwd(self):
-        return self.repository.full_path
+        return ' '.join(self.repository.full_path)
 
     def get(self, *path: str):
         return self.repository.get(path)
@@ -77,6 +79,10 @@ class ShellWithFileSystem:
             self.repository.set(k, values[0])
         elif len(values) > 1:
             self.repository.set(k, values)
+
+    def new(self, *keys: str):
+        for k in keys:
+            self.set(k, {})
 
     def init_home(self, *path: Path):
         self.repository.init_home(path)

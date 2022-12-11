@@ -56,6 +56,21 @@ def test_crud_set():
     assert catch_output('get x', shell=shell) == "['1', '2', '3']"
 
 
+def test_crud_new():
+    obj = init()
+    shell = obj.shell
+
+    run_command('new a', shell=shell)
+    assert catch_output('ls a', shell=shell) == ''
+
+    run_command('cd a', shell=shell)
+    run_command('new b c', shell=shell)
+    assert catch_output('pwd', shell=shell) == '/ a'
+
+    assert catch_output('ls b', shell=shell) == ''
+    assert catch_output('ls c', shell=shell) == ''
+
+
 def test_crud_expansion():
     obj = init()
     shell = obj.shell
