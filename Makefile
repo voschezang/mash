@@ -25,11 +25,11 @@ build:
 
 upload-test:
 	make build
-	python3 -m twine upload --repository testpypi dist/* -u voschezang
+	python3 -m twine upload --repository testpypi dist/* -u "${user}" -p "${pass}"
 
 upload:
 	make build
-	 python3 -m twine upload dist/* -u voschezang
+	 python3 -m twine upload dist/* -u "${user}" -p "${pass}"
 
 docs-init:
 	mkdir -p docs

@@ -13,7 +13,7 @@ import subprocess
 from mash import io_util
 from mash.filesystem.filesystem import FileSystem
 from mash.io_util import log, shell_ready_signal, print_shell_ready_signal, check_output
-from mash.util import for_any, has_method, identity, is_alpha, is_globbable, is_valid_method_name, omit_prefixes, split_prefixes, split_sequence, glob
+from mash.util import for_any, has_method, identity, is_alpha, is_globbable, is_valid_method_name, match_words, omit_prefixes, split_prefixes, split_sequence, glob
 from mash.shell.function import InlineFunction
 
 confirmation_mode = False
@@ -693,7 +693,7 @@ class BaseShell(Cmd):
             rhs = args[i:]
         return lhs, rhs
 
-    def expand_variables(self, variables: List[str]) -> Iterable[str]:
+    def expand_variables(self, terms: List[str]) -> Iterable[str]:
         """Replace variables with their values. 
         E.g.
         ```sh
@@ -701,26 +701,25 @@ class BaseShell(Cmd):
         print $a # gets converted to `print 1`
         ```
         """
-        for v in variables:
-            if len(v) >= 2 and v[0] == self.variable_prefix:
-                k = v[1:]
+        for v in terms:
+            matches = match_words(v, prefix=r'\$')
+            if matches:
+                for match in matches:
+                    k = match[1:]
+                    if not is_valid_method_name(k):
+                        # ignore this variable silently
+                        continue
 
-                if not self.variable_name_is_valid(k):
-                    # ignore this variable silently
-                    yield v
-                    continue
+                    error_msg = f'Variable `{match}` is not set'
 
-                error_msg = f'Variable `{v}` is not set'
+                    if k in self.env:
+                        v = v.replace(match, str(self.env[k]))
+                    elif self.ignore_invalid_syntax:
+                        log(error_msg)
+                    else:
+                        raise ShellError(error_msg)
 
-                if k in self.env:
-                    yield str(self.env[k])
-                    continue
-                elif self.ignore_invalid_syntax:
-                    log(error_msg)
-                else:
-                    raise ShellError(error_msg)
-
-            elif is_globbable(v):
+            if is_globbable(v):
                 try:
                     matches = glob(v, self.completenames_options, strict=True)
                     yield ' '.join(matches)
@@ -742,8 +741,10 @@ class BaseShell(Cmd):
         line = ' '.join(expanded_terms)
         return line
 
-    def variable_name_is_valid(self, k: str) -> bool:
-        return is_alpha(k, ignore='_')
+    def expand_inner_variables(self, line: str):
+        matches = match_words(line, prefix=r'\$')
+        for match in matches:
+            line = line.replace(match, '')
 
     def none(self, _: str) -> str:
         """Do nothing. Similar to util.none.

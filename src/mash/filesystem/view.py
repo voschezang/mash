@@ -13,13 +13,6 @@ Path = List[Union[List[str], str]]
 NAME = 'name'
 
 
-# @dataclass
-# class Link:
-#     next: Key
-#     data: Data
-# Trace = List[Link]
-
-
 @dataclass
 class View:
     """A tree of dict's. Tree traversal is exposed through the methods `up` and `down`.

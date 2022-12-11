@@ -1,3 +1,4 @@
+import re
 from braceexpand import braceexpand, UnbalancedBracesError
 from dataclasses import dataclass
 from enum import Enum
@@ -14,7 +15,7 @@ import traceback
 T = TypeVar('T')
 
 AdjacencyList = Dict[str, List[str]]
-GLOB_CHARS = '?*{}[]'
+GLOB_CHARS = '?*+!{}[]'
 
 
 class DataClassHelper:
@@ -289,6 +290,16 @@ def omit_prefixes(items: Sequence[T], prefixes: Sequence[T]) -> Iterable[T]:
     return dropwhile(predicate, items)
 
 
+def match_words(s: str, prefix='') -> List[str]:
+    """Match a words that:
+    - starts with a letter
+    - contains exclusively alphanumerical chars and underscores
+
+    An optional prefix can be added, e.g. a delimiter.
+    """
+    return re.findall(prefix + r'[A-Za-z][\w]*', s)
+
+
 def extend(q: Queue, items: Sequence):
     """Fill queue `q` with items, similar to list.extend
 
@@ -375,6 +386,8 @@ def glob(value: str, options: List[str] = [], strict=False) -> Iterable[str]:
     if not options:
         yield from values
         return
+
+    options = [str(o) for o in options]
 
     for value in values:
         matches = list(fnmatch.filter(options, value))

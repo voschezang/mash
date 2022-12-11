@@ -25,7 +25,7 @@ Links
 
 See [SHELL.md](https://github.com/voschezang/mash/blob/main/SHELL.md) and [REFERENCE.md](https://github.com/voschezang/mash/blob/main/SHELL_REFERENCE.md).
 
-<img src="https://github.com/voschezang/mash/blob/97b0d7b5eae8bb09c1da00a1c118e7c4dfbd1409/img/shell_dropdown.png" style="max-width: 10%" alt="Example of a shell with a dropdown completion menu">
+<img src="https://github.com/voschezang/mash/blob/97b0d7b5eae8bb09c1da00a1c118e7c4dfbd1409/img/shell_dropdown.png" style="max-width: 10%" alt="Example of a shell with a dropdown completion menu"></img>
 
 ## Usage
 

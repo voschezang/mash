@@ -1,7 +1,7 @@
 from operator import contains, eq
 from pytest import raises
 
-from mash.util import concat, constant, equals, find_prefix_matches, find_fuzzy_matches, for_all, for_any, glob, identity, is_alpha, is_digit, list_prefix_matches, not_equals, split, split_sequence, split_tips
+from mash.util import concat, constant, equals, find_prefix_matches, find_fuzzy_matches, for_all, for_any, glob, identity, is_alpha, is_digit, list_prefix_matches, match_words, not_equals, split, split_sequence, split_tips
 
 
 def test_concat_empty_container():
@@ -153,6 +153,15 @@ def test_find_prefix_matches_all():
     assert list(find_prefix_matches('a', ['c', 'b', 'a'])) == ['a']
     assert list(find_prefix_matches('a', ['aa', 'ai'])) == ['aa', 'ai']
     assert list(find_prefix_matches('ab', ['aa', 'ab'])) == ['ab', 'aa']
+
+
+def test_match_word():
+    assert match_words('i abc') == ['i', 'abc']
+    assert match_words('<abc>') == ['abc']
+    assert match_words('-abc-[def] x_1') == ['abc', 'def', 'x_1']
+    assert match_words('a$x...$y', prefix=r'\$') == ['$x', '$y']
+    assert match_words('{$from..$to_here}', prefix=r'\$') == \
+        ['$from', '$to_here']
 
 
 def test_glob_with_options():

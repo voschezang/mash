@@ -59,10 +59,11 @@ An environment is a key-value map.
 
 ### Globbing
 
-| Example     | Description                                                |
-| ----------- | ---------------------------------------------------------- |
-| `print *`   | `*` is replaced with all items from the autocomplete list. |
-| `print ab?` | `?` is a wildcard for a single character.                  |
+| Example        | Description                                                |
+| -------------- | ---------------------------------------------------------- |
+| `print *`      | `*` is replaced with all items from the autocomplete list. |
+| `print ab?`    | `?` is a wildcard for a single character.                  |
+| `print {1..3}` | Create a range.                                            |
 
 ### Functions
 

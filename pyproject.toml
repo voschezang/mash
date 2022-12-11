@@ -4,12 +4,13 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "mash-shell"
-version = "0.1.5"
+version = "0.1.7"
 authors = [
   { name="voschezang", email="mark.voschezang@student.uva.nl" },
 ]
 description = "A shell and other utils"
-dynamic = ["dependencies", "readme"]
+dynamic = ["dependencies"]
+readme = "README.md"
 requires-python = ">=3.10"
 classifiers = [
     "Programming Language :: Python :: 3",
@@ -23,5 +24,4 @@ classifiers = [
 "Bug Tracker" = "https://github.com/voschezang/mash/issues"
 
 [tool.setuptools.dynamic]
-readme = {file = ["README.md", "SHELL.md", "SHELL_REFERENCE.md"]}
 dependencies = {file = ["requirements.txt"]}

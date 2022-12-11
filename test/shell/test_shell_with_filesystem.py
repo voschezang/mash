@@ -3,7 +3,7 @@ from pytest import raises
 
 from examples.filesystem import repository
 from src.mash.shell.shell import run_command
-from src.mash.shell import ShellWithFileSystem
+from src.mash.shell import ShellWithFileSystem, ShellError
 from src.mash import io_util
 
 
@@ -212,3 +212,24 @@ def test_shell_home():
 
     o.repository.cd('/')
     assert o.repository.path == ['/']
+
+
+def test_shell_globbing():
+    o = init(home=['worlds', 'earth'])
+    shell = o.shell
+
+    assert catch_output('ls an?mal?', shell=shell) == 'terrestrial, aquatic'
+    assert catch_output('ls a*', shell=shell) == 'terrestrial, aquatic'
+    assert catch_output('ls [!n]*', shell=shell) == 'terrestrial, aquatic'
+
+
+def test_shell_invalid_globbing():
+    o = init(home=['worlds', 'earth'])
+    shell = o.shell
+
+    assert catch_output('ls [ter]', shell=shell) == ''
+
+    run_command('cd animals', shell=shell)
+
+    with raises(ShellError):
+        run_command('ls [ter]', shell=shell, strict=True)
