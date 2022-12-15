@@ -53,6 +53,14 @@ def test_discoverable_cd():
     d.cd('...')
     d.cd(departments[0], 'teams')
 
+    # default value
+    d.cd('t')
+    assert d.get('name') == ''
+
+    member = d.get('first_member')
+    assert member['value'] == 100
+    d.cd('-')
+
     path = [teams[0], 'members']
     members = d.ls([teams[0], 'members'])
     i = 1

@@ -34,6 +34,8 @@ class Member:
 @dataclass
 class Team:
     members: List[Member]
+    name: str
+    first_member: Member
 
     @staticmethod
     def get_all(path: Path) -> List[str]:

@@ -207,7 +207,7 @@ def discover_using_cls(cls: type, k: Key, container_cls: type, full_path):
         infer_defaults(cls, data)
         return data
 
-    return cls
+    return cls()
 
 
 def infer_defaults(cls: type, data: dict):

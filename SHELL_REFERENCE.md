@@ -108,7 +108,7 @@ Proposals for future changes.
 
 Inf loop: `f x = f x |> repeat x` 
 
-Range `g x n = `
+- TODO: Decide on whether states should be mutable or immutable.
 
 
 
@@ -123,7 +123,7 @@ f x = x
 or
 
 ```bash
-function f(x) { # ignore newlines in this scope
+fun f(x) { # ignore newlines in this scope
   # local variable
   a <- math 2 ** 3 ;
   # use the last expression as return value
@@ -131,7 +131,33 @@ function f(x) { # ignore newlines in this scope
 }
 ```
 
+or
 
+```elm
+-- inline
+sum (x y): math x + y
+
+mul (x y):
+  math y * x
+
+-- let .. in
+g (x y):
+  let a = 10, b = 3, k <- math x ** a + b
+  in x
+
+-- keyword: fun
+fun g (x y):
+  let a = 10, b = 3, k <- math x ** a + b
+  in x
+
+fun g (x y):
+  let
+    a = 10 ;
+    b = 3 ;
+    k <- math x ** a ;
+  in
+    x
+```
 
 
 
@@ -140,8 +166,10 @@ function f(x) { # ignore newlines in this scope
 *Proposal: Never expand RHS `*` symbols.*
 
 ````python
-f *x = x
-print <| f 1 2 3 # "1 2 3"
+a b = println 10 20
+print a # 10
+
+a *b = {1..10} # a = 1, b = 2-10
 ````
 
 Alternative syntax:
@@ -151,6 +179,8 @@ head x @xs = x
 tail x @xs = xs
 end @xs x = x
 ```
+
+*TODO: Decide on whether to support lazy evaluation*
 
 
 
