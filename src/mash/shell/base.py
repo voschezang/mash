@@ -103,7 +103,8 @@ class BaseShell(Cmd):
 
     def set_infix_operators(self):
         # use this for infix operators, e.g. `a = 1`
-        self.infix_operators = {'=': self.handle_equation}
+        self.infix_operators = {'=': self.handle_set_env_variable,
+                                ':': self.handle_equation}
         # the sign to indicate that a variable should be expanded
         self.variable_prefix = '$'
 
@@ -173,14 +174,29 @@ class BaseShell(Cmd):
 
         raise RuntimeError('Cannot retrieve result')
 
-    def handle_equation(self, lhs: Tuple[str], *rhs: str) -> str:
-        if len(lhs) == 1:
-            k = lhs[0]
-            self.set_env_variable(k, *rhs)
-            return ''
+    def handle_set_env_variable(self, lhs: Tuple[str], *rhs: str) -> str:
+        if len(lhs) != 1:
+            raise ShellError()
 
+        k = lhs[0]
+        self.set_env_variable(k, *rhs)
+        return ''
+
+    def handle_equation(self, lhs: Tuple[str], *rhs: str) -> str:
         f, *args = lhs
+        args = [arg for arg in args if arg != '']
         implementation = ' '.join(rhs[1:])
+
+        if not args or not args[0].startswith('(') or not args[-1].endswith(')'):
+            raise ShellError(f'Invalid syntax for inline function: {lhs}')
+
+        # strip braces
+        if args[0] == '()':
+            args = []
+        else:
+            args[0] = args[0][1:]
+            args[-1] = args[-1][:-1]
+
         self.add_inline_function(f, args, implementation)
         return ''
 
@@ -203,6 +219,10 @@ class BaseShell(Cmd):
 
     def call_inline_function(self, f: InlineFunction, *args: str):
         translations = {}
+
+        if len(args) != len(f.args):
+            raise ShellError(
+                f'Invalid number of arguments: {len(f.args)} arguments expected .')
 
         for i, k in enumerate(f.args):
             translations[k] = args[i]
@@ -638,6 +658,17 @@ class BaseShell(Cmd):
             # split lines and handle quotes
             # e.g. convert 'echo "echo 1"' to ['echo', 'echo 1']
             terms = shlex.split(line, comments=True)
+
+            # split `:`
+            for i, term in enumerate(terms):
+                if term.endswith(':'):
+                    # verify that the term wasn't quoted
+                    if '"' + term + '"' in line or "'" + term + "'" in line:
+                        continue
+
+                    terms[i] = terms[i][:-1]
+                    terms.insert(i+1, ':')
+                    break
 
         except ValueError as e:
             msg = f'Invalid syntax: {e} for {str(line)[:10]} ..'

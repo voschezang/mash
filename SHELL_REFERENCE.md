@@ -67,12 +67,12 @@ An environment is a key-value map.
 
 ### Functions
 
-| Example                | Description                                              |
-| ---------------------- | -------------------------------------------------------- |
-| `f x = x`              | Identity function. Echo the input.                       |
-| `triple i = i i i`     | Repeat a term.                                           |
-| `add a b = math a + b` | Arithmetic.                                              |
-| `f x = math x + $a`    | Combine positional arguments with environment variables. |
+| Example                 | Description                                              |
+| ----------------------- | -------------------------------------------------------- |
+| `f (x): x`              | Identity function. Echo the input.                       |
+| `triple (i): i i i`     | Repeat a term.                                           |
+| `add (a b): math a + b` | Arithmetic.                                              |
+| `f (x): math x + $a`    | Combine positional arguments with environment variables. |
 
 ### Built-in Commands
 

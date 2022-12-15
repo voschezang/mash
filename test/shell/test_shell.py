@@ -429,31 +429,54 @@ def test_shell_numbers():
         run_command(f'math abc', shell=shell)
 
 
-def test_shell_inline_function():
+def test_shell_inline_function_simple():
     shell = Shell()
 
     # identity
-    run_command('f x = x', shell=shell)
+    run_command('f (x): x', shell=shell)
     assert catch_output('f 100', shell=shell) == '100'
 
+    # too many arguments
+    with raises(ShellError):
+        run_command('f 1 2 3', shell=shell, strict=True)
+
+    # too few arguments
+    with raises(ShellError):
+        run_command('f', shell=shell, strict=True)
+
+    # invalid syntax
+    with raises(ShellError):
+        run_command('g "(x):" x', shell=shell, strict=True)
+
+
+def test_shell_inline_function_constant():
+    shell = Shell()
+
+    run_command('f () : 10', shell=shell)
+    assert catch_output('f', shell=shell) == '10'
+
+
+def test_shell_inline_function():
+    shell = Shell()
+
     # echo
-    run_command('f x = print x', shell=shell)
+    run_command('f x : print x', shell=shell)
     assert catch_output('f 100', shell=shell) == '100'
 
     # test pipe
-    run_command('f x = print x |> print', shell=shell)
+    run_command('f x : print x |> print', shell=shell)
     assert catch_output('f 100', shell=shell) == '100'
 
     # repeat input
-    run_command('g x = x x', shell=shell)
+    run_command('g x : x x', shell=shell)
     assert catch_output('g 2', shell=shell) == '2 2'
 
     # math expressions
-    run_command('add x y = math x + y', shell=shell)
+    run_command('add x y : math x + y', shell=shell)
     assert catch_output('add 1 2', shell=shell) == '3'
 
     # faulty math expressions
-    run_command('add x y = x + y', shell=shell)
+    run_command('add x y : x + y', shell=shell)
     assert catch_output('add 1 2', shell=shell) == '1 + 2'
 
 
@@ -461,14 +484,14 @@ def test_shell_inline_function_with_macros():
     shell = Shell()
 
     run_command('a = 10', shell=shell)
-    run_command('f b = $a b', shell=shell)
+    run_command('f (b): $a b', shell=shell)
     assert catch_output('f 2', shell=shell) == '10 2'
 
 
 def test_shell_inline_function_with_map():
     shell = Shell()
     # TODO implement pipe support for inline functions
-    line = 'f n = range n >>= echo $'
+    line = 'f (n) : range n >>= echo $'
     x = catch_output(line, shell=shell, strict=True)
     line = 'f 3'
     y = catch_output(line, shell=shell, strict=True)
