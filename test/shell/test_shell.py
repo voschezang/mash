@@ -578,12 +578,26 @@ def test_set_do_char_method():
 
 def test_set_do_foldr():
     shell = Shell()
-    run_command('sum (a b): math a + b', shell=shell)
-    line = 'range 4 |> foldr sum 0'
+    run_command('add (a b): math a + b', shell=shell)
+
+    line = 'range 4 |> foldr add 0'
     assert catch_output(line, shell=shell, strict=True) == '6'
 
-    line = 'range 4 |> foldr sum 0 $'
+    line = 'range 4 |> foldr add 0 $'
     assert catch_output(line, shell=shell, strict=True) == '6'
+
+
+def test_set_do_flatten():
+    shell = Shell()
+    line = 'echo a b |> flatten'
+    assert catch_output(line, shell=shell) == 'a\nb'
+
+    run_command('x <- flatten a b c', shell=shell)
+    line = 'echo $x $x'
+    assert catch_output(line, shell=shell) == 'a\nb\nc a\nb\nc'
+
+    line = 'echo $x $x |> flatten'
+    assert catch_output(line, shell=shell) == 'a\nb\nc\na\nb\nc'
 
 
 def test_set_do_map():

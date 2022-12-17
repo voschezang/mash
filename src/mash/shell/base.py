@@ -220,11 +220,11 @@ class BaseShell(Cmd):
                 f'Invalid number of arguments: {len(f.args)} arguments expected .')
 
         for i, k in enumerate(f.args):
-            translations[k] = args[i]
+            # quote item to preserve `\n`
+            translations[k] = shlex.quote(args[i])
 
         terms = [term for term in f.command.split(' ') if term != '']
         terms = list(self.translate_terms(terms, translations))
-        line = ' '.join(terms)
 
         first_func = terms[0]
         if not has_method(self, f'do_{first_func}') \
@@ -364,7 +364,7 @@ class BaseShell(Cmd):
         if not args:
             return ''
 
-        k, *values = args.split()
+        k, *values = args.split(' ')
 
         if len(values) == 0:
             log(f'unset {k}')
@@ -399,7 +399,8 @@ class BaseShell(Cmd):
         """
         lines = args.split(delimiter)
         msg = 'Not enough arguments. Usage: `foldl f zero [args] $ [args]`.'
-        if len(lines) <= 1:
+        # if len(lines) <= 1:
+        if not lines:
             log(msg)
             return
 
@@ -430,9 +431,7 @@ class BaseShell(Cmd):
             line = [f, acc] + local_args
 
             acc = self.run_single_command(line)
-            # results.append(self.run_single_command(line))
 
-        # return delimiter.join([str(result) for result in results])
         return acc
 
     def do_map(self, args: str, delimiter='\n'):

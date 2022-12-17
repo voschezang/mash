@@ -130,6 +130,11 @@ class Shell(BaseShell):
         """
         self.save_session()
 
+    def do_source(self, args: str):
+        files = args.split(' ')
+        for f in files:
+            run_command(read_file(f), self, strict=True)
+
     def do_reload(self, _):
         """Reload the current session.
         """

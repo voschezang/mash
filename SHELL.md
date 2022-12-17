@@ -40,6 +40,16 @@ See `examples/filesystem.py` and `examples/discoverable.py`.
 ## Modules
 
 ```sh
+# in src
+examples/ # examples written in Python
+lib/ # shell scripts
+    math.sh # elementary mathematical functions
+mash/ # implementation written in Python 
+  .. # see below
+```
+
+```sh
+# in src/mash
 shell/
     base.BaseShell # A bare-bone Shell. It is a subclass of Cmd that overrides some methods.
     shell.Shell # A functional extension of BaseShell.
