@@ -53,5 +53,5 @@ def find_synonym(cls, key: str):
 
 
 def verify_key_format(cls, key: str):
-    if not is_valid_method_name(key):
+    if key.startswith('_') or not is_valid_method_name(key):
         raise SpecError(ErrorMessages.invalid_key_format(cls, key))

@@ -56,6 +56,7 @@ class ShellFunction:
 
 
 class InlineFunction:
-    def __init__(self, command: str, *args: str) -> None:
+    def __init__(self, command: str, *args: str, func_name='') -> None:
         self.command = command
         self.args = args
+        self.func_name = func_name

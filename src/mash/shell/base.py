@@ -13,13 +13,16 @@ import subprocess
 from mash import io_util
 from mash.filesystem.filesystem import FileSystem
 from mash.io_util import log, shell_ready_signal, print_shell_ready_signal, check_output
-from mash.util import for_any, has_method, identity, is_alpha, is_globbable, is_valid_method_name, match_words, omit_prefixes, split_prefixes, split_sequence, glob
+from mash.shell.delimiters import DEFINE_FUNCTION, LEFT_ASSIGNMENT, RIGHT_ASSIGNMENT
 from mash.shell.function import InlineFunction
+from mash.util import for_any, has_method, identity, is_alpha, is_globbable, is_valid_method_name, match_words, omit_prefixes, split_prefixes, split_sequence, glob
+
 
 confirmation_mode = False
 bash_delimiters = ['|', '>', '>>', '1>', '1>>', '2>', '2>>']
-py_delimiters = [';', '|>', '>>=']
-other_delimiters = ['=', '<-', '->']
+# py_delimiters = [o.value for o in delimiters.Python]
+py_delimiters = [';', ':', '|>', '>>=']
+other_delimiters = ['=', LEFT_ASSIGNMENT, RIGHT_ASSIGNMENT]
 default_session_filename = '.shell_session.json'
 
 
@@ -94,17 +97,18 @@ class BaseShell(Cmd):
     def delimiters(self):
         """Return the most recent values of the delimiters.
         """
-        delimiters = py_delimiters + bash_delimiters + ['->']
+        delimiters = py_delimiters + bash_delimiters + [RIGHT_ASSIGNMENT]
 
-        # insert '<-' after ';'
-        delimiters.insert(1, '<-')
+        # insert '<-' after ':'
+        delimiters.insert(2, '<-')
 
         return delimiters
 
     def set_infix_operators(self):
         # use this for infix operators, e.g. `a = 1`
         self.infix_operators = {'=': self.handle_set_env_variable,
-                                ':': self.handle_equation}
+                                # ':': self.handle_equation
+                                }
         # the sign to indicate that a variable should be expanded
         self.variable_prefix = '$'
 
@@ -142,14 +146,16 @@ class BaseShell(Cmd):
 
         self.env = env
 
-    def eval(self, args: Iterable[str]) -> Types:
+    def eval(self, args: Iterable[str], quote=True) -> Types:
         """Evaluate / run `args` and return the result.
         """
-        # convert args to a shell command
+        if quote:
+            args = (shlex.quote(arg) for arg in args)
+            # args = ' '.join(shlex.quote(arg) for arg in args)
+
+        args = ' '.join(args)
 
         k = '_eval_output'
-
-        args = ' '.join(shlex.quote(arg) for arg in args)
         line = f'{args} |> export {k}'
 
         self.onecmd(line)
@@ -182,12 +188,12 @@ class BaseShell(Cmd):
         self.set_env_variable(k, *rhs)
         return ''
 
-    def handle_equation(self, lhs: Tuple[str], *rhs: str) -> str:
-        f, *args = lhs
+    def handle_define_inline_function(self, terms: List[str]) -> str:
+        f, *args = terms
         args = [arg for arg in args if arg != '']
-        implementation = ' '.join(rhs[1:])
 
         if not args or not args[0].startswith('(') or not args[-1].endswith(')'):
+            lhs = ' '.join(terms)
             raise ShellError(f'Invalid syntax for inline function: {lhs}')
 
         # strip braces
@@ -197,10 +203,17 @@ class BaseShell(Cmd):
             args[0] = args[0][1:]
             args[-1] = args[-1][:-1]
 
-        self.add_inline_function(f, args, implementation)
-        return ''
+        self.locals.set(DEFINE_FUNCTION,
+                        InlineFunction('', *args, func_name=f))
 
-    def add_inline_function(self, f, args, inner) -> str:
+    def _save_inline_function(self) -> str:
+        func = self.locals[DEFINE_FUNCTION]
+        self.locals.rm(DEFINE_FUNCTION)
+
+        f = func.func_name
+        args = func.args
+        inner = func.command
+
         if has_method(self, f'do_{f}'):
             raise ShellError(
                 f'Name conflict: Cannot define inline function {f}, '
@@ -227,7 +240,8 @@ class BaseShell(Cmd):
         for i, k in enumerate(f.args):
             translations[k] = args[i]
 
-        terms = list(self.translate_terms(f.command.split(' '), translations))
+        terms = [term for term in f.command.split(' ') if term != '']
+        terms = list(self.translate_terms(terms, translations))
         line = ' '.join(terms)
 
         first_func = terms[0]
@@ -235,8 +249,7 @@ class BaseShell(Cmd):
                 and first_func not in self.locals['functions']:
             terms = ['print'] + terms
 
-        line = ' '.join(terms)
-        return super().onecmd(line)
+        return self.eval(terms, quote=False)
 
     def set_env_variable(self, k: str, *values: str):
         """Set the variable `k` to `values`
@@ -247,6 +260,18 @@ class BaseShell(Cmd):
         log(f'set {k}')
         self.env[k] = ' '.join(values)
         return k
+
+    def set_env_variables(self, keys: str, result: str):
+        """Set the variable `k` to `values`
+        """
+        if result is None:
+            raise ShellError(f'Missing return value in assignment: {k}')
+
+        # TODO set multiple keys based on pattern matching
+        # e.g. i j = range(2)
+        k = keys[0]
+
+        self.env[k] = result
 
     def show_env(self, env=None):
         if env is None:
@@ -329,12 +354,23 @@ class BaseShell(Cmd):
         # results in a = 10
         ```
         """
-        k = args.split(' ')[0]
+        keys = args.split(' ')
 
-        if not is_valid_method_name(k):
-            raise ShellError('Invalid variable name format: {k}')
+        for k in keys:
+            if not is_valid_method_name(k):
+                raise ShellError('Invalid variable name format: {k}')
 
-        self.locals.set('assignee', k)
+        if LEFT_ASSIGNMENT in self.locals:
+            assignee = self.locals[LEFT_ASSIGNMENT]
+
+            # cancel previous assignments
+            self.locals.rm(LEFT_ASSIGNMENT)
+
+            raise ShellError(
+                f'Assignments cannot be used inside other assignments: {assignee}')
+
+        self.locals.set(LEFT_ASSIGNMENT, keys)
+        self.set_env_variables(keys, '')
 
         # return value must be empty to prevent side-effects in the next command
         return ''
@@ -453,10 +489,6 @@ class BaseShell(Cmd):
         try:
             line = self.onecmd_prehook(line)
             lines = list(self.parse_commands(line))
-
-            if any(line[0] == '<-' for line in lines):
-                lines[0] = ['assign'] + lines[0]
-
             self.run_commands(lines)
 
         except CancelledError:
@@ -510,7 +542,24 @@ class BaseShell(Cmd):
         if not lines:
             return
 
-        for line in lines:
+        for i, line in enumerate(lines):
+
+            if LEFT_ASSIGNMENT not in self.locals \
+                    and i+1 < len(lines) \
+                    and '<-' in lines[i+1]:
+                # prefix line if '<-' is used later on
+                j = 1 if ';' in line else 0
+                line.insert(j, 'assign')
+
+            if DEFINE_FUNCTION in self.locals:
+                if ':' in line:
+                    line = line[1:]
+
+                # self.locals[DEFINE_FUNCTION].command += '; ' + ' '.join(line)
+                self.locals[DEFINE_FUNCTION].command += ' ' + ' '.join(line)
+                result = None
+                continue
+
             try:
                 result = self.run_single_command(line, result)
 
@@ -530,9 +579,18 @@ class BaseShell(Cmd):
 
                 raise ShellError(str(e))
 
-        if 'assignee' in self.locals:
+            if DEFINE_FUNCTION not in self.locals:
+                # handle inline `<-`
+                if LEFT_ASSIGNMENT in self.locals and 'assign' not in line:
+                    self._save_assignee(result)
+                    result = ''
+
+        if DEFINE_FUNCTION in self.locals:
+            self._save_inline_function()
+
+        elif LEFT_ASSIGNMENT in self.locals and not io_util.interactive:
+            # cancel assignment
             self._save_assignee(result)
-            result = ''
 
         elif result is not None:
             print(result)
@@ -553,34 +611,35 @@ class BaseShell(Cmd):
                 line = f'map {line}'
                 return self.pipe_cmd_py(line, result)
 
-            elif prefixes[-1] == '->':
-                # TODO verify syntax
+            elif prefixes[-1] == RIGHT_ASSIGNMENT:
+                # TODO verify syntax of `line`
                 assert ' ' not in line
-                self.set_env_variable(line, result)
+                self.set_env_variables(line, result)
                 return ''
 
         if infix_operator_args:
             return self.infix_command(*infix_operator_args)
+        elif is_function_definition(command_and_args):
+            return self.handle_define_inline_function(command_and_args)
 
         return self.pipe_cmd_py(line, result)
 
     def _save_assignee(self, result: str):
-        k = self.locals['assignee']
+        keys = self.locals[LEFT_ASSIGNMENT]
+
+        self.locals.rm(LEFT_ASSIGNMENT)
 
         if result is None:
-            raise ShellError(f'Missing return value in assignment: {k}')
+            raise ShellError(f'Missing return value in assignment: {keys}')
         elif result == '' and self._last_results:
             result = self._last_results.pop()
 
-        self.env[k] = result
-        self.locals.rm('assignee')
+        self.set_env_variables(keys, result)
 
     def filter_result(self, command_and_args, result):
         if ';' in command_and_args:
-            if 'assignee' in self.locals:
-                self._save_assignee(result)
 
-            elif result is not None:
+            if result is not None and LEFT_ASSIGNMENT not in self.locals:
                 # print prev result & discard it
                 print(result)
 
@@ -608,7 +667,6 @@ class BaseShell(Cmd):
         args = list(self.expand_variables(args))
         line = ' '.join(chain.from_iterable(([f], args)))
 
-        # TODO make this check quote-aware
         there_is_an_infix_operator = for_any(
             self.infix_operators, contains, args)
 
@@ -658,6 +716,13 @@ class BaseShell(Cmd):
             # split lines and handle quotes
             # e.g. convert 'echo "echo 1"' to ['echo', 'echo 1']
             terms = shlex.split(line, comments=True)
+
+            # re-quote delimiters
+            for i, term in enumerate(terms):
+                # if other_delimiters:
+                if term in self.delimiters or term in other_delimiters:
+                    if '"' + term + '"' in line or "'" + term + "'" in line:
+                        terms[i] = f'"{terms[i]}"'
 
             # split `:`
             for i, term in enumerate(terms):
@@ -798,3 +863,19 @@ class BaseShell(Cmd):
                 continue
 
             yield term
+
+
+def is_function_definition(terms: List[str]) -> bool:
+    terms = [term for term in terms if term != '']
+
+    if len(terms) < 2:
+        return
+
+    if len(terms) == 2:
+        term = terms[-1]
+        first = term
+        last = term
+    else:
+        _f, first, *_, last = terms
+
+    return first.startswith('(') and last.endswith(')')

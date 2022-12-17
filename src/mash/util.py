@@ -572,7 +572,8 @@ def is_globbable(value: str) -> bool:
 
 def is_valid_method_name(value: str) -> bool:
     try:
-        return is_alpha(value[0]) and is_alphanumerical(value, ignore='_')
+        return (is_alpha(value[0]) or value[0] == '_') \
+            and is_alphanumerical(value, ignore='_')
     except TypeError:
         return False
 
