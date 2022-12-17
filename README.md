@@ -7,7 +7,7 @@
 | [SHELL.md](https://github.com/voschezang/mash/blob/main/SHELL.md)
 | [REFERENCE.md](https://github.com/voschezang/mash/blob/main/SHELL_REFERENCE.md)
 
-<img src="https://github.com/voschezang/mash/blob/main/img/dall-E/bosh-terminal-.png?raw=true" style="width: 9vw" alt="A drawing of a terminal"></img>
+<img src="https://github.com/voschezang/mash/blob/main/img/dall-E/bosh-terminal-icon.png?raw=true" style="max-width: 5%" alt="A drawing of a terminal"></img>
 
 # Overview
 
