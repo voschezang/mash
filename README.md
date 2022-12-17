@@ -7,8 +7,7 @@
 | [SHELL.md](https://github.com/voschezang/mash/blob/main/SHELL.md)
 | [REFERENCE.md](https://github.com/voschezang/mash/blob/main/SHELL_REFERENCE.md)
 
-<img src="https://github.com/voschezang/mash/blob/f35e7401f17785f92612064b6c85b905af159fba/img/dall-E/bosh-terminal.png" style="width: 12vw" alt="A drawing of a terminal"></img>
-
+<img src="https://github.com/voschezang/mash/blob/main/img/dall-E/bosh-terminal.png?raw=true" style="width: 9vw" alt="A drawing of a terminal"></img>
 
 # Overview
 
@@ -28,7 +27,7 @@ Links
 
 See [SHELL.md](https://github.com/voschezang/mash/blob/main/SHELL.md) and [REFERENCE.md](https://github.com/voschezang/mash/blob/main/SHELL_REFERENCE.md).
 
-<img src="https://github.com/voschezang/mash/blob/97b0d7b5eae8bb09c1da00a1c118e7c4dfbd1409/img/shell_dropdown.png" style="max-width: 10%" alt="Example of a shell with a dropdown completion menu"></img>
+<img src="https://github.com/voschezang/mash/blob/main/img/shell_dropdown.png?raw=true" style="max-width: 10%" alt="Example of a shell with a dropdown completion menu"></img>
 
 ## Usage
 
