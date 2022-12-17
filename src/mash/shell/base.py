@@ -13,16 +13,13 @@ import subprocess
 from mash import io_util
 from mash.filesystem.filesystem import FileSystem
 from mash.io_util import log, shell_ready_signal, print_shell_ready_signal, check_output
+from mash.shell import delimiters
 from mash.shell.delimiters import DEFINE_FUNCTION, LEFT_ASSIGNMENT, RIGHT_ASSIGNMENT
 from mash.shell.function import InlineFunction
-from mash.util import for_any, has_method, identity, is_alpha, is_globbable, is_valid_method_name, match_words, omit_prefixes, split_prefixes, split_sequence, glob
+from mash.util import for_any, has_method, identity, is_globbable, is_valid_method_name, match_words, omit_prefixes, split_prefixes, split_sequence, glob
 
 
 confirmation_mode = False
-bash_delimiters = ['|', '>', '>>', '1>', '1>>', '2>', '2>>']
-# py_delimiters = [o.value for o in delimiters.Python]
-py_delimiters = [';', ':', '|>', '>>=']
-other_delimiters = ['=', LEFT_ASSIGNMENT, RIGHT_ASSIGNMENT]
 default_session_filename = '.shell_session.json'
 
 
@@ -97,18 +94,13 @@ class BaseShell(Cmd):
     def delimiters(self):
         """Return the most recent values of the delimiters.
         """
-        delimiters = py_delimiters + bash_delimiters + [RIGHT_ASSIGNMENT]
-
-        # insert '<-' after ':'
-        delimiters.insert(2, '<-')
-
-        return delimiters
+        items = delimiters.python + delimiters.bash
+        items.remove('=')
+        return items
 
     def set_infix_operators(self):
         # use this for infix operators, e.g. `a = 1`
-        self.infix_operators = {'=': self.handle_set_env_variable,
-                                # ':': self.handle_equation
-                                }
+        self.infix_operators = {'=': self.handle_set_env_variable}
         # the sign to indicate that a variable should be expanded
         self.variable_prefix = '$'
 
@@ -119,22 +111,12 @@ class BaseShell(Cmd):
 
         Naming conflicts with existing `delimiters` are resolved.
         """
+        for char in chars:
+            if char in delimiters.all:
+                raise ShellError(f'Char {char} is already in use.')
+
         self._do_char_method = method
         self._chars_allowed_for_char_method = chars
-        self.resolve_char_name_conflicts()
-
-    def resolve_char_name_conflicts(self):
-        # TODO don't mutate global vars
-        for char in self._chars_allowed_for_char_method:
-            if char in bash_delimiters:
-                logging.warning(
-                    f'Overriding default sh delimiters: remove {char}')
-                bash_delimiters.remove(char)
-
-            if char in py_delimiters:
-                logging.warning(
-                    f'Overriding default py delimiters: remove {char}')
-                py_delimiters.remove(char)
 
     def update_env(self, env: Dict[str, Any] = None):
         if env is None:
@@ -655,7 +637,7 @@ class BaseShell(Cmd):
             command_and_args)
 
         if prefixes:
-            if prefixes[-1] in bash_delimiters:
+            if prefixes[-1] in delimiters.bash:
                 return self.pipe_cmd_sh(line, result, delimiter=prefixes[-1])
 
             elif prefixes[-1] == '>>=':
@@ -710,7 +692,7 @@ class BaseShell(Cmd):
         prefixes = list(split_prefixes(command_and_args, self.delimiters))
         prefix = prefixes[-1]
 
-        if prefix in bash_delimiters:
+        if prefix in delimiters.bash:
             return prefix
 
     def parse_single_command(self, command_and_args: List[str]) -> Tuple[List[str], str, List[str]]:
@@ -740,7 +722,7 @@ class BaseShell(Cmd):
         """
         May raise subprocess.CalledProcessError
         """
-        assert delimiter in bash_delimiters
+        assert delimiter in delimiters.bash
 
         # pass last result to stdin
         line = f'echo {shlex.quote(prev_result)} {delimiter} {line}'
@@ -773,7 +755,7 @@ class BaseShell(Cmd):
             # re-quote delimiters
             for i, term in enumerate(terms):
                 # if other_delimiters:
-                if term in self.delimiters or term in other_delimiters:
+                if term in self.delimiters or term == '=':
                     if '"' + term + '"' in line or "'" + term + "'" in line:
                         terms[i] = f'"{terms[i]}"'
 

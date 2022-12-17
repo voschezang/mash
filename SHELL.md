@@ -21,8 +21,6 @@ Main features
 
 See [reference](SHELL_REFERENCE.md).
 
-
-
 ### FileSystem Commands
 
 See `examples/filesystem.py` and `examples/discoverable.py`.
@@ -46,6 +44,7 @@ shell/
     base.BaseShell # A bare-bone Shell. It is a subclass of Cmd that overrides some methods.
     shell.Shell # A functional extension of BaseShell.
     function.ShellFunction # A wrapper for "normal" Python functions that includes error handling.
+    delimiters # constants that are used as delimiters and operators
 
 filesystem/
     filesystem.FileSystem # A file system simulation that provides an interface to data.

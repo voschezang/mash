@@ -6,7 +6,7 @@ from time import perf_counter
 
 from mash import io_util
 from mash.io_util import check_output, read_file, run_subprocess
-from mash.shell.base import bash_delimiters, py_delimiters
+from mash.shell import delimiters
 from mash.shell import ShellError
 from mash.shell.shell import Shell, add_cli_args, run_command
 from mash.util import identity
@@ -569,11 +569,11 @@ def test_set_do_char_method():
     assert catch_output(op, shell=shell, strict=True) == op
 
     # verify that clashes are resolved
-    for op in [bash_delimiters[0], py_delimiters[0]]:
+    for op in [delimiters.bash[0], delimiters.python[0]]:
         assert catch_output(op, shell=shell, strict=True) == ''
 
-        shell.set_do_char_method(print, op)
-        assert catch_output(op, shell=shell, strict=True).strip() == op
+        with raises(ShellError):
+            shell.set_do_char_method(print, op)
 
 
 def test_set_do_foldr():
