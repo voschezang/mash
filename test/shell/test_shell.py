@@ -576,6 +576,16 @@ def test_set_do_char_method():
         assert catch_output(op, shell=shell, strict=True).strip() == op
 
 
+def test_set_do_foldr():
+    shell = Shell()
+    run_command('sum (a b): math a + b', shell=shell)
+    line = 'range 4 |> foldr sum 0'
+    assert catch_output(line, shell=shell, strict=True) == '6'
+
+    line = 'range 4 |> foldr sum 0 $'
+    assert catch_output(line, shell=shell, strict=True) == '6'
+
+
 def test_set_do_map():
     shell = Shell()
     line = 'echo a b |> flatten |> map echo'
@@ -604,6 +614,14 @@ def test_set_do_foreach():
 
     line = 'echo 1 2 |> foreach echo 0'
     assert catch_output(line, shell=shell, strict=True) == '0\n1\n2'
+
+
+def test_set_map_reduce():
+    shell = Shell()
+    run_command('sum (a b): math a + b', shell=shell)
+
+    line = 'range 4 >>= math 2 * $ |> reduce sum 0 $'
+    assert catch_output(line, shell=shell, strict=True) == '12'
 
 
 def test_save_and_load_session():

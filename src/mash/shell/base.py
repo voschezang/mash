@@ -265,7 +265,7 @@ class BaseShell(Cmd):
         """Set the variable `k` to `values`
         """
         if result is None:
-            raise ShellError(f'Missing return value in assignment: {k}')
+            raise ShellError(f'Missing return value in assignment: {keys}')
 
         # TODO set multiple keys based on pattern matching
         # e.g. i j = range(2)
@@ -400,6 +400,59 @@ class BaseShell(Cmd):
         logging.info(f'Cmd = !{args}')
         return check_output(args)
 
+    def do_reduce(self, *args: str):
+        """Reduce a sequence of items to using an operator.
+
+        See https://en.wikipedia.org/wiki/Reduction_operator
+
+        E.g. compute the sum:
+        `range 10 |> reduce sum 0 $
+        """
+        return self.do_foldr(*args)
+
+    def do_foldr(self, args: str, delimiter='\n'):
+        """Fold or reduce from right to left.
+
+        See https://wiki.haskell.org/Foldr_Foldl_Foldl'
+        """
+        lines = args.split(delimiter)
+        msg = 'Not enough arguments. Usage: `foldl f zero [args] $ [args]`.'
+        if len(lines) <= 1:
+            log(msg)
+            return
+
+        items = lines[0].split(' ')
+        if len(items) <= 1:
+            log(msg)
+            return
+
+        f, zero, *args, line = items
+        lines = [line] + lines[1:]
+
+        if '$' in args:
+            i = args.index('$')
+        else:
+            i = -1
+
+        # apply the reduction
+        acc = zero
+        for line in lines:
+            local_args = args.copy()
+            line = line.split(' ')
+
+            if i == -1:
+                local_args += line
+            else:
+                local_args[i:i+1] = line
+
+            line = [f, acc] + local_args
+
+            acc = self.run_single_command(line)
+            # results.append(self.run_single_command(line))
+
+        # return delimiter.join([str(result) for result in results])
+        return acc
+
     def do_map(self, args: str, delimiter='\n'):
         """Apply a function to every line.
         If `$` is present, then each line from stdin is inserted there. 
@@ -413,7 +466,7 @@ class BaseShell(Cmd):
         ```
         """
         lines = args.split(delimiter)
-        msg = 'Not enough arguments. Usage: `map f [args] *`.'
+        msg = 'Not enough arguments. Usage: `map f [args] $ [args]`.'
         if len(lines) <= 1:
             log(msg)
             return
