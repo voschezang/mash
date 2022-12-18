@@ -1,6 +1,7 @@
 # Syntax
 
 There are build-in methods and user-defined methods. Commands such as `print` are bound to methods with the name `do_print`.
+For examples, see [lib](https://github.com/voschezang/mash/blob/main/src/lib/math.sh).
 
 [toc]
 
