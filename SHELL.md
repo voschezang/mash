@@ -116,6 +116,8 @@ See [reference](SHELL_REFERENCE.md).
 
 ## Usage Examples
 
+For real-world examples, see [lib](https://github.com/voschezang/mash/blob/main/src/lib/math.sh).
+
 ### Example 1
 
 See `src/shell_example.py`. It shows how to use a user-definnable mapping of custom functions.
