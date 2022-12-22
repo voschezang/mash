@@ -9,6 +9,11 @@ class Python(Enum):
     PIPE = '|>'
     MAP = '>>='
     SET_ENV_VARIABLE = '='
+    IF = 'if'
+    THEN = 'then'
+    # ELSE = 'else'
+    # AND = 'and'
+    # OR = 'or'
 
 
 bash = ['|', '>', '>>', '1>', '1>>', '2>', '2>>']
@@ -19,3 +24,13 @@ all = bash + python
 DEFINE_FUNCTION = Python.DEFINE_FUNCTION.value
 RIGHT_ASSIGNMENT = Python.RIGHT_ASSIGNMENT.value
 LEFT_ASSIGNMENT = Python.LEFT_ASSIGNMENT.value
+IF = Python.IF.value
+THEN = Python.THEN.value
+# ELSE = Python.ELSE.value
+# AND = Python.AND.value
+# OR = Python.OR.value
+
+
+class KeyWords(Enum):
+    AND = 'and'
+    OR = 'or'

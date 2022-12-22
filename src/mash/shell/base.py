@@ -14,7 +14,7 @@ from mash import io_util
 from mash.filesystem.filesystem import FileSystem
 from mash.io_util import log, shell_ready_signal, print_shell_ready_signal, check_output
 from mash.shell import delimiters
-from mash.shell.delimiters import DEFINE_FUNCTION, LEFT_ASSIGNMENT, RIGHT_ASSIGNMENT
+from mash.shell.delimiters import DEFINE_FUNCTION, IF, LEFT_ASSIGNMENT, RIGHT_ASSIGNMENT, THEN
 from mash.shell.function import InlineFunction
 from mash.util import for_any, has_method, identity, is_globbable, is_valid_method_name, match_words, omit_prefixes, split_prefixes, split_sequence, glob
 
@@ -75,6 +75,7 @@ class BaseShell(Cmd):
 
         self.env = {}
         self.locals = FileSystem(defaultdict(dict))
+        self.locals.set(IF, [])
 
         self.update_env(env)
 
@@ -629,34 +630,44 @@ class BaseShell(Cmd):
         elif result is not None:
             print(result)
 
-    def run_single_command(self, command_and_args: List[str], result: str = '') -> str:
-        result = self.filter_result(command_and_args, result)
+    def run_single_command(self, command_and_args: List[str], prev_result: str = '') -> str:
+        prev_result = self.filter_result(command_and_args, prev_result)
 
         prefixes, line, infix_operator_args = self.parse_single_command(
             command_and_args)
 
         if prefixes:
             if prefixes[-1] in delimiters.bash:
-                return self.pipe_cmd_sh(line, result, delimiter=prefixes[-1])
+                return self.pipe_cmd_sh(line, prev_result, delimiter=prefixes[-1])
 
             elif prefixes[-1] == '>>=':
                 # monadic bind
                 # https://en.wikipedia.org/wiki/Monad_(functional_programming)
                 line = f'map {line}'
-                return self.pipe_cmd_py(line, result)
+                return self.pipe_cmd_py(line, prev_result)
 
             elif prefixes[-1] == RIGHT_ASSIGNMENT:
                 # TODO verify syntax of `line`
                 assert ' ' not in line
-                self.set_env_variables(line, result)
+                self.set_env_variables(line, prev_result)
                 return ''
+
+            elif prefixes[-1] == IF:
+                self.locals[IF].append(line)
+                return ''
+
+            elif prefixes[-1] == THEN:
+                if self.locals[IF].pop() == '':
+                    # skip
+                    return ''
+                # otherwise continue
 
         if infix_operator_args:
             return self.infix_command(*infix_operator_args)
         elif is_function_definition(command_and_args):
             return self.handle_define_inline_function(command_and_args)
 
-        return self.pipe_cmd_py(line, result)
+        return self.pipe_cmd_py(line, prev_result)
 
     def _save_assignee(self, result: str):
         keys = self.locals[LEFT_ASSIGNMENT]

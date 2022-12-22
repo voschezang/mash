@@ -453,6 +453,12 @@ def test_shell_range():
     assert catch_output('range 3 1 -1', shell=shell) == '3\n2'
 
 
+def test_shell_if_then():
+    shell = Shell()
+    assert catch_output('if "" then print 1', shell=shell) == ''
+    assert catch_output('if 1 then print 1', shell=shell) == '1'
+
+
 def test_shell_numbers():
     shell = Shell()
     run_command(f'x <- int 10', shell=shell)
