@@ -189,6 +189,9 @@ def test_variable_expansion():
     assert catch_output('print $a', shell=shell) == '2'
     assert catch_output('print $a$a $a', shell=shell) == '22 2'
 
+    run_command('run = print', shell=shell)
+    assert catch_output('$run 4', shell=shell) == '4'
+
 
 def test_variable_expansion_regex():
     shell = Shell()

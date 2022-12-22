@@ -2,15 +2,15 @@ from enum import Enum
 
 
 class Python(Enum):
+    THEN = 'then'
     NEW_COMMAND = ';'
+    IF = 'if'
     DEFINE_FUNCTION = ':'
     RIGHT_ASSIGNMENT = '->'
     LEFT_ASSIGNMENT = '<-'
     PIPE = '|>'
     MAP = '>>='
     SET_ENV_VARIABLE = '='
-    IF = 'if'
-    THEN = 'then'
     # ELSE = 'else'
     # AND = 'and'
     # OR = 'or'

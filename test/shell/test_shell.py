@@ -57,6 +57,18 @@ def test_shell_if_then():
     assert catch_output('if "" then print 1', shell=shell) == ''
     assert catch_output('if 1 then print 1', shell=shell) == '1'
 
+    run_command('a = ""', shell=shell)
+    assert catch_output('if $a then print 1', shell=shell) == ''
+    run_command('a = false or true', shell=shell)
+    assert catch_output('if $a then print 1', shell=shell) == '1'
+
+
+def test_shell_if_then_multicommand():
+    shell = Shell()
+    then = 'then print 1 ; print 2'
+    assert catch_output(f'if "" {then} ', shell=shell) == ''
+    assert catch_output(f'if 1 {then}', shell=shell) == '1\n2'
+
 
 def test_pipe():
     assert catch_output('print 100 |> print') == '100'

@@ -437,7 +437,7 @@ class BaseShell(Cmd):
 
     def do_map(self, args: str, delimiter='\n'):
         """Apply a function to every line.
-        If `$` is present, then each line from stdin is inserted there. 
+        If `$` is present, then each line from stdin is inserted there.
         Otherwise each line is appended.
 
         Usage
@@ -637,6 +637,12 @@ class BaseShell(Cmd):
             command_and_args)
 
         if prefixes:
+            if THEN in prefixes:
+                if self.locals[IF][-1]:
+                    # skip
+                    return ''
+                # otherwise continue
+
             if prefixes[-1] in delimiters.bash:
                 return self.pipe_cmd_sh(line, prev_result, delimiter=prefixes[-1])
 
@@ -653,14 +659,9 @@ class BaseShell(Cmd):
                 return ''
 
             elif prefixes[-1] == IF:
-                self.locals[IF].append(line)
+                # a = self.eval('echo ' + line)
+                self.locals[IF].append(line == '')
                 return ''
-
-            elif prefixes[-1] == THEN:
-                if self.locals[IF].pop() == '':
-                    # skip
-                    return ''
-                # otherwise continue
 
         if infix_operator_args:
             return self.infix_command(*infix_operator_args)
@@ -708,9 +709,9 @@ class BaseShell(Cmd):
     def parse_single_command(self, command_and_args: List[str]) -> Tuple[List[str], str, List[str]]:
         # strip right-hand side delimiters
         all_args = list(omit_prefixes(command_and_args, self.delimiters))
-        f, *args = all_args
-        args = list(self.expand_variables(args))
-        line = ' '.join(chain.from_iterable(([f], args)))
+        all_args = list(self.expand_variables(all_args))
+        _f, *args = all_args
+        line = ' '.join(all_args)
 
         there_is_an_infix_operator = for_any(
             self.infix_operators, contains, args)
@@ -836,7 +837,7 @@ class BaseShell(Cmd):
         return lhs, rhs
 
     def expand_variables(self, terms: List[str]) -> Iterable[str]:
-        """Replace variables with their values. 
+        """Replace variables with their values.
         E.g.
         ```sh
         a = 1
