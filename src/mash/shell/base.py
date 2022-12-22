@@ -638,7 +638,15 @@ class BaseShell(Cmd):
 
         if prefixes:
             if THEN in prefixes:
-                if self.locals[IF][-1]:
+
+                if not self.locals[IF]:
+                    if self.ignore_invalid_syntax:
+                        return ''
+                    raise ShellError(
+                        f'If-else clause requires an {IF} statement')
+
+                result = self.locals[IF].pop()
+                if result:
                     # skip
                     return ''
                 # otherwise continue
@@ -659,7 +667,6 @@ class BaseShell(Cmd):
                 return ''
 
             elif prefixes[-1] == IF:
-                # a = self.eval('echo ' + line)
                 self.locals[IF].append(line == '')
                 return ''
 

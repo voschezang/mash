@@ -62,6 +62,35 @@ def test_shell_if_then():
     run_command('a = false or true', shell=shell)
     assert catch_output('if $a then print 1', shell=shell) == '1'
 
+    shell = Shell()
+    with raises(ShellError):
+        run_command('then print 1', shell=shell, strict=True)
+
+    with raises(ShellError):
+        run_command('if 1 then print 1 then print 2', shell=shell, strict=True)
+
+
+def test_shell_if_then_multiline():
+    shell = Shell()
+
+    run_command('if ""', shell=shell)
+    assert catch_output('then print 1', shell=shell) == ''
+
+    run_command('if 1', shell=shell)
+    assert catch_output('then print 1', shell=shell) == '1'
+
+    # fail on double else
+    with raises(ShellError):
+        run_command('then 1', shell=shell, strict=True)
+
+
+def test_shell_if_then_nested():
+    shell = Shell()
+
+    # TODO implement multiline clauses
+    assert catch_output(
+        'if 1 if 2 then print 2 then print 1', shell=shell) == '1 2'
+
 
 def test_shell_if_then_multicommand():
     shell = Shell()
@@ -129,7 +158,7 @@ def test_add_functions():
     assert 'Unknown syntax: id' in out
 
     shell.add_functions({'id': print}, group_key=key)
-    run_command('id 10')
+    run_command('id 10', shell=shell)
     out = catch_output('id 10')
     assert '10' in out
 
