@@ -577,6 +577,8 @@ class BaseShell(Cmd):
         if not lines:
             return
 
+        self.locals.set(IF, [])
+
         for i, line in enumerate(lines):
 
             if LEFT_ASSIGNMENT not in self.locals \
@@ -638,14 +640,19 @@ class BaseShell(Cmd):
 
         if prefixes:
             if THEN in prefixes:
-
                 if not self.locals[IF]:
                     if self.ignore_invalid_syntax:
                         return ''
                     raise ShellError(
-                        f'If-else clause requires an {IF} statement')
+                        f'If-then clause requires an {IF} statement')
 
-                if self.locals[IF][-1]:
+                self.locals[IF][-1]['depth'] += 1
+
+                if len(prefixes) <= 1 and self.locals[IF][-1]['depth'] >= 2:
+                    raise ShellError(
+                        f'If-then clause requires an {IF} statement')
+
+                if not self.locals[IF][-1]['value']:
                     # skip
                     return ''
                 # otherwise continue
@@ -666,7 +673,16 @@ class BaseShell(Cmd):
                 return ''
 
             elif prefixes[-1] == IF:
-                self.locals[IF].append(line == '')
+                # if self.locals[IF] and self.locals[IF][-1]['depth'] == 0:
+                #     raise ShellError(
+                #         f'The previous if-then statement was not closed')
+
+                if self.locals[IF] and not self.locals[IF][-1]['value']:
+                    value = False
+                else:
+                    value = line != ''
+
+                self.locals[IF].append({'value': value, 'depth': 0})
                 return ''
 
         if infix_operator_args:

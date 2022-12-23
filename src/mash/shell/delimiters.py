@@ -2,9 +2,9 @@ from enum import Enum
 
 
 class Python(Enum):
+    IF = 'if'
     THEN = 'then'
     NEW_COMMAND = ';'
-    IF = 'if'
     DEFINE_FUNCTION = ':'
     RIGHT_ASSIGNMENT = '->'
     LEFT_ASSIGNMENT = '<-'

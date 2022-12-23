@@ -1,4 +1,4 @@
-# Shell
+# My Automation Shell
 
 A tool to generate a [Domain-specific Language](https://en.wikipedia.org/wiki/Domain-specific_language) (DSL).  It can be used as a command line program or interactively as a subshell/repl.
 

@@ -65,6 +65,34 @@ def test_shell_if_then():
     assert catch_output('if $a then print 1', shell=shell) == '1'
 
 
+def test_shell_if_then_multicommand():
+    shell = Shell()
+    then = 'then print 1 ; print 2'
+    assert catch_output(f'if "" {then} ', shell=shell) == ''
+    assert catch_output(f'if 1 {then}', shell=shell) == '1\n2'
+
+# def test_shell_if_then_multiline():
+#     shell = Shell()
+
+#     run_command('if ""', shell=shell)
+#     assert catch_output('then print 1', shell=shell) == ''
+
+#     run_command('if 1', shell=shell)
+#     assert catch_output('then print 1', shell=shell) == '1'
+
+#     # fail on double else
+#     with raises(ShellError):
+#         run_command('then 1', shell=shell, strict=True)
+
+
+# def test_shell_if_if_then():
+#     shell = Shell()
+#     shell.ignore_invalid_syntax = False
+
+#     with raises(ShellError):
+#         run_command('if 1 if 2 then print 3', shell=shell)
+
+
 def test_shell_if_then_then():
     shell = Shell()
     shell.ignore_invalid_syntax = False
@@ -72,42 +100,32 @@ def test_shell_if_then_then():
     with raises(ShellError):
         run_command('then print 1', shell=shell)
 
-    # TODO this should raise:
-    # with raises(ShellError):
-    run_command('if 1 then print 1 then print 2', shell=shell)
-
-    assert catch_output('if 1 then if "" print 3', shell=shell) == ''
-    # TODO this should result in '3'
+    # missing `then` keyword should be handled
     assert catch_output('if 1 then if 2 print 3', shell=shell) == ''
 
-
-def test_shell_if_then_multiline():
-    shell = Shell()
-
-    run_command('if ""', shell=shell)
-    assert catch_output('then print 1', shell=shell) == ''
-
-    run_command('if 1', shell=shell)
-    assert catch_output('then print 1', shell=shell) == '1'
-
-    # fail on double else
-    with raises(ShellError):
-        run_command('then 1', shell=shell, strict=True)
+    # double `then`
+    # TODO
+    # with raises(ShellError):
+    run_command('if 1 then print 1 then print 2', shell=shell)
+    # TODO
+    # with raises(ShellError):
+    run_command('if 1 then print 1 ; print 2 then print 3', shell=shell)
 
 
 def test_shell_if_then_nested():
     shell = Shell()
+    shell.ignore_invalid_syntax = False
 
-    # TODO implement multiline clauses
-    assert catch_output(
-        'if 1 if 2 then print 2 then print 1', shell=shell) == '1 2'
+    assert catch_output('if 1 then if 2 then print 3',
+                        shell=shell) == '3'
 
+    assert catch_output('if 1 then if "" print 3', shell=shell) == ''
 
-def test_shell_if_then_multicommand():
-    shell = Shell()
-    then = 'then print 1 ; print 2'
-    assert catch_output(f'if "" {then} ', shell=shell) == ''
-    assert catch_output(f'if 1 {then}', shell=shell) == '1\n2'
+    assert catch_output('if "" then if 2 then print 3',
+                        shell=shell) == ''
+
+    assert catch_output('if 1 then if "" then print 3',
+                        shell=shell) == ''
 
 
 def test_pipe():
@@ -311,7 +329,7 @@ def test_set_do_char_method():
     assert catch_output(op, shell=shell, strict=True) == op
 
     # verify that clashes are resolved
-    for op in [delimiters.bash[0], delimiters.python[1]]:
+    for op in [delimiters.bash[0], delimiters.RIGHT_ASSIGNMENT]:
         assert catch_output(op, shell=shell, strict=True) == ''
 
         with raises(ShellError):
