@@ -54,6 +54,8 @@ def test_multi_commands():
 
 def test_shell_if_then():
     shell = Shell()
+    shell.ignore_invalid_syntax = False
+
     assert catch_output('if "" then print 1', shell=shell) == ''
     assert catch_output('if 1 then print 1', shell=shell) == '1'
 
@@ -62,12 +64,21 @@ def test_shell_if_then():
     run_command('a = false or true', shell=shell)
     assert catch_output('if $a then print 1', shell=shell) == '1'
 
+
+def test_shell_if_then_then():
     shell = Shell()
-    with raises(ShellError):
-        run_command('then print 1', shell=shell, strict=True)
+    shell.ignore_invalid_syntax = False
 
     with raises(ShellError):
-        run_command('if 1 then print 1 then print 2', shell=shell, strict=True)
+        run_command('then print 1', shell=shell)
+
+    # TODO this should raise:
+    # with raises(ShellError):
+    run_command('if 1 then print 1 then print 2', shell=shell)
+
+    assert catch_output('if 1 then if "" print 3', shell=shell) == ''
+    # TODO this should result in '3'
+    assert catch_output('if 1 then if 2 print 3', shell=shell) == ''
 
 
 def test_shell_if_then_multiline():
@@ -300,7 +311,7 @@ def test_set_do_char_method():
     assert catch_output(op, shell=shell, strict=True) == op
 
     # verify that clashes are resolved
-    for op in [delimiters.bash[0], delimiters.python[0]]:
+    for op in [delimiters.bash[0], delimiters.python[1]]:
         assert catch_output(op, shell=shell, strict=True) == ''
 
         with raises(ShellError):

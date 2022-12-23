@@ -645,8 +645,7 @@ class BaseShell(Cmd):
                     raise ShellError(
                         f'If-else clause requires an {IF} statement')
 
-                result = self.locals[IF].pop()
-                if result:
+                if self.locals[IF][-1]:
                     # skip
                     return ''
                 # otherwise continue
