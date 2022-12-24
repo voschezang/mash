@@ -16,7 +16,7 @@ from mash.io_util import log, shell_ready_signal, print_shell_ready_signal, chec
 from mash.shell import delimiters
 from mash.shell.delimiters import DEFINE_FUNCTION, IF, LEFT_ASSIGNMENT, RETURN, RIGHT_ASSIGNMENT, THEN
 from mash.shell.function import InlineFunction
-from mash.util import for_any, has_method, identity, is_globbable, is_valid_method_name, match_words, omit_prefixes, split_prefixes, split_sequence, glob
+from mash.util import for_any, has_method, identity, is_globbable, is_valid_method_name, match_words, omit_prefixes, removeprefix, split_prefixes, split_sequence, glob
 
 
 confirmation_mode = False
@@ -193,7 +193,7 @@ class BaseShell(Cmd):
     def _define_multiline_function(self, line: str):
         line = line.lstrip()
         if line.startswith(RETURN + ' '):
-            line = line.removeprefix(RETURN + ' ')
+            line = removeprefix(line, RETURN + ' ')
             self.locals[DEFINE_FUNCTION].command = line
             self._save_inline_function()
 

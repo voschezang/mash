@@ -533,6 +533,13 @@ def call(f, *_):
     """
     return f()
 
+
+def removeprefix(s: str, prefix: str) -> str:
+    # from python 3.11
+    if s.startswith(prefix):
+        return s[len(prefix):]
+    return s
+
 ################################################################################
 # Predicates
 ################################################################################
