@@ -5,10 +5,6 @@ from mash.shell import ShellError
 from mash.shell.shell import Shell, run_command
 
 
-# Beware of the trailing space
-run = 'python src/examples/shell_example.py '
-
-
 def catch_output(line='', func=run_command, **kwds) -> str:
     return io_util.catch_output(line, func, **kwds)
 
@@ -104,11 +100,13 @@ def test_assign_variable_left_hand():
 
 def test_assign_multicommand():
     shell = Shell()
-    # assert catch_output('assign x |> print 20 ', shell=shell) == ''
-    # assert shell.env['x'] == '20'
+    assert catch_output('assign x |> print 20 ', shell=shell) == ''
+    assert shell.env['x'] == '20'
 
-    assert catch_output('y <- echo 20 |> echo ; print 30',
-                        shell=shell) == '\n30'
+    assert catch_output('y <- echo 20 |> echo 1 ; print 30',
+                        shell=shell) == '1\n30'
+
+    # TODO this should be '1 20'
     assert shell.env['y'] == '20'
 
 
@@ -159,13 +157,16 @@ def test_do_export():
     run_command(f'export {k} "{v}"', shell)
     assert shell.env[k] == v
 
+    run_command('export k', shell)
+    assert 'k' in shell.env
+    assert shell.env['k'] == ''
 
-def test_do_export_unset():
+
+def test_do_unset():
     shell = Shell()
 
-    # unset var when no values are given
     shell.env['k'] = '1'
-    run_command('export k', shell)
+    run_command('unset k', shell)
     assert 'k' not in shell.env
 
 

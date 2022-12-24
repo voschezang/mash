@@ -34,9 +34,6 @@ def test_add_cli_args():
 
 
 def test_cli():
-    # Note that this may be run with a different python version,
-    # based on the shebang (#!) in shell.py
-
     assert check_output(run + 'print 3') == '3'
     assert check_output(run + '"print 3"') == '3'
     assert check_output(run + '\"print 3\"') == '3'

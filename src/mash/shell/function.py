@@ -55,8 +55,11 @@ class ShellFunction:
             log('\t', last_exception)
 
 
+# TODO rename ShellFunction to ShellMethod, and rename InlineFunction to Function
 class InlineFunction:
-    def __init__(self, command: str, *args: str, func_name='') -> None:
+    def __init__(self, command: str, *args: str, func_name='', multiline=False) -> None:
         self.command = command
         self.args = args
         self.func_name = func_name
+        self.multiline = multiline
+        self.inner = []

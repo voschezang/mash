@@ -7,10 +7,6 @@ from mash.shell import delimiters, ShellError
 from mash.shell.shell import Shell, run_command
 
 
-# Beware of the trailing space
-run = 'python src/examples/shell_example.py '
-
-
 def catch_output(line='', func=run_command, **kwds) -> str:
     return io_util.catch_output(line, func, **kwds)
 
@@ -233,7 +229,16 @@ def test_inline_function_constant():
     assert catch_output('f 100', shell=shell) == '100'
 
 
-def test_inline_function():
+def test_inline_function_with_variable():
+    shell = Shell()
+    shell.ignore_invalid_syntax = False
+
+    run_command('a = 1', shell=shell)
+    run_command('f (b) : $a', shell=shell)
+    assert catch_output('f 2', shell=shell) == '1'
+
+
+def test_inline_function_with_args():
     shell = Shell()
 
     # repeat input
@@ -280,10 +285,34 @@ def test_inline_function_with_map():
     assert catch_output(line, shell=shell, strict=True)
 
 
+def test_multiline_function():
+    shell = Shell()
+    shell.ignore_invalid_syntax = False
+    cmd = """
+f (x):
+    y = 10
+    return 1 |> math 1 +
+    """
+    # run_command(cmd, shell=shell)
+
+    # assert catch_output(f'f 1', shell=shell) == '2'
+    # assert catch_output(cmd + '\nprint 10', shell=shell) == '10'
+
+    cmd = """
+f (x):
+    y = 20
+    # z <- echo 2 |> math 1 +
+    z <- math 1 + 2 
+    return x $y $z
+    """
+    run_command(cmd, shell=shell)
+    assert catch_output(f'f 10', shell=shell) == '\n\n10 20 3'
+
+
 def test_shell_do_math():
     shell = Shell()
-    catch_output(f'math 1 + 10', shell=shell) == '11'
-    catch_output(f'math 1 + 2 * 3', shell=shell) == '7'
+    assert catch_output(f'math 1 + 10', shell=shell) == '11'
+    assert catch_output(f'math 1 + 2 * 3', shell=shell) == '7'
 
 
 def test_shell_range():

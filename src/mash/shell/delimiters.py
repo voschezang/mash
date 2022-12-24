@@ -2,6 +2,7 @@ from enum import Enum
 
 
 class Python(Enum):
+    RETURN = 'return'
     IF = 'if'
     THEN = 'then'
     NEW_COMMAND = ';'
@@ -21,6 +22,7 @@ python = [o.value for o in Python]
 all = bash + python
 
 # use dedicated variables to simplify searching
+RETURN = Python.RETURN.value
 DEFINE_FUNCTION = Python.DEFINE_FUNCTION.value
 RIGHT_ASSIGNMENT = Python.RIGHT_ASSIGNMENT.value
 LEFT_ASSIGNMENT = Python.LEFT_ASSIGNMENT.value

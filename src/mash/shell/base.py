@@ -14,14 +14,15 @@ from mash import io_util
 from mash.filesystem.filesystem import FileSystem
 from mash.io_util import log, shell_ready_signal, print_shell_ready_signal, check_output
 from mash.shell import delimiters
-from mash.shell.delimiters import DEFINE_FUNCTION, IF, LEFT_ASSIGNMENT, RIGHT_ASSIGNMENT, THEN
+from mash.shell.delimiters import DEFINE_FUNCTION, IF, LEFT_ASSIGNMENT, RETURN, RIGHT_ASSIGNMENT, THEN
 from mash.shell.function import InlineFunction
 from mash.util import for_any, has_method, identity, is_globbable, is_valid_method_name, match_words, omit_prefixes, split_prefixes, split_sequence, glob
 
 
 confirmation_mode = False
 default_session_filename = '.shell_session.json'
-
+FALSE = ''
+TRUE = '1'
 
 Command = Callable[[Cmd, str], str]
 Types = Union[str, bool, int, float]
@@ -189,14 +190,21 @@ class BaseShell(Cmd):
         self.locals.set(DEFINE_FUNCTION,
                         InlineFunction('', *args, func_name=f))
 
+    def _define_multiline_function(self, line: str):
+        line = line.lstrip()
+        if line.startswith(RETURN + ' '):
+            line = line.removeprefix(RETURN + ' ')
+            self.locals[DEFINE_FUNCTION].command = line
+            self._save_inline_function()
+
+        else:
+            self.locals[DEFINE_FUNCTION].inner.append(line)
+
     def _save_inline_function(self) -> str:
         func = self.locals[DEFINE_FUNCTION]
         self.locals.rm(DEFINE_FUNCTION)
 
         f = func.func_name
-        args = func.args
-        inner = func.command
-
         if has_method(self, f'do_{f}'):
             raise ShellError(
                 f'Name conflict: Cannot define inline function {f}, '
@@ -205,12 +213,13 @@ class BaseShell(Cmd):
         if not is_valid_method_name(f):
             raise ShellError(f'Invalid function name format: {f}')
 
-        inner = self.expand_variables_inline(inner)
+        if not func.multiline:
+            func.command = self.expand_variables_inline(func.command)
 
         # TODO use custom class with attr .functions instead of a string
-        self.locals['functions'][f] = InlineFunction(inner, *args)
+        self.locals['functions'][f] = func
 
-        positionals = ' '.join(args)
+        positionals = ' '.join(func.args)
         log(f'function {f}({positionals});')
 
     def call_inline_function(self, f: InlineFunction, *args: str):
@@ -223,6 +232,17 @@ class BaseShell(Cmd):
         for i, k in enumerate(f.args):
             # quote item to preserve `\n`
             translations[k] = shlex.quote(args[i])
+
+        # TODO ensure that self.env uses local scopes first, before global scopes
+        # self.locals.cd('function_scope')
+        for line in f.inner:
+            terms = [term for term in line.split(' ') if term != '']
+            terms = list(self.translate_terms(terms, translations))
+
+            self.onecmd(' '.join(terms))
+            # TODO
+            # use eval to suppress output
+            # self.eval(' '.join(terms), quote=False)
 
         terms = [term for term in f.command.split(' ') if term != '']
         terms = list(self.translate_terms(terms, translations))
@@ -341,7 +361,7 @@ class BaseShell(Cmd):
 
         for k in keys:
             if not is_valid_method_name(k):
-                raise ShellError('Invalid variable name format: {k}')
+                raise ShellError(f'Invalid variable name format: {k}')
 
         if LEFT_ASSIGNMENT in self.locals:
             assignee = self.locals[LEFT_ASSIGNMENT]
@@ -368,14 +388,27 @@ class BaseShell(Cmd):
         k, *values = args.split(' ')
 
         if len(values) == 0:
-            log(f'unset {k}')
+            values = ['']
+            # log(f'unset {k}')
+            # if k in self.env:
+            #     del self.env[k]
+            # else:
+            #     logging.warning('Invalid key')
+            # return
+
+        self.set_env_variable(k, *values)
+
+    def do_unset(self, args: str):
+        """Unset keys
+        `unset [KEY [KEY..]]
+        """
+        for k in args.split(' '):
             if k in self.env:
                 del self.env[k]
             else:
                 logging.warning('Invalid key')
-            return
 
-        self.set_env_variable(k, *values)
+        return ''
 
     def do_shell(self, args):
         """System call
@@ -513,6 +546,11 @@ class BaseShell(Cmd):
         self._save_result(bool(args))
         return ''
 
+    def do_not(self, args: str) -> str:
+        if args:
+            return FALSE
+        return TRUE
+
     ############################################################################
     # Overrides
     ############################################################################
@@ -521,10 +559,15 @@ class BaseShell(Cmd):
         """Parse and run `line`.
         Returns 0 on success and None otherwise
         """
+
         try:
             line = self.onecmd_prehook(line)
-            lines = list(self.parse_commands(line))
-            self.run_commands(lines)
+
+            if DEFINE_FUNCTION in self.locals and self.locals[DEFINE_FUNCTION].multiline:
+                self._define_multiline_function(line)
+            else:
+                lines = list(self.parse_commands(line))
+                self.run_commands(lines)
 
         except CancelledError:
             pass
@@ -556,7 +599,15 @@ class BaseShell(Cmd):
         head, *tail = line.split(' ')
         if head in self.locals['functions']:
             f = self.locals['functions'][head]
-            return self.call_inline_function(f, *tail)
+            try:
+                result = self.call_inline_function(f, *tail)
+            except ShellError:
+                # reset local scope
+                self.locals.cd()
+                raise
+
+            self.locals.cd()
+            return result
 
         if line in self._chars_allowed_for_char_method:
             return self._do_char_method(line)
@@ -581,21 +632,26 @@ class BaseShell(Cmd):
 
         for i, line in enumerate(lines):
 
+            if DEFINE_FUNCTION in self.locals:
+                if not self.locals[DEFINE_FUNCTION].multiline:
+                    if ':' in line:
+                        line = line[1:]
+
+                cmd = ' ' + ' '.join(line)
+                if self.locals[DEFINE_FUNCTION].multiline:
+                    self.locals[DEFINE_FUNCTION].inner[-1] += cmd
+                else:
+                    self.locals[DEFINE_FUNCTION].command += cmd
+
+                result = None
+                continue
+
             if LEFT_ASSIGNMENT not in self.locals \
                     and i+1 < len(lines) \
                     and '<-' in lines[i+1]:
                 # prefix line if '<-' is used later on
                 j = 1 if ';' in line else 0
                 line.insert(j, 'assign')
-
-            if DEFINE_FUNCTION in self.locals:
-                if ':' in line:
-                    line = line[1:]
-
-                # self.locals[DEFINE_FUNCTION].command += '; ' + ' '.join(line)
-                self.locals[DEFINE_FUNCTION].command += ' ' + ' '.join(line)
-                result = None
-                continue
 
             try:
                 result = self.run_single_command(line, result)
@@ -616,6 +672,7 @@ class BaseShell(Cmd):
 
                 raise ShellError(str(e))
 
+            # TODO the condition `DEFINE_FUNCTION` is never true
             if DEFINE_FUNCTION not in self.locals:
                 # handle inline `<-`
                 if LEFT_ASSIGNMENT in self.locals and 'assign' not in line:
@@ -623,7 +680,12 @@ class BaseShell(Cmd):
                     result = ''
 
         if DEFINE_FUNCTION in self.locals:
-            self._save_inline_function()
+            # returned = for_any(lines, contains, 'return')
+            if not self.locals[DEFINE_FUNCTION].multiline:
+                if self.locals[DEFINE_FUNCTION].command:
+                    self._save_inline_function()
+                else:
+                    self.locals[DEFINE_FUNCTION].multiline = True
 
         elif LEFT_ASSIGNMENT in self.locals and not io_util.interactive:
             # cancel assignment
@@ -673,9 +735,11 @@ class BaseShell(Cmd):
                 return ''
 
             elif prefixes[-1] == IF:
-                # if self.locals[IF] and self.locals[IF][-1]['depth'] == 0:
-                #     raise ShellError(
-                #         f'The previous if-then statement was not closed')
+                assert_if_then_is_closed = False
+                if assert_if_then_is_closed:
+                    if self.locals[IF] and self.locals[IF][-1]['depth'] == 0:
+                        raise ShellError(
+                            f'The previous if-then statement was not closed')
 
                 if self.locals[IF] and not self.locals[IF][-1]['value']:
                     value = False
