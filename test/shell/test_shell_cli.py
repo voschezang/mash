@@ -10,7 +10,7 @@ from mash.util import identity
 
 
 # Beware of the trailing space
-run = 'python src/examples/shell_example.py '
+run = 'python3 src/examples/shell_example.py '
 
 
 def catch_output(line='', func=run_command, **kwds) -> str:
