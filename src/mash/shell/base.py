@@ -2,7 +2,6 @@ from asyncio import CancelledError
 from cmd import Cmd
 from collections import defaultdict
 from dataclasses import asdict
-from itertools import chain
 from json import dumps, loads
 from operator import contains
 from typing import Any, Callable, Dict, Iterable, List, Tuple, Union
@@ -18,7 +17,7 @@ from mash.shell.delimiters import DEFINE_FUNCTION, IF, LEFT_ASSIGNMENT, RETURN, 
 from mash.shell.errors import ShellError, ShellPipeError
 from mash.shell.function import InlineFunction
 from mash.shell.parsing import expand_variables, expand_variables_inline, infer_infix_args, parse_commands
-from mash.util import for_any, has_method, identity, is_globbable, is_valid_method_name, match_words, omit_prefixes, removeprefix, split_prefixes, split_sequence, glob, translate_terms
+from mash.util import for_any, has_method, identity, is_valid_method_name, omit_prefixes, removeprefix, split_prefixes, translate_terms
 
 
 confirmation_mode = False
@@ -114,16 +113,6 @@ class BaseShell(Cmd):
         self._do_char_method = method
         self._chars_allowed_for_char_method = chars
 
-    def update_env(self, env: Dict[str, Any] = None):
-        if env is None:
-            return
-
-        for k in self.env:
-            if k not in env:
-                env[k] = self.env[k]
-
-        self.env = env
-
     def eval(self, args: Iterable[str], quote=True) -> Types:
         """Evaluate / run `args` and return the result.
         """
@@ -158,131 +147,6 @@ class BaseShell(Cmd):
 
         raise RuntimeError('Cannot retrieve result')
 
-    def handle_set_env_variable(self, lhs: Tuple[str], *rhs: str) -> str:
-        if len(lhs) != 1:
-            raise ShellError()
-
-        k = lhs[0]
-        self.set_env_variable(k, *rhs)
-        return ''
-
-    def handle_define_inline_function(self, terms: List[str]) -> str:
-        f, *args = terms
-        args = [arg for arg in args if arg != '']
-
-        if not args or not args[0].startswith('(') or not args[-1].endswith(')'):
-            lhs = ' '.join(terms)
-            raise ShellError(f'Invalid syntax for inline function: {lhs}')
-
-        # strip braces
-        if args[0] == '()':
-            args = []
-        else:
-            args[0] = args[0][1:]
-            args[-1] = args[-1][:-1]
-
-        self.locals.set(DEFINE_FUNCTION,
-                        InlineFunction('', *args, func_name=f))
-
-    def _define_multiline_function(self, line: str):
-        line = line.lstrip()
-        if line.startswith(RETURN + ' '):
-            line = removeprefix(line, RETURN + ' ')
-            self.locals[DEFINE_FUNCTION].command = line
-            self._save_inline_function()
-
-        else:
-            self.locals[DEFINE_FUNCTION].inner.append(line)
-
-    def _save_inline_function(self) -> str:
-        func = self.locals[DEFINE_FUNCTION]
-        self.locals.rm(DEFINE_FUNCTION)
-
-        f = func.func_name
-        if has_method(self, f'do_{f}'):
-            raise ShellError(
-                f'Name conflict: Cannot define inline function {f}, '
-                f'because there already exists a method do_{f}.')
-
-        if not is_valid_method_name(f):
-            raise ShellError(f'Invalid function name format: {f}')
-
-        if not func.multiline:
-            func.command = expand_variables_inline(func.command, self.env,
-                                                   self.completenames_options,
-                                                   self.ignore_invalid_syntax)
-
-        # TODO use custom class with attr .functions instead of a string
-        self.locals['functions'][f] = func
-
-        positionals = ' '.join(func.args)
-        log(f'function {f}({positionals});')
-
-    def call_inline_function(self, f: InlineFunction, *args: str):
-        translations = {}
-
-        if len(args) != len(f.args):
-            raise ShellError(
-                f'Invalid number of arguments: {len(f.args)} arguments expected .')
-
-        for i, k in enumerate(f.args):
-            # quote item to preserve `\n`
-            translations[k] = shlex.quote(args[i])
-
-        # TODO ensure that self.env uses local scopes first, before global scopes
-        # self.locals.cd('function_scope')
-        for line in f.inner:
-            terms = [term for term in line.split(' ') if term != '']
-            terms = list(translate_terms(terms, translations))
-
-            self.onecmd(' '.join(terms))
-            # TODO
-            # use eval to suppress output
-            # self.eval(' '.join(terms), quote=False)
-
-        terms = [term for term in f.command.split(' ') if term != '']
-        terms = list(translate_terms(terms, translations))
-
-        first_func = terms[0]
-        if not has_method(self, f'do_{first_func}') \
-                and first_func not in self.locals['functions']:
-            terms = ['print'] + terms
-
-        return self.eval(terms, quote=False)
-
-    def set_env_variable(self, k: str, *values: str):
-        """Set the variable `k` to `values`
-        """
-        if not is_valid_method_name(k):
-            raise ShellError(f'Invalid variable name format: {k}')
-
-        log(f'set {k}')
-        self.env[k] = ' '.join(values)
-        return k
-
-    def set_env_variables(self, keys: str, result: str):
-        """Set the variable `k` to `values`
-        """
-        if result is None:
-            raise ShellError(f'Missing return value in assignment: {keys}')
-
-        # TODO set multiple keys based on pattern matching
-        # e.g. i j = range(2)
-        k = keys[0]
-
-        self.env[k] = result
-
-    def show_env(self, env=None):
-        if env is None:
-            env = self.env
-
-        if not env:
-            return
-
-        print('Env')
-        for k in env:
-            print(f'\t{k}: {env[k]}')
-
     def onecmd_prehook(self, line):
         """Similar to cmd.precmd but executed before cmd.onecmd
         """
@@ -293,54 +157,6 @@ class BaseShell(Cmd):
                 raise CancelledError()
 
         return line
-
-    def save_session(self, session=default_session_filename):
-        self.save_session_prehook()
-
-        if not self.env:
-            logging.info('No env data to save')
-            return
-
-        with open(session, 'w') as f:
-            try:
-                json = dumps(self.env)
-            except TypeError:
-                logging.debug('Cannot serialize self.env')
-                try:
-                    json = dumps(self.env, skip_keys=True)
-                except TypeError:
-                    json = dumps(asdict(self.env))
-
-            f.write(json)
-
-    def try_load_session(self, session=default_session_filename):
-        self.load_session(session, strict=False)
-
-    def load_session(self, session: str = None, strict=True):
-        try:
-            with open(session) as f:
-                data = f.read()
-
-        except OSError as e:
-            if strict:
-                raise ShellError(e)
-
-            log(f'Session file not found: {session}: {e}')
-            return
-
-        if not data:
-            logging.info('No env data found')
-            return
-
-        env = loads(data)
-
-        log(f'Using session: {session}')
-        self.show_env(env)
-
-        # TODO handle key conflicts
-        self.update_env(env)
-
-        self.load_session_posthook()
 
     def none(self, _: str) -> str:
         """Do nothing. Similar to util.none.
@@ -871,6 +687,201 @@ class BaseShell(Cmd):
             return method(lhs, *rhs)
 
         raise ValueError()
+
+    ############################################################################
+    # Environment Variables
+    ############################################################################
+
+    def show_env(self, env=None):
+        if env is None:
+            env = self.env
+
+        if not env:
+            return
+
+        print('Env')
+        for k in env:
+            print(f'\t{k}: {env[k]}')
+
+    def update_env(self, env: Dict[str, Any] = None):
+        if env is None:
+            return
+
+        for k in self.env:
+            if k not in env:
+                env[k] = self.env[k]
+
+        self.env = env
+
+    def set_env_variable(self, k: str, *values: str):
+        """Set the variable `k` to `values`
+        """
+        if not is_valid_method_name(k):
+            raise ShellError(f'Invalid variable name format: {k}')
+
+        log(f'set {k}')
+        self.env[k] = ' '.join(values)
+        return k
+
+    def set_env_variables(self, keys: str, result: str):
+        """Set the variable `k` to `values`
+        """
+        if result is None:
+            raise ShellError(f'Missing return value in assignment: {keys}')
+
+        # TODO set multiple keys based on pattern matching
+        # e.g. i j = range(2)
+        k = keys[0]
+
+        self.env[k] = result
+
+    def handle_set_env_variable(self, lhs: Tuple[str], *rhs: str) -> str:
+        if len(lhs) != 1:
+            raise ShellError()
+
+        k = lhs[0]
+        self.set_env_variable(k, *rhs)
+        return ''
+
+    ############################################################################
+    # Persistency: Save/load sessions to disk
+    ############################################################################
+
+    def save_session(self, session=default_session_filename):
+        self.save_session_prehook()
+
+        if not self.env:
+            logging.info('No env data to save')
+            return
+
+        with open(session, 'w') as f:
+            try:
+                json = dumps(self.env)
+            except TypeError:
+                logging.debug('Cannot serialize self.env')
+                try:
+                    json = dumps(self.env, skip_keys=True)
+                except TypeError:
+                    json = dumps(asdict(self.env))
+
+            f.write(json)
+
+    def try_load_session(self, session=default_session_filename):
+        self.load_session(session, strict=False)
+
+    def load_session(self, session: str = None, strict=True):
+        try:
+            with open(session) as f:
+                data = f.read()
+
+        except OSError as e:
+            if strict:
+                raise ShellError(e)
+
+            log(f'Session file not found: {session}: {e}')
+            return
+
+        if not data:
+            logging.info('No env data found')
+            return
+
+        env = loads(data)
+
+        log(f'Using session: {session}')
+        self.show_env(env)
+
+        # TODO handle key conflicts
+        self.update_env(env)
+
+        self.load_session_posthook()
+
+    ############################################################################
+    # Inline & Multiline Functions
+    ############################################################################
+
+    def handle_define_inline_function(self, terms: List[str]) -> str:
+        f, *args = terms
+        args = [arg for arg in args if arg != '']
+
+        if not args or not args[0].startswith('(') or not args[-1].endswith(')'):
+            lhs = ' '.join(terms)
+            raise ShellError(f'Invalid syntax for inline function: {lhs}')
+
+        # strip braces
+        if args[0] == '()':
+            args = []
+        else:
+            args[0] = args[0][1:]
+            args[-1] = args[-1][:-1]
+
+        self.locals.set(DEFINE_FUNCTION,
+                        InlineFunction('', *args, func_name=f))
+
+    def _define_multiline_function(self, line: str):
+        line = line.lstrip()
+        if line.startswith(RETURN + ' '):
+            line = removeprefix(line, RETURN + ' ')
+            self.locals[DEFINE_FUNCTION].command = line
+            self._save_inline_function()
+
+        else:
+            self.locals[DEFINE_FUNCTION].inner.append(line)
+
+    def _save_inline_function(self) -> str:
+        func = self.locals[DEFINE_FUNCTION]
+        self.locals.rm(DEFINE_FUNCTION)
+
+        f = func.func_name
+        if has_method(self, f'do_{f}'):
+            raise ShellError(
+                f'Name conflict: Cannot define inline function {f}, '
+                f'because there already exists a method do_{f}.')
+
+        if not is_valid_method_name(f):
+            raise ShellError(f'Invalid function name format: {f}')
+
+        if not func.multiline:
+            func.command = expand_variables_inline(func.command, self.env,
+                                                   self.completenames_options,
+                                                   self.ignore_invalid_syntax)
+
+        # TODO use custom class with attr .functions instead of a string
+        self.locals['functions'][f] = func
+
+        positionals = ' '.join(func.args)
+        log(f'function {f}({positionals});')
+
+    def call_inline_function(self, f: InlineFunction, *args: str):
+        translations = {}
+
+        if len(args) != len(f.args):
+            raise ShellError(
+                f'Invalid number of arguments: {len(f.args)} arguments expected .')
+
+        for i, k in enumerate(f.args):
+            # quote item to preserve `\n`
+            translations[k] = shlex.quote(args[i])
+
+        # TODO ensure that self.env uses local scopes first, before global scopes
+        # self.locals.cd('function_scope')
+        for line in f.inner:
+            terms = [term for term in line.split(' ') if term != '']
+            terms = list(translate_terms(terms, translations))
+
+            self.onecmd(' '.join(terms))
+            # TODO
+            # use eval to suppress output
+            # self.eval(' '.join(terms), quote=False)
+
+        terms = [term for term in f.command.split(' ') if term != '']
+        terms = list(translate_terms(terms, translations))
+
+        first_func = terms[0]
+        if not has_method(self, f'do_{first_func}') \
+                and first_func not in self.locals['functions']:
+            terms = ['print'] + terms
+
+        return self.eval(terms, quote=False)
 
 
 def is_function_definition(terms: List[str]) -> bool:
