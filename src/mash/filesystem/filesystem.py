@@ -2,6 +2,7 @@
 """A filesystem-like interface for static and dynamic data.
 This can be used to e.g. browse REST APIs.
 """
+from contextlib import contextmanager
 from enum import Enum
 from pickle import dumps, loads
 from pprint import pformat
@@ -381,3 +382,17 @@ class FileSystem:
                     results = [result]
 
             yield from results
+
+
+@contextmanager
+def cd(filesystem: FileSystem, key: str):
+    """Change directory and finally reset 
+    """
+    path = filesystem.full_path
+    try:
+        filesystem.cd(key)
+        yield
+    except IndexError:
+        raise KeyError(key)
+    finally:
+        filesystem.cd(*path)

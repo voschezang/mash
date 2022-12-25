@@ -2,6 +2,7 @@ from copy import deepcopy
 from pytest import raises
 
 from mash.filesystem import FileSystem, Option, OPTIONS
+from mash.filesystem.filesystem import cd
 
 root = {'a': {'1': '1', '2': 2, '3': ['A', 'B', 10, 20, [30]]},
         'b': [{'1': '1'}, {'2': 2}],
@@ -360,3 +361,19 @@ def test_rm():
 
     d.rm('a')
     assert 'a' not in d.ls()
+
+
+def test_with_cd():
+    d = init()
+    d.cd('a')
+    assert d.full_path == ['/', 'a']
+
+    with cd(d, '3'):
+        assert d.full_path == ['/', 'a', '3']
+
+    assert d.full_path == ['/', 'a']
+
+    with cd(d, '3'):
+        d.cd('/')
+
+    assert d.full_path == ['/', 'a']
