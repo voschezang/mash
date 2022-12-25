@@ -16,7 +16,7 @@ from mash.util import has_method, is_valid_method_name
 
 from mash.shell.function import ShellFunction as Function
 import mash.shell.function as func
-from mash.shell.base import BaseShell, ShellError
+from mash.shell.base import BaseShell, ShellError, translate_terms
 
 description = 'If no positional arguments are given then an interactive subshell is started.'
 epilog = f"""
@@ -169,7 +169,7 @@ class Shell(BaseShell):
         return '\n'.join((str(i) for i in range(*args)))
 
     def _eval_terms(self, terms=List[str]) -> str:
-        line = ''.join(self.translate_terms(terms, self.env))
+        line = ''.join(translate_terms(terms, self.env))
         log(line)
 
         try:

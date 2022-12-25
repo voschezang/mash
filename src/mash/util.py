@@ -285,6 +285,18 @@ def split_prefixes(items: Sequence[T], prefixes: Sequence[T]) -> Iterable[T]:
     return takewhile(predicate, items)
 
 
+def translate_terms(terms: Iterable[str], translations: dict):
+    """Iterate over `terms` and return any translations found.
+    """
+    for term in terms:
+        term = term.strip()
+        if term in translations:
+            yield str(translations[term])
+            continue
+
+        yield term
+
+
 def omit_prefixes(items: Sequence[T], prefixes: Sequence[T]) -> Iterable[T]:
     predicate = partial(contains, prefixes)
     return dropwhile(predicate, items)

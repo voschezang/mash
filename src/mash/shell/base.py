@@ -15,8 +15,10 @@ from mash.filesystem.filesystem import FileSystem
 from mash.io_util import log, shell_ready_signal, print_shell_ready_signal, check_output
 from mash.shell import delimiters
 from mash.shell.delimiters import DEFINE_FUNCTION, IF, LEFT_ASSIGNMENT, RETURN, RIGHT_ASSIGNMENT, THEN
+from mash.shell.errors import ShellError, ShellPipeError
 from mash.shell.function import InlineFunction
-from mash.util import for_any, has_method, identity, is_globbable, is_valid_method_name, match_words, omit_prefixes, removeprefix, split_prefixes, split_sequence, glob
+from mash.shell.parsing import expand_variables, expand_variables_inline, infer_infix_args, parse_commands
+from mash.util import for_any, has_method, identity, is_globbable, is_valid_method_name, match_words, omit_prefixes, removeprefix, split_prefixes, split_sequence, glob, translate_terms
 
 
 confirmation_mode = False
@@ -26,14 +28,6 @@ TRUE = '1'
 
 Command = Callable[[Cmd, str], str]
 Types = Union[str, bool, int, float]
-
-
-class ShellError(RuntimeError):
-    pass
-
-
-class ShellPipeError(RuntimeError):
-    pass
 
 
 class BaseShell(Cmd):
@@ -214,7 +208,9 @@ class BaseShell(Cmd):
             raise ShellError(f'Invalid function name format: {f}')
 
         if not func.multiline:
-            func.command = self.expand_variables_inline(func.command)
+            func.command = expand_variables_inline(func.command, self.env,
+                                                   self.completenames_options,
+                                                   self.ignore_invalid_syntax)
 
         # TODO use custom class with attr .functions instead of a string
         self.locals['functions'][f] = func
@@ -237,7 +233,7 @@ class BaseShell(Cmd):
         # self.locals.cd('function_scope')
         for line in f.inner:
             terms = [term for term in line.split(' ') if term != '']
-            terms = list(self.translate_terms(terms, translations))
+            terms = list(translate_terms(terms, translations))
 
             self.onecmd(' '.join(terms))
             # TODO
@@ -245,7 +241,7 @@ class BaseShell(Cmd):
             # self.eval(' '.join(terms), quote=False)
 
         terms = [term for term in f.command.split(' ') if term != '']
-        terms = list(self.translate_terms(terms, translations))
+        terms = list(translate_terms(terms, translations))
 
         first_func = terms[0]
         if not has_method(self, f'do_{first_func}') \
@@ -345,6 +341,18 @@ class BaseShell(Cmd):
         self.update_env(env)
 
         self.load_session_posthook()
+
+    def none(self, _: str) -> str:
+        """Do nothing. Similar to util.none.
+        This is a default value for self._do_char_method.
+        """
+        return ''
+
+    def _save_result(self, value, overwrite=True):
+        if overwrite:
+            self._last_results = [value]
+        else:
+            self._last_results.append(value)
 
     ############################################################################
     # Commands: do_*
@@ -566,7 +574,9 @@ class BaseShell(Cmd):
             if DEFINE_FUNCTION in self.locals and self.locals[DEFINE_FUNCTION].multiline:
                 self._define_multiline_function(line)
             else:
-                lines = list(self.parse_commands(line))
+                lines = list(parse_commands(line,
+                                            self.delimiters,
+                                            self.ignore_invalid_syntax))
                 self.run_commands(lines)
 
         except CancelledError:
@@ -795,7 +805,8 @@ class BaseShell(Cmd):
     def parse_single_command(self, command_and_args: List[str]) -> Tuple[List[str], str, List[str]]:
         # strip right-hand side delimiters
         all_args = list(omit_prefixes(command_and_args, self.delimiters))
-        all_args = list(self.expand_variables(all_args))
+        all_args = list(expand_variables(all_args, self.env,
+                        self.completenames_options, self.ignore_invalid_syntax))
         _f, *args = all_args
         line = ' '.join(all_args)
 
@@ -837,57 +848,6 @@ class BaseShell(Cmd):
         log(stderr)
         return stdout
 
-    ############################################################################
-    # Argument Parsing
-    ############################################################################
-
-    def parse_commands(self, line: str) -> Iterable[List[str]]:
-        """Split up `line` into an iterable of single commands.
-        """
-        try:
-            # split lines and handle quotes
-            # e.g. convert 'echo "echo 1"' to ['echo', 'echo 1']
-            terms = shlex.split(line, comments=True)
-
-            # re-quote delimiters
-            for i, term in enumerate(terms):
-                # if other_delimiters:
-                if term in self.delimiters or term == '=':
-                    if '"' + term + '"' in line or "'" + term + "'" in line:
-                        terms[i] = f'"{terms[i]}"'
-
-            # split `:`
-            for i, term in enumerate(terms):
-                if term.endswith(':'):
-                    # verify that the term wasn't quoted
-                    if '"' + term + '"' in line or "'" + term + "'" in line:
-                        continue
-
-                    terms[i] = terms[i][:-1]
-                    terms.insert(i+1, ':')
-                    break
-
-        except ValueError as e:
-            msg = f'Invalid syntax: {e} for {str(line)[:10]} ..'
-            if self.ignore_invalid_syntax:
-                log(msg)
-                return []
-
-            raise ShellError(msg)
-
-        if not terms:
-            return []
-
-        ################################################################################
-        # handle lines that end with `;`
-        # e.g. 'echo 1; echo 2;'
-        # TODO this doesn't preserve ; when it was originally enclosed in quotes
-        # terms = chain.from_iterable([split_tips(term.strip(), ';') for term in terms])
-        ################################################################################
-
-        # group terms based on delimiters
-        return split_sequence(terms, self.delimiters, return_delimiters=True)
-
     def infix_command(self, *args: str):
         """Treat `args` as an infix command.
         Apply the respective infix method to args.
@@ -900,7 +860,7 @@ class BaseShell(Cmd):
                 continue
 
             try:
-                lhs, rhs = self.infer_infix_args(op, *args)
+                lhs, rhs = infer_infix_args(op, *args)
             except ValueError:
                 msg = f'Invalid syntax for infix operator {op}'
                 if self.ignore_invalid_syntax:
@@ -911,90 +871,6 @@ class BaseShell(Cmd):
             return method(lhs, *rhs)
 
         raise ValueError()
-
-    def infer_infix_args(self, op: str, *args: str) -> Tuple[Tuple[str], Tuple[str]]:
-        if args[1] == op:
-            lhs, _, *rhs = args
-            lhs = (lhs,)
-        else:
-            i = args.index(op)
-            lhs = args[:i]
-            rhs = args[i:]
-        return lhs, rhs
-
-    def expand_variables(self, terms: List[str]) -> Iterable[str]:
-        """Replace variables with their values.
-        E.g.
-        ```sh
-        a = 1
-        print $a # gets converted to `print 1`
-        ```
-        """
-        for v in terms:
-            matches = match_words(v, prefix=r'\$')
-            if matches:
-                for match in matches:
-                    k = match[1:]
-                    if not is_valid_method_name(k):
-                        # ignore this variable silently
-                        continue
-
-                    error_msg = f'Variable `{match}` is not set'
-
-                    if k in self.env:
-                        v = v.replace(match, str(self.env[k]))
-                    elif self.ignore_invalid_syntax:
-                        log(error_msg)
-                    else:
-                        raise ShellError(error_msg)
-
-            if is_globbable(v):
-                try:
-                    matches = glob(v, self.completenames_options, strict=True)
-                    yield ' '.join(matches)
-                    continue
-
-                except ValueError as e:
-                    if self.ignore_invalid_syntax:
-                        log(f'Invalid syntax: {e}')
-                    else:
-                        raise ShellError(e)
-
-            yield v
-
-    def expand_variables_inline(self, line: str):
-        """Expand $variables in `line`.
-        """
-        terms = line.split(' ')
-        expanded_terms = self.expand_variables(terms)
-        line = ' '.join(expanded_terms)
-        return line
-
-    def expand_inner_variables(self, line: str):
-        matches = match_words(line, prefix=r'\$')
-        for match in matches:
-            line = line.replace(match, '')
-
-    def none(self, _: str) -> str:
-        """Do nothing. Similar to util.none.
-        This is a default value for self._do_char_method.
-        """
-        return ''
-
-    def _save_result(self, value, overwrite=True):
-        if overwrite:
-            self._last_results = [value]
-        else:
-            self._last_results.append(value)
-
-    def translate_terms(self, terms: Iterable[str], translations: dict):
-        for term in terms:
-            term = term.strip()
-            if term in translations:
-                yield str(translations[term])
-                continue
-
-            yield term
 
 
 def is_function_definition(terms: List[str]) -> bool:
