@@ -213,12 +213,6 @@ class BaseShell(Cmd):
 
         if len(values) == 0:
             values = ['']
-            # log(f'unset {k}')
-            # if k in self.env:
-            #     del self.env[k]
-            # else:
-            #     logging.warning('Invalid key')
-            # return
 
         self.set_env_variable(k, *values)
 
@@ -459,25 +453,11 @@ class BaseShell(Cmd):
         for i, line in enumerate(lines):
 
             if DEFINE_FUNCTION in self.locals:
-                if not self.locals[DEFINE_FUNCTION].multiline:
-                    if ':' in line:
-                        line = line[1:]
-
-                cmd = ' ' + ' '.join(line)
-                if self.locals[DEFINE_FUNCTION].multiline:
-                    self.locals[DEFINE_FUNCTION].inner[-1] += cmd
-                else:
-                    self.locals[DEFINE_FUNCTION].command += cmd
-
+                self._extend_inline_function_definition(line)
                 result = None
                 continue
 
-            if LEFT_ASSIGNMENT not in self.locals \
-                    and i+1 < len(lines) \
-                    and '<-' in lines[i+1]:
-                # prefix line if '<-' is used later on
-                j = 1 if ';' in line else 0
-                line.insert(j, 'assign')
+            self._conditionally_insert_assign_operator(lines, i, line)
 
             try:
                 result = self.run_single_command(line, result)
@@ -519,6 +499,26 @@ class BaseShell(Cmd):
 
         elif result is not None:
             print(result)
+
+    def _conditionally_insert_assign_operator(self, lines, i, line):
+        if LEFT_ASSIGNMENT not in self.locals \
+                and i+1 < len(lines) \
+                and '<-' in lines[i+1]:
+            # prefix line if '<-' is used later on
+            j = 1 if ';' in line else 0
+            line.insert(j, 'assign')
+
+    def _extend_inline_function_definition(self, line):
+        if not self.locals[DEFINE_FUNCTION].multiline:
+            if ':' in line:
+                line = line[1:]
+
+        cmd = ' ' + ' '.join(line)
+        if self.locals[DEFINE_FUNCTION].multiline:
+            self.locals[DEFINE_FUNCTION].inner[-1] += cmd
+        else:
+            self.locals[DEFINE_FUNCTION].command += cmd
+        return line
 
     def run_single_command(self, command_and_args: List[str], prev_result: str = '') -> str:
         prev_result = self.filter_result(command_and_args, prev_result)
