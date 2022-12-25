@@ -10,10 +10,11 @@ import shlex
 import subprocess
 
 from mash import io_util
-from mash.filesystem.filesystem import FileSystem
+from mash.filesystem.filesystem import FileSystem, cd
 from mash.io_util import log, shell_ready_signal, print_shell_ready_signal, check_output
 from mash.shell import delimiters
 from mash.shell.delimiters import DEFINE_FUNCTION, IF, LEFT_ASSIGNMENT, RETURN, RIGHT_ASSIGNMENT, THEN
+from mash.shell.env import ENV, Environment, show
 from mash.shell.errors import ShellError, ShellPipeError
 from mash.shell.function import InlineFunction
 from mash.shell.parsing import expand_variables, expand_variables_inline, infer_infix_args, parse_commands
@@ -22,6 +23,7 @@ from mash.util import for_any, has_method, identity, is_valid_method_name, omit_
 
 confirmation_mode = False
 default_session_filename = '.shell_session.json'
+
 FALSE = ''
 TRUE = '1'
 
@@ -67,11 +69,10 @@ class BaseShell(Cmd):
         # defaults
         self.ignore_invalid_syntax = True
 
-        self.env = {}
         self.locals = FileSystem(defaultdict(dict))
         self.locals.set(IF, [])
 
-        self.update_env(env)
+        self.env = Environment(self.locals)
 
         self.auto_save = False
         self.auto_reload = False
@@ -692,27 +693,6 @@ class BaseShell(Cmd):
     # Environment Variables
     ############################################################################
 
-    def show_env(self, env=None):
-        if env is None:
-            env = self.env
-
-        if not env:
-            return
-
-        print('Env')
-        for k in env:
-            print(f'\t{k}: {env[k]}')
-
-    def update_env(self, env: Dict[str, Any] = None):
-        if env is None:
-            return
-
-        for k in self.env:
-            if k not in env:
-                env[k] = self.env[k]
-
-        self.env = env
-
     def set_env_variable(self, k: str, *values: str):
         """Set the variable `k` to `values`
         """
@@ -754,17 +734,23 @@ class BaseShell(Cmd):
             logging.info('No env data to save')
             return
 
+        self.reset_locals()
+        env = self.locals[ENV]
+
         with open(session, 'w') as f:
             try:
-                json = dumps(self.env)
+                json = dumps(env)
             except TypeError:
                 logging.debug('Cannot serialize self.env')
                 try:
-                    json = dumps(self.env, skip_keys=True)
+                    json = dumps(env, skip_keys=True)
                 except TypeError:
-                    json = dumps(asdict(self.env))
+                    json = dumps(asdict(env))
 
             f.write(json)
+
+    def reset_locals(self):
+        self.locals.cd()
 
     def try_load_session(self, session=default_session_filename):
         self.load_session(session, strict=False)
@@ -787,11 +773,12 @@ class BaseShell(Cmd):
 
         env = loads(data)
 
+        self.reset_locals()
         log(f'Using session: {session}')
-        self.show_env(env)
+        show(env)
 
         # TODO handle key conflicts
-        self.update_env(env)
+        self.env.update(env)
 
         self.load_session_posthook()
 
