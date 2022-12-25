@@ -272,7 +272,7 @@ class FileSystem:
         return fs
 
     def __getitem__(self, k):
-        return self.root[k]
+        return self.get(k)
 
     def __contains__(self, k):
         return k in self.root
@@ -385,14 +385,14 @@ class FileSystem:
 
 
 @contextmanager
-def cd(filesystem: FileSystem, key: str):
+def cd(filesystem: FileSystem, *keys: str):
     """Change directory and finally reset 
     """
     path = filesystem.full_path
     try:
-        filesystem.cd(key)
+        filesystem.cd(*keys)
         yield
     except IndexError:
-        raise KeyError(key)
+        raise KeyError(keys)
     finally:
         filesystem.cd(*path)

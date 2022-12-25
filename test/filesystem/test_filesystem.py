@@ -79,6 +79,10 @@ def test_get_index():
     with raises(ValueError):
         d.get(['a', '3', 10])
 
+def test_getitem():
+    d = init()
+    assert d['a'] == d.get('a')
+
 
 def test_set():
     d = init()
@@ -341,7 +345,7 @@ def test_cp_multi():
 def test_mv_rename():
     d = init()
 
-    a = d['a']
+    a = d.get('a')
     d.mv('a', 'c')
     assert d.get(['c']) == a
     assert 'a' not in d
@@ -350,7 +354,7 @@ def test_mv_rename():
 def test_mv_to():
     d = init()
 
-    a = d['a']
+    a = d.get('a')
     d.mv('a', 'a', 'c')
     assert d.get(['c', 'a']) == a
 
@@ -377,3 +381,14 @@ def test_with_cd():
         d.cd('/')
 
     assert d.full_path == ['/', 'a']
+
+
+def test_with_cd_multiple_keys():
+    d = init()
+    assert d.full_path == ['/']
+
+    keys = ['a', '3']
+    with cd(d, *keys):
+        assert d.full_path == ['/'] + keys
+
+    assert d.full_path == ['/']

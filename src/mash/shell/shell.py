@@ -109,15 +109,13 @@ class Shell(BaseShell):
         """Retrieve environment variables.
         Return all variables if no key is given.
         """
-        data = self.env
-        if keys:
-            try:
-                data = {k: self.env[k] for k in keys.split()}
-            except KeyError:
-                log('Invalid key')
-                return
+        if not keys:
+            return self.env.asdict()
 
-        return data
+        try:
+            return {k: self.env[k] for k in keys.split()}
+        except KeyError:
+            log('Invalid key')
 
     def do_E(self, args):
         """Show the last exception
@@ -169,7 +167,7 @@ class Shell(BaseShell):
         return '\n'.join((str(i) for i in range(*args)))
 
     def _eval_terms(self, terms=List[str]) -> str:
-        line = ''.join(translate_terms(terms, self.env))
+        line = ''.join(translate_terms(terms, self.env.asdict()))
         log(line)
 
         try:

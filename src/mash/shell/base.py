@@ -10,7 +10,7 @@ import shlex
 import subprocess
 
 from mash import io_util
-from mash.filesystem.filesystem import FileSystem, cd
+from mash.filesystem.filesystem import FileSystem
 from mash.io_util import log, shell_ready_signal, print_shell_ready_signal, check_output
 from mash.shell import delimiters
 from mash.shell.delimiters import DEFINE_FUNCTION, IF, LEFT_ASSIGNMENT, RETURN, RIGHT_ASSIGNMENT, THEN
@@ -26,6 +26,7 @@ default_session_filename = '.shell_session.json'
 
 FALSE = ''
 TRUE = '1'
+CURRENT_FUNCTION_SCOPE = 'current_function_scope'
 
 Command = Callable[[Cmd, str], str]
 Types = Union[str, bool, int, float]
@@ -69,8 +70,8 @@ class BaseShell(Cmd):
         # defaults
         self.ignore_invalid_syntax = True
 
-        self.locals = FileSystem(defaultdict(dict))
-        self.locals.set(IF, [])
+        self.locals = FileSystem(scope())
+        self.init_current_scope()
 
         self.env = Environment(self.locals)
 
@@ -424,10 +425,10 @@ class BaseShell(Cmd):
                 result = self.call_inline_function(f, *tail)
             except ShellError:
                 # reset local scope
-                self.locals.cd()
+                self.reset_locals()
                 raise
 
-            self.locals.cd()
+            self.reset_locals()
             return result
 
         if line in self._chars_allowed_for_char_method:
@@ -479,15 +480,14 @@ class BaseShell(Cmd):
 
                 raise ShellError(str(e))
 
-            # TODO the condition `DEFINE_FUNCTION` is never true
-            if DEFINE_FUNCTION not in self.locals:
-                # handle inline `<-`
-                if LEFT_ASSIGNMENT in self.locals and 'assign' not in line:
-                    self._save_assignee(result)
-                    result = ''
+            # handle inline `<-`
+            if DEFINE_FUNCTION not in self.locals \
+                    and LEFT_ASSIGNMENT in self.locals \
+                    and 'assign' not in line:
+                self._save_assignee(result)
+                result = ''
 
         if DEFINE_FUNCTION in self.locals:
-            # returned = for_any(lines, contains, 'return')
             if not self.locals[DEFINE_FUNCTION].multiline:
                 if self.locals[DEFINE_FUNCTION].command:
                     self._save_inline_function()
@@ -850,7 +850,8 @@ class BaseShell(Cmd):
             translations[k] = shlex.quote(args[i])
 
         # TODO ensure that self.env uses local scopes first, before global scopes
-        # self.locals.cd('function_scope')
+        self.enter_new_scope()
+
         for line in f.inner:
             terms = [term for term in line.split(' ') if term != '']
             terms = list(translate_terms(terms, translations))
@@ -868,7 +869,19 @@ class BaseShell(Cmd):
                 and first_func not in self.locals['functions']:
             terms = ['print'] + terms
 
-        return self.eval(terms, quote=False)
+        result = self.eval(terms, quote=False)
+        self.locals.cd('..')
+        return result
+
+    def enter_new_scope(self):
+        self.locals.set(CURRENT_FUNCTION_SCOPE, scope())
+        self.locals.cd(CURRENT_FUNCTION_SCOPE)
+        self.init_current_scope()
+
+    def init_current_scope(self):
+        self.locals.set(IF, [])
+        self.locals.set(ENV, {})
+        self.locals.set('functions', {})
 
 
 def is_function_definition(terms: List[str]) -> bool:
@@ -885,3 +898,7 @@ def is_function_definition(terms: List[str]) -> bool:
         _f, first, *_, last = terms
 
     return first.startswith('(') and last.endswith(')')
+
+
+def scope():
+    return defaultdict(dict)

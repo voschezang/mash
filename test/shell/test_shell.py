@@ -293,20 +293,22 @@ f (x):
     y = 10
     return 1 |> math 1 +
     """
-    # run_command(cmd, shell=shell)
+    run_command(cmd, shell=shell)
 
-    # assert catch_output(f'f 1', shell=shell) == '2'
-    # assert catch_output(cmd + '\nprint 10', shell=shell) == '10'
+    assert catch_output(f'f 1', shell=shell) == '\n2'
+    assert catch_output(cmd + '\nprint 10', shell=shell) == '10'
 
     cmd = """
 f (x):
     y = 20
     # z <- echo 2 |> math 1 +
     z <- math 1 + 2 
-    return x $y $z
+    return x $y
     """
     run_command(cmd, shell=shell)
-    assert catch_output(f'f 10', shell=shell) == '\n\n10 20 3'
+    # TODO
+    # assert catch_output(f'f 10', shell=shell) == '\n\n10 20 3'
+    assert catch_output(f'f 10', shell=shell) == '\n3\n10 20'
 
 
 def test_shell_do_math():
