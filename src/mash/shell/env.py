@@ -1,5 +1,5 @@
 from typing import Iterable
-from mash.filesystem.filesystem import FileSystem, cd
+from mash.filesystem.filesystem import FileSystem, Option, cd
 from mash.util import crop
 
 ENV = 'env'
@@ -26,14 +26,15 @@ class Environment:
     def __getitem__(self, key: str) -> str:
         """Find `key` in all scopes and return the corresponding value.
         """
-        while True:
-            if key in self.data[ENV]:
-                return self.data.get([ENV, key])
+        with cd(self.data):
+            while True:
+                if key in self.data[ENV]:
+                    return self.data.get([ENV, key])
 
-            try:
-                self.data.cd('..')
-            except IndexError:
-                raise KeyError(key)
+                try:
+                    self.data.cd_up()
+                except IndexError:
+                    raise KeyError(key)
 
     def __contains__(self, key: object) -> bool:
         try:
@@ -43,24 +44,22 @@ class Environment:
         return True
 
     def __delitem__(self, key):
-        while True:
-            if key in self.data[ENV]:
-                with cd(self.data, ENV):
+        with cd(self.data):
+            while True:
+                if key in self.data[ENV]:
+                    self.data.cd(ENV)
                     self.data.rm(key)
-                return
+                    return
 
-            try:
-                self.data.cd('..')
-            except IndexError:
-                raise KeyError(key)
-
-    # def __iter__(self):
-    #     return iter(self.data[ENV])
+                try:
+                    self.data.cd_up()
+                except IndexError:
+                    raise KeyError(key)
 
     def __str__(self) -> str:
-        return str({k: crop(self[k], 15) for k in self.keys()})
+        return str({k: crop(str(self[k]), 15) for k in self.keys()})
 
-    def asdict(self) -> str:
+    def asdict(self) -> dict:
         return {k: self[k] for k in self.keys()}
 
     def keys(self) -> Iterable[str]:
@@ -69,7 +68,7 @@ class Environment:
         """
         # use an ordered list
         keys = []
-        with cd(self.data, '.'):
+        with cd(self.data):
             while True:
                 # iterate over all scopes, from local to global
                 for key in self.data[ENV]:
@@ -78,7 +77,7 @@ class Environment:
                         keys.append(key)
 
                 try:
-                    self.data.cd('..')
+                    self.data.cd_up()
                 except IndexError:
                     break
         return keys

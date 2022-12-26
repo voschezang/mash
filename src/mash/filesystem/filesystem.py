@@ -233,6 +233,9 @@ class FileSystem:
 
         self.post_cd_hook()
 
+    def cd_up(self):
+        self.cd(Option.up.value)
+
     @property
     def semantic_path(self) -> Path:
         """Convert indices in path to semantic values.
@@ -275,7 +278,7 @@ class FileSystem:
         return self.get(k)
 
     def __contains__(self, k):
-        return k in self.root
+        return k in self.state.ls()
 
     ############################################################################
     # Internals
@@ -386,8 +389,12 @@ class FileSystem:
 
 @contextmanager
 def cd(filesystem: FileSystem, *keys: str):
-    """Change directory and finally reset 
+    """Change directory and finally reset the current directory.
+    Stay in the current directory by default. 
     """
+    if not keys:
+        keys = (Option.stay.value)
+
     path = filesystem.full_path
     try:
         filesystem.cd(*keys)

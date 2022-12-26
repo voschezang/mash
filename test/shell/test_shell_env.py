@@ -9,7 +9,7 @@ def init():
     return Environment(fs)
 
 
-def test_setitem():
+def test_env_setitem():
     env = init()
     assert env.keys() == []
 
@@ -20,7 +20,7 @@ def test_setitem():
     assert env.data.get([ENV, 'a']) == 1
 
 
-def test_getitem():
+def test_env_getitem():
     env = init()
 
     with cd(env.data, ENV):
@@ -29,7 +29,7 @@ def test_getitem():
     assert env['a'] == 1
 
 
-def test_contains():
+def test_env_contains():
     env = init()
 
     assert 'a' not in env
@@ -37,7 +37,7 @@ def test_contains():
     assert 'a' in env
 
 
-def test_delitem():
+def test_env_delitem():
     env = init()
 
     env['a'] = 1
@@ -45,10 +45,35 @@ def test_delitem():
     assert 'a' not in env
 
 
-def test_keys():
+def test_env_keys():
     env = init()
     keys = ['a', 'b']
     for k in keys:
         env[k] = 1
 
     assert env.keys() == keys
+
+
+def test_env_cd_in_FileSystem():
+    env = init()
+    fs = env.data
+    fs.set('dir', {})
+    env['a'] = 1
+    assert fs.ls() == [ENV, 'dir']
+    assert fs.ls('env') == ['a']
+
+    fs.cd('dir')
+    assert fs.ls() == []
+    fs.set(ENV, {})
+    assert fs.ls() == [ENV]
+    assert fs.ls('env') == []
+
+    env['b'] = 2
+    assert fs.ls('env') == ['b']
+    assert env.keys() == ['b', 'a']
+    assert env['a'] == 1
+    assert env['b'] == 2
+    assert fs.ls('env') == ['b']
+
+    fs.cd()
+    assert fs.ls('env') == ['a']
