@@ -1,6 +1,7 @@
 from asyncio import CancelledError
 from cmd import Cmd
 from collections import defaultdict
+from contextlib import contextmanager
 from dataclasses import asdict
 from json import dumps, loads
 from operator import contains
@@ -10,14 +11,14 @@ import shlex
 import subprocess
 
 from mash import io_util
-from mash.filesystem.filesystem import FileSystem
+from mash.filesystem.filesystem import FileSystem, cd
 from mash.io_util import log, shell_ready_signal, print_shell_ready_signal, check_output
 from mash.shell import delimiters
 from mash.shell.delimiters import DEFINE_FUNCTION, IF, LEFT_ASSIGNMENT, RETURN, RIGHT_ASSIGNMENT, THEN
 from mash.shell.env import ENV, Environment, show
 from mash.shell.errors import ShellError, ShellPipeError
 from mash.shell.function import InlineFunction
-from mash.shell.parsing import expand_variables, expand_variables_inline, infer_infix_args, parse_commands
+from mash.shell.parsing import expand_variables, expand_variables_inline, filter_comments, infer_infix_args, parse_commands
 from mash.util import for_any, has_method, identity, is_valid_method_name, omit_prefixes, removeprefix, split_prefixes, translate_terms
 
 
@@ -26,7 +27,8 @@ default_session_filename = '.shell_session.json'
 
 FALSE = ''
 TRUE = '1'
-CURRENT_FUNCTION_SCOPE = 'current_function_scope'
+COMMENT = '#'
+INNER_SCOPE = 'inner_scope'
 
 Command = Callable[[Cmd, str], str]
 Types = Union[str, bool, int, float]
@@ -87,6 +89,10 @@ class BaseShell(Cmd):
         if self.auto_reload:
             self.try_load_session()
 
+    def init_current_scope(self):
+        self.locals.set(IF, [])
+        self.locals.set(ENV, {})
+
     @property
     def delimiters(self):
         """Return the most recent values of the delimiters.
@@ -122,7 +128,9 @@ class BaseShell(Cmd):
             args = (shlex.quote(arg) for arg in args)
             # args = ' '.join(shlex.quote(arg) for arg in args)
 
-        args = ' '.join(args)
+        args = ' '.join(filter_comments(args))
+        if not args:
+            return ''
 
         k = '_eval_output'
         line = f'{args} |> export {k}'
@@ -171,6 +179,12 @@ class BaseShell(Cmd):
             self._last_results = [value]
         else:
             self._last_results.append(value)
+
+    def is_function(self, func_name: str) -> bool:
+        return has_method(self, f'do_{func_name}') or self.is_inline_function(func_name)
+
+    def is_inline_function(self, func_name: str) -> bool:
+        return func_name in self.env and isinstance(self.env[func_name], InlineFunction)
 
     ############################################################################
     # Commands: do_*
@@ -375,7 +389,7 @@ class BaseShell(Cmd):
     # Overrides
     ############################################################################
 
-    def onecmd(self, line: str) -> bool:
+    def onecmd(self, line: str, print_result=True) -> bool:
         """Parse and run `line`.
         Returns 0 on success and None otherwise
         """
@@ -389,7 +403,10 @@ class BaseShell(Cmd):
                 lines = list(parse_commands(line,
                                             self.delimiters,
                                             self.ignore_invalid_syntax))
-                self.run_commands(lines)
+                result = self.run_commands(lines)
+
+                if print_result and result is not None:
+                    print(result)
 
         except CancelledError:
             pass
@@ -419,8 +436,8 @@ class BaseShell(Cmd):
 
     def default(self, line: str):
         head, *tail = line.split(' ')
-        if head in self.locals['functions']:
-            f = self.locals['functions'][head]
+        if head in self.env and isinstance(self.env[head], InlineFunction):
+            f = self.env[head]
             try:
                 result = self.call_inline_function(f, *tail)
             except ShellError:
@@ -493,13 +510,14 @@ class BaseShell(Cmd):
                     self._save_inline_function()
                 else:
                     self.locals[DEFINE_FUNCTION].multiline = True
+            return
 
         elif LEFT_ASSIGNMENT in self.locals and not io_util.interactive:
             # cancel assignment
             self._save_assignee(result)
+            return
 
-        elif result is not None:
-            print(result)
+        return result
 
     def _conditionally_insert_assign_operator(self, lines, i, line):
         if LEFT_ASSIGNMENT not in self.locals \
@@ -704,7 +722,7 @@ class BaseShell(Cmd):
         return k
 
     def set_env_variables(self, keys: str, result: str):
-        """Set the variable `k` to `values`
+        """Set the variables `keys` to the values in result.
         """
         if result is None:
             raise ShellError(f'Missing return value in assignment: {keys}')
@@ -712,7 +730,6 @@ class BaseShell(Cmd):
         # TODO set multiple keys based on pattern matching
         # e.g. i j = range(2)
         k = keys[0]
-
         self.env[k] = result
 
     def handle_set_env_variable(self, lhs: Tuple[str], *rhs: str) -> str:
@@ -786,6 +803,36 @@ class BaseShell(Cmd):
     # Inline & Multiline Functions
     ############################################################################
 
+    def call_inline_function(self, f: InlineFunction, *args: str):
+        translations = {}
+
+        if len(args) != len(f.args):
+            raise ShellError(
+                f'Invalid number of arguments: {len(f.args)} arguments expected .')
+
+        for i, k in enumerate(f.args):
+            # quote item to preserve `\n`
+            translations[k] = shlex.quote(args[i])
+
+        with enter_new_scope(self):
+
+            for line in f.inner:
+                terms = [term for term in line.split(' ') if term != '']
+                terms = list(translate_terms(terms, translations))
+
+                self.onecmd(' '.join(terms), print_result=False)
+
+            terms = [term for term in f.command.split(' ') if term != '']
+            terms = list(translate_terms(terms, translations))
+
+            first_func = terms[0]
+            if not self.is_function(first_func):
+                terms = ['print'] + terms
+
+            result = self.eval(terms, quote=False)
+
+        return result
+
     def handle_define_inline_function(self, terms: List[str]) -> str:
         f, *args = terms
         args = [arg for arg in args if arg != '']
@@ -832,56 +879,9 @@ class BaseShell(Cmd):
                                                    self.completenames_options,
                                                    self.ignore_invalid_syntax)
 
-        # TODO use custom class with attr .functions instead of a string
-        self.locals['functions'][f] = func
-
+        self.env[f] = func
         positionals = ' '.join(func.args)
         log(f'function {f}({positionals});')
-
-    def call_inline_function(self, f: InlineFunction, *args: str):
-        translations = {}
-
-        if len(args) != len(f.args):
-            raise ShellError(
-                f'Invalid number of arguments: {len(f.args)} arguments expected .')
-
-        for i, k in enumerate(f.args):
-            # quote item to preserve `\n`
-            translations[k] = shlex.quote(args[i])
-
-        # TODO ensure that self.env uses local scopes first, before global scopes
-        self.enter_new_scope()
-
-        for line in f.inner:
-            terms = [term for term in line.split(' ') if term != '']
-            terms = list(translate_terms(terms, translations))
-
-            self.onecmd(' '.join(terms))
-            # TODO
-            # use eval to suppress output
-            # self.eval(' '.join(terms), quote=False)
-
-        terms = [term for term in f.command.split(' ') if term != '']
-        terms = list(translate_terms(terms, translations))
-
-        first_func = terms[0]
-        if not has_method(self, f'do_{first_func}') \
-                and first_func not in self.locals['functions']:
-            terms = ['print'] + terms
-
-        result = self.eval(terms, quote=False)
-        self.locals.cd('..')
-        return result
-
-    def enter_new_scope(self):
-        self.locals.set(CURRENT_FUNCTION_SCOPE, scope())
-        self.locals.cd(CURRENT_FUNCTION_SCOPE)
-        self.init_current_scope()
-
-    def init_current_scope(self):
-        self.locals.set(IF, [])
-        self.locals.set(ENV, {})
-        self.locals.set('functions', {})
 
 
 def is_function_definition(terms: List[str]) -> bool:
@@ -900,5 +900,19 @@ def is_function_definition(terms: List[str]) -> bool:
     return first.startswith('(') and last.endswith(')')
 
 
-def scope():
+def scope() -> dict:
     return defaultdict(dict)
+
+
+@contextmanager
+def enter_new_scope(cls: BaseShell, scope_name=INNER_SCOPE):
+    """Create a new scope, then change directory into that scope. 
+    Finally exit the new scope.
+    """
+    cls.locals.set(scope_name, scope())
+    try:
+        with cd(cls.locals, scope_name):
+            cls.init_current_scope()
+            yield
+    finally:
+        pass

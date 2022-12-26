@@ -119,3 +119,10 @@ def expand_variables_inline(line: str, env: dict,
                                       ignore_invalid_syntax)
     line = ' '.join(expanded_terms)
     return line
+
+
+def filter_comments(terms: List[str]) -> List[str]:
+    if '#' in terms:
+        i = terms.index('#')
+        terms = terms[:i]
+    return terms

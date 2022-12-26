@@ -290,25 +290,30 @@ def test_multiline_function():
     shell.ignore_invalid_syntax = False
     cmd = """
 f (x):
-    y = 10
+    # example comment
+    y = 10 # an inline comment
     return 1 |> math 1 +
     """
     run_command(cmd, shell=shell)
 
-    assert catch_output(f'f 1', shell=shell) == '\n2'
+    assert catch_output(f'f 1', shell=shell) == '2'
     assert catch_output(cmd + '\nprint 10', shell=shell) == '10'
 
+
+def test_multiline_function_with_assignments():
+    shell = Shell()
+    shell.ignore_invalid_syntax = False
     cmd = """
 f (x):
     y = 20
+    # TODO print 'echo'
     # z <- echo 2 |> math 1 +
     z <- math 1 + 2 
-    return x $y
+    return x $y $z # done
     """
     run_command(cmd, shell=shell)
-    # TODO
-    # assert catch_output(f'f 10', shell=shell) == '\n\n10 20 3'
-    assert catch_output(f'f 10', shell=shell) == '\n3\n10 20'
+
+    assert catch_output(f'f 10', shell=shell) == '10 20 3'
 
 
 def test_shell_do_math():
@@ -427,6 +432,17 @@ def test_set_map_reduce():
 
     line = 'range 4 >>= math 2 * $ |> reduce sum 0 $'
     assert catch_output(line, shell=shell, strict=True) == '12'
+
+
+def test_product_reduce():
+    shell = Shell()
+    run_command('mul (a b): math a * b', shell=shell)
+    run_command('addOne (a): math 1 + a', shell=shell)
+    run_command('product (x): echo x |> reduce mul 1', shell=shell)
+
+    assert catch_output('mul 2 2', shell=shell, strict=True) == '4'
+    line = 'range 3 >>= addOne |> product'
+    assert catch_output(line, shell=shell, strict=True) == '6'
 
 
 def test_save_and_load_session():
