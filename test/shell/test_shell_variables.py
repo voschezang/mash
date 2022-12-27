@@ -77,9 +77,10 @@ def test_assign_variable():
     assert shell.env['x'] == '1'
 
     run_command('assign x y z', shell=shell)
+    assert 'x' in shell.env
+    assert 'y' in shell.env
     assert shell.env['x'] == ''
-    # TODO
-    # assert 'y' in shell.env
+    assert shell.env['y'] == ''
 
     with raises(ShellError):
         run_command('x <- assign y', shell=shell)
@@ -89,6 +90,29 @@ def test_assign_variable():
 
     assert 'x' in shell.env
     assert shell.env['x'] == '2'
+
+
+def test_assign_variable_multiple():
+    shell = Shell()
+    shell.ignore_invalid_syntax = False
+
+    run_command('x y <- echo 1 2', shell=shell)
+    assert 'x' in shell.env
+    assert 'y' in shell.env
+    assert shell.env['x'] == '1'
+    assert shell.env['y'] == '2'
+
+    run_command('x y <- range 1 3', shell=shell)
+    assert 'x' in shell.env
+    assert 'y' in shell.env
+    assert shell.env['x'] == '1'
+    assert shell.env['y'] == '2'
+
+    run_command('x y <- range 2 >>= map int', shell=shell)
+    assert 'x' in shell.env
+    assert 'y' in shell.env
+    assert shell.env['x'] == '0'
+    assert shell.env['y'] == '1'
 
 
 def test_assign_variable_left_hand():

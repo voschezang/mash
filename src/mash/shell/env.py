@@ -1,4 +1,4 @@
-from typing import Iterable
+from typing import Any, Iterable, Tuple
 from mash.filesystem.filesystem import FileSystem, Option, cd
 from mash.util import crop
 
@@ -82,8 +82,12 @@ class Environment:
                     break
         return keys
 
-    def update(self, env: dict):
+    def update(self, env: dict = {},
+               items: Tuple[str, Any] = []):
         for k, v in env.items():
+            self[k] = v
+
+        for k, v in items:
             self[k] = v
 
 

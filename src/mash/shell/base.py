@@ -3,6 +3,7 @@ from cmd import Cmd
 from collections import defaultdict
 from contextlib import contextmanager
 from dataclasses import asdict
+from itertools import repeat
 from json import dumps, loads
 from operator import contains
 from typing import Any, Callable, Dict, Iterable, List, Tuple, Union
@@ -721,7 +722,7 @@ class BaseShell(Cmd):
         self.env[k] = ' '.join(values)
         return k
 
-    def set_env_variables(self, keys: str, result: str):
+    def set_env_variables(self, keys: Union[str, List[str]], result: str):
         """Set the variables `keys` to the values in result.
         """
         if result is None:
@@ -729,8 +730,33 @@ class BaseShell(Cmd):
 
         # TODO set multiple keys based on pattern matching
         # e.g. i j = range(2)
-        k = keys[0]
-        self.env[k] = result
+        if isinstance(keys, str):
+            keys = keys.split(' ')
+
+        try:
+            if len(result) == len(keys):
+                self.env.update(items=zip(keys, result))
+                return
+        except TypeError:
+            pass
+
+        if len(keys) == 1:
+            self.env[keys[0]] = result
+        elif isinstance(result, str):
+            lines = result.split('\n')
+            terms = result.split(' ')
+            if len(lines) == len(keys):
+                self.env.update(items=zip(keys, lines))
+
+            elif len(terms) == len(keys):
+                self.env.update(items=zip(keys, terms))
+
+            elif result == '':
+                self.env.update(items=zip(keys, repeat('')))
+
+        else:
+            raise ShellError(
+                f'Cannot assign values to all keys: {" ".join(keys)}')
 
     def handle_set_env_variable(self, lhs: Tuple[str], *rhs: str) -> str:
         if len(lhs) != 1:
