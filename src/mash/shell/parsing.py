@@ -1,7 +1,8 @@
-from typing import Iterable, List, Tuple
+from typing import Any, Iterable, List, Tuple
 import shlex
 
 from mash.io_util import log
+from mash.shell.delimiters import FALSE, TRUE
 from mash.shell.errors import ShellError
 from mash.util import is_globbable, is_valid_method_name, match_words, removeprefix, split_sequence, glob
 
@@ -101,7 +102,7 @@ def expand_variables(terms: List[str], env: dict,
                 error_msg = f'Variable `{match}` is not set'
 
                 if k in env:
-                    v = v.replace(match, str(env[k]))
+                    v = v.replace(match, to_string(env[k]))
                 elif ignore_invalid_syntax:
                     log(error_msg)
                 else:
@@ -120,6 +121,14 @@ def expand_variables(terms: List[str], env: dict,
                     raise ShellError(e)
 
         yield v
+
+
+def to_string(value: Any) -> str:
+    """Convert a variable to a string.
+    """
+    if isinstance(value, bool):
+        value = TRUE if value else FALSE
+    return str(value)
 
 
 def expand_variables_inline(line: str, env: dict,

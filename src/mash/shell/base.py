@@ -15,7 +15,7 @@ from mash import io_util
 from mash.filesystem.filesystem import FileSystem, cd
 from mash.io_util import log, shell_ready_signal, print_shell_ready_signal, check_output
 from mash.shell import delimiters
-from mash.shell.delimiters import DEFINE_FUNCTION, IF, LEFT_ASSIGNMENT, RETURN, RIGHT_ASSIGNMENT, THEN
+from mash.shell.delimiters import DEFINE_FUNCTION, FALSE, IF, LEFT_ASSIGNMENT, RETURN, RIGHT_ASSIGNMENT, THEN, TRUE
 from mash.shell.env import ENV, Environment, show
 from mash.shell.errors import ShellError, ShellPipeError
 from mash.shell.function import InlineFunction
@@ -26,8 +26,6 @@ from mash.util import for_any, has_method, identity, is_valid_method_name, omit_
 confirmation_mode = False
 default_session_filename = '.shell_session.json'
 
-FALSE = ''
-TRUE = '1'
 COMMENT = '#'
 INNER_SCOPE = 'inner_scope'
 
@@ -403,9 +401,9 @@ class BaseShell(Cmd):
         return ''
 
     def do_not(self, args: str) -> str:
-        if args:
-            return FALSE
-        return TRUE
+        if args == FALSE:
+            return TRUE
+        return FALSE
 
     ############################################################################
     # Overrides

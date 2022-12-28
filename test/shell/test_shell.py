@@ -355,13 +355,13 @@ def test_multiline_function_with_branches():
     shell.ignore_invalid_syntax = False
     cmd = """
 f (x):
-    a <- math $x < 0 |> bool
-    b <- math $x \> 0 |> bool
-    return $a $b
+    a <- math $x < 0
+    b <- math $x \> 0
+    return [$a] [$b]
     """
     run_command(cmd, shell=shell)
 
-    assert catch_output(f'f 1', shell=shell) == 'False True'
+    assert catch_output(f'f 1', shell=shell) == '[] [1]'
 
 
 def test_shell_do_math():

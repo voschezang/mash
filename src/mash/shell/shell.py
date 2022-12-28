@@ -175,6 +175,7 @@ class Shell(BaseShell):
         except (NameError, SyntaxError) as e:
             raise ShellError(e)
 
+        # SMELL avoid side-effects on top of a return type
         self._save_result(result)
 
         if isinstance(result, bool):

@@ -1,5 +1,9 @@
 from enum import Enum
 
+# language constants to a new file
+# TODO mv these to a new module
+FALSE = ''
+TRUE = '1'
 
 class Python(Enum):
     RETURN = 'return'
