@@ -108,11 +108,11 @@ def test_assign_variable_multiple():
     assert shell.env['x'] == '1'
     assert shell.env['y'] == '2'
 
-    run_command('x y <- range 2 >>= map int', shell=shell)
+    run_command('x y <- range 2 >>= int', shell=shell)
     assert 'x' in shell.env
     assert 'y' in shell.env
-    assert shell.env['x'] == '0'
-    assert shell.env['y'] == '1'
+    assert shell.env['x'] == 0
+    assert shell.env['y'] == 1
 
 
 def test_assign_variable_left_hand():
@@ -128,10 +128,9 @@ def test_assign_multicommand():
     assert shell.env['x'] == '20'
 
     assert catch_output('y <- echo 20 |> echo 1 ; print 30',
-                        shell=shell) == '1\n30'
+                        shell=shell) == '30'
 
-    # TODO this should be '1 20'
-    assert shell.env['y'] == '20'
+    assert shell.env['y'] == '1 20'
 
 
 def test_assign_multiple():
@@ -154,8 +153,8 @@ def test_assign_eval_multiple():
 
 def test_set_variable_infix_eval_with_pipes():
     shell = Shell()
-    assert catch_output('x <- print a |> print b', shell=shell) == 'b'
-    assert shell.env['x'] == 'a'
+    assert catch_output('x <- print a |> print b', shell=shell) == ''
+    assert shell.env['x'] == 'b a'
 
 
 def test_do_export():

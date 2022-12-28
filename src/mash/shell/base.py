@@ -175,7 +175,7 @@ class BaseShell(Cmd):
         """
         return ''
 
-    def _save_result(self, value, overwrite=True):
+    def _save_result(self, value, overwrite=False):
         if overwrite:
             self._last_results = [value]
         else:
@@ -316,7 +316,7 @@ class BaseShell(Cmd):
         ```
         """
         lines = args.split(delimiter)
-        msg = 'Not enough arguments. Usage: `map f [args] $ [args]`.'
+        msg = 'Not enough arguments. Usage: `map f [args..] $ [args..]`.'
         if len(lines) <= 1:
             log(msg)
             return
@@ -469,6 +469,8 @@ class BaseShell(Cmd):
             return
 
         self.locals.set(IF, [])
+        # TODO use self.locals
+        self._last_results = []
 
         for i, line in enumerate(lines):
 
@@ -501,9 +503,12 @@ class BaseShell(Cmd):
             # handle inline `<-`
             if DEFINE_FUNCTION not in self.locals \
                     and LEFT_ASSIGNMENT in self.locals \
-                    and 'assign' not in line:
+                    and 'assign' not in line \
+                    and not \
+                        (len(lines) > i + 1
+                         and lines[i+1][0] == LEFT_ASSIGNMENT):
                 self._save_assignee(result)
-                result = ''
+                result = None
 
         if DEFINE_FUNCTION in self.locals:
             if not self.locals[DEFINE_FUNCTION].multiline:
@@ -609,8 +614,9 @@ class BaseShell(Cmd):
 
         if result is None:
             raise ShellError(f'Missing return value in assignment: {keys}')
-        elif result == '' and self._last_results:
-            result = self._last_results.pop()
+        elif result.strip() == '' and self._last_results:
+            result = self._last_results
+            self._last_results = []
 
         self.set_env_variables(keys, result)
 
@@ -728,8 +734,6 @@ class BaseShell(Cmd):
         if result is None:
             raise ShellError(f'Missing return value in assignment: {keys}')
 
-        # TODO set multiple keys based on pattern matching
-        # e.g. i j = range(2)
         if isinstance(keys, str):
             keys = keys.split(' ')
 
