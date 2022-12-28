@@ -77,6 +77,9 @@ class BaseShell(Cmd):
         self.init_current_scope()
 
         self.env = Environment(self.locals)
+        if env:
+            for k, v in env.items():
+                self.env[k] = v
 
         self.auto_save = False
         self.auto_reload = False
@@ -84,7 +87,10 @@ class BaseShell(Cmd):
         # internals
         self._do_char_method = self.none
         self._chars_allowed_for_char_method: List[str] = []
-        self._last_results = None
+
+        # TODO use self.local to allow nesting
+        self._last_results = []
+        self._last_result_index = 0
 
         self.set_infix_operators()
         if self.auto_reload:
@@ -175,11 +181,13 @@ class BaseShell(Cmd):
         """
         return ''
 
-    def _save_result(self, value, overwrite=False):
-        if overwrite:
-            self._last_results = [value]
-        else:
-            self._last_results.append(value)
+    def _save_result(self, value):
+        if len(self._last_results) < self._last_result_index:
+            raise ShellError('Invalid state')
+        if len(self._last_results) == self._last_result_index:
+            self._last_results.append(None)
+
+        self._last_results[self._last_result_index] = value
 
     def is_function(self, func_name: str) -> bool:
         return has_method(self, f'do_{func_name}') or self.is_inline_function(func_name)
@@ -250,6 +258,9 @@ class BaseShell(Cmd):
         """
         logging.info(f'Cmd = !{args}')
         return check_output(args)
+
+    def do_fail(self, msg: str):
+        raise ShellError(f'Fail: {msg:<21}')
 
     def do_reduce(self, *args: str):
         """Reduce a sequence of items to using an operator.
@@ -336,7 +347,7 @@ class BaseShell(Cmd):
 
         # collect all results
         results = []
-        for line in lines:
+        for i, line in enumerate(lines):
             local_args = args.copy()
             line = line.split(' ')
 
@@ -347,8 +358,10 @@ class BaseShell(Cmd):
 
             line = [f] + local_args
 
+            self._last_result_index = i
             results.append(self.run_single_command(line))
 
+        self._last_result_index = 0
         return delimiter.join([str(result) for result in results])
 
     def do_foreach(self, args):
@@ -369,6 +382,11 @@ class BaseShell(Cmd):
         """
         return '\n'.join(args.split(' '))
 
+    def do_strip(self, args: str) -> str:
+        """Convert a space-separated string to a newline-separates string.
+        """
+        return args.strip()
+
     def do_int(self, args: str) -> str:
         self._save_result(int(args))
         return ''
@@ -378,7 +396,7 @@ class BaseShell(Cmd):
         return ''
 
     def do_bool(self, args: str) -> str:
-        self._save_result(bool(args))
+        self._save_result(args != FALSE)
         return ''
 
     def do_not(self, args: str) -> str:
@@ -469,7 +487,6 @@ class BaseShell(Cmd):
             return
 
         self.locals.set(IF, [])
-        # TODO use self.locals
         self._last_results = []
 
         for i, line in enumerate(lines):
@@ -615,7 +632,8 @@ class BaseShell(Cmd):
         if result is None:
             raise ShellError(f'Missing return value in assignment: {keys}')
         elif result.strip() == '' and self._last_results:
-            result = self._last_results
+            i = self._last_result_index
+            result = self._last_results[i]
             self._last_results = []
 
         self.set_env_variables(keys, result)
@@ -840,17 +858,23 @@ class BaseShell(Cmd):
             raise ShellError(
                 f'Invalid number of arguments: {len(f.args)} arguments expected .')
 
+        # translate variables in inline functions
         for i, k in enumerate(f.args):
             # quote item to preserve `\n`
             translations[k] = shlex.quote(args[i])
 
         with enter_new_scope(self):
 
-            for line in f.inner:
-                terms = [term for term in line.split(' ') if term != '']
-                terms = list(translate_terms(terms, translations))
+            for i, k in enumerate(f.args):
+                # quote item to preserve `\n`
+                self.env[k] = shlex.quote(args[i])
 
-                self.onecmd(' '.join(terms), print_result=False)
+            for line in f.inner:
+                # terms = [term for term in line.split(' ') if term != '']
+                # terms = list(translate_terms(terms, translations))
+
+                # self.onecmd(' '.join(terms), print_result=False)
+                self.onecmd(line, print_result=False)
 
             terms = [term for term in f.command.split(' ') if term != '']
             terms = list(translate_terms(terms, translations))

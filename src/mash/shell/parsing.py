@@ -3,7 +3,7 @@ import shlex
 
 from mash.io_util import log
 from mash.shell.errors import ShellError
-from mash.util import is_globbable, is_valid_method_name, match_words, split_sequence, glob
+from mash.util import is_globbable, is_valid_method_name, match_words, removeprefix, split_sequence, glob
 
 
 def infer_infix_args(op: str, *args: str) -> Tuple[Tuple[str], Tuple[str]]:
@@ -31,6 +31,8 @@ def parse_commands(line: str, delimiters: List[str], ignore_invalid_syntax: bool
             if term in delimiters or term == '=':
                 if '"' + term + '"' in line or "'" + term + "'" in line:
                     terms[i] = f'"{terms[i]}"'
+                elif '\\' + term in line:
+                    terms[i] = f'\\{terms[i]}'
 
         # split `:`
         for i, term in enumerate(terms):
@@ -62,7 +64,19 @@ def parse_commands(line: str, delimiters: List[str], ignore_invalid_syntax: bool
     ################################################################################
 
     # group terms based on delimiters
-    return split_sequence(terms, delimiters, return_delimiters=True)
+    results = split_sequence(terms, delimiters, return_delimiters=True)
+
+    for line in results:
+        unquote_delimiters(line, delimiters)
+        yield line
+
+
+def unquote_delimiters(terms: List[str], delimiters: List[str]) -> List[str]:
+    for i, term in enumerate(terms):
+        if term.startswith('\\'):
+            suffix = removeprefix(term, '\\')
+            if suffix in delimiters:
+                terms[i] = suffix
 
 
 def expand_variables(terms: List[str], env: dict,

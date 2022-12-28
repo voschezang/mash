@@ -33,7 +33,7 @@ def test_println():
 
 
 def test_onecmd_syntax():
-    # ignore invalid syntax in strict mode
+    # ignore invalid syntax if strict mode is false
     run_command('print "\""', strict=False)
     run_command('aaaa a', strict=False)
 
@@ -42,6 +42,22 @@ def test_onecmd_syntax():
 
     with raises(ShellError):
         run_command('print "\""', strict=True)
+
+
+def test_onecmd_syntax_quotes():
+    shell = Shell()
+    shell.ignore_invalid_syntax = False
+
+    assert catch_output('a = 1', shell=shell) == ''
+
+    # TODO quoting terms can shadow other terms
+    with raises(ShellError):
+        assert catch_output('a = 1 "="', shell=shell) == ''
+
+
+def test_onecmd_syntax_escape():
+    assert catch_output('echo \\| echo') == '| echo'
+    assert catch_output('echo \| echo') == '| echo'
 
 
 def test_multi_commands():
@@ -317,6 +333,25 @@ f (x):
     assert catch_output(f'z <- f 10', shell=shell) == ''
     assert 'z' in shell.env
     assert shell.env['z'] == '10 20 3'
+
+
+def test_multiline_function_with_branches():
+    shell = Shell()
+    shell.ignore_invalid_syntax = False
+    cmd = """
+f (x):
+    a <- math $x < 0 |> bool
+    b <- math $x \> 0 |> bool
+    return $a $b
+    """
+    run_command(cmd, shell=shell)
+
+    assert catch_output(f'f 1', shell=shell) == 'False True'
+
+    # TODO verify that count is reset after errrors
+    # line = 'range 1 3 >>= fail'
+    # TODO support nested loops
+    # line = 'range 3 >>= fac 1 + '
 
 
 def test_shell_do_math():
