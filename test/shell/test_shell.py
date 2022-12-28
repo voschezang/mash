@@ -314,6 +314,9 @@ f (x):
     run_command(cmd, shell=shell)
 
     assert catch_output(f'f 10', shell=shell) == '10 20 3'
+    assert catch_output(f'z <- f 10', shell=shell) == ''
+    assert 'z' in shell.env
+    assert shell.env['z'] == '10 20 3'
 
 
 def test_shell_do_math():
