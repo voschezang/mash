@@ -277,12 +277,12 @@ def test_inline_function_with_macros():
 
 def test_inline_function_with_map():
     shell = Shell()
-    # TODO implement pipe support for inline functions
-    line = 'f (n) : range n >>= echo $'
-    x = catch_output(line, shell=shell, strict=True)
+    shell.ignore_invalid_syntax = False
+
+    line = 'f (n) : range n >>= echo - $ -'
+    run_command(line, shell=shell)
     line = 'f 3'
-    y = catch_output(line, shell=shell, strict=True)
-    assert catch_output(line, shell=shell, strict=True)
+    assert catch_output('f 3', shell=shell) == '- 0 -\n- 1 -\n- 2 -'
 
 
 def test_multiline_function():
