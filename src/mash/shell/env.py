@@ -1,5 +1,6 @@
 from typing import Any, Iterable, Tuple
 from mash.filesystem.filesystem import FileSystem, Option, cd
+from mash.io_util import log
 from mash.util import crop
 
 ENV = 'env'
@@ -21,6 +22,9 @@ class Environment:
         """Let `key` point to `item` in the current scope. 
         """
         with cd(self.data, ENV):
+            # warn on overriding a non-local variable
+            if key not in self.data and key in self.keys():
+                log(f'Warning: shadowing a global variable: {key}')
             self.data.set(key, item)
 
     def __getitem__(self, key: str) -> str:
@@ -71,10 +75,11 @@ class Environment:
         with cd(self.data):
             while True:
                 # iterate over all scopes, from local to global
-                for key in self.data[ENV]:
-                    # skip duplicate keys
-                    if key not in keys:
-                        keys.append(key)
+                if ENV in self.data:
+                    for key in self.data[ENV]:
+                        # skip duplicate keys
+                        if key not in keys:
+                            keys.append(key)
 
                 try:
                     self.data.cd_up()

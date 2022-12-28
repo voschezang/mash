@@ -301,6 +301,21 @@ def test_inline_function_with_map():
     assert catch_output('f 3', shell=shell) == '- 0 -\n- 1 -\n- 2 -'
 
 
+def test_do_fail():
+    shell = Shell()
+    shell.ignore_invalid_syntax = False
+    # TODO verify that count is reset after errrors
+    line = 'range 1 3 >>= fail'
+
+    with raises(ShellError):
+        run_command('fail 1', shell=shell)
+
+    with raises(ShellError):
+        run_command(line, shell=shell)
+    # TODO support nested loops
+    # line = 'range 3 >>= fac 1 + '
+
+
 def test_multiline_function():
     shell = Shell()
     shell.ignore_invalid_syntax = False
@@ -325,7 +340,7 @@ f (x):
     # TODO print 'echo'
     # z <- echo 2 |> math 1 +
     z <- math 1 + 2 
-    return x $y $z # done
+    return $x $y $z # done
     """
     run_command(cmd, shell=shell)
 
@@ -347,11 +362,6 @@ f (x):
     run_command(cmd, shell=shell)
 
     assert catch_output(f'f 1', shell=shell) == 'False True'
-
-    # TODO verify that count is reset after errrors
-    # line = 'range 1 3 >>= fail'
-    # TODO support nested loops
-    # line = 'range 3 >>= fac 1 + '
 
 
 def test_shell_do_math():
@@ -437,7 +447,7 @@ def test_set_do_flatten():
 def test_set_do_map():
     shell = Shell()
     line = 'echo a b |> flatten |> map echo'
-    assert catch_output(line, shell=shell, strict=True) == 'a\nb'
+    # assert catch_output(line, shell=shell, strict=True) == 'a\nb'
 
     line = 'echo a b |> flatten |> map echo [ $ ]'
     assert catch_output(line, shell=shell, strict=True) == '[ a ]\n[ b ]'

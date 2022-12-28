@@ -182,6 +182,7 @@ class BaseShell(Cmd):
         return ''
 
     def _save_result(self, value):
+        log('save', self._last_result_index, value)
         if len(self._last_results) < self._last_result_index:
             raise ShellError('Invalid state')
         if len(self._last_results) == self._last_result_index:
@@ -326,6 +327,8 @@ class BaseShell(Cmd):
         println a b |> map echo prefix $ suffix
         ```
         """
+        self._last_results = []
+
         lines = args.split(delimiter)
         msg = 'Not enough arguments. Usage: `map f [args..] $ [args..]`.'
         if len(lines) <= 1:
@@ -487,7 +490,6 @@ class BaseShell(Cmd):
             return
 
         self.locals.set(IF, [])
-        self._last_results = []
 
         for i, line in enumerate(lines):
 
@@ -632,8 +634,7 @@ class BaseShell(Cmd):
         if result is None:
             raise ShellError(f'Missing return value in assignment: {keys}')
         elif result.strip() == '' and self._last_results:
-            i = self._last_result_index
-            result = self._last_results[i]
+            result = self._last_results
             self._last_results = []
 
         self.set_env_variables(keys, result)
