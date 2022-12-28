@@ -260,7 +260,7 @@ class BaseShell(Cmd):
         return check_output(args)
 
     def do_fail(self, msg: str):
-        raise ShellError(f'Fail: {msg:<21}')
+        raise ShellError(f'Fail: {msg}')
 
     def do_reduce(self, *args: str):
         """Reduce a sequence of items to using an operator.
@@ -347,7 +347,7 @@ class BaseShell(Cmd):
 
         # collect all results
         results = []
-        for i, line in enumerate(lines):
+        for j, line in enumerate(lines):
             local_args = args.copy()
             line = line.split(' ')
 
@@ -358,7 +358,7 @@ class BaseShell(Cmd):
 
             line = [f] + local_args
 
-            self._last_result_index = i
+            self._last_result_index = j
             results.append(self.run_single_command(line))
 
         self._last_result_index = 0
@@ -870,14 +870,11 @@ class BaseShell(Cmd):
                 self.env[k] = shlex.quote(args[i])
 
             for line in f.inner:
-                # terms = [term for term in line.split(' ') if term != '']
-                # terms = list(translate_terms(terms, translations))
-
-                # self.onecmd(' '.join(terms), print_result=False)
                 self.onecmd(line, print_result=False)
 
             terms = [term for term in f.command.split(' ') if term != '']
-            terms = list(translate_terms(terms, translations))
+            if not f.multiline:
+                terms = list(translate_terms(terms, translations))
 
             first_func = terms[0]
             if not self.is_function(first_func):
