@@ -5,6 +5,8 @@ from enum import Enum
 FALSE = ''
 TRUE = '1'
 
+comparators = ['==', '!=', '>', '<']
+
 
 class Python(Enum):
     RETURN = 'return'
@@ -17,6 +19,7 @@ class Python(Enum):
     PIPE = '|>'
     MAP = '>>='
     SET_ENV_VARIABLE = '='
+    INLINE_COMMENT = '#'
     # ELSE = 'else'
     # AND = 'and'
     # OR = 'or'

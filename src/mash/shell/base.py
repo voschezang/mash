@@ -15,11 +15,11 @@ from mash import io_util
 from mash.filesystem.filesystem import FileSystem, cd
 from mash.io_util import log, shell_ready_signal, print_shell_ready_signal, check_output
 from mash.shell import delimiters
-from mash.shell.delimiters import DEFINE_FUNCTION, FALSE, IF, LEFT_ASSIGNMENT, RETURN, RIGHT_ASSIGNMENT, THEN, TRUE
+from mash.shell.delimiters import comparators, DEFINE_FUNCTION, FALSE, IF, LEFT_ASSIGNMENT, RETURN, RIGHT_ASSIGNMENT, THEN, TRUE
 from mash.shell.env import ENV, Environment, show
 from mash.shell.errors import ShellError, ShellPipeError
 from mash.shell.function import InlineFunction
-from mash.shell.parsing import expand_variables, expand_variables_inline, filter_comments, infer_infix_args, parse_commands
+from mash.shell.parsing import expand_variables, expand_variables_inline, filter_comments, infer_infix_args, parse_commands, quote_items
 from mash.util import for_any, has_method, identity, is_valid_method_name, omit_prefixes, removeprefix, split_prefixes, translate_terms
 
 
@@ -104,6 +104,7 @@ class BaseShell(Cmd):
         """
         items = delimiters.python + delimiters.bash
         items.remove('=')
+        items.remove('#')
         return items
 
     def set_infix_operators(self):
@@ -130,7 +131,7 @@ class BaseShell(Cmd):
         """Evaluate / run `args` and return the result.
         """
         if quote:
-            args = (shlex.quote(arg) for arg in args)
+            args = list(quote_items(args))
 
         args = list(filter_comments(args))
 
@@ -165,6 +166,19 @@ class BaseShell(Cmd):
             return self._last_results.pop()
 
         raise RuntimeError('Cannot retrieve result')
+
+    def eval_compare(self, line: str) -> bool:
+        f, *_ = line.split(' ')
+        terms = line.split(' ')
+
+        if self.is_function(f):
+            result = self.eval(terms)
+        elif for_any(comparators, contains, line):
+            result = self.eval('math ' + terms)
+        else:
+            result = line
+
+        return result != FALSE
 
     def onecmd_prehook(self, line):
         """Similar to cmd.precmd but executed before cmd.onecmd
@@ -618,12 +632,7 @@ class BaseShell(Cmd):
                     # force value to be false when previous conditions are false
                     value = False
                 else:
-                    f, *_ = line.split(' ')
-                    if self.is_function(f):
-                        result = self.eval(line.split(' '), quote=False)
-                        value = result != FALSE
-                    else:
-                        value = line != FALSE
+                    value = self.eval_compare(line)
 
                 self.locals[IF].append({'value': value, 'depth': 0})
                 return ''
@@ -889,6 +898,7 @@ class BaseShell(Cmd):
             if not f.multiline:
                 terms = list(translate_terms(terms, translations))
 
+            # don't re-quote terms to maintain newlines
             result = self.eval(terms, quote=False)
 
         return result

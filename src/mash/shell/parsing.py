@@ -3,6 +3,7 @@ from typing import Any, Iterable, List, Tuple
 import shlex
 
 from mash.io_util import log
+from mash.shell import delimiters
 from mash.shell.delimiters import FALSE, TRUE
 from mash.shell.errors import ShellError
 from mash.util import is_globbable, is_valid_method_name, match_words, removeprefix, split_sequence, glob
@@ -152,3 +153,14 @@ def filter_comments(terms: List[str]) -> List[str]:
         i = terms.index('#')
         terms = terms[:i]
     return terms
+
+
+def quote_items(items: List[str]) -> Iterable[str]:
+    """Map shlex.quote() to all items.
+    Do not modify python delimiters.
+    """
+    for arg in items:
+        if arg in delimiters.python:
+            yield arg
+        else:
+            yield shlex.quote(arg)
