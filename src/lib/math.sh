@@ -5,7 +5,7 @@
 fac (n): range n |> product
 fac (n):
     less <- math $n < 0
-    more <- math $n \> 0
+    more <- math $n > 0
     eq <- math $n == 0
     if $less then fail
     # TODO implement if-then-else

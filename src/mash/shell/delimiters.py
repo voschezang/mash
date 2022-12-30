@@ -22,8 +22,7 @@ class Python(Enum):
     # OR = 'or'
 
 
-# TODO add '<'
-bash = ['|', '>', '>>', '1>', '1>>', '2>', '2>>']
+bash = ['|', '>-', '>>', '1>', '1>>', '2>', '2>>']
 python = [o.value for o in Python]
 all = bash + python
 

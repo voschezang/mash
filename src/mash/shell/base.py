@@ -702,6 +702,9 @@ class BaseShell(Cmd):
         """
         assert delimiter in delimiters.bash
 
+        if delimiter == '>-':
+            delimiter = '>'
+
         # pass last result to stdin
         line = f'echo {shlex.quote(prev_result)} {delimiter} {line}'
 

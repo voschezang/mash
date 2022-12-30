@@ -180,7 +180,7 @@ def test_pipe_to_file():
     f = Path(filename)
     f.unlink(True)
 
-    result = catch_output(f'print {text} > {filename}')
+    result = catch_output(f'print {text} >- {filename}')
     assert result == ''
 
     # verify output file
@@ -192,7 +192,7 @@ def test_pipe_to_file():
 def test_pipe_to_file_with_interop():
     t = str(perf_counter())
     f = '.pytest_time'
-    cmd = f'print {t} > {f} ; cat {f}'
+    cmd = f'print {t} >- {f} ; cat {f}'
 
     assert catch_output(cmd).strip() == t, cmd
 
@@ -246,10 +246,8 @@ def test_shell_do_math():
 def test_shell_do_math_compare():
     shell = Shell()
     assert catch_output(f'math 1 < 10', shell=shell) == '1'
+    assert catch_output(f'math 1 > 10', shell=shell) == ''
     assert catch_output(f'math 1 \> 10', shell=shell) == ''
-
-    with raises(ShellError):
-        run_command(f'math 1 ">" 10', shell=shell)
 
 
 def test_shell_range():
@@ -291,7 +289,7 @@ def test_set_do_char_method():
     with raises(ShellError):
         run_command(op, shell, strict=True)
 
-    shell.set_do_char_method(print, op)
+    shell.set_do_char_method(print, [op])
     assert catch_output(op, shell=shell, strict=True) == op
 
     # verify that clashes are resolved
@@ -299,7 +297,7 @@ def test_set_do_char_method():
         assert catch_output(op, shell=shell, strict=True) == ''
 
         with raises(ShellError):
-            shell.set_do_char_method(print, op)
+            shell.set_do_char_method(print, [op])
 
 
 def test_set_do_foldr():
