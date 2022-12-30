@@ -488,6 +488,8 @@ class BaseShell(Cmd):
             return
 
         self.locals.set(IF, [])
+        if LEFT_ASSIGNMENT in self.locals:
+            self.locals.rm(LEFT_ASSIGNMENT)
 
         for i, line in enumerate(lines):
 

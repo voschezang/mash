@@ -5,14 +5,15 @@ from enum import Enum
 FALSE = ''
 TRUE = '1'
 
+
 class Python(Enum):
     RETURN = 'return'
+    LEFT_ASSIGNMENT = '<-'
     IF = 'if'
     THEN = 'then'
     NEW_COMMAND = ';'
     DEFINE_FUNCTION = ':'
     RIGHT_ASSIGNMENT = '->'
-    LEFT_ASSIGNMENT = '<-'
     PIPE = '|>'
     MAP = '>>='
     SET_ENV_VARIABLE = '='

@@ -246,3 +246,18 @@ def test_variable_assignment_with_pipes():
     shell = Shell()
     run_command('a = 2', shell=shell)
     assert shell.env['a'] == '2'
+
+
+def test_variable_assignment_with_if_then():
+    shell = Shell()
+    shell.ignore_invalid_syntax = False
+
+    with raises(ShellError):
+        run_command('a <- if 20 then 10', shell=shell)
+
+    run_command('a <- if 20 then echo 10', shell=shell)
+    assert 'a' in shell.env
+    assert shell.env['a'] == '10'
+
+    run_command('a <- if "" then echo 10', shell=shell)
+    assert shell.env['a'] == ''
