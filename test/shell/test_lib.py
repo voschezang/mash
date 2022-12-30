@@ -24,12 +24,13 @@ def catch_output(line='', func=run_command, **kwds) -> str:
 def test_math_lib_unary_operators():
     shell = init()
 
-    catch_output('fac 2', shell=shell) == '2'
+    catch_output('fac 3', shell=shell) == '6'
     catch_output('fac 1', shell=shell) == '1'
+    catch_output('fac 0', shell=shell) == '1'
 
     with raises(ShellError):
         # TODO implement this edge case
-        run_command('fac 0', shell=shell)
+        run_command('fac -1', shell=shell)
 
 
 def test_math_lib_binary_operators():

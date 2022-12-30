@@ -364,6 +364,22 @@ f (x):
     assert catch_output(f'f 1', shell=shell) == '[] [1]'
 
 
+def test_multiline_function_nested():
+    shell = Shell()
+    shell.ignore_invalid_syntax = False
+    cmd = """
+g (x):
+    return $x $x
+
+f (x):
+    y <- g $x
+    return $y $y
+    """
+    run_command(cmd, shell=shell)
+
+    assert catch_output(f'f 1', shell=shell) == '1 1 1 1'
+
+
 def test_shell_do_math():
     shell = Shell()
     assert catch_output(f'math 1 + 10', shell=shell) == '11'

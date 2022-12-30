@@ -465,7 +465,6 @@ class BaseShell(Cmd):
                 self.reset_locals()
                 raise
 
-            self.reset_locals()
             return result
 
         if line in self._chars_allowed_for_char_method:
@@ -879,7 +878,7 @@ class BaseShell(Cmd):
 
             first_func = terms[0]
             if not self.is_function(first_func):
-                terms = ['print'] + terms
+                terms = ['echo'] + terms
 
             result = self.eval(terms, quote=False)
 

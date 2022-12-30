@@ -1,3 +1,4 @@
+from logging import debug
 from typing import Any, Iterable, List, Tuple
 import shlex
 
@@ -104,8 +105,10 @@ def expand_variables(terms: List[str], env: dict,
                 if k in env:
                     v = v.replace(match, to_string(env[k]))
                 elif ignore_invalid_syntax:
+                    debug(' '.join(terms))
                     log(error_msg)
                 else:
+                    debug(' '.join(terms))
                     raise ShellError(error_msg)
 
         if is_globbable(v):
