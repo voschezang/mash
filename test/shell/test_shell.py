@@ -83,6 +83,8 @@ def test_shell_if_eval():
 
     assert catch_output('if echo then print 1', shell=shell) == ''
     assert catch_output('if echo 2 then print 1', shell=shell) == '1'
+    assert catch_output('if bool "" then print 1', shell=shell) == ''
+    assert catch_output('if bool ... then print 1', shell=shell) == ''
 
 
 def test_shell_if_then_multicommand():
@@ -220,95 +222,6 @@ def test_add_functions():
     assert 'Unknown syntax: id' in out
 
 
-def test_function_simple():
-    shell = Shell()
-    shell.ignore_invalid_syntax = False
-
-    # identity
-    run_command('f (x): x', shell=shell)
-    assert catch_output('f 100', shell=shell) == '100'
-
-    # too many arguments
-    with raises(ShellError):
-        run_command('f 1 2 3', shell=shell)
-
-    # too few arguments
-    with raises(ShellError):
-        run_command('f', shell=shell)
-
-    # invalid syntax
-    with raises(ShellError):
-        run_command('g "(x):" x', shell=shell)
-
-
-def test_inline_function_constant():
-    shell = Shell()
-    shell.ignore_invalid_syntax = False
-
-    run_command('f () : 10', shell=shell)
-    assert catch_output('f', shell=shell) == '10'
-
-    # echo
-    run_command('f (x): print x', shell=shell)
-    assert catch_output('f 100', shell=shell) == '100'
-
-
-def test_inline_function_with_variable():
-    shell = Shell()
-    shell.ignore_invalid_syntax = False
-
-    run_command('a = 1', shell=shell)
-    run_command('f (b) : $a', shell=shell)
-    assert catch_output('f 2', shell=shell) == '1'
-
-
-def test_inline_function_with_args():
-    shell = Shell()
-
-    # repeat input
-    run_command('g (x): x x', shell=shell)
-    assert catch_output('g 2', shell=shell) == '2 2'
-
-    # math expressions
-    run_command('add (x y): math x + y', shell=shell)
-    assert catch_output('add 1 2', shell=shell) == '3'
-
-    # faulty math expressions
-    run_command('add (x y): x + y', shell=shell)
-    assert catch_output('add 1 2', shell=shell) == '1 + 2'
-
-
-def test_inline_function_with_pipe():
-    shell = Shell()
-
-    run_command('f (x): print x |> print', shell=shell)
-    assert catch_output('f 100', shell=shell) == '100'
-
-    run_command('f (x): math 1 + 2 |> echo result is', shell=shell)
-    assert catch_output('f 100', shell=shell) == 'result is 3'
-
-    run_command('f (x): math 1 + 2 |> echo result "=" ', shell=shell)
-    assert catch_output('f 100', shell=shell) == 'result "=" 3'
-
-
-def test_inline_function_with_macros():
-    shell = Shell()
-
-    run_command('a = 10', shell=shell)
-    run_command('f (b): $a b', shell=shell)
-    assert catch_output('f 2', shell=shell) == '10 2'
-
-
-def test_inline_function_with_map():
-    shell = Shell()
-    shell.ignore_invalid_syntax = False
-
-    line = 'f (n) : range n >>= echo - $ -'
-    run_command(line, shell=shell)
-    line = 'f 3'
-    assert catch_output('f 3', shell=shell) == '- 0 -\n- 1 -\n- 2 -'
-
-
 def test_do_fail():
     shell = Shell()
     shell.ignore_invalid_syntax = False
@@ -324,109 +237,19 @@ def test_do_fail():
     # line = 'range 3 >>= fac 1 + '
 
 
-def test_multiline_function():
-    shell = Shell()
-    shell.ignore_invalid_syntax = False
-    cmd = """
-f (x):
-    # example comment
-    y = 10 # an inline comment
-    return 1 |> math 1 +
-    """
-    run_command(cmd, shell=shell)
-
-    assert catch_output(f'f 1', shell=shell) == '2'
-    assert catch_output(cmd + '\nprint 10', shell=shell) == '10'
-
-
-def test_multiline_function_with_assignments():
-    shell = Shell()
-    shell.ignore_invalid_syntax = False
-    cmd = """
-f (x):
-    y = 20
-    # TODO print 'echo'
-    # z <- echo 2 |> math 1 +
-    z <- math 1 + 2 
-    return $x $y $z # done
-    """
-    run_command(cmd, shell=shell)
-
-    assert catch_output(f'f 10', shell=shell) == '10 20 3'
-    assert catch_output(f'z <- f 10', shell=shell) == ''
-    assert 'z' in shell.env
-    assert shell.env['z'] == '10 20 3'
-
-
-def test_multiline_function_with_branches():
-    shell = Shell()
-    shell.ignore_invalid_syntax = False
-    cmd = """
-f (x):
-    a <- math $x < 0
-    b <- math $x \> 0
-    return [$a] [$b]
-    """
-    run_command(cmd, shell=shell)
-
-    assert catch_output(f'f 1', shell=shell) == '[] [1]'
-
-
-def test_multiline_function_with_maps():
-    shell = Shell()
-    shell.ignore_invalid_syntax = False
-    cmd = """
-f (x):
-    y <- math 1 + $x
-    return $y
-    """
-    run_command(cmd, shell=shell)
-
-    assert catch_output(f'f 1', shell=shell) == '2'
-
-    assert catch_output(f'range 2 |> map f', shell=shell) == '1\n2'
-
-    run_command(f'x <- range 2 |> map f |> map f', shell=shell)
-    assert shell.env['x'] == '2\n3'
-
-
-def test_multiline_function_nested():
-    shell = Shell()
-    shell.ignore_invalid_syntax = False
-    cmd = """
-g (x):
-    return $x $x
-
-f (x):
-    y <- g $x
-    return $y $y
-    """
-    run_command(cmd, shell=shell)
-
-    assert catch_output(f'f 1', shell=shell) == '1 1 1 1'
-
-
-def test_multiline_function_recursion():
-    shell = Shell()
-    shell.ignore_invalid_syntax = False
-    cmd = """
-f (x):
-    a <- if math x < 0 then f 1
-    b <- if math x > 0 then 10 
-    return strip $a $b
-    """
-    run_command(cmd, shell=shell)
-
-    # TODO
-    # assert catch_output(f'f 1', shell=shell) == '10'
-    # assert catch_output(f'f -1', shell=shell) == '10'
-    # assert catch_output(f'f 0', shell=shell) == ''
-
-
 def test_shell_do_math():
     shell = Shell()
     assert catch_output(f'math 1 + 10', shell=shell) == '11'
     assert catch_output(f'math 1 + 2 * 3', shell=shell) == '7'
+
+
+def test_shell_do_math_compare():
+    shell = Shell()
+    assert catch_output(f'math 1 < 10', shell=shell) == '1'
+    assert catch_output(f'math 1 \> 10', shell=shell) == ''
+
+    with raises(ShellError):
+        run_command(f'math 1 ">" 10', shell=shell)
 
 
 def test_shell_range():

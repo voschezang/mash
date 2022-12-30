@@ -184,7 +184,7 @@ class BaseShell(Cmd):
         return ''
 
     def _save_result(self, value):
-        log('save', self._last_result_index, value)
+        log(f'_save_result [{self._last_result_index}]: {value}')
         if len(self._last_results) < self._last_result_index:
             raise ShellError('Invalid state')
         if len(self._last_results) == self._last_result_index:
@@ -620,11 +620,10 @@ class BaseShell(Cmd):
                 else:
                     f, *_ = line.split(' ')
                     if self.is_function(f):
-                        result = self.eval([line], quote=False)
+                        result = self.eval(line.split(' '), quote=False)
                         value = result != FALSE
                     else:
                         value = line != FALSE
-                    # value = line != ''
 
                 self.locals[IF].append({'value': value, 'depth': 0})
                 return ''
@@ -887,9 +886,6 @@ class BaseShell(Cmd):
             if not f.multiline:
                 terms = list(translate_terms(terms, translations))
 
-            # first_func = terms[0]
-            # if not self.is_function(first_func):
-            #     terms = ['echo'] + terms
             result = self.eval(terms, quote=False)
 
         return result
