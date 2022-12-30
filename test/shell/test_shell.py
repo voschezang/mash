@@ -77,6 +77,14 @@ def test_shell_if_then():
     assert catch_output('if $a then print 1', shell=shell) == '1'
 
 
+def test_shell_if_eval():
+    shell = Shell()
+    shell.ignore_invalid_syntax = False
+
+    assert catch_output('if echo then print 1', shell=shell) == ''
+    assert catch_output('if echo 2 then print 1', shell=shell) == '1'
+
+
 def test_shell_if_then_multicommand():
     shell = Shell()
     then = 'then print 1 ; print 2'
@@ -362,6 +370,24 @@ f (x):
     run_command(cmd, shell=shell)
 
     assert catch_output(f'f 1', shell=shell) == '[] [1]'
+
+
+def test_multiline_function_with_maps():
+    shell = Shell()
+    shell.ignore_invalid_syntax = False
+    cmd = """
+f (x):
+    y <- math 1 + $x
+    return $y
+    """
+    run_command(cmd, shell=shell)
+
+    assert catch_output(f'f 1', shell=shell) == '2'
+
+    assert catch_output(f'range 2 |> map f', shell=shell) == '1\n2'
+
+    run_command(f'x <- range 2 |> map f |> map f', shell=shell)
+    assert shell.env['x'] == '2\n3'
 
 
 def test_multiline_function_nested():

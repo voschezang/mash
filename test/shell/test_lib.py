@@ -40,12 +40,19 @@ def test_math_lib_binary_operators():
     catch_output('sub 2 1', shell=shell) == '1'
     catch_output('mul 2 2', shell=shell) == '4'
 
+    run_command('x <- mul 2 2', shell=shell)
+    assert 'x' in shell.env
+    assert shell.env['x'] == '4'
+
 
 def test_math_lib_reduction_sum():
     shell = init()
 
     catch_output('echo 1 2 3 |> flatten |> sum', shell=shell) == '6'
     catch_output('range 4 |> sum', shell=shell) == '6'
+
+    run_command('x <- range 4 |> sum', shell=shell)
+    assert shell.env['x'] == '6'
 
 
 def test_math_lib_reduction_product():

@@ -126,19 +126,23 @@ class BaseShell(Cmd):
         self._do_char_method = method
         self._chars_allowed_for_char_method = chars
 
-    def eval(self, args: Iterable[str], quote=True) -> Types:
+    def eval(self, args: List[str], quote=True) -> Types:
         """Evaluate / run `args` and return the result.
         """
         if quote:
             args = (shlex.quote(arg) for arg in args)
-            # args = ' '.join(shlex.quote(arg) for arg in args)
 
-        args = ' '.join(filter_comments(args))
+        args = list(filter_comments(args))
+
         if not args:
             return ''
 
+        if not self.is_function(args[0]):
+            args = ['echo'] + args
+
         k = '_eval_output'
-        line = f'{args} |> export {k}'
+        line = ' '.join(args)
+        line = f'{line} |> export {k}'
 
         self.onecmd(line)
 
@@ -611,9 +615,16 @@ class BaseShell(Cmd):
                             f'The previous if-then statement was not closed')
 
                 if self.locals[IF] and not self.locals[IF][-1]['value']:
+                    # force value to be false when previous conditions are false
                     value = False
                 else:
-                    value = line != ''
+                    f, *_ = line.split(' ')
+                    if self.is_function(f):
+                        result = self.eval([line], quote=False)
+                        value = result != FALSE
+                    else:
+                        value = line != FALSE
+                    # value = line != ''
 
                 self.locals[IF].append({'value': value, 'depth': 0})
                 return ''
@@ -876,10 +887,9 @@ class BaseShell(Cmd):
             if not f.multiline:
                 terms = list(translate_terms(terms, translations))
 
-            first_func = terms[0]
-            if not self.is_function(first_func):
-                terms = ['echo'] + terms
-
+            # first_func = terms[0]
+            # if not self.is_function(first_func):
+            #     terms = ['echo'] + terms
             result = self.eval(terms, quote=False)
 
         return result
