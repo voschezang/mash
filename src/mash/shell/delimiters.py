@@ -8,10 +8,10 @@ TRUE = '1'
 
 class Python(Enum):
     RETURN = 'return'
+    NEW_COMMAND = ';'
     LEFT_ASSIGNMENT = '<-'
     IF = 'if'
     THEN = 'then'
-    NEW_COMMAND = ';'
     DEFINE_FUNCTION = ':'
     RIGHT_ASSIGNMENT = '->'
     PIPE = '|>'

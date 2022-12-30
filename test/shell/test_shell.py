@@ -80,7 +80,7 @@ def test_shell_if_then():
 def test_shell_if_then_multicommand():
     shell = Shell()
     then = 'then print 1 ; print 2'
-    assert catch_output(f'if "" {then} ', shell=shell) == ''
+    assert catch_output(f'if "" {then} ', shell=shell) == '\n2'
     assert catch_output(f'if 1 {then}', shell=shell) == '1\n2'
 
 # def test_shell_if_then_multiline():
@@ -378,6 +378,23 @@ f (x):
     run_command(cmd, shell=shell)
 
     assert catch_output(f'f 1', shell=shell) == '1 1 1 1'
+
+
+def test_multiline_function_recursion():
+    shell = Shell()
+    shell.ignore_invalid_syntax = False
+    cmd = """
+f (x):
+    a <- if math x < 0 then f 1
+    b <- if math x > 0 then 10 
+    return strip $a $b
+    """
+    run_command(cmd, shell=shell)
+
+    # TODO
+    # assert catch_output(f'f 1', shell=shell) == '10'
+    # assert catch_output(f'f -1', shell=shell) == '10'
+    # assert catch_output(f'f 0', shell=shell) == ''
 
 
 def test_shell_do_math():
