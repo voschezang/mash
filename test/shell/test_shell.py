@@ -87,6 +87,14 @@ def test_shell_if_eval():
     assert catch_output('if bool ... then print 1', shell=shell) == ''
 
 
+def test_shell_if_compare():
+    shell = Shell()
+    shell.ignore_invalid_syntax = False
+
+    assert catch_output('if 1 < 2 then print 1', shell=shell) == '1'
+    assert catch_output('if 1 > 2 then print 1', shell=shell) == ''
+
+
 def test_shell_if_then_multicommand():
     shell = Shell()
     then = 'then print 1 ; print 2'
@@ -148,6 +156,19 @@ def test_shell_if_then_nested():
 
     assert catch_output('if 1 then if "" then print 3',
                         shell=shell) == ''
+
+
+def test_shell_if_with_assign():
+    shell = Shell()
+    shell.ignore_invalid_syntax = False
+
+    run_command('a <- if 1 then echo 3', shell=shell)
+    assert 'a' in shell.env
+    assert shell.env['a'] == '3'
+
+    run_command('b <- if 1 then range 2', shell=shell)
+    assert 'b' in shell.env
+    assert shell.env['b'] == '0\n1'
 
 
 def test_pipe():

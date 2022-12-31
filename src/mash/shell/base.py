@@ -145,16 +145,18 @@ class BaseShell(Cmd):
         line = ' '.join(args)
         line = f'{line} |> export {k}'
 
-        self.onecmd(line)
+        with enter_new_scope(self):
 
-        # verify result
-        if k not in self.env and not self._last_results:
-            raise ShellError('eval() failed')
+            self.onecmd(line)
 
-        result = self._retrieve_eval_result(k)
+            # verify result
+            if k not in self.env and not self._last_results:
+                raise ShellError('eval() failed')
 
-        if k in self.env:
-            del self.env[k]
+            result = self._retrieve_eval_result(k)
+
+            if k in self.env:
+                del self.env[k]
 
         return result
 
@@ -174,7 +176,7 @@ class BaseShell(Cmd):
         if self.is_function(f):
             result = self.eval(terms)
         elif for_any(comparators, contains, line):
-            result = self.eval('math ' + terms)
+            result = self.eval(['math'] + terms)
         else:
             result = line
 

@@ -1,16 +1,13 @@
 #!/usr/bin/python -m mash
 
 # unary operators
-# id (i): i
 fac (n): range n |> product
 fac (n):
-    less <- math $n < 0
-    more <- math $n > 0
-    eq <- math $n == 0
-    if $less then fail
-    # TODO implement if-then-else
-    a <- if $eq then echo 1
-    b <- if $more then range $n |> product
+    b <- if $n > 0 then range $n |> product
+    # TODO implement if-then-else or switch-case
+    if $n < 0 then fail
+    a <- if $n == 0 then echo 1
+    b <- if $n > 0 then range $n |> product
     return strip $a $b
 
 # binary operators
