@@ -1,12 +1,13 @@
-
-from collections import defaultdict
+from mash import io_util
 from mash.filesystem.filesystem import FileSystem, cd
-from mash.shell.env import ENV, Environment
+from mash.filesystem.scope import Scope, show
+
+ENV = 'env'
 
 
-def init():
+def init() -> Scope:
     fs = FileSystem({})
-    return Environment(fs)
+    return Scope(fs)
 
 
 def test_env_setitem():
@@ -77,3 +78,9 @@ def test_env_cd_in_FileSystem():
 
     fs.cd()
     assert fs.ls('env') == ['a']
+
+
+def test_env_show():
+    env = init()
+    env['a'] = 1
+    assert 'a' in io_util.catch_output(env, show)

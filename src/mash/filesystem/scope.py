@@ -1,30 +1,32 @@
+from logging import debug
 from typing import Any, Iterable, Tuple
-from mash.filesystem.filesystem import FileSystem, Option, cd
-from mash.io_util import log
-from mash.util import crop
-
-ENV = 'env'
+from mash.filesystem.filesystem import FileSystem, cd
+from mash.util import constant, crop
 
 
-class Environment:
+class Scope:
     """A dict-like interface for a FileSystem instance.
     It mixes local and global scopes.
+
+    If a file is not present in the current directory, 
+    then this class attempts to acces it in each parent directory. 
     """
 
-    def __init__(self, data: FileSystem, **kwds):
+    def __init__(self, data: FileSystem, key='env', **kwds):
         self.data = data
-        if ENV not in self.data:
-            self.data.set(ENV, {})
+        self.key = key
+        if self.key not in self.data:
+            self.data.set(self.key, {})
 
         self.update(kwds)
 
     def __setitem__(self, key: str, item):
         """Let `key` point to `item` in the current scope. 
         """
-        with cd(self.data, ENV):
+        with cd(self.data, self.key):
             # warn on overriding a non-local variable
             if key not in self.data and key in self.keys():
-                log(f'Warning: shadowing a global variable: {key}')
+                debug(f'Warning: shadowing a global variable: {key}')
             self.data.set(key, item)
 
     def __getitem__(self, key: str) -> str:
@@ -32,8 +34,8 @@ class Environment:
         """
         with cd(self.data):
             while True:
-                if key in self.data[ENV]:
-                    return self.data.get([ENV, key])
+                if key in self.data[self.key]:
+                    return self.data.get([self.key, key])
 
                 try:
                     self.data.cd_up()
@@ -50,8 +52,8 @@ class Environment:
     def __delitem__(self, key):
         with cd(self.data):
             while True:
-                if key in self.data[ENV]:
-                    self.data.cd(ENV)
+                if key in self.data[self.key]:
+                    self.data.cd(self.key)
                     self.data.rm(key)
                     return
 
@@ -62,6 +64,9 @@ class Environment:
 
     def __str__(self) -> str:
         return str({k: crop(str(self[k]), 15) for k in self.keys()})
+
+    def __iter__(self):
+        return iter(self.keys())
 
     def asdict(self) -> dict:
         return {k: self[k] for k in self.keys()}
@@ -75,8 +80,8 @@ class Environment:
         with cd(self.data):
             while True:
                 # iterate over all scopes, from local to global
-                if ENV in self.data:
-                    for key in self.data[ENV]:
+                if self.key in self.data:
+                    for key in self.data[self.key]:
                         # skip duplicate keys
                         if key not in keys:
                             keys.append(key)
@@ -96,10 +101,10 @@ class Environment:
             self[k] = v
 
 
-def show(env=None):
+def show(env: Scope = None, when=constant(True)):
     if not env:
         return
 
-    print('Env')
     for k in env:
-        print(f'\t{k}: {env[k]}')
+        if when(k):
+            print(f'\t{k}: {env[k]}')
