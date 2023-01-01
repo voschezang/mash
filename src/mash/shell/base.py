@@ -157,7 +157,7 @@ class BaseShell(Cmd):
 
         with enter_new_scope(self):
 
-            self.onecmd(line, override_last_results=False)
+            self.onecmd(line)
 
             # verify result
             if k not in self.env and not self._last_results:
@@ -251,7 +251,6 @@ class BaseShell(Cmd):
                 f'Assignments cannot be used inside other assignments: {assignee}')
 
         self.locals.set(LEFT_ASSIGNMENT, keys)
-        self.set_env_variables(keys, '')
 
         # return value must be empty to prevent side-effects in the next command
         return ''
@@ -439,15 +438,10 @@ class BaseShell(Cmd):
     # Overrides
     ############################################################################
 
-    def onecmd(self, line: str, print_result=True, override_last_results=True) -> bool:
+    def onecmd(self, line: str, print_result=True) -> bool:
         """Parse and run `line`.
         Returns 0 on success and None otherwise
         """
-
-        # TODO
-        # if override_last_results:
-        #     self.env[LAST_RESULTS] = []
-        #     self.env[LAST_RESULTS_INDEX] = 0
 
         try:
             line = self.onecmd_prehook(line)

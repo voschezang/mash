@@ -21,6 +21,11 @@ def catch_output(line='', func=run_command, **kwds) -> str:
     return io_util.catch_output(line, func, **kwds)
 
 
+def test_math_lib_constants():
+    shell = init()
+    catch_output('echo pi', shell=shell) == 3.141592653589793
+
+
 def test_math_lib_unary_operators():
     shell = init()
 

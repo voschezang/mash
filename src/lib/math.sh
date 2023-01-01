@@ -1,5 +1,8 @@
 #!/usr/bin/python -m mash
 
+# constants
+pi <- float 3.141592653589793
+
 # unary operators
 fac (n): range n |> product
 fac (n):

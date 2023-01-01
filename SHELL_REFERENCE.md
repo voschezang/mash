@@ -77,6 +77,20 @@ An environment is a key-value map.
 | `powers (n): range n >>= math $ ** 2` | A function that iterates over a loop.                    |
 | `f (n): range n |> reduce sum 0`      | Aggregate a sequence using a reduction operator.         |
 
+### Multiline Functions
+
+```python
+b = 10 # a global variable
+
+f (x):
+    # a magic formula
+    x <- math x * 3 # a local variable
+    return math a * x + b
+
+# call the function with argument '10'
+f 10
+```
+
 ### Built-in Commands
 
 | Command             | Description                                           |

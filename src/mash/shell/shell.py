@@ -16,7 +16,7 @@ from mash.util import has_method, is_valid_method_name
 
 from mash.shell.function import ShellFunction as Function
 import mash.shell.function as func
-from mash.shell.base import FALSE, TRUE, BaseShell, ShellError, translate_terms
+from mash.shell.base import ENV, FALSE, TRUE, BaseShell, ShellError, filter_private_keys, translate_terms
 
 description = 'If no positional arguments are given then an interactive subshell is started.'
 epilog = f"""
@@ -110,7 +110,8 @@ class Shell(BaseShell):
         Return all variables if no key is given.
         """
         if not keys:
-            return self.env.asdict()
+            env = filter_private_keys(self.locals[ENV])
+            return env.asdict()
 
         try:
             return {k: self.env[k] for k in keys.split()}
@@ -173,7 +174,7 @@ class Shell(BaseShell):
         try:
             result = eval(line)
         except (NameError, SyntaxError) as e:
-            raise ShellError(e)
+            raise ShellError(f'eval failed: {line}') from e
 
         # SMELL avoid side-effects on top of a return type
         self._save_result(result)
