@@ -35,6 +35,17 @@ def test_set_variable_infix_multiple_values():
     assert catch_output(f'echo ${k}', shell=shell) == v
 
 
+def test_set_variable_infix_multiple_keys():
+    shell = Shell()
+    shell.ignore_invalid_syntax = False
+
+    run_command('a b = 1 2', shell=shell)
+    assert 'a' in shell.env
+    assert shell.env['a'] == '1'
+    assert 'b' in shell.env
+    assert shell.env['b'] == '2'
+
+
 def test_set_variable_infix_eval():
     shell = Shell()
     shell.ignore_invalid_syntax = False

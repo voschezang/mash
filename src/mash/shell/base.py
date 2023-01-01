@@ -818,11 +818,7 @@ class BaseShell(Cmd):
                 f'Cannot assign values to all keys: {" ".join(keys)}')
 
     def handle_set_env_variable(self, lhs: Tuple[str], *rhs: str) -> str:
-        if len(lhs) != 1:
-            raise ShellError()
-
-        k = lhs[0]
-        self.set_env_variable(k, *rhs)
+        self.set_env_variables(lhs, ' '.join(rhs))
         return ''
 
     ############################################################################

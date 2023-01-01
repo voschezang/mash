@@ -21,10 +21,10 @@ For examples, see [lib](https://github.com/voschezang/mash/blob/main/src/lib/mat
 
 ### Conditions and Branches
 
-| Example                              | Description                                      |
-| ------------------------------------ | ------------------------------------------------ |
-| `if $n > 0 then print greater`       | Run a command conditionally.                     |
-| `x <- if x == 1 then echo 'greater'` | Set `x` to a either value or to an empty string. |
+| Example                       | Description                                      |
+| ----------------------------- | ------------------------------------------------ |
+| `if 1 > 0 then print greater` | Run a command conditionally.                     |
+| `x <- if 1 > 0 then 10`       | Set `x` to either a value or to an empty string. |
 
 ### Maps and Loops
 
@@ -53,6 +53,7 @@ The operator `=` is used for variable assignment. The operator `<-` is used for 
 | Example         | Description                                                  |
 | --------------- | ------------------------------------------------------------ |
 | `a = 100`       | Assign the value `100`  to the variable `a`                  |
+| `a b = 10 20`   | Assign the values `10`, `20` to the variables `a`,`b`, respectively |
 | `b <- print 10` | Assign the result of the left-hand-side expression to the variable `b` |
 | `print 20 -> c` | Assign the result of the right-hand-side expression to the variable `b` |
 | `print $a $b`   | Pass the values of the variables `a` and `b` to the command `print` |
@@ -138,7 +139,6 @@ f 10
 
 Proposals for future changes.
 
-
 **Basic Functions**
 
 Inf loop: `f x = f x |> repeat x` 
@@ -147,58 +147,9 @@ Inf loop: `f x = f x |> repeat x`
 
 
 
-**Multiline functions**
-
-```haskell
-f x = x
-	|> repeat
-	|> tail
-```
-
-or
-
-```bash
-fun f(x) { # ignore newlines in this scope
-  # local variable
-  a <- math 2 ** 3 ;
-  # use the last expression as return value
-  math x + a
-}
-```
-
-or
-
-```elm
--- inline
-sum (x y): math x + y
-
-mul (x y):
-  math y * x
-
--- let .. in
-g (x y):
-  let a = 10, b = 3, k <- math x ** a + b
-  in x
-
--- keyword: fun
-fun g (x y):
-  let a = 10, b = 3, k <- math x ** a + b
-  in x
-
-fun g (x y):
-  let
-    a = 10 ;
-    b = 3 ;
-    k <- math x ** a ;
-  in
-    x
-```
-
-
-
 **Unpack sequences**
 
-*Proposal: Never expand RHS `*` symbols.*
+*Proposal: Never expand LHS `*` symbols.*
 
 ````python
 a b = println 10 20

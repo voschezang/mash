@@ -16,7 +16,7 @@ def infer_infix_args(op: str, *args: str) -> Tuple[Tuple[str], Tuple[str]]:
     else:
         i = args.index(op)
         lhs = args[:i]
-        rhs = args[i:]
+        rhs = args[i+1:]
     return lhs, rhs
 
 

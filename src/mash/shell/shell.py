@@ -110,8 +110,7 @@ class Shell(BaseShell):
         Return all variables if no key is given.
         """
         if not keys:
-            env = filter_private_keys(self.locals[ENV])
-            return env.asdict()
+            return filter_private_keys(self.env.asdict())
 
         try:
             return {k: self.env[k] for k in keys.split()}
