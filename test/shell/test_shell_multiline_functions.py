@@ -105,8 +105,8 @@ def test_multiline_function_recursion():
 f (x):
     y <- math $x - 1
     a <- if $y > 0 then f $y
-    b <- if $y < 0 then echo -10 
-    c <- if $y == 0 then echo -20
+    b <- if $y < 0 then -10 
+    c <- if $y == 0 then -20
     return strip $a $b $c
     """
     run_command(cmd, shell=shell)

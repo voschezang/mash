@@ -210,7 +210,8 @@ class BaseShell(Cmd):
         return ''
 
     def _save_result(self, value):
-        log(f'_save_result [{self._last_results_index}]: {value}')
+        logging.debug(f'_save_result [{self._last_results_index}]: {value}')
+
         if len(self._last_results) < self._last_results_index:
             raise ShellError('Invalid state')
         if len(self._last_results) == self._last_results_index:
@@ -616,6 +617,9 @@ class BaseShell(Cmd):
                     # skip
                     return ''
                 # otherwise continue
+
+                if not self.is_function(line.split(' ')[0]):
+                    line = 'echo ' + line
 
             if prefixes[-1] in delimiters.bash:
                 return self.pipe_cmd_sh(line, prev_result, delimiter=prefixes[-1])
