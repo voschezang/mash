@@ -1,6 +1,9 @@
 # Syntax
 
-There are build-in methods and user-defined methods. Commands such as `print` are bound to methods with the name `do_print`.
+The syntax and grammar is a mix of Bash and Python. It relies on pipes to pass strings between commands. Statements are mainly separated by whitespace and semicolons.
+
+There are build-in methods and user-defined functions. Methods such as `print` are bound to methods with the name `do_print`. Functions can be either one-liners or multiline functions.
+
 For examples, see [lib](https://github.com/voschezang/mash/blob/main/src/lib/math.sh).
 
 [toc]
@@ -15,6 +18,13 @@ For examples, see [lib](https://github.com/voschezang/mash/blob/main/src/lib/mat
 | `println 1 2 3`           | Print separated arguments on new lines.                      |
 | `print 1, print 2`        | Run multiple methods.                                        |
 | `print 1 `&vert;`> print` | Pipe the output of one expression to another expression.     |
+
+### Conditions and Branches
+
+| Example                              | Description                                      |
+| ------------------------------------ | ------------------------------------------------ |
+| `if $n > 0 then print greater`       | Run a command conditionally.                     |
+| `x <- if x == 1 then echo 'greater'` | Set `x` to a either value or to an empty string. |
 
 ### Maps and Loops
 
@@ -108,13 +118,21 @@ f 10
 **Variable assignment**
 `=` `->` `<-` `$`
 
+**Function definition**
+` ( ):`
+
 **Pipes (Bash)**
-`|` `>` `>>`
+`|` `>-` `>>`
 
 **Pipes (Python)**
  `|>` `>>=`
 
+**Comparison Operators**
+`==` `!=` `>` `<`
 
+### Keywords
+
+`if` `then` `return`
 
 ## Proposals
 
