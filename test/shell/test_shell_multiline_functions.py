@@ -103,14 +103,15 @@ def test_multiline_function_recursion():
     shell.ignore_invalid_syntax = False
     cmd = """
 f (x):
-    #a <- if math $x < 0 then f 1
-    a <- if '' then f 1
-    b <- if math $x \> 0 then 10 
-    return strip $a $b
+    y <- math $x - 1
+    a <- if $y > 0 then f $y
+    b <- if $y < 0 then echo -10 
+    c <- if $y == 0 then echo -20
+    return strip $a $b $c
     """
     run_command(cmd, shell=shell)
 
-    # TODO
-    # assert catch_output(f'f 1', shell=shell) == '10'
-    # assert catch_output(f'f -1', shell=shell) == '10'
-    # assert catch_output(f'f 0', shell=shell) == ''
+    assert catch_output(f'f -1', shell=shell) == '-10'
+    assert catch_output(f'f 1', shell=shell) == '-20'
+    assert catch_output(f'f 2', shell=shell) == '-20'
+    assert catch_output(f'f 3', shell=shell) == '-20'

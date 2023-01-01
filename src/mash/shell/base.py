@@ -16,7 +16,7 @@ from mash.filesystem.filesystem import FileSystem, cd
 from mash.io_util import log, shell_ready_signal, print_shell_ready_signal, check_output
 from mash.shell import delimiters
 from mash.shell.delimiters import comparators, DEFINE_FUNCTION, FALSE, IF, LEFT_ASSIGNMENT, RETURN, RIGHT_ASSIGNMENT, THEN, TRUE
-from mash.shell.env import ENV, Environment, show
+from mash.filesystem.scope import Scope, show
 from mash.shell.errors import ShellError, ShellPipeError
 from mash.shell.function import InlineFunction
 from mash.shell.parsing import expand_variables, expand_variables_inline, filter_comments, infer_infix_args, parse_commands, quote_items
@@ -27,7 +27,10 @@ confirmation_mode = False
 default_session_filename = '.shell_session.json'
 
 COMMENT = '#'
+LAST_RESULTS = '_last_results'
+LAST_RESULTS_INDEX = '_last_results_index'
 INNER_SCOPE = 'inner_scope'
+ENV = 'env'
 
 Command = Callable[[Cmd, str], str]
 Types = Union[str, bool, int, float]
@@ -74,7 +77,10 @@ class BaseShell(Cmd):
         self.locals = FileSystem(scope())
         self.init_current_scope()
 
-        self.env = Environment(self.locals)
+        self.env = Scope(self.locals, ENV)
+        self.env[LAST_RESULTS] = []
+        self.env[LAST_RESULTS_INDEX] = 0
+
         if env:
             for k, v in env.items():
                 self.env[k] = v
@@ -85,10 +91,6 @@ class BaseShell(Cmd):
         # internals
         self._do_char_method = self.none
         self._chars_allowed_for_char_method: List[str] = []
-
-        # TODO use self.local to allow nesting
-        self._last_results = []
-        self._last_result_index = 0
 
         self.set_infix_operators()
         if self.auto_reload:
@@ -106,6 +108,14 @@ class BaseShell(Cmd):
         items.remove('=')
         items.remove('#')
         return items
+
+    @property
+    def _last_results(self):
+        return self.env[LAST_RESULTS]
+
+    @property
+    def _last_results_index(self):
+        return self.env[LAST_RESULTS_INDEX]
 
     def set_infix_operators(self):
         # use this for infix operators, e.g. `a = 1`
@@ -147,7 +157,7 @@ class BaseShell(Cmd):
 
         with enter_new_scope(self):
 
-            self.onecmd(line)
+            self.onecmd(line, override_last_results=False)
 
             # verify result
             if k not in self.env and not self._last_results:
@@ -200,13 +210,13 @@ class BaseShell(Cmd):
         return ''
 
     def _save_result(self, value):
-        log(f'_save_result [{self._last_result_index}]: {value}')
-        if len(self._last_results) < self._last_result_index:
+        log(f'_save_result [{self._last_results_index}]: {value}')
+        if len(self._last_results) < self._last_results_index:
             raise ShellError('Invalid state')
-        if len(self._last_results) == self._last_result_index:
+        if len(self._last_results) == self._last_results_index:
             self._last_results.append(None)
 
-        self._last_results[self._last_result_index] = value
+        self._last_results[self._last_results_index] = value
 
     def is_function(self, func_name: str) -> bool:
         return has_method(self, f'do_{func_name}') or self.is_inline_function(func_name)
@@ -345,7 +355,7 @@ class BaseShell(Cmd):
         println a b |> map echo prefix $ suffix
         ```
         """
-        self._last_results = []
+        self.env[LAST_RESULTS] = []
 
         lines = args.split(delimiter)
         msg = 'Not enough arguments. Usage: `map f [args..] $ [args..]`.'
@@ -379,10 +389,10 @@ class BaseShell(Cmd):
 
             line = [f] + local_args
 
-            self._last_result_index = j
+            self.env[LAST_RESULTS_INDEX] = j
             results.append(self.run_single_command(line))
 
-        self._last_result_index = 0
+        self.env[LAST_RESULTS_INDEX] = 0
         return delimiter.join([str(result) for result in results])
 
     def do_foreach(self, args):
@@ -429,10 +439,15 @@ class BaseShell(Cmd):
     # Overrides
     ############################################################################
 
-    def onecmd(self, line: str, print_result=True) -> bool:
+    def onecmd(self, line: str, print_result=True, override_last_results=True) -> bool:
         """Parse and run `line`.
         Returns 0 on success and None otherwise
         """
+
+        # TODO
+        # if override_last_results:
+        #     self.env[LAST_RESULTS] = []
+        #     self.env[LAST_RESULTS_INDEX] = 0
 
         try:
             line = self.onecmd_prehook(line)
@@ -655,7 +670,7 @@ class BaseShell(Cmd):
             raise ShellError(f'Missing return value in assignment: {keys}')
         elif result.strip() == '' and self._last_results:
             result = self._last_results
-            self._last_results = []
+            self.env[LAST_RESULTS] = []
 
         self.set_env_variables(keys, result)
 
@@ -824,7 +839,7 @@ class BaseShell(Cmd):
             return
 
         self.reset_locals()
-        env = self.locals[ENV]
+        env = filter_private_keys(self.locals[ENV])
 
         with open(session, 'w') as f:
             try:
@@ -864,7 +879,8 @@ class BaseShell(Cmd):
 
         self.reset_locals()
         log(f'Using session: {session}')
-        show(env)
+        print('Env')
+        show(env, when=is_public)
 
         # TODO handle key conflicts
         self.env.update(env)
@@ -970,6 +986,22 @@ def is_function_definition(terms: List[str]) -> bool:
         _f, first, *_, last = terms
 
     return first.startswith('(') and last.endswith(')')
+
+
+def is_public(key: str) -> bool:
+    return not is_private(key)
+
+
+def is_private(key: str) -> bool:
+    return key.startswith('_')
+
+
+def filter_private_keys(env: dict) -> dict:
+    env = env.copy()
+    for k in list(env.keys()):
+        if is_private(k):
+            del env[k]
+    return env
 
 
 def scope() -> dict:

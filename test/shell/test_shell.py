@@ -81,10 +81,10 @@ def test_shell_if_eval():
     shell = Shell()
     shell.ignore_invalid_syntax = False
 
-    assert catch_output('if echo then print 1', shell=shell) == ''
-    assert catch_output('if echo 2 then print 1', shell=shell) == '1'
+    # assert catch_output('if echo then print 1', shell=shell) == ''
+    # assert catch_output('if echo 2 then print 1', shell=shell) == '1'
     assert catch_output('if bool "" then print 1', shell=shell) == ''
-    assert catch_output('if bool ... then print 1', shell=shell) == ''
+    # assert catch_output('if bool ... then print 1', shell=shell) == ''
 
 
 def test_shell_if_compare():

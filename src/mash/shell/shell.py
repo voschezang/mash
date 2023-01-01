@@ -174,8 +174,6 @@ class Shell(BaseShell):
             result = eval(line)
         except (NameError, SyntaxError) as e:
             raise ShellError(e)
-        except TypeError as e:
-            0
 
         # SMELL avoid side-effects on top of a return type
         self._save_result(result)
