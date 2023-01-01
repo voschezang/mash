@@ -122,6 +122,10 @@ f 10
 **Function definition**
 ` ( ):`
 
+**Globbing**
+
+`*` `?` `{` `}`
+
 **Pipes (Bash)**
 `|` `>-` `>>`
 
@@ -160,8 +164,6 @@ if $x then 1 else 2
 ```python
 if $x and math 1 + 3 then ..
 ```
-
-
 
 
 
