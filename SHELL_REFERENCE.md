@@ -147,6 +147,24 @@ Inf loop: `f x = f x |> repeat x`
 
 
 
+**If-then-else conditions**
+
+```python
+if $x then 1 else 2
+```
+
+
+
+**Logical operators: `and, or`**
+
+```python
+if $x and math 1 + 3 then ..
+```
+
+
+
+
+
 **Unpack sequences**
 
 *Proposal: Never expand LHS `*` symbols.*
