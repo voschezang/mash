@@ -26,7 +26,14 @@ def test_math_lib_constants():
     catch_output('echo pi', shell=shell) == 3.141592653589793
 
 
-def test_math_lib_unary_operators():
+def test_math_lib_abs():
+    shell = init()
+
+    catch_output('abs 1.1', shell=shell) == '1.1'
+    catch_output('abs -1.1', shell=shell) == '1.1'
+
+
+def test_math_lib_factorial():
     shell = init()
 
     catch_output('fac 3', shell=shell) == '6'
