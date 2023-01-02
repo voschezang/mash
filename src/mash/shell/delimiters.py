@@ -13,6 +13,7 @@ class Python(Enum):
     NEW_COMMAND = ';'
     LEFT_ASSIGNMENT = '<-'
     IF = 'if'
+    ELSE = 'else'
     THEN = 'then'
     DEFINE_FUNCTION = ':'
     RIGHT_ASSIGNMENT = '->'
@@ -20,7 +21,6 @@ class Python(Enum):
     MAP = '>>='
     SET_ENV_VARIABLE = '='
     INLINE_COMMENT = '#'
-    # ELSE = 'else'
     # AND = 'and'
     # OR = 'or'
 
@@ -36,7 +36,7 @@ RIGHT_ASSIGNMENT = Python.RIGHT_ASSIGNMENT.value
 LEFT_ASSIGNMENT = Python.LEFT_ASSIGNMENT.value
 IF = Python.IF.value
 THEN = Python.THEN.value
-# ELSE = Python.ELSE.value
+ELSE = Python.ELSE.value
 # AND = Python.AND.value
 # OR = Python.OR.value
 

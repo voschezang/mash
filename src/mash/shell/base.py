@@ -15,7 +15,7 @@ from mash import io_util
 from mash.filesystem.filesystem import FileSystem, cd
 from mash.io_util import log, shell_ready_signal, print_shell_ready_signal, check_output
 from mash.shell import delimiters
-from mash.shell.delimiters import comparators, DEFINE_FUNCTION, FALSE, IF, LEFT_ASSIGNMENT, RETURN, RIGHT_ASSIGNMENT, THEN, TRUE
+from mash.shell.delimiters import ELSE, comparators, DEFINE_FUNCTION, FALSE, IF, LEFT_ASSIGNMENT, RETURN, RIGHT_ASSIGNMENT, THEN, TRUE
 from mash.filesystem.scope import Scope, show
 from mash.shell.errors import ShellError, ShellPipeError
 from mash.shell.function import InlineFunction
@@ -600,13 +600,14 @@ class BaseShell(Cmd):
             command_and_args)
 
         if prefixes:
-            if THEN in prefixes:
+            if THEN in prefixes or ELSE in prefixes:
                 if not self.locals[IF]:
                     if self.ignore_invalid_syntax:
                         return ''
                     raise ShellError(
                         f'If-then clause requires an {IF} statement')
 
+            if THEN in prefixes:
                 self.locals[IF][-1]['depth'] += 1
 
                 if len(prefixes) <= 1 and self.locals[IF][-1]['depth'] >= 2:
@@ -616,6 +617,15 @@ class BaseShell(Cmd):
                 if not self.locals[IF][-1]['value']:
                     # skip
                     return ''
+                # otherwise continue
+
+                if not self.is_function(line.split(' ')[0]):
+                    line = 'echo ' + line
+
+            elif ELSE in prefixes:
+                if self.locals[IF][-1]['value']:
+                    # skip
+                    return prev_result
                 # otherwise continue
 
                 if not self.is_function(line.split(' ')[0]):

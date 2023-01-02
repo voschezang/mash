@@ -171,6 +171,14 @@ def test_shell_if_with_assign():
     assert shell.env['b'] == '0\n1'
 
 
+def test_shell_if_else():
+    shell = Shell()
+    shell.ignore_invalid_syntax = False
+
+    assert catch_output('if "" then print 1 else print 2') == '2'
+    assert catch_output('if 10 then print 1 else print 2') == '1'
+
+
 def test_pipe():
     assert catch_output('print 100 |> print') == '100'
 
