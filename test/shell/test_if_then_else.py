@@ -12,6 +12,7 @@ def catch_output(line='', func=run_command, **kwds) -> str:
 def test_shell_if_then():
     shell = Shell()
     shell.ignore_invalid_syntax = False
+    assert catch_output('if "" then 2 |> echo 1', shell=shell) == ''
 
     assert catch_output('if "" then print 1', shell=shell) == ''
     assert catch_output('if 1 then print 1', shell=shell) == '1'
@@ -23,6 +24,9 @@ def test_shell_if_then():
 
     assert catch_output('if echo 1 |> echo then 2', shell=shell) == '2'
     assert catch_output('if echo "" |> echo then 2', shell=shell) == ''
+
+    assert catch_output('if 10 echo then 2 |> echo 1', shell=shell) == '1 2'
+    assert catch_output('if "" then 2 |> echo 1', shell=shell) == ''
 
 
 def test_shell_if_eval():
@@ -129,7 +133,11 @@ def test_shell_if_else_with_pipes():
 
     # pipe in IF
     assert catch_output('if echo 10 |> echo then 2 else 3', shell=shell) == '2'
-    assert catch_output('if echo "" |> echo then 2 else 3', shell=shell) == '3'
+    assert catch_output('if echo 10 |> echo then 2 else 3', shell=shell) == '2'
+
+    # TODO fix leaking pipes
+    assert catch_output(
+        'if echo "" |> echo 1 then 2 else 3', shell=shell) == '3 1'
 
     # pipe in THEN
     assert catch_output(
@@ -142,8 +150,10 @@ def test_shell_if_else_with_pipes():
     assert catch_output(
         'if "" then echo 2 |> math 1 + else 4', shell=shell) == '4'
 
+    # pipe in ELSE
     # TODO
-    # # pipe in ELSE
+    # with raises(ShellError):
+    #     run_command('if 1 then 2 else echo 2 |> echo', shell=shell)
     # assert catch_output(
     #     'if 10 then echo 4 else 2 |> echo 3', shell=shell) == '4'
     # assert catch_output(

@@ -13,12 +13,12 @@ class Python(Enum):
     NEW_COMMAND = ';'
     LEFT_ASSIGNMENT = '<-'
     IF = 'if'
-    ELSE = 'else'
     THEN = 'then'
     DEFINE_FUNCTION = ':'
     RIGHT_ASSIGNMENT = '->'
     PIPE = '|>'
     MAP = '>>='
+    ELSE = 'else'
     SET_ENV_VARIABLE = '='
     INLINE_COMMENT = '#'
     # AND = 'and'
@@ -44,3 +44,10 @@ ELSE = Python.ELSE.value
 class KeyWords(Enum):
     AND = 'and'
     OR = 'or'
+
+# TODO choose precedence
+# x <- if $y then (range 3 |> product) else (range 10 |> product)
+# x <- if $y then range 3 |> product else range 10 |> product
+
+# x <- if $y then range 3 else range 10 |> product
+# x <- (if $y then range 3 else range 10) |> product

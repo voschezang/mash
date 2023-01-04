@@ -46,19 +46,18 @@ def handle_then_else_statements(self, prefixes: str, prev_result: str) -> Tuple[
             f'If-then clause requires an {IF} statement (1)')
 
     try:
-        if THEN in prefixes:
-            handle_then_statement(self)
-        elif ELSE in prefixes:
+        if ELSE in prefixes:
+            if prefixes[-1] != ELSE:
+                raise ShellError('Nested else is not implemented')
             handle_else_statement(self)
+        elif THEN in prefixes:
+            handle_then_statement(self)
 
     except Abort:
         raise Done(prev_result)
 
 
 def handle_then_statement(self):
-    # if self._last_if['branch'] is not None:
-    #     raise ShellError(
-    #         f'If-then clause requires an {IF} statement (2)')
     if self._last_if['value'] is None:
         raise Abort()
 
@@ -81,6 +80,9 @@ def handle_else_statement(self):
             f'If-then-else clause requires a {THEN} statement (3)')
 
     if self._last_if['branch'] == ELSE:
+        # TODO this breaks operators with lower precedence
+        # e.g. if .. then .. else .. |> ..
+        #                         (      )
         self.locals[IF].pop()
 
     if not self.locals[IF]:
