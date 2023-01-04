@@ -7,6 +7,10 @@ class Abort(RuntimeError):
     pass
 
 
+class Done(RuntimeError):
+    pass
+
+
 def handle_if_statement(self, line: str, prev_result: str) -> str:
     # fix missing THEN in double if
     if self.locals[IF] and self._last_if['branch'] is None:
@@ -34,10 +38,10 @@ def handle_if_statement(self, line: str, prev_result: str) -> str:
     return ''
 
 
-def handle_then_else_statements(self, prefixes: str, line: str,  prev_result: str) -> Tuple[str, str]:
+def handle_then_else_statements(self, prefixes: str, prev_result: str) -> Tuple[str, str]:
     if not self.locals[IF]:
         if self.ignore_invalid_syntax:
-            return line, ''
+            raise Done('')
         raise ShellError(
             f'If-then clause requires an {IF} statement')
 
@@ -48,12 +52,7 @@ def handle_then_else_statements(self, prefixes: str, line: str,  prev_result: st
             handle_else_statement(self)
 
     except Abort:
-        return None, prev_result
-
-    if not self.is_function(line.split(' ')[0]):
-        line = 'echo ' + line
-
-    return line, None
+        raise Done(prev_result)
 
 
 def handle_then_statement(self):

@@ -15,7 +15,7 @@ from mash import io_util
 from mash.filesystem.filesystem import FileSystem, cd
 from mash.io_util import log, shell_ready_signal, print_shell_ready_signal, check_output
 from mash.shell import delimiters
-from mash.shell.if_statement import handle_if_statement, handle_then_else_statements
+from mash.shell.if_statement import Done, handle_if_statement, handle_then_else_statements
 from mash.shell.delimiters import ELSE, comparators, DEFINE_FUNCTION, FALSE, IF, LEFT_ASSIGNMENT, RETURN, RIGHT_ASSIGNMENT, THEN, TRUE
 from mash.filesystem.scope import Scope, show
 from mash.shell.errors import ShellError, ShellPipeError
@@ -606,10 +606,13 @@ class BaseShell(Cmd):
 
         if prefixes:
             if THEN in prefixes or ELSE in prefixes:
-                line, result = handle_then_else_statements(
-                    self, prefixes, line, prev_result)
-                if result is not None:
-                    return result
+                try:
+                    handle_then_else_statements(self, prefixes, prev_result)
+                except Done as result:
+                    return result.args[0]
+
+                if not self.is_function(line.split(' ')[0]):
+                    line = 'echo ' + line
 
             if prefixes[-1] == IF:
                 return handle_if_statement(self, line, prev_result)
