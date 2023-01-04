@@ -15,6 +15,7 @@ from mash import io_util
 from mash.filesystem.filesystem import FileSystem, cd
 from mash.io_util import log, shell_ready_signal, print_shell_ready_signal, check_output
 from mash.shell import delimiters
+from mash.shell.if_statement import handle_if_statement, handle_then_else_statements
 from mash.shell.delimiters import ELSE, comparators, DEFINE_FUNCTION, FALSE, IF, LEFT_ASSIGNMENT, RETURN, RIGHT_ASSIGNMENT, THEN, TRUE
 from mash.filesystem.scope import Scope, show
 from mash.shell.errors import ShellError, ShellPipeError
@@ -108,6 +109,10 @@ class BaseShell(Cmd):
         items.remove('=')
         items.remove('#')
         return items
+
+    @property
+    def _last_if(self):
+        return self.locals[IF][-1]
 
     @property
     def _last_results(self):
@@ -601,37 +606,15 @@ class BaseShell(Cmd):
 
         if prefixes:
             if THEN in prefixes or ELSE in prefixes:
-                if not self.locals[IF]:
-                    if self.ignore_invalid_syntax:
-                        return ''
-                    raise ShellError(
-                        f'If-then clause requires an {IF} statement')
+                line, result = handle_then_else_statements(
+                    self, prefixes, line, prev_result)
+                if result is not None:
+                    return result
 
-            if THEN in prefixes:
-                self.locals[IF][-1]['depth'] += 1
+            if prefixes[-1] == IF:
+                return handle_if_statement(self, line, prev_result)
 
-                if len(prefixes) <= 1 and self.locals[IF][-1]['depth'] >= 2:
-                    raise ShellError(
-                        f'If-then clause requires an {IF} statement')
-
-                if not self.locals[IF][-1]['value']:
-                    # skip
-                    return ''
-                # otherwise continue
-
-                if not self.is_function(line.split(' ')[0]):
-                    line = 'echo ' + line
-
-            elif ELSE in prefixes:
-                if self.locals[IF][-1]['value']:
-                    # skip
-                    return prev_result
-                # otherwise continue
-
-                if not self.is_function(line.split(' ')[0]):
-                    line = 'echo ' + line
-
-            if prefixes[-1] in delimiters.bash:
+            elif prefixes[-1] in delimiters.bash:
                 return self.pipe_cmd_sh(line, prev_result, delimiter=prefixes[-1])
 
             elif prefixes[-1] == '>>=':
@@ -644,22 +627,6 @@ class BaseShell(Cmd):
                 # TODO verify syntax of `line`
                 assert ' ' not in line
                 self.set_env_variables(line, prev_result)
-                return ''
-
-            elif prefixes[-1] == IF:
-                assert_if_then_is_closed = False
-                if assert_if_then_is_closed:
-                    if self.locals[IF] and self.locals[IF][-1]['depth'] == 0:
-                        raise ShellError(
-                            f'The previous if-then statement was not closed')
-
-                if self.locals[IF] and not self.locals[IF][-1]['value']:
-                    # force value to be false when previous conditions are false
-                    value = False
-                else:
-                    value = self.eval_compare(line)
-
-                self.locals[IF].append({'value': value, 'depth': 0})
                 return ''
 
         if infix_operator_args:
