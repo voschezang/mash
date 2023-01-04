@@ -21,6 +21,9 @@ def test_shell_if_then():
     run_command('a = false or true', shell=shell)
     assert catch_output('if $a then print 1', shell=shell) == '1'
 
+    assert catch_output('if echo 1 |> echo then 2', shell=shell) == '2'
+    assert catch_output('if echo "" |> echo then 2', shell=shell) == ''
+
 
 def test_shell_if_eval():
     shell = Shell()
@@ -60,14 +63,6 @@ def test_shell_if_then_multicommand():
 #         run_command('then 1', shell=shell, strict=True)
 
 
-# def test_shell_if_if_then():
-#     shell = Shell()
-#     shell.ignore_invalid_syntax = False
-
-#     with raises(ShellError):
-#         run_command('if 1 if 2 then print 3', shell=shell)
-
-
 def test_shell_if_then_then():
     shell = Shell()
     shell.ignore_invalid_syntax = False
@@ -78,11 +73,9 @@ def test_shell_if_then_then():
     # missing `then` keyword should be handled
     assert catch_output('if 1 then if 2 print 3', shell=shell) == ''
 
-    # double `then`
-    with raises(ShellError):
-        run_command('if 1 then print 1 then print 2', shell=shell)
-    with raises(ShellError):
-        run_command('if 1 then print 1 ; print 2 then print 3', shell=shell)
+    # double `then` should be allowed
+    run_command('if 1 then print 1 then print 2', shell=shell)
+    run_command('if 1 then print 1 ; print 2 then print 3', shell=shell)
 
 
 def test_shell_if_then_nested():
@@ -105,13 +98,21 @@ def test_shell_if_with_assign():
     shell = Shell()
     shell.ignore_invalid_syntax = False
 
-    run_command('a <- if 1 then echo 3', shell=shell)
-    assert 'a' in shell.env
-    assert shell.env['a'] == '3'
+    run_command('a <- if "" then 3 else 4', shell=shell)
+    assert shell.env['a'] == '4'
 
     run_command('b <- if 1 then range 2', shell=shell)
     assert 'b' in shell.env
     assert shell.env['b'] == '0\n1'
+
+    # skip missing else
+    run_command('a <- if 1 then 3', shell=shell)
+    assert 'a' in shell.env
+    assert shell.env['a'] == '3'
+
+    # missing else should default to ''
+    run_command('a <- if "" then 3', shell=shell)
+    assert shell.env['a'] == ''
 
 
 def test_shell_if_else():
@@ -120,6 +121,33 @@ def test_shell_if_else():
 
     assert catch_output('if "" then print 1 else print 2') == '2'
     assert catch_output('if 10 then print 1 else print 2') == '1'
+
+
+def test_shell_if_else_with_pipes():
+    shell = Shell()
+    shell.ignore_invalid_syntax = False
+
+    # pipe in IF
+    assert catch_output('if echo 10 |> echo then 2 else 3', shell=shell) == '2'
+    assert catch_output('if echo "" |> echo then 2 else 3', shell=shell) == '3'
+
+    # pipe in THEN
+    assert catch_output(
+        'if 10 then echo 2 |> echo 3 else 4', shell=shell) == '3 2'
+    assert catch_output(
+        'if "" then echo 2 |> echo 3 else 4', shell=shell) == '4'
+
+    assert catch_output(
+        'if 10 then echo 2 |> math 1 + else 4', shell=shell) == '3'
+    assert catch_output(
+        'if "" then echo 2 |> math 1 + else 4', shell=shell) == '4'
+
+    # TODO
+    # # pipe in ELSE
+    # assert catch_output(
+    #     'if 10 then echo 4 else 2 |> echo 3', shell=shell) == '4'
+    # assert catch_output(
+    #     'if "" then echo 4 else 2 |> echo 3', shell=shell) == '3 2'
 
 
 def test_shell_if_then_if_else():

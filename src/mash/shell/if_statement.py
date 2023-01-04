@@ -43,7 +43,7 @@ def handle_then_else_statements(self, prefixes: str, prev_result: str) -> Tuple[
         if self.ignore_invalid_syntax:
             raise Done('')
         raise ShellError(
-            f'If-then clause requires an {IF} statement')
+            f'If-then clause requires an {IF} statement (1)')
 
     try:
         if THEN in prefixes:
@@ -56,10 +56,10 @@ def handle_then_else_statements(self, prefixes: str, prev_result: str) -> Tuple[
 
 
 def handle_then_statement(self):
-    if self._last_if['branch'] is not None:
-        raise ShellError(
-            f'If-then clause requires an {IF} statement')
-    elif self._last_if['value'] is None:
+    # if self._last_if['branch'] is not None:
+    #     raise ShellError(
+    #         f'If-then clause requires an {IF} statement (2)')
+    if self._last_if['value'] is None:
         raise Abort()
 
     self._last_if['branch'] = THEN
@@ -78,14 +78,14 @@ def handle_else_statement(self):
         raise Abort()
     elif self._last_if['branch'] is None:
         raise ShellError(
-            f'If-then-else clause requires a {THEN} statement')
+            f'If-then-else clause requires a {THEN} statement (3)')
 
     if self._last_if['branch'] == ELSE:
         self.locals[IF].pop()
 
     if not self.locals[IF]:
         raise ShellError(
-            f'If-then-else clause requires an {IF} statement')
+            f'If-then-else clause requires an {IF} statement (4)')
 
     self._last_if['branch'] = ELSE
 
