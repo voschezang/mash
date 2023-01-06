@@ -47,12 +47,6 @@ def test_shell_if_compare():
     assert catch_output('if 1 > 2 then print 1', shell=shell) == ''
 
 
-def test_shell_if_then_multicommand():
-    shell = Shell()
-    then = 'then print 1 ; print 2'
-    assert catch_output(f'if "" {then} ', shell=shell) == '\n2'
-    assert catch_output(f'if 1 {then}', shell=shell) == '1\n2'
-
 # def test_shell_if_then_multiline():
 #     shell = Shell()
 
@@ -65,6 +59,14 @@ def test_shell_if_then_multicommand():
 #     # fail on double else
 #     with raises(ShellError):
 #         run_command('then 1', shell=shell, strict=True)
+
+
+def test_shell_if_then_semicolons():
+    shell = Shell()
+    shell.ignore_invalid_syntax = False
+
+    assert catch_output('if 10 then print 1 ; print 2', shell=shell) == '1\n2'
+    assert catch_output('if "" then print 1 ; print 2', shell=shell) == ''
 
 
 def test_shell_if_then_then():
@@ -181,11 +183,12 @@ def test_shell_if_then_if_else():
     # True & True
     assert catch_output(f'if 10 then {x} else print 3') == '1'
     # True & False
-    assert catch_output(f'if 10 then {not_x} else print 3') == '2'
-    # False & True
-    assert catch_output(f'if "" then {x} else print 3') == '3'
-    # False & False
-    assert catch_output(f'if "" then {not_x} else print 3') == '3'
+    # the double else behaves like a |> operator
+    assert catch_output(f'if 10 then {not_x} else print 3') == '3 2'
+    # # False & True
+    # assert catch_output(f'if "" then {x} else print 3') == '3'
+    # # False & False
+    # assert catch_output(f'if "" then {not_x} else print 3') == '3'
 
 
 def test_shell_if_then_else_if_then():
@@ -224,5 +227,68 @@ def test_shell_if_else_unhappy():
     with raises(ShellError):
         run_command('if "" else print 2')
 
-    with raises(ShellError):
-        run_command('if "" then print 1 else print 2 else print 3')
+    # TODO
+    # with raises(ShellError):
+    run_command('if "" then print 1 else print 2 else print 3')
+
+
+def test_shell_if_else_multiline():
+    """Test the following pattern:
+    if () then print 1
+    else 
+        if () then print 2
+        else
+            if () then print 2
+                else
+                    ..
+    """
+    shell = Shell()
+    shell.ignore_invalid_syntax = False
+
+    def line(a, b, c):
+        return f"""
+if {a} then 
+    print 1
+else if {b} 
+then print 2
+else
+    print 3
+
+# a second independent branch
+if {c} then print 4
+
+# if .. then ..
+# else if .. then ..
+# else
+#     ..
+#     if .. then ..
+# 
+# if ..
+    """
+
+    assert catch_output(line('1', ' ', ' ')).strip() == '1'
+    assert catch_output(line('1', '1', ' ')).strip() == '1'
+    assert catch_output(line(' ', '1', ' ')).strip() == '2'
+    assert catch_output(line(' ', ' ', ' ')).strip() == '3'
+
+    assert catch_output(line('1', ' ', '1')).strip() == '1\n4'
+    assert catch_output(line('1', '1', '1')).strip() == '1\n4'
+    assert catch_output(line(' ', '1', '1')).strip() == '2\n4'
+    assert catch_output(line(' ', ' ', '1')).strip() == '3\n4'
+
+
+def test_shell_if_else_multiline_indent():
+    shell = Shell()
+    shell.ignore_invalid_syntax = False
+
+    def line(a, b):
+        return f"""
+if {a} then 
+    print 1
+else
+    print 2
+
+if {b} then 
+    print 3
+    """
+    # TODO

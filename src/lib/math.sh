@@ -11,8 +11,7 @@ abs (x):
 
 fac (n): range n |> product
 fac (n):
-    b <- if $n > 0 then range $n |> product
-    # TODO implement if-then-else or switch-case
+    # TODO implement break-like behaviour of `return`
     if $n < 0 then fail
     a <- if $n == 0 then echo 1
     b <- if $n > 0 then range $n |> product

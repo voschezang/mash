@@ -2,6 +2,8 @@ from typing import Tuple
 from mash.shell.delimiters import ELSE, IF, THEN
 from mash.shell.errors import ShellError
 
+LINE_INDENT = 'line_indent'
+
 
 class Abort(RuntimeError):
     pass
@@ -9,6 +11,12 @@ class Abort(RuntimeError):
 
 class Done(RuntimeError):
     pass
+
+
+def State(self, value) -> dict:
+    return {'value': value,
+            'branch': None,
+            LINE_INDENT: self.locals[LINE_INDENT]}
 
 
 def handle_if_statement(self, line: str, prev_result: str) -> str:
@@ -24,7 +32,7 @@ def handle_if_statement(self, line: str, prev_result: str) -> str:
     if self.locals[IF] and self._last_if['branch'] == ELSE and self._last_if['value']:
         # case of: if .. else if .. :
         # force value to be false when previous IF was true
-        self.locals[IF].append({'value': None, 'branch': None})
+        self.locals[IF].append(State(self, None))
         return prev_result
     elif self.locals[IF] and self._last_if['branch'] == THEN and not self._last_if['value']:
         # case of: if .. then if .. then:
@@ -33,8 +41,7 @@ def handle_if_statement(self, line: str, prev_result: str) -> str:
     else:
         value = self.eval_compare(line)
 
-    self.locals[IF].append({'value': value,
-                            'branch': None})
+    self.locals[IF].append(State(self, value))
     return ''
 
 
@@ -57,11 +64,17 @@ def handle_then_else_statements(self, prefixes: str, prev_result: str) -> Tuple[
         raise Done(prev_result)
 
 
-def handle_then_statement(self):
+def handle_then_statement(self, transparent=False):
     if self._last_if['value'] is None:
         raise Abort()
 
-    self._last_if['branch'] = THEN
+    if not transparent:
+        # TODO fail iff double THEN is not use in combination with other delimiters
+        # if self._last_if['branch'] == THEN:
+        #     raise ShellError(
+        #         f'If-then-else clause requires an {IF} statement (5)')
+
+        self._last_if['branch'] = THEN
 
     if not self._last_if['value']:
         raise Abort()
@@ -72,24 +85,25 @@ def handle_then_statement(self):
             raise Abort()
 
 
-def handle_else_statement(self):
+def handle_else_statement(self, transparent=False):
     if self._last_if['value'] is None:
         raise Abort()
     elif self._last_if['branch'] is None:
         raise ShellError(
             f'If-then-else clause requires a {THEN} statement (3)')
 
-    if self._last_if['branch'] == ELSE:
-        # TODO this breaks operators with lower precedence
-        # e.g. if .. then .. else .. |> ..
-        #                         (      )
-        self.locals[IF].pop()
+    if not transparent:
+        # if self._last_if['branch'] == ELSE:
+        #     # TODO this breaks operators with lower precedence
+        #     # e.g. if .. then .. else .. |> ..
+        #     #                         (      )
+        #     self.locals[IF].pop()
 
-    if not self.locals[IF]:
-        raise ShellError(
-            f'If-then-else clause requires an {IF} statement (4)')
+        if not self.locals[IF]:
+            raise ShellError(
+                f'If-then-else clause requires an {IF} statement (4)')
 
-    self._last_if['branch'] = ELSE
+        self._last_if['branch'] = ELSE
 
     if self._last_if['value']:
         raise Abort()

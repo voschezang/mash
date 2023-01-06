@@ -4,7 +4,7 @@ import shlex
 
 from mash.io_util import log
 from mash.shell import delimiters
-from mash.shell.delimiters import FALSE, TRUE
+from mash.shell.delimiters import ELSE, FALSE, IF, THEN, TRUE
 from mash.shell.errors import ShellError
 from mash.util import is_globbable, is_valid_method_name, match_words, removeprefix, split_sequence, glob
 
@@ -66,12 +66,33 @@ def parse_commands(line: str, delimiters: List[str], ignore_invalid_syntax: bool
     # terms = chain.from_iterable([split_tips(term.strip(), ';') for term in terms])
     ################################################################################
 
+    # insert an empty string to force if-then to be executed
+    terms = list(insert_item(terms, item='', after=IF, before=THEN))
+    terms = list(insert_item(terms, item='', after=ELSE, before=IF))
+    terms = list(insert_item(terms, item='', after=IF))
+    terms = list(insert_item(terms, item='', after=THEN))
+    terms = list(insert_item(terms, item='', after=ELSE))
+
     # group terms based on delimiters
     results = split_sequence(terms, delimiters, return_delimiters=True)
 
     for line in results:
         unquote_delimiters(line, delimiters)
         yield line
+
+
+def insert_item(terms: List[str], item: str,
+                after: str, before: str = None) -> Iterable[str]:
+    for i, term in enumerate(terms):
+        yield term
+        if term == after:
+            # TODO mv this branch to new function
+            if before is None:
+                # append iff last item
+                if i == len(terms) - 1:
+                    yield item
+            elif i < len(terms) - 1 and terms[i+1] == before:
+                yield item
 
 
 def unquote_delimiters(terms: List[str], delimiters: List[str]) -> List[str]:
@@ -164,3 +185,22 @@ def quote_items(items: List[str]) -> Iterable[str]:
             yield arg
         else:
             yield shlex.quote(arg)
+
+
+def indent_with(line: str) -> Tuple[str, str]:
+    """Return a tuple that represents the length of the indentation in spaces and tabs.
+    """
+    n = len(line) - len(line.lstrip())
+    prefix = line[:n]
+    n_spaces = prefix.count(' ')
+    n_tabs = prefix.count('\t')
+    return n_spaces, n_tabs
+
+
+def inline_indent_with(*indent_per_type) -> float:
+    for i in indent_per_type:
+        if i > 80:
+            raise NotImplementedError(f'Indent too large: {i}')
+
+    values = ''.join(f'{k:080}' for k in indent_per_type)
+    return str('.' + ''.join(values))

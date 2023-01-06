@@ -44,10 +44,3 @@ ELSE = Python.ELSE.value
 class KeyWords(Enum):
     AND = 'and'
     OR = 'or'
-
-# TODO choose precedence
-# x <- if $y then (range 3 |> product) else (range 10 |> product)
-# x <- if $y then range 3 |> product else range 10 |> product
-
-# x <- if $y then range 3 else range 10 |> product
-# x <- (if $y then range 3 else range 10) |> product
