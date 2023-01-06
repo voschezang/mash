@@ -256,14 +256,6 @@ else
 
 # a second independent branch
 if {c} then print 4
-
-# if .. then ..
-# else if .. then ..
-# else
-#     ..
-#     if .. then ..
-# 
-# if ..
     """
 
     assert catch_output(line('1', ' ', ' ')).strip() == '1'
@@ -277,18 +269,34 @@ if {c} then print 4
     assert catch_output(line(' ', ' ', '1')).strip() == '3\n4'
 
 
-def test_shell_if_else_multiline_indent():
+def test_shell_if_else_multiline_nested():
     shell = Shell()
     shell.ignore_invalid_syntax = False
 
-    def line(a, b):
+    def line(a, b, c, d):
         return f"""
 if {a} then 
-    print 1
-else
-    print 2
+    if {b} then
+        print 1
+    else
+        print 2
 
-if {b} then 
-    print 3
+else if {c} then
+    if {d} then
+        print 3
+    else
+        print 4
+else
+    print 5
     """
-    # TODO
+
+    assert catch_output(line('1', ' ', ' ', ' ')).strip() == '2'
+    assert catch_output(line('1', ' ', ' ', '1')).strip() == '2'
+    assert catch_output(line('1', '1', '1', '1')).strip() == '1'
+    assert catch_output(line('1', '1', ' ', ' ')).strip() == '1'
+    assert catch_output(line(' ', '1', ' ', ' ')).strip() == '5'
+    assert catch_output(line(' ', '1', '1', '1')).strip() == '3'
+    assert catch_output(line(' ', '1', '1', ' ')).strip() == '4'
+    assert catch_output(line(' ', ' ', '1', ' ')).strip() == '4'
+    assert catch_output(line(' ', ' ', ' ', '1')).strip() == '5'
+    assert catch_output(line(' ', ' ', ' ', ' ')).strip() == '5'

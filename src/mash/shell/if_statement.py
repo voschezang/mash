@@ -24,11 +24,6 @@ def handle_if_statement(self, line: str, prev_result: str) -> str:
     if self.locals[IF] and self._last_if['branch'] is None:
         self._last_if['branch'] = THEN
 
-    # fix the dropped keyword else in else-if
-    elif self.locals[IF] and self._last_if['branch'] == THEN:
-        # case of: if .. else if .. :
-        self._last_if['branch'] = ELSE
-
     if self.locals[IF] and self._last_if['branch'] == ELSE and self._last_if['value']:
         # case of: if .. else if .. :
         # force value to be false when previous IF was true
@@ -69,11 +64,6 @@ def handle_then_statement(self, transparent=False):
         raise Abort()
 
     if not transparent:
-        # TODO fail iff double THEN is not use in combination with other delimiters
-        # if self._last_if['branch'] == THEN:
-        #     raise ShellError(
-        #         f'If-then-else clause requires an {IF} statement (5)')
-
         self._last_if['branch'] = THEN
 
     if not self._last_if['value']:
@@ -93,12 +83,6 @@ def handle_else_statement(self, transparent=False):
             f'If-then-else clause requires a {THEN} statement (3)')
 
     if not transparent:
-        # if self._last_if['branch'] == ELSE:
-        #     # TODO this breaks operators with lower precedence
-        #     # e.g. if .. then .. else .. |> ..
-        #     #                         (      )
-        #     self.locals[IF].pop()
-
         if not self.locals[IF]:
             raise ShellError(
                 f'If-then-else clause requires an {IF} statement (4)')
