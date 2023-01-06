@@ -21,10 +21,12 @@ For examples, see [lib](https://github.com/voschezang/mash/blob/main/src/lib/mat
 
 ### Conditions and Branches
 
-| Example                       | Description                                      |
-| ----------------------------- | ------------------------------------------------ |
-| `if 1 > 0 then print greater` | Run a command conditionally.                     |
-| `x <- if 1 > 0 then 10`       | Set `x` to either a value or to an empty string. |
+| Example                                                   | Description                                      |
+| --------------------------------------------------------- | ------------------------------------------------ |
+| `if 1 > 0 then print greater`                             | Run a command conditionally.                     |
+| `x <- if 1 > 0 then 10`                                   | Set `x` to either a value or to an empty string. |
+| `if 1 then print A else print B`                          | If-then-else statement                           |
+| `if .. then if .. then print A else print B else print C` | Nested if-then-else statement                    |
 
 ### Maps and Loops
 
@@ -151,10 +153,60 @@ Inf loop: `f x = f x |> repeat x`
 
 
 
-**If-then-else conditions**
+**Break-like return statement**
 
 ```python
-if $x then 1 else 2
+abs (x):
+  if x > 0 then return x
+  return math -x
+```
+
+
+
+**Multiline if-then-else conditions**
+
+Options:
+
+```python
+f (n):
+  if $n == 0 then 
+    result = 1
+  else if $n > 0 then
+    result <- range $n |> product
+
+  if $n == 0 then 
+    return 1
+  if $n > 0 then 
+    return range $n |> product
+
+  result <- if $n == 0 then echo 1
+			 else if $n >= 0 then range $n |> product
+
+  result <- if $n == 0 then 
+		  	echo 1
+		  else if $n > 0 then
+  			range $n |> product
+```
+
+
+
+Choose precedence
+
+```python
+x <- if $y then (range 3 |> product) else (range 10 |> product)
+x <- if $y then range 3 |> product else range 10 |> product
+
+x <- if $y then range 3 else range 10 |> product
+x <- (if $y then range 3 else range 10) |> product
+```
+
+
+
+**Skip `then` keyword**
+
+```python
+if 1:
+  print 1
 ```
 
 
@@ -201,5 +253,20 @@ Using [Polish notation](https://en.wikipedia.org/wiki/Polish_notation):
 ```python
 + x y # addition
 - x y # subtraction
+```
+
+
+
+**Performance & Parallelization**
+
+Benefit
+
+- Simplicity of Python and performance of Haskell and Erlang
+
+```python
+# inf streams
+a *b = list_natural_numbers
+# pure functions can be executed in parallel, using a thread pool
+range 10 >>= math 10 * $ + 1 |> reduce sum
 ```
 
