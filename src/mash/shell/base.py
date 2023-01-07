@@ -581,6 +581,10 @@ class BaseShell(Cmd):
             self._save_assignee(result)
             return
 
+        if RETURN in self.locals:
+            self.locals.set(RETURN,  result)
+            return
+
         return result
 
     def _conditionally_insert_assign_operator(self, lines, i, line):
@@ -659,6 +663,13 @@ class BaseShell(Cmd):
                     return result.args[0]
 
                 if not self.is_function(line.split(' ')[0]):
+                    line = 'echo ' + line
+
+            if RETURN in prefixes:
+                if RETURN not in self.locals:
+                    self.locals.set(RETURN, None)
+
+                if len(prefixes) == 1 and not self.is_function(line.split(' ')[0]):
                     line = 'echo ' + line
 
             if prefixes[-1] == IF:
@@ -933,6 +944,11 @@ class BaseShell(Cmd):
             for line in f.inner:
                 self.onecmd(line, print_result=False)
 
+                if RETURN in self.locals:
+                    if self.locals[RETURN] is None:
+                        raise ShellError('invalid state')
+                    return self.locals[RETURN]
+
             terms = [term for term in f.command.split(' ') if term != '']
             if not f.multiline:
                 terms = list(translate_terms(terms, translations))
@@ -958,17 +974,31 @@ class BaseShell(Cmd):
             args[-1] = args[-1][:-1]
 
         self.locals.set(DEFINE_FUNCTION,
-                        InlineFunction('', *args, func_name=f))
+                        InlineFunction('', *args, func_name=f,
+                                       line_indent=self.locals[RAW_LINE_INDENT]))
 
-    def _define_multiline_function(self, line: str):
-        line = line.lstrip()
-        if line.startswith(RETURN + ' '):
+    def _define_multiline_function(self, indented_line: str):
+        line = indented_line.lstrip()
+
+        if line.startswith(RETURN + ' ') and (
+                self.locals[RAW_LINE_INDENT] <= self.locals[DEFINE_FUNCTION].line_indent or
+                not self.locals[DEFINE_FUNCTION].inner):
+
+            if self.locals[RAW_LINE_INDENT] < self.locals[DEFINE_FUNCTION].line_indent:
+                raise ShellError(
+                    f'Function defintion did not end with {RETURN}')
+
+            # TODO fix indent
             line = removeprefix(line, RETURN + ' ')
             self.locals[DEFINE_FUNCTION].command = line
             self._save_inline_function()
 
         else:
-            self.locals[DEFINE_FUNCTION].inner.append(line)
+            # update line indent on the first line
+            if self.locals[DEFINE_FUNCTION].inner == []:
+                self.locals[DEFINE_FUNCTION].line_indent = self.locals[RAW_LINE_INDENT]
+
+            self.locals[DEFINE_FUNCTION].inner.append(indented_line)
 
     def _save_inline_function(self) -> str:
         func = self.locals[DEFINE_FUNCTION]

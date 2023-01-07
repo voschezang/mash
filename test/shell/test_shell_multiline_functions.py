@@ -1,8 +1,10 @@
+import sys
 from pytest import raises
 
 from mash import io_util
 from mash.shell import ShellError
 from mash.shell.shell import Shell, run_command
+from mash.util import use_recursion_limit
 
 
 def catch_output(line='', func=run_command, **kwds) -> str:
@@ -31,6 +33,34 @@ f (x):
     assert catch_output(cmd + '\nprint 10', shell=shell) == '10'
 
 
+def test_multiline_function_missing_return():
+    shell = Shell()
+    shell.ignore_invalid_syntax = False
+    cmd = """
+f (x):
+    print 10
+
+print 20
+    """
+    # continue to extend the function definition
+    assert catch_output(cmd, shell=shell) == ''
+    assert catch_output(f'f 1', shell=shell) == ''
+
+    # return with too large indent should be skipped
+    assert catch_output(f'        return 1', shell=shell) == ''
+    assert catch_output(f'f 1', shell=shell) == ''
+
+    # return with too small indent should fail
+    with raises(ShellError):
+        assert catch_output(f'return 2', shell=shell) == ''
+
+    assert catch_output(f'    return 3', shell=shell) == ''
+
+    with use_recursion_limit(100):
+        with raises(RecursionError):
+            run_command(f'f 40', shell=shell)
+
+
 def test_multiline_function_with_assignments():
     shell = Shell()
     shell.ignore_invalid_syntax = False
@@ -56,7 +86,7 @@ def test_multiline_function_with_branches():
     cmd = """
 f (x):
     a <- math $x < 0
-    b <- math $x \> 0
+    b <- math $x > 0
     return [$a] [$b]
     """
     run_command(cmd, shell=shell)
@@ -95,6 +125,7 @@ f (x):
     """
     run_command(cmd, shell=shell)
 
+    # assert catch_output(f'g 1', shell=shell) == '1 1'
     assert catch_output(f'f 1', shell=shell) == '1 1 1 1'
 
 
@@ -115,3 +146,20 @@ f (x):
     assert catch_output(f'f 1', shell=shell) == '-20'
     assert catch_output(f'f 2', shell=shell) == '-20'
     assert catch_output(f'f 3', shell=shell) == '-20'
+
+
+def test_multiline_function_early_return():
+    shell = Shell()
+    shell.ignore_invalid_syntax = False
+    cmd = """
+f (x):
+    if $x == 1 then return 10
+    if $x == 2 then
+        return 20
+
+    return 30
+    """
+    run_command(cmd, shell=shell)
+    assert catch_output(f'f 1', shell=shell) == '10'
+    assert catch_output(f'f 2', shell=shell) == '20'
+    assert catch_output(f'f 3', shell=shell) == '30'

@@ -1,3 +1,4 @@
+from contextlib import contextmanager
 import re
 from braceexpand import braceexpand, UnbalancedBracesError
 from dataclasses import dataclass
@@ -467,6 +468,15 @@ def extract_exception():
     filename, line, func, text = info[-1]
     return filename, line, func, text
 
+
+@contextmanager
+def use_recursion_limit(limit=100):
+    original = sys.getrecursionlimit()
+    sys.setrecursionlimit(limit)
+    try:
+        yield
+    finally:
+        sys.setrecursionlimit(original)
 
 ################################################################################
 # Pure functions
