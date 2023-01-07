@@ -28,6 +28,15 @@ For examples, see [lib](https://github.com/voschezang/mash/blob/main/src/lib/mat
 | `if 1 then print A else print B`                          | If-then-else statement                           |
 | `if .. then if .. then print A else print B else print C` | Nested if-then-else statement                    |
 
+Multiline if-then-else statement
+
+```python
+if .. then
+	print 1
+else
+	print 2
+```
+
 ### Maps and Loops
 
 | Example                                    | Description                                                  |
@@ -90,7 +99,7 @@ An environment is a key-value map.
 | `powers (n): range n >>= math $ ** 2` | A function that iterates over a loop.                    |
 | `f (n): range n |> reduce sum 0`      | Aggregate a sequence using a reduction operator.         |
 
-### Multiline Functions
+#### Multiline Functions
 
 ```python
 b = 10 # a global variable
@@ -186,6 +195,12 @@ f (n):
 		  	echo 1
 		  else if $n > 0 then
   			range $n |> product
+        
+	if $n |> math 1 + $ |> echo
+  then result = 1
+  else if $n > 1
+  then
+  	result = 0
 ```
 
 
@@ -202,7 +217,7 @@ x <- (if $y then range 3 else range 10) |> product
 
 
 
-**Skip `then` keyword**
+**Skip `then` keyword in if-then statements**
 
 ```python
 if 1:
