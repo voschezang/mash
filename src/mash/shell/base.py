@@ -15,7 +15,7 @@ from mash import io_util
 from mash.filesystem.filesystem import FileSystem, cd
 from mash.io_util import log, shell_ready_signal, print_shell_ready_signal, check_output
 from mash.shell import delimiters
-from mash.shell.if_statement import LINE_INDENT, Abort, Done, handle_else_statement, handle_if_statement, handle_then_else_statements, handle_then_statement
+from mash.shell.if_statement import LINE_INDENT, Abort, Done, close_prev_if_statements, handle_else_statement, handle_if_statement, handle_then_else_statements, handle_prev_then_else_statements, handle_then_statement
 from mash.shell.delimiters import ELSE, comparators, DEFINE_FUNCTION, FALSE, IF, LEFT_ASSIGNMENT, RETURN, RIGHT_ASSIGNMENT, THEN, TRUE
 from mash.filesystem.scope import Scope, show
 from mash.shell.errors import ShellError, ShellPipeError
@@ -613,46 +613,12 @@ class BaseShell(Cmd):
         prefixes, line, infix_operator_args = self.parse_single_command(
             command_and_args)
 
-        # TODO refactor
-        # TODO do this recursively
-        for _ in range(4):
-            # TODO handle case of both THEN and ELSE in prefixes
-            if not self.locals[IF]:
-                break
-            elif IF in prefixes:
-                if self.locals[LINE_INDENT] <= self._last_if[LINE_INDENT]:
-                    # case of: new, independent if-then
-                    self.locals[IF].pop()
-                else:
-                    break
-            elif THEN not in prefixes:
-                if ELSE in prefixes:
-                    if self.locals[LINE_INDENT][:2] < self._last_if[LINE_INDENT][:2]:
-                        # case of: unclosed if-then-else
-                        self.locals[IF].pop()
-                    else:
-                        break
-                # elif self.locals[LINE_INDENT][:2] <= self._last_if[LINE_INDENT][:2]:
-                elif self.locals[LINE_INDENT] <= self._last_if[LINE_INDENT]:
-                    # case of: if-then fully terminated
-                    self.locals[IF].pop()
-                else:
-                    break
-            else:
-                break
+        close_prev_if_statements(self, prefixes)
 
-        if self.locals[IF] and IF not in prefixes and THEN not in prefixes and ELSE not in prefixes:
-            c = for_any([IF, THEN, ELSE], contains, prefixes)
-            assert not c, c
+        if not for_any([IF, THEN, ELSE], contains, prefixes):
             try:
-                # TODO don't modify locals[IF]
-                if self._last_if['branch'] == THEN or self._last_if['branch'] is None:
-                    handle_then_statement(self, transparent=True)
-                elif self._last_if['branch'] == ELSE:
-                    # TODO don't drop from locals[IF]
-                    handle_else_statement(self, transparent=True)
-
-            except Abort as result:
+                handle_prev_then_else_statements(self)
+            except Abort:
                 return prev_result
 
         if prefixes:
