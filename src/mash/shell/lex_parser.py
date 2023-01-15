@@ -2,50 +2,64 @@ import ply.lex as lex
 import ply.yacc as yacc
 
 tokens = (
-    # 'RETURN',
-    # 'NEW_COMMAND',
     # 'LEFT_ASSIGNMENT',
-    # 'IF',
-    # 'THEN',
-    # 'RIGHT_ASSIGNMENT',
+    # 'NEW_COMMAND',
     # 'PIPE',
-    # 'ELSE',
+    # 'RETURN',
+    # 'RIGHT_ASSIGNMENT',
     'BREAK',  # ;
+    'COMMENT',
     'DEFINE_FUNCTION',
+
     'SET_ENV_VARIABLE',  # =
     'INFIX_OPERATOR',  # =
-    # 'INLINE_COMMENT'
-    'LPAREN',  # )
     'RPAREN',  # (
+    'LPAREN',  # )
+
+    'METHOD',  # some_method_V1
     'SPECIAL',  # $
     'VARIABLE',  # $x
-    'METHOD',  # some_method_V1
-    'NUMBER',  # 0123456789
     'STRING',
+
+    'NUMBER',  # 0123456789
 )
+reserved = {
+    'if': 'IF',
+    'then': 'THEN',
+    'else': 'ELSE'
+}
+tokens += tuple(reserved.values())
 
 
-def init():
-    # t_RETURN = r'.*return.*'
-    # t_RETURN = r'return'
+def init_lex():
+    """
+    Token regexes are defined with the prefix `t_`.
+    From ply docs:
+    - functions are matched in order of specification
+    - strings are sorted by regular expression length
+    """
+
     t_BREAK = r'\;'
     t_DEFINE_FUNCTION = r':'
-    # t_SET_ENV_VARIABLE = r'='
-    t_INFIX_OPERATOR = r'[=\+\-]'
-    # t_INFIX_OPERATOR = r'='
+
+    t_INFIX_OPERATOR = r'==|[=\+\-]'
     t_LPAREN = r'\('
     t_RPAREN = r'\)'
 
     t_SPECIAL = r'\$'
-    t_METHOD = r'[a-zA-Z_]\w+'
-    t_VARIABLE = t_SPECIAL + t_METHOD
+    t_VARIABLE = r'\$[a-zA-Z_][a-zA-Z_0-9]*'
     t_STRING = r'[\w\d]+'
 
     t_ignore = ' \t'
+    t_ignore_COMMENT = r'\#.*'
+
+    def t_METHOD(t):
+        r'[a-zA-Z_][a-zA-Z_0-9]*'
+        t.type = reserved.get(t.value, 'METHOD')
+        return t
 
     def t_NUMBER(t):
         r'\d+'
-        # t.value = int(t.value)
         return t
 
     def t_newline(t):
@@ -60,8 +74,7 @@ def init():
 
 
 def tokenize(data: str):
-    # lexer = lex.lex()
-    lexer = init()
+    lexer = init_lex()
     lexer.input(data)
 
     while True:
@@ -69,20 +82,29 @@ def tokenize(data: str):
         if not token:
             break
 
-        print(token)
-        print(token.type, token.value, token.lineno, token.lexpos)
         yield token
 
 
 def parse(text):
-    def p_expr_def_function(p):
+    def p_expr_def_inline_function(p):
         'expression : term LPAREN term RPAREN DEFINE_FUNCTION expression'
-        p[0] = ('define-function', p[1], p[3], p[6])
+        p[0] = ('define-inline-function', p[1], p[3], p[6])
+
+    def p_expr_def_function(p):
+        'expression : term LPAREN term RPAREN DEFINE_FUNCTION'
+        p[0] = ('define-function', p[1], p[3])
+
+    def p_expression_if_then_else(p):
+        'expression : IF expression THEN expression ELSE expression'
+        _, _if, cond, _then, true, _else, false = p
+        p[0] = ('if-then-else', cond, true, false)
+
+    def p_expression_if_then(p):
+        'expression : IF expression THEN expression'
+        p[0] = ('if-then', p[2], p[3])
 
     def p_expression_infix(p):
         'expression : expression INFIX_OPERATOR term'
-        # if p[2] == '=':
-        #     p[0] = p[1] + p[3]
         p[0] = ('binary-expression', p[2], p[1], p[3])
 
     def p_factor_expr(p):
@@ -95,9 +117,9 @@ def parse(text):
 
     def p_term_sequence(p):
         'term : term term'
-        p[0] = p[1] + p[2]
+        p[0] = p[1] + ', ' + p[2]
 
-    def p_term_factor(p):
+    def p_term(p):
         """term : NUMBER 
                 | VARIABLE 
                 | METHOD 
@@ -105,25 +127,33 @@ def parse(text):
         """
         p[0] = p[1]
 
-    # def p_term_text(p):
-    #     'term : STRING'
-    #     p[0] = p[1]
-
     def p_error(p):
         print(f'Syntax error: {p}')
 
-    lexer = init()
-    parser = yacc.yacc(debug=1)
+    lexer = init_lex()
+    parser = yacc.yacc(debug=0)
 
-    # data = '(x = 2)'
-    print('in', data)
-    result = parser.parse(data)
-    print('out', result)
+    for line in text.splitlines():
+        result = parser.parse(line)
+        if not line:
+            continue
+
+        if result is not None:
+            yield result
+
+
+def find_column(input, token):
+    line_start = input.rfind('\n', 0, token.lexpos) + 1
+    return (token.lexpos - line_start) + 1
 
 
 data = """
-f (x): x + 1
+echo x
+if 1 = 3 then 2 else 3
+"""
+data = """
+ 1
 """
 
-# tokenize(data)
-parse(data)
+result = list(parse(data))
+print('out', result)

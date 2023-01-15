@@ -7,6 +7,7 @@ flake8
 flask
 mistletoe
 pandas
+ply
 pytest
 pytest-cov
 pytest-xdist
