@@ -15,11 +15,13 @@ tokens = (
     'INFIX_OPERATOR',  # =
     'RPAREN',  # (
     'LPAREN',  # )
+    'DOUBLE_QUOTED_STRING',  # "a 'b' c"
+    'SINGLE_QUOTED_STRING',  # 'a\'bc'
 
     'METHOD',  # some_method_V1
     'SPECIAL',  # $
     'VARIABLE',  # $x
-    'STRING',
+    'WORD',
 
     'NUMBER',  # 0123456789
 )
@@ -48,10 +50,29 @@ def init_lex():
 
     t_SPECIAL = r'\$'
     t_VARIABLE = r'\$[a-zA-Z_][a-zA-Z_0-9]*'
-    t_STRING = r'[\w\d]+'
+    t_WORD = r'[\w\d]+'
 
     t_ignore = ' \t'
     t_ignore_COMMENT = r'\#.*'
+
+    single_quote = r'"(?:\.|[^"\n])*"'
+    double_quote = r"'(?:\.|[^'\n])*'"
+
+    def t_DOUBLE_QUOTED_STRING(t):
+        r'"(?:\.|[^"\n])*"'
+        # r'".*"'
+        # r'(\'(?:\.|[^\'\n])*\'|"(?:\.|[^"\n])*")'
+        # r'("(?:[^"\\]|(?:\\\\)|(?:\\\\)*\\.{1})*")'
+        # r'("()*")'
+        # r'"([^"\n]|(\\"))*"$'
+        # r"(?:\\.|[^"\\])*"
+        t.type = reserved.get(t.value, 'DOUBLE_QUOTED_STRING')
+        return t
+
+    def t_SINGLE_QUOTED_STRING(t):
+        r"'(?:\.|[^'\n])*'"
+        t.type = reserved.get(t.value, 'SINGLE_QUOTED_STRING')
+        return t
 
     def t_METHOD(t):
         r'[a-zA-Z_][a-zA-Z_0-9]*'
@@ -123,7 +144,9 @@ def parse(text):
         """term : NUMBER 
                 | VARIABLE 
                 | METHOD 
-                | STRING
+                | WORD
+                | SINGLE_QUOTED_STRING
+                | DOUBLE_QUOTED_STRING
         """
         p[0] = p[1]
 
@@ -147,13 +170,14 @@ def find_column(input, token):
     return (token.lexpos - line_start) + 1
 
 
-data = """
-echo x
-if 1 = 3 then 2 else 3
-"""
-data = """
- 1
-"""
+if __name__ == '__main__':
+    data = """
+    echo x
+    if 1 = 3 then 2 else 3
+    """
+    data = """
+    1
+    """
 
-result = list(parse(data))
-print('out', result)
+    result = list(parse(data))
+    print('out', result)

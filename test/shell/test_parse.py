@@ -23,6 +23,26 @@ def test_parse_infix():
     assert left == 'a, b'
 
 
+def test_parse_quotes():
+    text = 'x = "a b c"'
+    key, op, left, right = list(parse(text))[0]
+    assert 'binary' in key
+    assert op == '='
+    assert left == 'x'
+    assert right == '"a b c"'
+
+    text = 'x = "y = 1"'
+    key, op, left, right = list(parse(text))[0]
+    assert right == '"y = 1"'
+
+    # TODO support multiline strings
+    text = """x = "y
+z" 
+    """
+    key, op, left, right = list(parse(text))[0]
+    assert right == 'y'
+
+
 def test_parse_if_else():
     text = 'if 1 == 3 then 2 else 3'
     result = list(parse(text))[0]
