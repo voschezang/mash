@@ -8,3 +8,5 @@
 test-results-*.xml
 tmp*
 .shell_session.json
+*parser.out
+*parsetab.py
