@@ -28,7 +28,8 @@ tokens = (
 reserved = {
     'if': 'IF',
     'then': 'THEN',
-    'else': 'ELSE'
+    'else': 'ELSE',
+    'return': 'RETURN'
 }
 tokens += tuple(reserved.values())
 
@@ -55,17 +56,8 @@ def init_lex():
     t_ignore = ' \t'
     t_ignore_COMMENT = r'\#.*'
 
-    single_quote = r'"(?:\.|[^"\n])*"'
-    double_quote = r"'(?:\.|[^'\n])*'"
-
     def t_DOUBLE_QUOTED_STRING(t):
         r'"(?:\.|[^"\n])*"'
-        # r'".*"'
-        # r'(\'(?:\.|[^\'\n])*\'|"(?:\.|[^"\n])*")'
-        # r'("(?:[^"\\]|(?:\\\\)|(?:\\\\)*\\.{1})*")'
-        # r'("()*")'
-        # r'"([^"\n]|(\\"))*"$'
-        # r"(?:\\.|[^"\\])*"
         t.type = reserved.get(t.value, 'DOUBLE_QUOTED_STRING')
         return t
 
@@ -115,6 +107,10 @@ def parse(text):
         'expression : term LPAREN term RPAREN DEFINE_FUNCTION'
         p[0] = ('define-function', p[1], p[3])
 
+    def p_expression_return(p):
+        'expression : RETURN expression'
+        p[0] = ('return', p[2])
+
     def p_expression_if_then_else(p):
         'expression : IF expression THEN expression ELSE expression'
         _, _if, cond, _then, true, _else, false = p
@@ -122,7 +118,8 @@ def parse(text):
 
     def p_expression_if_then(p):
         'expression : IF expression THEN expression'
-        p[0] = ('if-then', p[2], p[3])
+        _, _if, cond, _then, true = p
+        p[0] = ('if-then', cond, true)
 
     def p_expression_infix(p):
         'expression : expression INFIX_OPERATOR term'

@@ -60,7 +60,7 @@ def test_parse_if_else():
 
 def test_parse_inline_function():
     text = """
-    f (x): return x + 1
+    f (x): x + 1
     """
     result = list(parse(text))[0]
     assert result[0] == 'define-inline-function'
@@ -80,4 +80,6 @@ def test_parse_function():
     result = list(parse(text))
     assert result[0][0] == 'define-function'
     assert result[1][0] == 'if-then'
-    assert result[2][2] == 'return, x'
+    assert result[1][1][0] == 'binary-expression'
+    assert result[1][2][0] == 'return'
+    assert result[2][0] == 'return'
