@@ -76,7 +76,7 @@ def init_lex():
         return t
 
     def t_newline(t):
-        r'\n+'
+        r'[\n\r]+'
         t.lexer.lineno += len(t.value)
 
     def t_error(t):
@@ -111,14 +111,29 @@ def parse(text):
         'expression : RETURN expression'
         p[0] = ('return', p[2])
 
-    def p_expression_if_then_else(p):
-        'expression : IF expression THEN expression ELSE expression'
-        _, _if, cond, _then, true, _else, false = p
-        p[0] = ('if-then-else', cond, true, false)
-
     def p_expression_if_then(p):
-        'expression : IF expression THEN expression'
-        _, _if, cond, _then, true = p
+        """expression : IF expression THEN expression ELSE expression
+                      | IF expression THEN expression ELSE
+                      | IF expression THEN expression
+                      | IF expression THEN
+                      | IF expression
+        """
+        if len(p) == 3 or len(p) == 4:
+            p[0] = ('if', p[2])
+            return
+
+        _, _if, cond, *then_else = p
+
+        if len(then_else) == 4:
+            _then, true, _else, false = then_else
+            p[0] = ('if-then-else', cond, true, false)
+            return
+
+        if len(then_else) == 2:
+            _then, true = then_else
+        elif len(then_else) == 3:
+            _then, true, _else = then_else
+
         p[0] = ('if-then', cond, true)
 
     def p_expression_infix(p):

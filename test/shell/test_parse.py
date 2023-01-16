@@ -6,8 +6,8 @@ from mash.shell.lex_parser import parse
 
 def test_parse_cmd():
     text = 'echo a 10'
-    result = list(parse(text))[0]
-    assert result == 'echo, a, 10'
+    results = list(parse(text))
+    assert results[0] == 'echo, a, 10'
 
 
 def test_parse_infix():
@@ -56,6 +56,21 @@ def test_parse_if_else():
     assert op == '=='
     assert left == '1'
     assert right == '3'
+
+
+def test_parse_if_then_multiline():
+    text = """
+if x == y then
+    inner = a
+
+outer = b
+    """
+    results = list(parse(text))
+    assert results[0][0] == 'if'
+    assert results[0][1][0] == 'binary-expression'
+    assert results[0][1][1:] == ('==', 'x', 'y')
+    assert results[1][0] == 'binary-expression'
+    assert results[2][0] == 'binary-expression'
 
 
 def test_parse_inline_function():
