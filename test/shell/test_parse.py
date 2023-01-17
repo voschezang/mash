@@ -13,7 +13,7 @@ def test_parse_cmd():
 def test_parse_infix():
     text = 'x = 2'
     key, op, left, right = list(parse(text))[0]
-    assert 'binary' in key
+    assert key == 'assign'
     assert op == '='
     assert left == 'x'
     assert right == '2'
@@ -26,7 +26,7 @@ def test_parse_infix():
 def test_parse_quotes():
     text = 'x = "a b c"'
     key, op, left, right = list(parse(text))[0]
-    assert 'binary' in key
+    assert key == 'assign'
     assert op == '='
     assert left == 'x'
     assert right == '"a b c"'
@@ -76,10 +76,10 @@ outer = c
     assert results[2][1] == (4, 0)
     assert results[3][0] == 'indent'
     assert results[3][1] == (8, 0)
-    assert results[3][2][0] == 'binary-expression'
+    assert results[3][2][0] == 'assign'
     assert results[3][2][1:] == ('=', 'inner', 'b')
 
-    assert results[4][0] == 'binary-expression'
+    assert results[4][0] == 'assign'
     assert results[4][1:] == ('=', 'outer', 'c')
 
 

@@ -4,17 +4,17 @@ import ply.yacc as yacc
 from mash.shell.parsing import indent_width
 
 tokens = (
-    # 'LEFT_ASSIGNMENT',
-    # 'NEW_COMMAND',
-    # 'PIPE',
-    # 'RETURN',
-    # 'RIGHT_ASSIGNMENT',
-    'BREAK',  # ;
-    'COMMENT',
-    'DEFINE_FUNCTION',
+    'BASH',  # | >>
+    'PIPE',  # |>
 
-    'SET_ENV_VARIABLE',  # =
-    'INFIX_OPERATOR',  # =
+    'BREAK',  # ;
+    'COMMENT',  # \#
+    'DEFINE_FUNCTION',  # f ( ):
+
+    'ASSIGN',  # =
+    'INFIX_OPERATOR',  # == + - * /
+
+
     'RPAREN',  # (
     'LPAREN',  # )
     'INDENT',
@@ -32,7 +32,11 @@ reserved = {
     'if': 'IF',
     'then': 'THEN',
     'else': 'ELSE',
-    'return': 'RETURN'
+    'return': 'RETURN',
+    'not': 'NOT',
+    'and': 'AND',
+    'or': 'OR',
+    'xor': 'XOR',
 }
 tokens += tuple(reserved.values())
 
@@ -47,8 +51,11 @@ def init_lex():
 
     t_BREAK = r'\;'
     t_DEFINE_FUNCTION = r':'
+    t_BASH = r'\||>-|>>|1>|1>>|2>|2>>'
+    t_PIPE = r'\|>' '|' r'>>='
+    t_ASSIGN = r'<-|=|->'
 
-    t_INFIX_OPERATOR = r'==|[=\+\-]'
+    t_INFIX_OPERATOR = r'==|[\+\-*//]'
     t_LPAREN = r'\('
     t_RPAREN = r'\)'
     t_INDENT = '^\s'
@@ -144,6 +151,10 @@ def parse(text):
             _then, true, _else = then_else
 
         p[0] = ('if-then', cond, true)
+
+    def p_epression_assign(p):
+        'expression : term ASSIGN expression'
+        p[0] = ('assign', p[2], p[1], p[3])
 
     def p_expression_infix(p):
         'expression : expression INFIX_OPERATOR term'
