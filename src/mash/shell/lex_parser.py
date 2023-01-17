@@ -9,15 +9,14 @@ tokens = (
 
     'BREAK',  # ;
     'COMMENT',  # \#
+    'INDENT',
     'DEFINE_FUNCTION',  # f ( ):
 
     'ASSIGN',  # =
     'INFIX_OPERATOR',  # == + - * /
 
-
     'RPAREN',  # (
     'LPAREN',  # )
-    'INDENT',
     'DOUBLE_QUOTED_STRING',  # "a 'b' c"
     'SINGLE_QUOTED_STRING',  # 'a\'bc'
 
@@ -25,7 +24,6 @@ tokens = (
     'SPECIAL',  # $
     'VARIABLE',  # $x
     'WORD',
-
     'NUMBER',  # 0123456789
 )
 reserved = {
@@ -151,6 +149,17 @@ def parse(text):
             _then, true, _else = then_else
 
         p[0] = ('if-then', cond, true)
+
+    def p_expr_logical(p):
+        """expression : expression AND expression
+                      | expression OR expression
+                      | expression XOR expression
+        """
+        p[0] = ('logic', p[2], p[1], p[3])
+
+    def p_expr_logical_not(p):
+        'expression : NOT expression'
+        p[0] = ('not', p[2])
 
     def p_epression_assign(p):
         'expression : term ASSIGN expression'
