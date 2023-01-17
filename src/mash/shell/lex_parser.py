@@ -182,8 +182,16 @@ def parse(text):
         p[0] = p[1]
 
     def p_term_sequence(p):
-        'term : term term'
-        p[0] = p[1] + ', ' + p[2]
+        """term : term term term term
+                | term term term
+                | term term
+        """
+        if len(p) == 5:
+            p[0] = ('seq', 'quadruple', p[1], p[2], p[3], p[4])
+        if len(p) == 4:
+            p[0] = ('seq', 'triple', p[1], p[2], p[3])
+        if len(p) == 3:
+            p[0] = ('seq', 'pair', p[1], p[2])
 
     def p_term(p):
         """term : NUMBER 

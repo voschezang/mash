@@ -6,8 +6,10 @@ from mash.shell.lex_parser import parse
 
 def test_parse_cmd():
     text = 'echo a 10'
-    results = list(parse(text))
-    assert results[0] == 'echo, a, 10'
+    result = list(parse(text))[0]
+    assert result[0] == 'seq'
+    assert result[1] == 'triple'
+    assert result[2:] == ('echo', 'a', '10')
 
 
 def test_parse_infix():
@@ -20,7 +22,8 @@ def test_parse_infix():
 
     text = 'a b = 2'
     key, op, left, right = list(parse(text))[0]
-    assert left == 'a, b'
+    assert left[:2] == ('seq', 'pair')
+    assert left[2:] == ('a', 'b')
 
 
 def test_parse_quotes():
