@@ -113,6 +113,14 @@ def parse(text):
         n = indent_width(p.lexer.lexdata)
         p[0] = ('indent', n, p[2])
 
+    def p_factor_expr(p):
+        'term : LPAREN expression RPAREN'
+        p[0] = p[2]
+
+    def p_factor_expr(p):
+        'expression : expression BREAK expression'
+        p[0] = ('break', p[1], p[3])
+
     def p_expr_def_inline_function(p):
         'expression : term LPAREN term RPAREN DEFINE_FUNCTION expression'
         p[0] = ('define-inline-function', p[1], p[3], p[6])
@@ -168,10 +176,6 @@ def parse(text):
     def p_expression_infix(p):
         'expression : expression INFIX_OPERATOR term'
         p[0] = ('binary-expression', p[2], p[1], p[3])
-
-    def p_factor_expr(p):
-        'term : LPAREN expression RPAREN'
-        p[0] = p[2]
 
     def p_expression_term(p):
         'expression : term'
