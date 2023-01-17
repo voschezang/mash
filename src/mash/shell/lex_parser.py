@@ -1,6 +1,8 @@
 import ply.lex as lex
 import ply.yacc as yacc
 
+from mash.shell.parsing import indent_width
+
 tokens = (
     # 'LEFT_ASSIGNMENT',
     # 'NEW_COMMAND',
@@ -15,6 +17,7 @@ tokens = (
     'INFIX_OPERATOR',  # =
     'RPAREN',  # (
     'LPAREN',  # )
+    'INDENT',
     'DOUBLE_QUOTED_STRING',  # "a 'b' c"
     'SINGLE_QUOTED_STRING',  # 'a\'bc'
 
@@ -48,12 +51,13 @@ def init_lex():
     t_INFIX_OPERATOR = r'==|[=\+\-]'
     t_LPAREN = r'\('
     t_RPAREN = r'\)'
+    t_INDENT = '^\s'
 
     t_SPECIAL = r'\$'
     t_VARIABLE = r'\$[a-zA-Z_][a-zA-Z_0-9]*'
     t_WORD = r'[\w\d]+'
 
-    t_ignore = ' \t'
+    t_ignore = ''
     t_ignore_COMMENT = r'\#.*'
 
     def t_DOUBLE_QUOTED_STRING(t):
@@ -99,6 +103,11 @@ def tokenize(data: str):
 
 
 def parse(text):
+    def p_indent(p):
+        'expression : INDENT expression'
+        n = indent_width(p.lexer.lexdata)
+        p[0] = ('indent', n, p[2])
+
     def p_expr_def_inline_function(p):
         'expression : term LPAREN term RPAREN DEFINE_FUNCTION expression'
         p[0] = ('define-inline-function', p[1], p[3], p[6])
@@ -175,11 +184,6 @@ def parse(text):
 
         if result is not None:
             yield result
-
-
-def find_column(input, token):
-    line_start = input.rfind('\n', 0, token.lexpos) + 1
-    return (token.lexpos - line_start) + 1
 
 
 if __name__ == '__main__':

@@ -20,7 +20,7 @@ from mash.shell.delimiters import ELSE, comparators, DEFINE_FUNCTION, FALSE, IF,
 from mash.filesystem.scope import Scope, show
 from mash.shell.errors import ShellError, ShellPipeError
 from mash.shell.function import InlineFunction
-from mash.shell.parsing import expand_variables, expand_variables_inline, filter_comments, indent_with, infer_infix_args, inline_indent_with, parse_commands, quote_items
+from mash.shell.parsing import expand_variables, expand_variables_inline, filter_comments, indent_width, infer_infix_args, inline_indent_with, parse_commands, quote_items
 from mash.util import for_any, has_method, identity, is_valid_method_name, omit_prefixes, removeprefix, split_prefixes, translate_terms
 
 
@@ -452,7 +452,7 @@ class BaseShell(Cmd):
 
         try:
             line = self.onecmd_prehook(line)
-            self.locals.set(RAW_LINE_INDENT, indent_with(line))
+            self.locals.set(RAW_LINE_INDENT, indent_width(line))
 
             if DEFINE_FUNCTION in self.locals and self.locals[DEFINE_FUNCTION].multiline:
                 self._define_multiline_function(line)

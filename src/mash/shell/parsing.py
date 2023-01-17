@@ -187,7 +187,7 @@ def quote_items(items: List[str]) -> Iterable[str]:
             yield shlex.quote(arg)
 
 
-def indent_with(line: str) -> Tuple[str, str]:
+def indent_width(line: str) -> Tuple[str, str]:
     """Return a tuple that represents the length of the indentation in spaces and tabs.
     """
     n = len(line) - len(line.lstrip())

@@ -63,19 +63,29 @@ def test_parse_if_then_multiline():
 if x == y then
     inner = a
 
-outer = b
+    if z then
+        inner = b
+
+outer = c
     """
     results = list(parse(text))
     assert results[0][0] == 'if'
-    assert results[0][1][0] == 'binary-expression'
-    assert results[0][1][1:] == ('==', 'x', 'y')
-    assert results[1][0] == 'binary-expression'
-    assert results[2][0] == 'binary-expression'
+    assert results[1][0] == 'indent'
+    assert results[1][1] == (4, 0)
+    assert results[2][0] == 'indent'
+    assert results[2][1] == (4, 0)
+    assert results[3][0] == 'indent'
+    assert results[3][1] == (8, 0)
+    assert results[3][2][0] == 'binary-expression'
+    assert results[3][2][1:] == ('=', 'inner', 'b')
+
+    assert results[4][0] == 'binary-expression'
+    assert results[4][1:] == ('=', 'outer', 'c')
 
 
 def test_parse_inline_function():
     text = """
-    f (x): x + 1
+f (x): x + 1
     """
     result = list(parse(text))[0]
     assert result[0] == 'define-inline-function'
@@ -88,13 +98,17 @@ def test_parse_inline_function():
 
 def test_parse_function():
     text = """
-    f (x): 
-        if x == 1 then return 2
-        return x + 1
+f (x): 
+    if x == 1 then return 2
+    return x + 1
     """
-    result = list(parse(text))
-    assert result[0][0] == 'define-function'
-    assert result[1][0] == 'if-then'
-    assert result[1][1][0] == 'binary-expression'
-    assert result[1][2][0] == 'return'
-    assert result[2][0] == 'return'
+    results = list(parse(text))
+    assert results[0][0] == 'define-function'
+    assert results[1][0] == 'indent'
+    assert results[1][1] == (4, 0)
+    assert results[2][0] == 'indent'
+    assert results[2][1] == (4, 0)
+    assert results[1][2][0] == 'if-then'
+    assert results[1][2][1][0] == 'binary-expression'
+    assert results[1][2][2] == ('return', '2')
+    assert results[2][2][0] == 'return'
