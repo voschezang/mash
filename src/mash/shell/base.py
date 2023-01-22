@@ -20,6 +20,7 @@ from mash.shell.delimiters import ELSE, comparators, DEFINE_FUNCTION, FALSE, IF,
 from mash.filesystem.scope import Scope, show
 from mash.shell.errors import ShellError, ShellPipeError
 from mash.shell.function import InlineFunction
+from mash.shell.lex_parser import parse
 from mash.shell.parsing import expand_variables, expand_variables_inline, filter_comments, indent_width, infer_infix_args, inline_indent_with, parse_commands, quote_items
 from mash.util import for_any, has_method, identity, is_valid_method_name, omit_prefixes, removeprefix, split_prefixes, translate_terms
 
@@ -445,11 +446,133 @@ class BaseShell(Cmd):
     # Overrides
     ############################################################################
 
-    def onecmd(self, line: str, print_result=True) -> bool:
+    def onecmd(self, lines: str, print_result=True) -> bool:
         """Parse and run `line`.
         Returns 0 on success and None otherwise
         """
+        result = ''
+        try:
+            lines = self.onecmd_prehook(lines)
+            ast = parse(lines)
 
+            for line in ast:
+                result = self.run_commands_new_wrapper(line, result, run=True)
+                # if result is None:
+                #     raise ValueError('?')
+
+            if print_result and result is not None:
+                if result or not self.locals[IF]:
+                    print(result)
+
+        except CancelledError:
+            pass
+
+    def run_commands_new_wrapper(self, *args, **kwds):
+        try:
+            result = self.run_commands_new(*args, **kwds)
+            if isinstance(result, list):
+                result = ' '.join(result)
+
+            return result
+
+        except ShellPipeError as e:
+            if self.ignore_invalid_syntax:
+                log(e)
+                return
+
+            raise ShellError(e)
+
+        except subprocess.CalledProcessError as e:
+            returncode, stderr = e.args
+            log(f'Shell exited with {returncode}: {stderr}')
+
+            if self.ignore_invalid_syntax:
+                return
+
+            raise ShellError(str(e))
+
+    def run_commands_new(self, ast: Tuple, prev_result='', run=False):
+        if isinstance(ast, str):
+            line = ast
+            if run:
+                return self.run_single_command_new(line, prev_result)
+            return line
+
+        key, *values = ast
+        if key == 'binary-expression':
+            op, a, b = values
+
+            if op == '=':
+                a = self.run_commands_new(a)
+                b = self.run_commands_new(b)
+                self.set_env_variables(a, b)
+                return ''
+
+            b = self.run_commands_new(b, run=True)
+
+            if op == LEFT_ASSIGNMENT:
+                self.set_env_variables(a, b)
+                return ''
+
+            a = self.run_commands_new(a, run=True)
+
+            if op in delimiters.comparators:
+                # TODO join a, b
+                return self.eval(['math', a, op, b])
+
+            if op in '+-*/':
+                # math
+                return self.eval(['math', a, op, b])
+
+            else:
+                raise ValueError('??')
+
+        elif key == 'seq':
+            _seq_type, *values = values
+            if len(values) == 0:
+                return
+
+            values = [self.run_commands_new(v) for v in values]
+            items = []
+            for v in values:
+                if isinstance(v, list):
+                    items.extend(v)
+                else:
+                    items.append(v)
+
+            values = items
+            k = values[0]
+
+            if self.is_function(k):
+                line = ' '.join(values)
+                return self.pipe_cmd_py(line, prev_result)
+
+            return values
+
+        elif key == 'break':
+            _, a, b = ast
+            a = self.run_commands_new(a)
+            print_result = True
+            if print_result and a is not None:
+                print(a)
+
+            b = self.run_commands_new(b)
+            return b
+        else:
+            0
+
+    def run_single_command_new(self, line, prev_result):
+        # self.infix_command(*infix_operator_args)
+        # if is_function_definition(command_and_args):
+        #     return self.handle_define_inline_function(command_and_args)
+        # elif prefixes[-1] in delimiters.bash:
+        #     return self.pipe_cmd_sh(line, prev_result, delimiter=prefixes[-1])
+        return self.pipe_cmd_py(line, prev_result)
+
+    def onecmd2(self, line: str, print_result=True) -> bool:
+        """Parse and run `line`.
+        Returns 0 on success and None otherwise
+        """
         try:
             line = self.onecmd_prehook(line)
             self.locals.set(RAW_LINE_INDENT, indent_width(line))

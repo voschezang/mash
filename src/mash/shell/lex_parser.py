@@ -10,6 +10,7 @@ tokens = (
     'BREAK',  # ;
     'COMMENT',  # \#
     'INDENT',
+    'SPACE',
     'DEFINE_FUNCTION',  # f ( ):
 
     'ASSIGN',  # =
@@ -56,12 +57,13 @@ def init_lex():
     t_INFIX_OPERATOR = r'==|[\+\-*//]'
     t_LPAREN = r'\('
     t_RPAREN = r'\)'
-    t_INDENT = '^\s'
+    # t_INDENT = r'^\s'
 
     t_SPECIAL = r'\$'
     t_VARIABLE = r'\$[a-zA-Z_][a-zA-Z_0-9]*'
     t_WORD = r'[\w\d]+'
 
+    # t_ignore = ' \t'
     t_ignore = ''
     t_ignore_COMMENT = r'\#.*'
 
@@ -74,6 +76,14 @@ def init_lex():
         r"'(?:\.|[^'\n])*'"
         t.type = reserved.get(t.value, 'SINGLE_QUOTED_STRING')
         return t
+
+    def t_INDENT(t):
+        r'^\s'
+        return t
+
+    def t_SPACE(t):
+        r'\ '
+        # TODO use `t_ignore` to improve performance
 
     def t_METHOD(t):
         r'[a-zA-Z_][a-zA-Z_0-9]*'
@@ -89,7 +99,7 @@ def init_lex():
         t.lexer.lineno += len(t.value)
 
     def t_error(t):
-        print("Illegal character '%s'" % t.value[0])
+        print(f'Illegal character: {t.value[0]}')
         t.lexer.skip(1)
 
     return lex.lex()
@@ -108,12 +118,14 @@ def tokenize(data: str):
 
 
 def parse(text):
+    # TODO use Node/Tree classes rather than tuples
+
     def p_indent(p):
         'expression : INDENT expression'
         n = indent_width(p.lexer.lexdata)
         p[0] = ('indent', n, p[2])
 
-    def p_factor_expr(p):
+    def p_parentheses(p):
         'term : LPAREN expression RPAREN'
         p[0] = p[2]
 
@@ -160,8 +172,8 @@ def parse(text):
 
     def p_expr_logical(p):
         """expression : expression AND expression
-                      | expression OR expression
                       | expression XOR expression
+                      | expression OR expression
         """
         p[0] = ('logic', p[2], p[1], p[3])
 
