@@ -6,10 +6,21 @@ from mash.shell.lex_parser import parse
 
 def test_parse_cmd():
     text = 'echo a 10'
-    result = list(parse(text))[0]
-    assert result[0] == 'seq'
-    assert result[1] == 'triple'
-    assert result[2:] == ('echo', 'a', '10')
+    result = list(parse(text))
+    assert result[0] == 'list'
+    assert result[1] == ['echo', 'a', '10']
+
+
+def test_parse_cmds():
+    text = 'echo a 10 ; echo b \n echo c'
+    result = list(parse(text))
+    assert result[0] == 'lines'
+    assert result[1][0][0] == 'list'
+    assert result[1][0][1] == ['echo', 'a', '10']
+    assert result[1][1][0] == 'list'
+    assert result[1][1][1] == ['echo', 'b']
+    assert result[1][2][0] == 'list'
+    assert result[1][2][1] == ['echo', 'c']
 
 
 def test_parse_infix():
@@ -28,23 +39,23 @@ def test_parse_infix():
 
 def test_parse_quotes():
     text = 'x = "a b c"'
-    key, op, left, right = list(parse(text))[0]
+    key, op, left, right = list(parse(text))
     assert key == 'assign'
     assert op == '='
     assert left == 'x'
     assert right == '"a b c"'
 
     text = r'x = "y =\"\' 1"'
-    key, op, left, right = list(parse(text))[0]
+    key, op, left, right = list(parse(text))
     assert right == '"y =\\"\\\' 1"'
 
     # TODO support multiline strings
     text = """x = "y
 z" 
     """
-    with raises(ShellError):
-        key, op, left, right = list(parse(text))[0]
-        assert right == 'y'
+    # with raises(ShellError):
+    key, op, left, right = list(parse(text))
+    assert right == '"y\nz"'
 
 
 def test_parse_if_else():

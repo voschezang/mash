@@ -9,7 +9,6 @@ tokens = (
     'PIPE',  # |>
 
     'BREAK',  # ;
-    'COMMENT',  # \#
     'INDENT',
     'SPACE',
     'DEFINE_FUNCTION',  # f ( ):
@@ -49,7 +48,7 @@ def init_lex():
     - strings are sorted by regular expression length
     """
 
-    t_BREAK = r'\;'
+    t_BREAK = r'\;|[\n\r]+'
     t_DEFINE_FUNCTION = r':'
     t_BASH = r'\||>-|>>|1>|1>>|2>|2>>'
     t_PIPE = r'\|>' '|' r'>>='
@@ -62,6 +61,7 @@ def init_lex():
 
     t_SPECIAL = r'\$'
     t_VARIABLE = r'\$[a-zA-Z_][a-zA-Z_0-9]*'
+    # t_WILDCARD = r'[\w\d\*\?]+'
     t_WORD = r'[\w\d]+'
 
     t_ignore = ''
@@ -94,9 +94,9 @@ def init_lex():
         r'\d+'
         return t
 
-    def t_newline(t):
-        r'[\n\r]+'
-        t.lexer.lineno += len(t.value)
+    # def t_newline(t):
+    #     r'[\n\r]+'
+    #     t.lexer.lineno += len(t.value)
 
     def t_error(t):
         print(f'Illegal character: `{t.value[0]}`')
@@ -121,6 +121,17 @@ def tokenize(data: str):
 def parse(text):
     # TODO use Node/Tree classes rather than tuples
 
+    def p_newlines(p):
+        """lines : expression
+                 | expression BREAK lines
+        """
+        if len(p) == 2:
+            p[0] = ('lines', [p[1]])
+        else:
+            a = p[1]
+            _key, values = p[3]
+            p[0] = ('lines', [a] + values)
+
     def p_indent(p):
         'expression : INDENT expression'
         n = indent_width(p.lexer.lexdata)
@@ -129,10 +140,6 @@ def parse(text):
     def p_parentheses(p):
         'term : LPAREN expression RPAREN'
         p[0] = p[2]
-
-    def p_factor_expr(p):
-        'expression : expression BREAK expression'
-        p[0] = ('break', p[1], p[3])
 
     def p_expr_def_inline_function(p):
         'expression : term LPAREN term RPAREN DEFINE_FUNCTION expression'
@@ -182,33 +189,59 @@ def parse(text):
         'expression : NOT expression'
         p[0] = ('not', p[2])
 
+    def p_expression_pipe_py(p):
+        'expression : term PIPE expression'
+        p[0] = ('pipe', p[0], p[2])
+
+    def p_expression_pipe_bash(p):
+        'expression : term BASH expression'
+        p[0] = ('bash', p[0], p[2])
+
     def p_epression_assign(p):
         'expression : term ASSIGN expression'
         p[0] = ('assign', p[2], p[1], p[3])
 
     def p_expression_infix(p):
-        'expression : expression INFIX_OPERATOR term'
+        'expression : term INFIX_OPERATOR term'
         p[0] = ('binary-expression', p[2], p[1], p[3])
 
     def p_expression_term(p):
-        'expression : term'
+        'expression : list'
+        # """expression : term
+        #               | list
+        # """
+        # 'expression : list'
+        # 'expression : term'
+        # 'expression : term'
         p[0] = p[1]
 
-    def p_term_sequence(p):
-        """term : term term term term
-                | term term term
-                | term term
+    # def p_term_sequence(p):
+    #     """term : term term term term
+    #             | term term term
+    #             | term term
+    #     """
+    #     if len(p) == 5:
+    #         p[0] = ('seq', 'quadruple', p[1], p[2], p[3], p[4])
+    #     if len(p) == 4:
+    #         p[0] = ('seq', 'triple', p[1], p[2], p[3])
+    #     if len(p) == 3:
+    #         p[0] = ('seq', 'pair', p[1], p[2])
+
+    def p_list(p):
+        """list : term 
+                | term list 
         """
-        if len(p) == 5:
-            p[0] = ('seq', 'quadruple', p[1], p[2], p[3], p[4])
-        if len(p) == 4:
-            p[0] = ('seq', 'triple', p[1], p[2], p[3])
-        if len(p) == 3:
-            p[0] = ('seq', 'pair', p[1], p[2])
+        if len(p) == 2:
+            p[0] = ('list', [p[1]])
+        else:
+            a = p[1]
+            _list, values = p[2]
+            p[0] = ('list', [a] + values)
 
     def p_term(p):
         """term : NUMBER 
                 | VARIABLE 
+                | SPECIAL 
                 | METHOD 
                 | WORD
                 | SINGLE_QUOTED_STRING
@@ -222,13 +255,7 @@ def parse(text):
     lexer = init_lex()
     parser = yacc.yacc(debug=0)
 
-    for line in text.splitlines():
-        result = parser.parse(line)
-        if not line:
-            continue
-
-        if result is not None:
-            yield result
+    return parser.parse(text)
 
 
 if __name__ == '__main__':
