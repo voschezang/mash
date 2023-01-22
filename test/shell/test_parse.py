@@ -34,16 +34,17 @@ def test_parse_quotes():
     assert left == 'x'
     assert right == '"a b c"'
 
-    text = 'x = "y = 1"'
+    text = r'x = "y =\"\' 1"'
     key, op, left, right = list(parse(text))[0]
-    assert right == '"y = 1"'
+    assert right == '"y =\\"\\\' 1"'
 
     # TODO support multiline strings
     text = """x = "y
 z" 
     """
-    key, op, left, right = list(parse(text))[0]
-    assert right == 'y'
+    with raises(ShellError):
+        key, op, left, right = list(parse(text))[0]
+        assert right == 'y'
 
 
 def test_parse_if_else():

@@ -543,7 +543,7 @@ class BaseShell(Cmd):
             values = items
             k = values[0]
 
-            if self.is_function(k):
+            if run and self.is_function(k):
                 line = ' '.join(values)
                 return self.pipe_cmd_py(line, prev_result)
 
@@ -551,13 +551,19 @@ class BaseShell(Cmd):
 
         elif key == 'break':
             _, a, b = ast
-            a = self.run_commands_new(a)
+            a = self.run_commands_new(a, prev_result, run=True)
             print_result = True
             if print_result and a is not None:
                 print(a)
 
-            b = self.run_commands_new(b)
+            b = self.run_commands_new(b, run=True)
             return b
+
+        elif key == 'indent':
+            # TODO
+            _, _width, value = ast
+            return self.run_commands_new(value, prev_result, run=True)
+
         else:
             0
 

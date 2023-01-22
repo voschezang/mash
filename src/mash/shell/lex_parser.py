@@ -1,5 +1,6 @@
 import ply.lex as lex
 import ply.yacc as yacc
+from mash.shell.errors import ShellError
 
 from mash.shell.parsing import indent_width
 
@@ -63,17 +64,16 @@ def init_lex():
     t_VARIABLE = r'\$[a-zA-Z_][a-zA-Z_0-9]*'
     t_WORD = r'[\w\d]+'
 
-    # t_ignore = ' \t'
     t_ignore = ''
     t_ignore_COMMENT = r'\#.*'
 
     def t_DOUBLE_QUOTED_STRING(t):
-        r'"(?:\.|[^"\n])*"'
+        r'"(?:\.|(\\\")|[^\""])*"'
         t.type = reserved.get(t.value, 'DOUBLE_QUOTED_STRING')
         return t
 
     def t_SINGLE_QUOTED_STRING(t):
-        r"'(?:\.|[^'\n])*'"
+        r"'(?:\.|(\\\')|[^\''])*'"
         t.type = reserved.get(t.value, 'SINGLE_QUOTED_STRING')
         return t
 
@@ -99,8 +99,9 @@ def init_lex():
         t.lexer.lineno += len(t.value)
 
     def t_error(t):
-        print(f'Illegal character: {t.value[0]}')
+        print(f'Illegal character: `{t.value[0]}`')
         t.lexer.skip(1)
+        raise ShellError(f'Illegal character: `{t.value[0]}`')
 
     return lex.lex()
 
