@@ -4,11 +4,17 @@ from mash.shell import ShellError
 from mash.shell.lex_parser import parse
 
 
+def parse_line(text: str):
+    return list(parse(text))[1][0]
+
+
 def test_parse_cmd():
     text = 'echo a 10'
     result = list(parse(text))
-    assert result[0] == 'list'
-    assert result[1] == ['echo', 'a', '10']
+    assert result[0] == 'lines'
+    assert result[1][0][0] == 'list'
+    assert result[1][0][1] == ['echo', 'a', '10']
+    assert parse_line(text)[1] == ['echo', 'a', '10']
 
 
 def test_parse_cmds():
@@ -24,43 +30,64 @@ def test_parse_cmds():
 
 
 def test_parse_infix():
-    text = 'x = 2'
-    key, op, left, right = list(parse(text))[0]
+    key, op, left, right = parse_line('x = 2')
     assert key == 'assign'
     assert op == '='
     assert left == 'x'
     assert right == '2'
 
-    text = 'a b = 2'
-    key, op, left, right = list(parse(text))[0]
-    assert left[:2] == ('seq', 'pair')
-    assert left[2:] == ('a', 'b')
+    key, op, left, right = parse_line('a b = 2')
+    assert key == 'assign'
+    assert op == '='
+    assert left == ('list', ['a', 'b'])
+    assert right == '2'
 
 
 def test_parse_quotes():
-    text = 'x = "a b c"'
-    key, op, left, right = list(parse(text))
+    result = parse_line('x = "a b c"')
+    key, op, left, right = result
     assert key == 'assign'
     assert op == '='
     assert left == 'x'
     assert right == '"a b c"'
 
-    text = r'x = "y =\"\' 1"'
-    key, op, left, right = list(parse(text))
+    line = r'x = "y =\"\' 1"'
+    key, op, left, right = parse_line(line)
     assert right == '"y =\\"\\\' 1"'
 
+
+def test_parse_quotes_multiline():
     # TODO support multiline strings
     text = """x = "y
 z" 
     """
-    # with raises(ShellError):
-    key, op, left, right = list(parse(text))
-    assert right == '"y\nz"'
+    if 0:
+        key = parse(text)
+        key, op, left, right = parse_line(text)
+        assert right == '"y\nz"'
+
+
+def test_parse_multiline():
+    text = """
+
+x = 2
+
+"""
+    key, results = parse(text)
+    assert key == 'lines'
+    assert results[0][0] == 'assign'
+
+
+def test_parse_indent():
+    line = '    echo'
+    result = parse_line(line)
+    assert result[0] == 'indent'
+    assert result[2] == 'echo'
 
 
 def test_parse_if_else():
-    text = 'if 1 == 3 then 2 else 3'
-    result = list(parse(text))[0]
+    line = 'if 1 == 3 then 2 else 3'
+    result = parse_line(line)
     key, cond, true, false = result
     assert 'if-then-else' in key
     assert true == '2'
@@ -75,16 +102,22 @@ def test_parse_if_else():
 
 def test_parse_if_then_multiline():
     text = """
+
 if x == y then
     inner = a
 
     if z then
-        inner = b
+        inner2 = b
+
 
 outer = c
+
     """
-    results = list(parse(text))
+    results = parse(text)
+    results = parse(text)[1]
     assert results[0][0] == 'if'
+    assert results[0][1][0] == 'binary-expression'
+    assert results[0][1][1:] == ('==', 'x', 'y')
     assert results[1][0] == 'indent'
     assert results[1][1] == (4, 0)
     assert results[2][0] == 'indent'

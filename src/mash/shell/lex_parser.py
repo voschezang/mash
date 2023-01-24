@@ -1,14 +1,16 @@
 import ply.lex as lex
 import ply.yacc as yacc
-from mash.shell.errors import ShellError
+# from mash.shell.parsing import indent_width
+# from mash.shell.errors import ShellError
+ShellError = RuntimeError
+def indent_width(x): return 1
 
-from mash.shell.parsing import indent_width
 
 tokens = (
     'BASH',  # | >>
     'PIPE',  # |>
 
-    'BREAK',  # ;
+    'BREAK',  # \n ;
     'INDENT',
     'SPACE',
     'DEFINE_FUNCTION',  # f ( ):
@@ -48,7 +50,6 @@ def init_lex():
     - strings are sorted by regular expression length
     """
 
-    t_BREAK = r'\;|[\n\r]+'
     t_DEFINE_FUNCTION = r':'
     t_BASH = r'\||>-|>>|1>|1>>|2>|2>>'
     t_PIPE = r'\|>' '|' r'>>='
@@ -67,8 +68,21 @@ def init_lex():
     t_ignore = ''
     t_ignore_COMMENT = r'\#.*'
 
+    def t_BREAK(t):
+        r'[\n\r]+|((\;)+[\ \t]*)'
+        # r'[\n\r]+|\;+'
+        # r'[\n\r]+'
+        # r'[\n\r]+|((\;)+[\ \t]*)'
+        # semicolon_with_whitespace = r'((\;)+[ \t]*)'
+        # newlines = r'(\n+)'
+        return t
+
     def t_DOUBLE_QUOTED_STRING(t):
-        r'"(?:\.|(\\\")|[^\""])*"'
+        r'"((\\\")|[^\""])*"'
+        # r'"((\\\")|[^\""])*"'
+        # r'"([^\""])*"'
+        # r'"(\.|(\\\")|[^\""])*"'
+        # r'"(\.|(\\\")|[^\""]|\n)*"'
         t.type = reserved.get(t.value, 'DOUBLE_QUOTED_STRING')
         return t
 
@@ -96,7 +110,10 @@ def init_lex():
 
     # def t_newline(t):
     #     r'[\n\r]+'
+    #     # r'a^'
+    #     # r'(?!)'
     #     t.lexer.lineno += len(t.value)
+    #     return t
 
     def t_error(t):
         print(f'Illegal character: `{t.value[0]}`')
@@ -121,33 +138,47 @@ def tokenize(data: str):
 def parse(text):
     # TODO use Node/Tree classes rather than tuples
 
-    def p_newlines(p):
-        """lines : expression
-                 | expression BREAK lines
+    def p_newlines_empty(p):
+        """lines : BREAK
         """
-        if len(p) == 2:
-            p[0] = ('lines', [p[1]])
-        else:
-            a = p[1]
-            _key, values = p[3]
-            p[0] = ('lines', [a] + values)
+        p[0] = []
+
+    def p_newlines_suffix(p):
+        """lines : expression
+                 | expression BREAK
+        """
+        p[0] = ('lines', [p[1]])
+
+    def p_newlines_infix(p):
+        """lines : expression BREAK lines
+        """
+        _, lines = p[3]
+        p[0] = ('lines', [p[1]] + lines)
+
+    def p_newlines_prefix(p):
+        """lines : BREAK lines
+        """
+        p[0] = p[2]
 
     def p_indent(p):
         'expression : INDENT expression'
-        n = indent_width(p.lexer.lexdata)
-        p[0] = ('indent', n, p[2])
+        if p[1] == '\n':
+            p[0] = p[2]
+        else:
+            n = indent_width(p.lexer.lexdata)
+            p[0] = ('indent', n, p[2])
+
+    def p_expr_def_inline_function(p):
+        'expression : METHOD LPAREN expression RPAREN DEFINE_FUNCTION expression'
+        p[0] = ('define-inline-function', p[1], p[3], p[6])
+
+    def p_expr_def_function(p):
+        'expression : METHOD LPAREN expression RPAREN DEFINE_FUNCTION'
+        p[0] = ('define-function', p[1], p[3])
 
     def p_parentheses(p):
         'term : LPAREN expression RPAREN'
         p[0] = p[2]
-
-    def p_expr_def_inline_function(p):
-        'expression : term LPAREN term RPAREN DEFINE_FUNCTION expression'
-        p[0] = ('define-inline-function', p[1], p[3], p[6])
-
-    def p_expr_def_function(p):
-        'expression : term LPAREN term RPAREN DEFINE_FUNCTION'
-        p[0] = ('define-function', p[1], p[3])
 
     def p_expression_return(p):
         'expression : RETURN expression'
@@ -198,45 +229,32 @@ def parse(text):
         p[0] = ('bash', p[0], p[2])
 
     def p_epression_assign(p):
-        'expression : term ASSIGN expression'
+        'expression : expression ASSIGN expression'
         p[0] = ('assign', p[2], p[1], p[3])
 
     def p_expression_infix(p):
-        'expression : term INFIX_OPERATOR term'
+        'expression : expression INFIX_OPERATOR expression'
         p[0] = ('binary-expression', p[2], p[1], p[3])
 
-    def p_expression_term(p):
-        'expression : list'
-        # """expression : term
-        #               | list
-        # """
-        # 'expression : list'
-        # 'expression : term'
-        # 'expression : term'
-        p[0] = p[1]
-
-    # def p_term_sequence(p):
-    #     """term : term term term term
-    #             | term term term
-    #             | term term
-    #     """
-    #     if len(p) == 5:
-    #         p[0] = ('seq', 'quadruple', p[1], p[2], p[3], p[4])
-    #     if len(p) == 4:
-    #         p[0] = ('seq', 'triple', p[1], p[2], p[3])
-    #     if len(p) == 3:
-    #         p[0] = ('seq', 'pair', p[1], p[2])
-
     def p_list(p):
-        """list : term 
-                | term list 
+        """list : term term
+                | term list
         """
-        if len(p) == 2:
-            p[0] = ('list', [p[1]])
+        if isinstance(p[1], list):
+            0
+        if isinstance(p[2], str):
+            # if len(p) == 3:
+            p[0] = ('list', [p[1], p[2]])
         else:
             a = p[1]
             _list, values = p[2]
             p[0] = ('list', [a] + values)
+
+    def p_expression_term(p):
+        """expression : term
+                      | list
+        """
+        p[0] = p[1]
 
     def p_term(p):
         """term : NUMBER 
@@ -252,20 +270,18 @@ def parse(text):
     def p_error(p):
         print(f'Syntax error: {p}')
 
-    lexer = init_lex()
-    parser = yacc.yacc(debug=0)
+    init_lex()
+    parser = yacc.yacc(debug=True)
 
-    return parser.parse(text)
+    return parser.parse(inner)
 
 
 if __name__ == '__main__':
     data = """
+
     echo x
     if 1 = 3 then 2 else 3
     """
-    data = """
-    1
-    """
 
-    result = list(parse(data))
+    result = parse(data)
     print('out', result)
