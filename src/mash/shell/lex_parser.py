@@ -1,9 +1,9 @@
 import ply.lex as lex
 import ply.yacc as yacc
-# from mash.shell.parsing import indent_width
-# from mash.shell.errors import ShellError
-ShellError = RuntimeError
-def indent_width(x): return 1
+from mash.shell.parsing import indent_width
+from mash.shell.errors import ShellError
+# ShellError = RuntimeError
+# def indent_width(x): return 1
 
 
 tokens = (
@@ -58,7 +58,6 @@ def init_lex():
     t_INFIX_OPERATOR = r'==|[\+\-*//]'
     t_LPAREN = r'\('
     t_RPAREN = r'\)'
-    # t_INDENT = r'^\s'
 
     t_SPECIAL = r'\$'
     t_VARIABLE = r'\$[a-zA-Z_][a-zA-Z_0-9]*'
@@ -69,12 +68,23 @@ def init_lex():
     t_ignore_COMMENT = r'\#.*'
 
     def t_BREAK(t):
-        r'[\n\r]+|((\;)+[\ \t]*)'
-        # r'[\n\r]+|\;+'
-        # r'[\n\r]+'
-        # r'[\n\r]+|((\;)+[\ \t]*)'
+        r'[\n\r]|((\;)+[\ \t]*)'
         # semicolon_with_whitespace = r'((\;)+[ \t]*)'
         # newlines = r'(\n+)'
+
+        # TOOD if not ;
+        t.lexer.lineno += len(t.value)
+        return t
+
+    def t_INDENT(t):
+        r'\ {2,}|\t+'
+        # r'\s{2,}|\t'
+        # r'(\ {4})+|\t+'
+        # r'\n(\ {4})+|\t+'
+        # r'\n(\ {4})+|\t+'
+        # r'(\ {4})+|\t+'
+        # r'[((\ ){4})\t]+'
+        # r'(^\s)|(\n\s)'
         return t
 
     def t_DOUBLE_QUOTED_STRING(t):
@@ -91,10 +101,6 @@ def init_lex():
         t.type = reserved.get(t.value, 'SINGLE_QUOTED_STRING')
         return t
 
-    def t_INDENT(t):
-        r'^\s'
-        return t
-
     def t_SPACE(t):
         r'\ '
         # TODO use `t_ignore` to improve performance
@@ -107,13 +113,6 @@ def init_lex():
     def t_NUMBER(t):
         r'\d+'
         return t
-
-    # def t_newline(t):
-    #     r'[\n\r]+'
-    #     # r'a^'
-    #     # r'(?!)'
-    #     t.lexer.lineno += len(t.value)
-    #     return t
 
     def t_error(t):
         print(f'Illegal character: `{t.value[0]}`')
@@ -141,7 +140,7 @@ def parse(text):
     def p_newlines_empty(p):
         """lines : BREAK
         """
-        p[0] = []
+        p[0] = ('lines', [])
 
     def p_newlines_suffix(p):
         """lines : expression
@@ -162,17 +161,19 @@ def parse(text):
 
     def p_indent(p):
         'expression : INDENT expression'
-        if p[1] == '\n':
-            p[0] = p[2]
-        else:
-            n = indent_width(p.lexer.lexdata)
-            p[0] = ('indent', n, p[2])
+        n = indent_width(p[1])
+        p[0] = ('indent', n, p[2])
 
-    def p_expr_def_inline_function(p):
+    def p_indent_empty(p):
+        'expression : INDENT'
+        n = indent_width(p[1])
+        p[0] = ('indent', n, None)
+
+    def p_def_inline_function(p):
         'expression : METHOD LPAREN expression RPAREN DEFINE_FUNCTION expression'
         p[0] = ('define-inline-function', p[1], p[3], p[6])
 
-    def p_expr_def_function(p):
+    def p_def_function(p):
         'expression : METHOD LPAREN expression RPAREN DEFINE_FUNCTION'
         p[0] = ('define-function', p[1], p[3])
 
@@ -180,11 +181,11 @@ def parse(text):
         'term : LPAREN expression RPAREN'
         p[0] = p[2]
 
-    def p_expression_return(p):
+    def p_return(p):
         'expression : RETURN expression'
         p[0] = ('return', p[2])
 
-    def p_expression_if_then(p):
+    def p_if_then(p):
         """expression : IF expression THEN expression ELSE expression
                       | IF expression THEN expression ELSE
                       | IF expression THEN expression
@@ -209,26 +210,26 @@ def parse(text):
 
         p[0] = ('if-then', cond, true)
 
-    def p_expr_logical(p):
+    def p_logical_bin(p):
         """expression : expression AND expression
                       | expression XOR expression
                       | expression OR expression
         """
         p[0] = ('logic', p[2], p[1], p[3])
 
-    def p_expr_logical_not(p):
+    def p_logical_not(p):
         'expression : NOT expression'
         p[0] = ('not', p[2])
 
-    def p_expression_pipe_py(p):
+    def p_pipe_py(p):
         'expression : term PIPE expression'
         p[0] = ('pipe', p[0], p[2])
 
-    def p_expression_pipe_bash(p):
+    def p_pipe_bash(p):
         'expression : term BASH expression'
         p[0] = ('bash', p[0], p[2])
 
-    def p_epression_assign(p):
+    def p_assign(p):
         'expression : expression ASSIGN expression'
         p[0] = ('assign', p[2], p[1], p[3])
 
@@ -273,7 +274,7 @@ def parse(text):
     init_lex()
     parser = yacc.yacc(debug=True)
 
-    return parser.parse(inner)
+    return parser.parse(text)
 
 
 if __name__ == '__main__':

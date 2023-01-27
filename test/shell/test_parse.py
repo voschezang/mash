@@ -85,6 +85,21 @@ def test_parse_indent():
     assert result[2] == 'echo'
 
 
+def test_parse_indent_multiline():
+    text = '\n\n    \n\t\t\n    echo'
+    result = parse(text)[1]
+    assert result[0][0] == 'indent'
+    assert result[1][0] == 'indent'
+    assert result[2][0] == 'indent'
+    assert result[2][2] == 'echo'
+
+
+def test_parse_indent_semicolon():
+    text = ';    \n;    echo'
+    result = parse(text)[1]
+    assert result[0] == 'echo'
+
+
 def test_parse_if_else():
     line = 'if 1 == 3 then 2 else 3'
     result = parse_line(line)
@@ -113,7 +128,6 @@ if x == y then
 outer = c
 
     """
-    results = parse(text)
     results = parse(text)[1]
     assert results[0][0] == 'if'
     assert results[0][1][0] == 'binary-expression'
@@ -125,7 +139,7 @@ outer = c
     assert results[3][0] == 'indent'
     assert results[3][1] == (8, 0)
     assert results[3][2][0] == 'assign'
-    assert results[3][2][1:] == ('=', 'inner', 'b')
+    assert results[3][2][1:] == ('=', 'inner2', 'b')
 
     assert results[4][0] == 'assign'
     assert results[4][1:] == ('=', 'outer', 'c')
@@ -135,11 +149,11 @@ def test_parse_inline_function():
     text = """
 f (x): x + 1
     """
-    result = list(parse(text))[0]
-    assert result[0] == 'define-inline-function'
-    assert result[1] == 'f'
-    assert result[2] == 'x'
-    key, op, _, _ = result[3]
+    result = parse(text)[1]
+    assert result[0][0] == 'define-inline-function'
+    assert result[0][1] == 'f'
+    assert result[0][2] == 'x'
+    key, op, _, _ = result[0][3]
     assert 'binary' in key
     assert op == '+'
 
@@ -150,7 +164,7 @@ f (x):
     if x == 1 then return 2
     return x + 1
     """
-    results = list(parse(text))
+    results = parse(text)[1]
     assert results[0][0] == 'define-function'
     assert results[1][0] == 'indent'
     assert results[1][1] == (4, 0)
