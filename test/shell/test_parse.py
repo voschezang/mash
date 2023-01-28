@@ -174,3 +174,19 @@ f (x):
     assert results[1][2][1][0] == 'binary-expression'
     assert results[1][2][2] == ('return', '2')
     assert results[2][2][0] == 'return'
+
+
+def test_parse_bash_pipe():
+    result = parse_line('print a | echo')
+    assert result[0] == 'bash'
+    assert result[1] == '|'
+    assert result[2][0] == 'list'
+    assert result[3] == 'echo'
+
+
+def test_parse_pipe():
+    result = parse_line('print a |> echo')
+    assert result[0] == 'pipe'
+    assert result[1] == '|>'
+    assert result[2][0] == 'list'
+    assert result[3] == 'echo'

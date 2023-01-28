@@ -52,7 +52,6 @@ def init_lex():
 
     t_DEFINE_FUNCTION = r':'
     t_BASH = r'\||>-|>>|1>|1>>|2>|2>>'
-    t_PIPE = r'\|>' '|' r'>>='
     t_ASSIGN = r'<-|=|->'
 
     t_INFIX_OPERATOR = r'==|[\+\-*//]'
@@ -112,6 +111,10 @@ def init_lex():
 
     def t_NUMBER(t):
         r'\d+'
+        return t
+
+    def t_PIPE(t):
+        r'\|>' '|' r'>>='
         return t
 
     def t_error(t):
@@ -222,12 +225,12 @@ def parse(text):
         p[0] = ('not', p[2])
 
     def p_pipe_py(p):
-        'expression : term PIPE expression'
-        p[0] = ('pipe', p[0], p[2])
+        'expression : expression PIPE expression'
+        p[0] = ('pipe', p[2], p[1], p[3])
 
     def p_pipe_bash(p):
-        'expression : term BASH expression'
-        p[0] = ('bash', p[0], p[2])
+        'expression : expression BASH expression'
+        p[0] = ('bash', p[2], p[1], p[3])
 
     def p_assign(p):
         'expression : expression ASSIGN expression'
