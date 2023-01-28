@@ -455,14 +455,12 @@ class BaseShell(Cmd):
             lines = self.onecmd_prehook(lines)
             ast = parse(lines)
 
-            for line in ast:
-                result = self.run_commands_new_wrapper(line, result, run=True)
-                # if result is None:
-                #     raise ValueError('?')
+            # for line in ast:
+            result = self.run_commands_new_wrapper(ast, result, run=True)
 
-            if print_result and result is not None:
-                if result or not self.locals[IF]:
-                    print(result)
+            # if print_result and result is not None:
+            #     if result or not self.locals[IF]:
+            #         print(result)
 
         except CancelledError:
             pass
@@ -470,8 +468,8 @@ class BaseShell(Cmd):
     def run_commands_new_wrapper(self, *args, **kwds):
         try:
             result = self.run_commands_new(*args, **kwds)
-            if isinstance(result, list):
-                result = ' '.join(result)
+            # if isinstance(result, list):
+            #     result = ' '.join(result)
 
             return result
 
@@ -492,6 +490,7 @@ class BaseShell(Cmd):
             raise ShellError(str(e))
 
     def run_commands_new(self, ast: Tuple, prev_result='', run=False):
+        print_result = True
         if isinstance(ast, str):
             line = ast
             if run:
@@ -499,7 +498,27 @@ class BaseShell(Cmd):
             return line
 
         key, *values = ast
-        if key == 'binary-expression':
+        if key == 'list':
+            items = values[0]
+            k = items[0]
+            if run and self.is_function(k):
+                line = ' '.join(items)
+                return self.pipe_cmd_py(line, prev_result)
+            return items
+
+        elif key == 'lines':
+            items = values[0]
+            for item in items:
+                result = self.run_commands_new(item, run=run)
+
+                if isinstance(result, list):
+                    result = ' '.join(result)
+
+                if print_result and result is not None:
+                    if result or not self.locals[IF]:
+                        print(result)
+
+        elif key == 'binary-expression':
             op, a, b = values
 
             if op == '=':
