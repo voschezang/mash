@@ -546,6 +546,21 @@ class BaseShell(Cmd):
             else:
                 raise ValueError('??')
 
+        elif key == 'pipe':
+            op, a, b = values
+            if op == '|>':
+                prev = self.run_commands_new(a, prev_result, run=run)
+                next = self.run_commands_new(b, prev, run=run)
+            return next
+
+        elif key == 'bash':
+            op, a, b = values
+            prev = self.run_commands_new(a, prev_result, run=run)
+            terms = self.run_commands_new(b, run=False)
+            line = ' '.join(terms)
+            next = self.pipe_cmd_sh(line, prev, delimiter=op)
+            return next
+
         elif key == 'seq':
             _seq_type, *values = values
             if len(values) == 0:

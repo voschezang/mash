@@ -88,16 +88,20 @@ def init_lex():
 
     def t_DOUBLE_QUOTED_STRING(t):
         r'"((\\\")|[^\""])*"'
-        # r'"((\\\")|[^\""])*"'
-        # r'"([^\""])*"'
-        # r'"(\.|(\\\")|[^\""])*"'
-        # r'"(\.|(\\\")|[^\""]|\n)*"'
         t.type = reserved.get(t.value, 'DOUBLE_QUOTED_STRING')
+
+        # omit quotes
+        t.value = t.value[1:-1]
+
         return t
 
     def t_SINGLE_QUOTED_STRING(t):
         r"'(?:\.|(\\\')|[^\''])*'"
         t.type = reserved.get(t.value, 'SINGLE_QUOTED_STRING')
+
+        # omit quotes
+        t.value = t.value[1:-1]
+
         return t
 
     def t_SPACE(t):
@@ -139,6 +143,7 @@ def tokenize(data: str):
 
 def parse(text):
     # TODO use Node/Tree classes rather than tuples
+    # e.g. classes with a .run() method (extends Runnable<>)
 
     def p_newlines_empty(p):
         """lines : BREAK

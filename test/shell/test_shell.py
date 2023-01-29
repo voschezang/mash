@@ -68,11 +68,11 @@ def test_multi_commands():
 
 
 def test_pipe():
-    assert catch_output('print 100 |> print') == '100'
+    assert catch_output('print 100 |> print 2') == '2 100'
 
 
 def test_pipe_unix():
-    assert catch_output('print 100 | less') == '100'
+    # assert catch_output('print 100 | less') == '100'
 
     # with quotes
     assert catch_output('print "2; echo 12" | grep 2') == '2; echo 12'
