@@ -85,6 +85,14 @@ def test_parse_parentheses():
     assert inner[1][1][1] == ('lines', ['b'])
 
 
+def test_parse_parentheses_quoted():
+    _, results = parse('( "(" )')
+    results
+    assert results[0][0] == 'scope'
+    assert results[0][1][0] == 'lines'
+    assert results[0][1][1] == ['(']
+
+
 def test_parse_multiline():
     text = """
 
@@ -94,6 +102,14 @@ x = 2
     key, results = parse(text)
     assert key == 'lines'
     assert results[0][0] == 'assign'
+
+
+def test_parse_multiline_quoted():
+    text = """'
+x = 2'"""
+    key, results = parse(text)
+    assert key == 'lines'
+    assert results[0] == '\nx = 2'
 
 
 def test_parse_indent():

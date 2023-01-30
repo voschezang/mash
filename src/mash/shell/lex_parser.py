@@ -67,8 +67,6 @@ def init_lex():
 
     # t_INFIX_OPERATOR = r'==|[\+\-*//]'
     t_INFIX_OPERATOR = r'==|!=|<|>|<=|>='
-    # t_LPAREN = r'\('
-    # t_RPAREN = r'\)'
 
     t_SPECIAL = r'\$'
     t_VARIABLE = r'\$[a-zA-Z_][a-zA-Z_0-9]*'
@@ -103,6 +101,9 @@ def init_lex():
             t.lexer.lineno += t.value.count('\n') + t.value.count(';')
             t.lexer.begin('INITIAL')
             return t
+
+    def t_scope_quotes(t):
+        r'("((\\\")|[^\""])*")' '|' r"('(?:\.|(\\\')|[^\''])*')"
 
     def t_scope_all(t):
         r'[^\s]'
@@ -345,7 +346,7 @@ def parse(text, init=True):
         """value : SINGLE_QUOTED_STRING
                  | DOUBLE_QUOTED_STRING
         """
-        p[0] = Term(p[1], 'string')
+        p[0] = Term(p[1], 'quoted string')
 
     def p_error(p):
         print(f'Syntax error: {p}')
