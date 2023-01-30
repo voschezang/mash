@@ -181,6 +181,7 @@ def quote_items(items: List[str]) -> Iterable[str]:
     Do not modify python delimiters.
     """
     for arg in items:
+        arg = str(arg)
         if arg in delimiters.python:
             yield arg
         else:

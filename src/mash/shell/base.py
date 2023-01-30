@@ -20,9 +20,9 @@ from mash.shell.delimiters import ELSE, comparators, DEFINE_FUNCTION, FALSE, IF,
 from mash.filesystem.scope import Scope, show
 from mash.shell.errors import ShellError, ShellPipeError
 from mash.shell.function import InlineFunction
-from mash.shell.lex_parser import parse
+from mash.shell.lex_parser import Term, parse
 from mash.shell.parsing import expand_variables, expand_variables_inline, filter_comments, indent_width, infer_infix_args, inline_indent_with, parse_commands, quote_items
-from mash.util import for_any, has_method, identity, is_valid_method_name, omit_prefixes, removeprefix, split_prefixes, translate_terms
+from mash.util import for_any, has_method, identity, is_valid_method_name, omit_prefixes, quote_all, removeprefix, split_prefixes, translate_terms
 
 
 confirmation_mode = False
@@ -491,20 +491,33 @@ class BaseShell(Cmd):
 
     def run_commands_new(self, ast: Tuple, prev_result='', run=False):
         print_result = True
-        if isinstance(ast, str):
-            line = ast
+        if isinstance(ast, Term):
+            term = ast
             if run:
-                return self.run_single_command_new(line, prev_result)
-            return line
+                if self.is_function(term):
+                    return self.pipe_cmd_py(term, prev_result)
+                elif ast.type != 'term':
+                    return str(term)
+
+                raise ShellError(f'Cannot execute the function {k}')
+            return term
+
+        elif isinstance(ast, str):
+            return self.run_commands_new(Term(ast), prev_result, run=run)
 
         key, *values = ast
         if key == 'list':
             items = values[0]
             k = items[0]
             if run and self.is_function(k):
-                line = ' '.join(items)
+                line = ' '.join(quote_all(items, ignore='*'))
+
                 return self.pipe_cmd_py(line, prev_result)
-            return items
+
+            elif self.ignore_invalid_syntax or not run:
+                return items
+
+            raise ShellError(f'Cannot execute the function {k}')
 
         elif key == 'lines':
             items = values[0]
@@ -512,7 +525,7 @@ class BaseShell(Cmd):
                 result = self.run_commands_new(item, run=run)
 
                 if isinstance(result, list):
-                    result = ' '.join(result)
+                    result = ' '.join(quote_all(result))
 
                 if print_result and result is not None:
                     if result or not self.locals[IF]:
@@ -548,16 +561,31 @@ class BaseShell(Cmd):
 
         elif key == 'pipe':
             op, a, b = values
+
+            prev = self.run_commands_new(a, prev_result, run=run)
+
             if op == '|>':
-                prev = self.run_commands_new(a, prev_result, run=run)
                 next = self.run_commands_new(b, prev, run=run)
+            elif op == '>>=':
+                assert isinstance(b, str) or isinstance(b, Term)
+                # monadic bind
+                # https://en.wikipedia.org/wiki/Monad_(functional_programming)
+                line = f'map {b}'
+                return self.pipe_cmd_py(line, prev)
+
+            else:
+                raise ShellError(f'unknown operator {op}')
             return next
 
         elif key == 'bash':
             op, a, b = values
             prev = self.run_commands_new(a, prev_result, run=run)
-            terms = self.run_commands_new(b, run=False)
-            line = ' '.join(terms)
+            line = self.run_commands_new(b, run=False)
+
+            # TODO also quote prev result
+            if not isinstance(line, str) and not isinstance(line, Term):
+                line = ' '.join(quote_all(line, ignore=['*']))
+
             next = self.pipe_cmd_sh(line, prev, delimiter=op)
             return next
 
@@ -600,14 +628,6 @@ class BaseShell(Cmd):
 
         else:
             0
-
-    def run_single_command_new(self, line, prev_result):
-        # self.infix_command(*infix_operator_args)
-        # if is_function_definition(command_and_args):
-        #     return self.handle_define_inline_function(command_and_args)
-        # elif prefixes[-1] in delimiters.bash:
-        #     return self.pipe_cmd_sh(line, prev_result, delimiter=prefixes[-1])
-        return self.pipe_cmd_py(line, prev_result)
 
     def onecmd2(self, line: str, print_result=True) -> bool:
         """Parse and run `line`.

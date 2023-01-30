@@ -1,5 +1,6 @@
 from contextlib import contextmanager
 import re
+import shlex
 from braceexpand import braceexpand, UnbalancedBracesError
 from dataclasses import dataclass
 from enum import Enum
@@ -161,6 +162,15 @@ def concat_empty_container(items):
             return e
 
     raise TypeError()
+
+
+def quote_all(items: List[str], ignore=[]):
+    for item in items:
+        item = str(item)
+        if item in ignore:
+            yield item
+        else:
+            yield shlex.quote(item)
 
 
 def split(line: str, delimiters=',.'):

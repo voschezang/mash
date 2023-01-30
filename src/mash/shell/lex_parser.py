@@ -1,3 +1,4 @@
+from collections import UserString
 import ply.lex as lex
 import ply.yacc as yacc
 from mash.shell.parsing import indent_width
@@ -27,6 +28,7 @@ tokens = (
     'SPECIAL',  # $
     'VARIABLE',  # $x
     'WORD',
+    'WORD_WITH_DOT',
     'NUMBER',  # 0123456789
 )
 reserved = {
@@ -38,8 +40,15 @@ reserved = {
     'and': 'AND',
     'or': 'OR',
     'xor': 'XOR',
+    'math': 'MATH'
 }
 tokens += tuple(reserved.values())
+
+
+class Term(UserString):
+    def __init__(self, value, string_type='term'):
+        self.data = value
+        self.type = string_type
 
 
 def init_lex():
@@ -54,14 +63,14 @@ def init_lex():
     t_BASH = r'\||>-|>>|1>|1>>|2>|2>>'
     t_ASSIGN = r'<-|=|->'
 
-    t_INFIX_OPERATOR = r'==|[\+\-*//]'
+    # t_INFIX_OPERATOR = r'==|[\+\-*//]'
+    t_INFIX_OPERATOR = r'==|!=|<|>|<=|>='
     t_LPAREN = r'\('
     t_RPAREN = r'\)'
 
     t_SPECIAL = r'\$'
     t_VARIABLE = r'\$[a-zA-Z_][a-zA-Z_0-9]*'
     # t_WILDCARD = r'[\w\d\*\?]+'
-    t_WORD = r'[\w\d]+'
 
     t_ignore = ''
     t_ignore_COMMENT = r'\#.*'
@@ -77,12 +86,6 @@ def init_lex():
 
     def t_INDENT(t):
         r'\ {2,}|\t+'
-        # r'\s{2,}|\t'
-        # r'(\ {4})+|\t+'
-        # r'\n(\ {4})+|\t+'
-        # r'\n(\ {4})+|\t+'
-        # r'(\ {4})+|\t+'
-        # r'[((\ ){4})\t]+'
         # r'(^\s)|(\n\s)'
         return t
 
@@ -108,6 +111,11 @@ def init_lex():
         r'\ '
         # TODO use `t_ignore` to improve performance
 
+    def t_WORD_WITH_DOT(t):
+        r'([\w\d]+\.[\.\w\d]*)|([\w\d]*\.[\.\w\d]+)'
+        # match *. or .* or *.*
+        return t
+
     def t_METHOD(t):
         r'[a-zA-Z_][a-zA-Z_0-9]*'
         t.type = reserved.get(t.value, 'METHOD')
@@ -119,6 +127,10 @@ def init_lex():
 
     def t_PIPE(t):
         r'\|>' '|' r'>>='
+        return t
+
+    def t_WORD(t):
+        r'[\w\d\+\-*//%]+'
         return t
 
     def t_error(t):
@@ -185,8 +197,12 @@ def parse(text):
         'expression : METHOD LPAREN expression RPAREN DEFINE_FUNCTION'
         p[0] = ('define-function', p[1], p[3])
 
+    def p_math(p):
+        'expression : MATH expression'
+        p[0] = p[2]
+
     def p_parentheses(p):
-        'term : LPAREN expression RPAREN'
+        'expression : LPAREN expression RPAREN'
         p[0] = p[2]
 
     def p_return(p):
@@ -251,7 +267,7 @@ def parse(text):
         """
         if isinstance(p[1], list):
             0
-        if isinstance(p[2], str):
+        if isinstance(p[2], str) or isinstance(p[2], Term):
             # if len(p) == 3:
             p[0] = ('list', [p[1], p[2]])
         else:
@@ -266,15 +282,33 @@ def parse(text):
         p[0] = p[1]
 
     def p_term(p):
-        """term : NUMBER 
-                | VARIABLE 
-                | SPECIAL 
-                | METHOD 
+        """term : SPECIAL 
                 | WORD
-                | SINGLE_QUOTED_STRING
-                | DOUBLE_QUOTED_STRING
+                | WORD_WITH_DOT
         """
+        p[0] = Term(p[1])
+
+    def p_term_value(p):
+        'term : value'
         p[0] = p[1]
+
+    def p_value_number(p):
+        'value : NUMBER'
+        p[0] = Term(p[1], 'number')
+
+    def p_value_method(p):
+        'value : METHOD'
+        p[0] = Term(p[1], 'method')
+
+    def p_value_variable(p):
+        'value : VARIABLE'
+        p[0] = Term(p[1], 'variable')
+
+    def p_value_string(p):
+        """value : SINGLE_QUOTED_STRING
+                 | DOUBLE_QUOTED_STRING
+        """
+        p[0] = Term(p[1], 'string')
 
     def p_error(p):
         print(f'Syntax error: {p}')

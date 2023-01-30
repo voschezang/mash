@@ -67,6 +67,12 @@ z"
         assert right == '"y\nz"'
 
 
+def test_parse_parentheses():
+    result = parse_line('(a b)')
+    result = parse_line('(a (b) c)')
+    result
+
+
 def test_parse_multiline():
     text = """
 
@@ -190,3 +196,11 @@ def test_parse_pipe():
     assert result[1] == '|>'
     assert result[2][0] == 'list'
     assert result[3] == 'echo'
+
+
+def test_parse_pipe_multiple():
+    result = parse_line('print a |> echo 1 |> echo 2')
+    # assert result[0] == 'pipe'
+    # assert result[1] == '|>'
+    # assert result[2][0] == 'list'
+    assert 0

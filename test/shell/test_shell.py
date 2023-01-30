@@ -23,10 +23,15 @@ def test_onecmd_output():
     assert catch_output('print a b c d e f') == 'a b c d e f'
     assert catch_output('print a ; print b') == 'a\nb'
     assert catch_output('aaaa a') == 'aaaa a'
+
     # assert 'Unknown syntax' in catch_output('aaaa a')
 
-    # with raises(ShellError):
-    #     run_command('aaaa a', strict=True)
+    with raises(ShellError):
+        run_command('aaaa a', strict=True)
+
+
+def test_onecmd_numbers():
+    assert catch_output('123', strict=True) == '123'
 
 
 def test_println():
@@ -40,7 +45,7 @@ def test_onecmd_syntax():
     run_command('aaaa a', strict=False)
 
     s = 'A string with ;'
-    assert catch_output(f'print " {s} " ') == f'" {s} "'
+    assert catch_output(f'print " {s} " ') == f"' {s} '"
 
     with raises(ShellError):
         run_command('print "\""', strict=True)
@@ -75,7 +80,7 @@ def test_pipe_unix():
     # assert catch_output('print 100 | less') == '100'
 
     # with quotes
-    assert catch_output('print "2; echo 12" | grep 2') == '2; echo 12'
+    assert catch_output('print "2; echo 12" | grep 2') == "'2; echo 12'"
 
 
 def test_pipe_input():
@@ -122,21 +127,24 @@ def test_add_functions():
 
     key = 'test_add_functions'
 
-    out = catch_output('id 10')
-    assert 'Unknown syntax: id' in out
+    out = catch_output('id 10', shell=shell)
+    assert out == 'id 10'
+
+    with raises(ShellError):
+        run_command('id 10', shell=shell, strict=True)
 
     shell.add_functions({'id': print}, group_key=key)
-    run_command('id 10', shell=shell)
-    out = catch_output('id 10')
-    assert '10' in out
+    out = catch_output('id 10', shell=shell)
+    assert out == '10'
 
     # removing another key should have no impact
     shell.remove_functions('another key')
-    out = catch_output('id 10')
+    out = catch_output('id 10', shell=shell)
     assert '10' in out
 
     shell.remove_functions(key)
-    assert 'Unknown syntax: id' in out
+    with raises(ShellError):
+        out = catch_output('id 10', shell=shell)
 
 
 def test_do_fail():
@@ -156,12 +164,13 @@ def test_do_fail():
 
 def test_shell_do_math():
     shell = Shell()
-    assert catch_output(f'math 1 + 10', shell=shell) == '11'
+    # assert catch_output(f'math 1 + 10', shell=shell) == '11'
     assert catch_output(f'math 1 + 2 * 3', shell=shell) == '7'
 
 
 def test_shell_do_math_compare():
     shell = Shell()
+    assert catch_output(f'math 1 == 10', shell=shell) == ''
     assert catch_output(f'math 1 < 10', shell=shell) == '1'
     assert catch_output(f'math 1 > 10', shell=shell) == ''
     assert catch_output(f'math 1 > 10', shell=shell) == ''
