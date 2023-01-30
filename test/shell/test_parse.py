@@ -49,11 +49,11 @@ def test_parse_quotes():
     assert key == 'assign'
     assert op == '='
     assert left == 'x'
-    assert right == '"a b c"'
+    assert right == 'a b c'
 
     line = r'x = "y =\"\' 1"'
     key, op, left, right = parse_line(line)
-    assert right == '"y =\\"\\\' 1"'
+    assert right == 'y =\\"\\\' 1'
 
 
 def test_parse_quotes_multiline():
@@ -68,9 +68,21 @@ z"
 
 
 def test_parse_parentheses():
-    result = parse_line('(a b)')
-    result = parse_line('(a (b) c)')
-    result
+    _, results = parse('(a)')
+    assert results[0][0] == 'scope'
+    assert results[0][1][0] == 'lines'
+    assert results[0][1][1] == ['a']
+
+    _, results = parse('(a (b) c)')
+    assert results[0][0] == 'scope'
+    assert results[0][1][0] == 'lines'
+
+    inner = results[0][1][1][0]
+    assert inner[0] == 'list'
+    assert inner[1][0] == 'a'
+    assert inner[1][2] == 'c'
+    assert inner[1][1][0] == 'scope'
+    assert inner[1][1][1] == ('lines', ['b'])
 
 
 def test_parse_multiline():

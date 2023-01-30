@@ -6,6 +6,7 @@ from mash.shell.errors import ShellError
 # ShellError = RuntimeError
 # def indent_width(x): return 1
 
+lexer = None
 
 tokens = (
     'BASH',  # | >>
@@ -30,6 +31,7 @@ tokens = (
     'WORD',
     'WORD_WITH_DOT',
     'NUMBER',  # 0123456789
+    'SCOPE'
 )
 reserved = {
     'if': 'IF',
@@ -65,8 +67,8 @@ def init_lex():
 
     # t_INFIX_OPERATOR = r'==|[\+\-*//]'
     t_INFIX_OPERATOR = r'==|!=|<|>|<=|>='
-    t_LPAREN = r'\('
-    t_RPAREN = r'\)'
+    # t_LPAREN = r'\('
+    # t_RPAREN = r'\)'
 
     t_SPECIAL = r'\$'
     t_VARIABLE = r'\$[a-zA-Z_][a-zA-Z_0-9]*'
@@ -74,6 +76,36 @@ def init_lex():
 
     t_ignore = ''
     t_ignore_COMMENT = r'\#.*'
+    t_scope_ignore = ' \t\n'
+
+    states = (('scope', 'exclusive'),)
+    # states = (('scope', 'inclusive'),)
+
+    def t_scope(t):
+        r'\('
+        t.lexer.scope_start = t.lexer.lexpos
+        t.lexer.begin('scope')
+        t.lexer.level = 1
+
+    def t_scope_LPAREN(t):
+        r'\('
+        t.lexer.level += 1
+
+    def t_scope_RPAREN(t):
+        r'\)'
+        # if not hasattr(t.lexer, 'level') or t.lexer.level < 1:
+        #     raise ShellError('Invalid syntax: non-matching braces')
+        t.lexer.level -= 1
+
+        if t.lexer.level == 0:
+            t.value = t.lexer.lexdata[t.lexer.scope_start:t.lexer.lexpos-1]
+            t.type = 'SCOPE'
+            t.lexer.lineno += t.value.count('\n') + t.value.count(';')
+            t.lexer.begin('INITIAL')
+            return t
+
+    def t_scope_all(t):
+        r'[^\s]'
 
     def t_BREAK(t):
         r'[\n\r]|((\;)+[\ \t]*)'
@@ -153,13 +185,12 @@ def tokenize(data: str):
         yield token
 
 
-def parse(text):
+def parse(text, init=True):
     # TODO use Node/Tree classes rather than tuples
     # e.g. classes with a .run() method (extends Runnable<>)
 
     def p_newlines_empty(p):
-        """lines : BREAK
-        """
+        'lines : BREAK'
         p[0] = ('lines', [])
 
     def p_newlines_suffix(p):
@@ -169,14 +200,12 @@ def parse(text):
         p[0] = ('lines', [p[1]])
 
     def p_newlines_infix(p):
-        """lines : expression BREAK lines
-        """
+        'lines : expression BREAK lines'
         _, lines = p[3]
         p[0] = ('lines', [p[1]] + lines)
 
     def p_newlines_prefix(p):
-        """lines : BREAK lines
-        """
+        'lines : BREAK lines'
         p[0] = p[2]
 
     def p_indent(p):
@@ -272,7 +301,10 @@ def parse(text):
             p[0] = ('list', [p[1], p[2]])
         else:
             a = p[1]
-            _list, values = p[2]
+            key, values = p[2]
+            if key == 'scope':
+                values = [p[2]]
+
             p[0] = ('list', [a] + values)
 
     def p_expression_term(p):
@@ -287,6 +319,11 @@ def parse(text):
                 | WORD_WITH_DOT
         """
         p[0] = Term(p[1])
+
+    def p_term_scope(p):
+        'term : SCOPE'
+        q = parse(p[1], False)
+        p[0] = ('scope', q)
 
     def p_term_value(p):
         'term : value'
@@ -313,7 +350,15 @@ def parse(text):
     def p_error(p):
         print(f'Syntax error: {p}')
 
-    init_lex()
+    def p_scope_error(p):
+        print(f'Syntax error in scope: {p}')
+
+    if init:
+        global lexer
+        lexer = init_lex()
+    else:
+        lexer.clone()
+
     parser = yacc.yacc(debug=True)
 
     return parser.parse(text)
