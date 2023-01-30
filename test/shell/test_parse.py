@@ -227,8 +227,10 @@ def test_parse_pipe():
 
 
 def test_parse_pipe_multiple():
-    result = parse_line('print a |> echo 1 |> echo 2')
-    # assert result[0] == 'pipe'
-    # assert result[1] == '|>'
-    # assert result[2][0] == 'list'
-    assert 0
+    result = parse_line('print a |> echo 1 | echo 2')
+    assert result[0] == 'pipe'
+    assert result[1] == '|>'
+    assert result[2][0] == 'list'
+    assert result[2][1] == ['print', 'a']
+    assert result[3][0] == 'bash'
+    assert result[3][1] == '|'
