@@ -18,10 +18,12 @@ tokens = (
     'DEFINE_FUNCTION',  # f ( ):
 
     'ASSIGN',  # =
-    'INFIX_OPERATOR',  # == + - * /
+    'INFIX_OPERATOR',  # == < >
 
     'RPAREN',  # (
     'LPAREN',  # )
+    'RBRACE',
+    'LBRACE',
     'DOUBLE_QUOTED_STRING',  # "a 'b' c"
     'SINGLE_QUOTED_STRING',  # 'a\'bc'
 
@@ -78,18 +80,26 @@ def init_lex():
 
     states = (('scope', 'exclusive'),)
 
-    def t_scope(t):
+    def t_LBRACE(t):
         r'\('
+        return t
+
+    def t_RBRACE(t):
+        r'\)'
+        return t
+
+    def t_scope(t):
+        r'\{'
         t.lexer.scope_start = t.lexer.lexpos
         t.lexer.begin('scope')
         t.lexer.level = 1
 
     def t_scope_LPAREN(t):
-        r'\('
+        r'\{'
         t.lexer.level += 1
 
     def t_scope_RPAREN(t):
-        r'\)'
+        r'\}'
         t.lexer.level -= 1
 
         if t.lexer.level == 0:
@@ -116,7 +126,6 @@ def init_lex():
 
     def t_INDENT(t):
         r'\ {2,}|\t+'
-        # r'(^\s)|(\n\s)'
         return t
 
     def t_DOUBLE_QUOTED_STRING(t):
@@ -212,8 +221,8 @@ def parse(text, init=True):
         p[0] = p[2]
 
     def p_statement(p):
-        """statement : expression
-                     | definition
+        """statement : definition
+                     | expression
         """
         p[0] = p[1]
 
@@ -228,20 +237,25 @@ def parse(text, init=True):
         p[0] = ('indent', n, None)
 
     def p_def_inline_function(p):
-        'definition : scope DEFINE_FUNCTION expression'
+        'definition : METHOD LBRACE basic_expression RBRACE DEFINE_FUNCTION expression'
+        # 'definition : scope DEFINE_FUNCTION expression'
+        # 'definition : METHOD scope DEFINE_FUNCTION expression'
         # 'expression : METHOD SCOPE DEFINE_FUNCTION'
         # 'expression : METHOD LPAREN list RPAREN DEFINE_FUNCTION expression'
         # scope = parse(p[2], False)
         # p[0] = ('define-inline-function', p[1], p[2], p[4])
-        p[0] = ('define-inline-function', p[1])
+        p[0] = ('define-inline-function', p[1], p[3], p[6])
 
     def p_def_function(p):
-        'definition : scope DEFINE_FUNCTION'
-        p[0] = ('define-function', p[1])
+        'definition : METHOD LBRACE basic_expression RBRACE DEFINE_FUNCTION'
+        # 'definition : scope DEFINE_FUNCTION'
+        p[0] = ('define-function', p[1], p[3])
 
     def p_scope(p):
-        'scope : SCOPE'
-        q = parse(p[1], False)
+        'scope : LBRACE expression RBRACE'
+        # 'scope : SCOPE'
+        # q = parse(p[1], False)
+        q = p[2]
         p[0] = ('scope', q)
 
     def p_math(p):
@@ -308,9 +322,14 @@ def parse(text, init=True):
         'expression : expression INFIX_OPERATOR expression'
         p[0] = ('binary-expression', p[2], p[1], p[3])
 
-    def p_expression_term(p):
-        """expression : term
-                      | list
+    def p_expression_basic(p):
+        """expression : basic_expression
+        """
+        p[0] = p[1]
+
+    def p_basic_expression(p):
+        """basic_expression : term
+                            | list
         """
         p[0] = p[1]
 

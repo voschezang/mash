@@ -70,28 +70,28 @@ z"
 def test_parse_parentheses():
     _, results = parse('(a)')
     assert results[0][0] == 'scope'
-    assert results[0][1][0] == 'lines'
-    assert results[0][1][1] == ['a']
+    assert results[0][1] == 'a'
+
+    _, results = parse('(a b c)')
+    assert results[0][0] == 'scope'
+    assert results[0][1][0] == 'list'
+    assert results[0][1][1] == ['a', 'b', 'c']
 
     _, results = parse('(a (b c) (d))')
     assert results[0][0] == 'scope'
-    assert results[0][1][0] == 'lines'
+    assert results[0][1][0] == 'list'
 
-    inner = results[0][1][1][0]
-    assert inner[0] == 'list'
-    assert inner[1][0] == 'a'
-    assert inner[1][1][0] == 'scope'
-    assert inner[1][1][1] == ('lines', [('list', ['b', 'c'])])
-    assert inner[1][2][0] == 'scope'
-    assert inner[1][2][1] == ('lines', ['d'])
+    inner = results[0][1][1]
+    assert inner[0] == 'a'
+    assert inner[1][0] == 'scope'
+    assert inner[1][1] == ('list', ['b', 'c'])
+    assert inner[2] == ('scope', 'd')
 
 
 def test_parse_parentheses_quoted():
     _, results = parse('( "(" )')
-    results
     assert results[0][0] == 'scope'
-    assert results[0][1][0] == 'lines'
-    assert results[0][1][1] == ['(']
+    assert results[0][1] == '('
 
 
 def test_parse_multiline():
@@ -187,10 +187,8 @@ f (x y): x + y
     result = parse(text)[1]
     assert result[0][0] == 'define-inline-function'
     assert result[0][1] == 'f'
-    assert result[0][2][1][0] == ('list', ['x', 'y'])
-    key, inner = result[0][3]
-    assert key == 'list'
-    assert inner == ['x', '+', 'y']
+    assert result[0][2] == ('list', ['x', 'y'])
+    assert result[0][3] == ('list', ['x', '+', 'y'])
 
 
 def test_parse_function():
@@ -202,7 +200,7 @@ f (x):
     results = parse(text)[1]
     assert results[0][0] == 'define-function'
     assert results[0][1] == 'f'
-    assert results[0][2] == ('lines', ['x'])
+    assert results[0][2] == 'x'
     assert results[1][0] == 'indent'
     assert results[1][1] == (4, 0)
     assert results[2][0] == 'indent'
