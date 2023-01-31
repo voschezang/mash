@@ -77,7 +77,6 @@ def init_lex():
     t_scope_ignore = ' \t\n'
 
     states = (('scope', 'exclusive'),)
-    # states = (('scope', 'inclusive'),)
 
     def t_scope(t):
         r'\('
@@ -91,8 +90,6 @@ def init_lex():
 
     def t_scope_RPAREN(t):
         r'\)'
-        # if not hasattr(t.lexer, 'level') or t.lexer.level < 1:
-        #     raise ShellError('Invalid syntax: non-matching braces')
         t.lexer.level -= 1
 
         if t.lexer.level == 0:
@@ -171,6 +168,11 @@ def init_lex():
         t.lexer.skip(1)
         raise ShellError(f'Illegal character: `{t.value[0]}`')
 
+    def t_scope_error(t):
+        print(f'Illegal character: `{t.value[0]}`')
+        t.lexer.skip(1)
+        raise ShellError(f'Illegal character in scope: `{t.value[0]}`')
+
     return lex.lex()
 
 
@@ -219,21 +221,28 @@ def parse(text, init=True):
         n = indent_width(p[1])
         p[0] = ('indent', n, None)
 
-    def p_def_inline_function(p):
-        'expression : METHOD LPAREN expression RPAREN DEFINE_FUNCTION expression'
-        p[0] = ('define-inline-function', p[1], p[3], p[6])
+    def p_scope(p):
+        'scope : SCOPE'
+        q = parse(p[1], False)
+        p[0] = ('scope', q)
 
-    def p_def_function(p):
-        'expression : METHOD LPAREN expression RPAREN DEFINE_FUNCTION'
-        p[0] = ('define-function', p[1], p[3])
+    # def p_def_inline_function(p):
+    #     'expression : METHOD SCOPE DEFINE_FUNCTION expression'
+    #     scope = parse(p[2], False)
+    #     p[0] = ('define-inline-function', p[1], scope, p[4])
+
+    # def p_def_function(p):
+    #     'expression : METHOD SCOPE DEFINE_FUNCTION'
+    #     scope = parse(p[2], False)
+    #     p[0] = ('define-function', p[1], scope)
 
     def p_math(p):
         'expression : MATH expression'
-        p[0] = p[2]
+        p[0] = ('math', p[2])
 
-    def p_parentheses(p):
-        'expression : LPAREN expression RPAREN'
-        p[0] = p[2]
+    # def p_parentheses(p):
+    #     'expression : LPAREN expression RPAREN'
+    #     p[0] = p[2]
 
     def p_return(p):
         'expression : RETURN expression'
@@ -321,13 +330,10 @@ def parse(text, init=True):
         """
         p[0] = Term(p[1])
 
-    def p_term_scope(p):
-        'term : SCOPE'
-        q = parse(p[1], False)
-        p[0] = ('scope', q)
-
     def p_term_value(p):
-        'term : value'
+        """term : value
+                | scope
+        """
         p[0] = p[1]
 
     def p_value_number(p):
@@ -350,9 +356,6 @@ def parse(text, init=True):
 
     def p_error(p):
         print(f'Syntax error: {p}')
-
-    def p_scope_error(p):
-        print(f'Syntax error in scope: {p}')
 
     if init:
         global lexer

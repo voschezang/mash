@@ -73,16 +73,17 @@ def test_parse_parentheses():
     assert results[0][1][0] == 'lines'
     assert results[0][1][1] == ['a']
 
-    _, results = parse('(a (b) c)')
+    _, results = parse('(a (b c) (d))')
     assert results[0][0] == 'scope'
     assert results[0][1][0] == 'lines'
 
     inner = results[0][1][1][0]
     assert inner[0] == 'list'
     assert inner[1][0] == 'a'
-    assert inner[1][2] == 'c'
     assert inner[1][1][0] == 'scope'
-    assert inner[1][1][1] == ('lines', ['b'])
+    assert inner[1][1][1] == ('lines', [('list', ['b', 'c'])])
+    assert inner[1][2][0] == 'scope'
+    assert inner[1][2][1] == ('lines', ['d'])
 
 
 def test_parse_parentheses_quoted():
@@ -181,15 +182,15 @@ outer = c
 
 def test_parse_inline_function():
     text = """
-f (x): x + 1
+f (x y): x + y
     """
     result = parse(text)[1]
     assert result[0][0] == 'define-inline-function'
     assert result[0][1] == 'f'
-    assert result[0][2] == 'x'
-    key, op, _, _ = result[0][3]
-    assert 'binary' in key
-    assert op == '+'
+    assert result[0][2][1][0] == ('list', ['x', 'y'])
+    key, inner = result[0][3]
+    assert key == 'list'
+    assert inner == ['x', '+', 'y']
 
 
 def test_parse_function():
@@ -200,6 +201,8 @@ f (x):
     """
     results = parse(text)[1]
     assert results[0][0] == 'define-function'
+    assert results[0][1] == 'f'
+    assert results[0][2] == ('lines', ['x'])
     assert results[1][0] == 'indent'
     assert results[1][1] == (4, 0)
     assert results[2][0] == 'indent'
@@ -234,3 +237,15 @@ def test_parse_pipe_multiple():
     assert result[2][1] == ['print', 'a']
     assert result[3][0] == 'bash'
     assert result[3][1] == '|'
+
+
+def test_parse_math():
+    key, results = parse_line('math 1 + 1')
+    assert key == 'math'
+    assert results[0] == 'list'
+    assert results[1] == ['1', '+', '1']
+
+    key, results = parse_line('math 1 == 1')
+    assert key == 'math'
+    assert results[0] == 'binary-expression'
+    assert results[1:] == ('==', '1', '1')

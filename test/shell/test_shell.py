@@ -164,7 +164,7 @@ def test_do_fail():
 
 def test_shell_do_math():
     shell = Shell()
-    # assert catch_output(f'math 1 + 10', shell=shell) == '11'
+    assert catch_output(f'math 1 + 10', shell=shell) == '11'
     assert catch_output(f'math 1 + 2 * 3', shell=shell) == '7'
 
 

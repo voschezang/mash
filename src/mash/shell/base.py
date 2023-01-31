@@ -537,24 +537,32 @@ class BaseShell(Cmd):
             if op == '=':
                 a = self.run_commands_new(a)
                 b = self.run_commands_new(b)
-                self.set_env_variables(a, b)
-                return ''
+                if run:
+                    self.set_env_variables(a, b)
+                    return ''
+                return a, op, b
 
-            b = self.run_commands_new(b, run=True)
+            b = self.run_commands_new(b, run=run)
 
             if op == LEFT_ASSIGNMENT:
-                self.set_env_variables(a, b)
-                return ''
+                if run:
+                    self.set_env_variables(a, b)
+                    return ''
+                return a, op, b
 
-            a = self.run_commands_new(a, run=True)
+            a = self.run_commands_new(a, run=run)
 
             if op in delimiters.comparators:
                 # TODO join a, b
-                return self.eval(['math', a, op, b])
+                if run:
+                    return self.eval(['math', a, op, b])
+                return a, op, b
 
             if op in '+-*/':
                 # math
-                return self.eval(['math', a, op, b])
+                if run:
+                    return self.eval(['math', a, op, b])
+                return a, op, b
 
             else:
                 raise ValueError('??')
@@ -589,27 +597,27 @@ class BaseShell(Cmd):
             next = self.pipe_cmd_sh(line, prev, delimiter=op)
             return next
 
-        elif key == 'seq':
-            _seq_type, *values = values
-            if len(values) == 0:
-                return
+        # elif key == 'seq':
+        #     _seq_type, *values = values
+        #     if len(values) == 0:
+        #         return
 
-            values = [self.run_commands_new(v) for v in values]
-            items = []
-            for v in values:
-                if isinstance(v, list):
-                    items.extend(v)
-                else:
-                    items.append(v)
+        #     values = [self.run_commands_new(v) for v in values]
+        #     items = []
+        #     for v in values:
+        #         if isinstance(v, list):
+        #             items.extend(v)
+        #         else:
+        #             items.append(v)
 
-            values = items
-            k = values[0]
+        #     values = items
+        #     k = values[0]
 
-            if run and self.is_function(k):
-                line = ' '.join(values)
-                return self.pipe_cmd_py(line, prev_result)
+        #     if run and self.is_function(k):
+        #         line = ' '.join(values)
+        #         return self.pipe_cmd_py(line, prev_result)
 
-            return values
+        #     return values
 
         elif key == 'break':
             _, a, b = ast
@@ -626,6 +634,13 @@ class BaseShell(Cmd):
             _, _width, value = ast
             return self.run_commands_new(value, prev_result, run=True)
 
+        elif key == 'math':
+            _key, values = ast
+            if values[0] == 'binary-expression':
+                values = values
+            terms = self.run_commands_new(values)
+            line = ' '.join(quote_all(terms, ignore=['*']))
+            return self.pipe_cmd_py(line, prev_result)
         else:
             0
 
