@@ -197,13 +197,13 @@ def parse(text, init=True):
         p[0] = ('lines', [])
 
     def p_newlines_suffix(p):
-        """lines : expression
-                 | expression BREAK
+        """lines : statement
+                 | statement BREAK
         """
         p[0] = ('lines', [p[1]])
 
     def p_newlines_infix(p):
-        'lines : expression BREAK lines'
+        'lines : statement BREAK lines'
         _, lines = p[3]
         p[0] = ('lines', [p[1]] + lines)
 
@@ -211,8 +211,14 @@ def parse(text, init=True):
         'lines : BREAK lines'
         p[0] = p[2]
 
-    def p_indent(p):
-        'expression : INDENT expression'
+    def p_statement(p):
+        """statement : expression
+                     | definition
+        """
+        p[0] = p[1]
+
+    def p_statement_indent(p):
+        'statement : INDENT expression'
         n = indent_width(p[1])
         p[0] = ('indent', n, p[2])
 
@@ -221,20 +227,22 @@ def parse(text, init=True):
         n = indent_width(p[1])
         p[0] = ('indent', n, None)
 
+    def p_def_inline_function(p):
+        'definition : scope DEFINE_FUNCTION expression'
+        # 'expression : METHOD SCOPE DEFINE_FUNCTION'
+        # 'expression : METHOD LPAREN list RPAREN DEFINE_FUNCTION expression'
+        # scope = parse(p[2], False)
+        # p[0] = ('define-inline-function', p[1], p[2], p[4])
+        p[0] = ('define-inline-function', p[1])
+
+    def p_def_function(p):
+        'definition : scope DEFINE_FUNCTION'
+        p[0] = ('define-function', p[1])
+
     def p_scope(p):
         'scope : SCOPE'
         q = parse(p[1], False)
         p[0] = ('scope', q)
-
-    # def p_def_inline_function(p):
-    #     'expression : METHOD SCOPE DEFINE_FUNCTION expression'
-    #     scope = parse(p[2], False)
-    #     p[0] = ('define-inline-function', p[1], scope, p[4])
-
-    # def p_def_function(p):
-    #     'expression : METHOD SCOPE DEFINE_FUNCTION'
-    #     scope = parse(p[2], False)
-    #     p[0] = ('define-function', p[1], scope)
 
     def p_math(p):
         'expression : MATH expression'
@@ -300,6 +308,12 @@ def parse(text, init=True):
         'expression : expression INFIX_OPERATOR expression'
         p[0] = ('binary-expression', p[2], p[1], p[3])
 
+    def p_expression_term(p):
+        """expression : term
+                      | list
+        """
+        p[0] = p[1]
+
     def p_list(p):
         """list : term term
                 | term list
@@ -317,12 +331,6 @@ def parse(text, init=True):
 
             p[0] = ('list', [a] + values)
 
-    def p_expression_term(p):
-        """expression : term
-                      | list
-        """
-        p[0] = p[1]
-
     def p_term(p):
         """term : SPECIAL 
                 | WORD
@@ -332,6 +340,7 @@ def parse(text, init=True):
 
     def p_term_value(p):
         """term : value
+                | method
                 | scope
         """
         p[0] = p[1]
@@ -341,7 +350,7 @@ def parse(text, init=True):
         p[0] = Term(p[1], 'number')
 
     def p_value_method(p):
-        'value : METHOD'
+        'method : METHOD'
         p[0] = Term(p[1], 'method')
 
     def p_value_variable(p):
