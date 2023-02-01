@@ -153,7 +153,7 @@ class Shell(BaseShell):
         raise NotImplementedError()
 
     def do_math(self, args: str) -> str:
-        operators = ['-', '\\+', '\\*', '%']
+        operators = ['-', '\\+', '\\*', '%', '==', '!=', '<', '>']
         delimiters = ['\\(', '\\)']
         regex = '(' + '|'.join(operators + delimiters) + ')'
         terms = re.split(regex, args)

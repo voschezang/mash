@@ -639,8 +639,10 @@ class BaseShell(Cmd):
             if values[0] == 'binary-expression':
                 values = values
             terms = self.run_commands_new(values)
-            line = ' '.join(quote_all(terms, ignore=['*']))
-            return self.pipe_cmd_py(line, prev_result)
+            line = 'math ' + ' '.join(quote_all(terms, ignore=list('*<>')))
+            if run:
+                return self.pipe_cmd_py(line, prev_result)
+            return line
         else:
             0
 

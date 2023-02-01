@@ -90,6 +90,7 @@ def init_lex():
 
     def t_scope(t):
         r'\{'
+        # TODO deprecate state "scope"
         t.lexer.scope_start = t.lexer.lexpos
         t.lexer.begin('scope')
         t.lexer.level = 1
