@@ -532,24 +532,28 @@ class BaseShell(Cmd):
                         print(result)
 
         elif key == 'assign':
-            a, b = values
-            a = self.run_commands_new(a)
-            if run:
-                self.set_env_variables(a, b)
-                return ''
-            return a, b
-
-        elif key == 'binary-expression':
             op, a, b = values
-
+            a = self.run_commands_new(a)
             if op == '=':
-                a = self.run_commands_new(a)
                 b = self.run_commands_new(b)
                 if run:
                     self.set_env_variables(a, b)
-                    return ''
+                    return TRUE
                 return a, op, b
 
+            elif op == LEFT_ASSIGNMENT:
+                b = self.run_commands_new(b, run=run)
+                if run:
+                    # self.set_env_variables(a, b)
+                    self.locals.set(LEFT_ASSIGNMENT, a)
+                    self._save_assignee('')
+                    return TRUE
+                return a, op, b
+            elif op == RIGHT_ASSIGNMENT:
+                raise NotImplementedError(RIGHT_ASSIGNMENT)
+
+        elif key == 'binary-expression':
+            op, a, b = values
             b = self.run_commands_new(b, run=run)
             a = self.run_commands_new(a, run=run)
 

@@ -55,11 +55,11 @@ def test_onecmd_syntax_quotes():
     shell = Shell()
     shell.ignore_invalid_syntax = False
 
-    assert catch_output('a = 1', shell=shell) == ''
+    assert catch_output('a = 1', shell=shell) == delimiters.TRUE
 
     # TODO quoting terms can shadow other terms
     # with raises(ShellError):
-    assert catch_output('a = 1 "="', shell=shell) == ''
+    assert catch_output('a = 1 "="', shell=shell) == delimiters.TRUE
 
 
 def test_onecmd_syntax_escape():
@@ -187,6 +187,7 @@ def test_shell_numbers():
     shell = Shell()
     run_command(f'x <- int 10', shell=shell)
     assert 'x' in shell.env
+    assert shell.env['x'] == 10
 
     run_command(f'y <- float 1.5', shell=shell)
     assert 'y' in shell.env
