@@ -531,6 +531,14 @@ class BaseShell(Cmd):
                     if result or not self.locals[IF]:
                         print(result)
 
+        elif key == 'assign':
+            a, b = values
+            a = self.run_commands_new(a)
+            if run:
+                self.set_env_variables(a, b)
+                return ''
+            return a, b
+
         elif key == 'binary-expression':
             op, a, b = values
 
@@ -543,13 +551,6 @@ class BaseShell(Cmd):
                 return a, op, b
 
             b = self.run_commands_new(b, run=run)
-
-            if op == LEFT_ASSIGNMENT:
-                if run:
-                    self.set_env_variables(a, b)
-                    return ''
-                return a, op, b
-
             a = self.run_commands_new(a, run=run)
 
             if op in delimiters.comparators:

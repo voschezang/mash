@@ -18,6 +18,7 @@ tokens = (
     'DEFINE_FUNCTION',  # f ( ):
 
     'ASSIGN',  # =
+    'EQUALS',  # ==
     'INFIX_OPERATOR',  # == < >
 
     'RPAREN',  # (
@@ -44,7 +45,7 @@ reserved = {
     'and': 'AND',
     'or': 'OR',
     'xor': 'XOR',
-    'math': 'MATH'
+    'math': 'MATH',
 }
 tokens += tuple(reserved.values())
 
@@ -64,11 +65,6 @@ def init_lex():
     """
 
     t_DEFINE_FUNCTION = r':'
-    t_BASH = r'\||>-|>>|1>|1>>|2>|2>>'
-    t_ASSIGN = r'<-|=|->'
-
-    # t_INFIX_OPERATOR = r'==|[\+\-*//]'
-    t_INFIX_OPERATOR = r'==|!=|<|>|<=|>='
 
     t_SPECIAL = r'\$'
     t_VARIABLE = r'\$[a-zA-Z_][a-zA-Z_0-9]*'
@@ -169,8 +165,24 @@ def init_lex():
         r'\|>' '|' r'>>='
         return t
 
+    def t_BASH(t):
+        r'\||>-|>>|1>|1>>|2>|2>>'
+        return t
+
+    def t_EQUALS(t):
+        '=='
+        return t
+
+    def t_ASSIGN(t):
+        r'<-|=|->'
+        return t
+
+    def t_INFIX_OPERATOR(t):
+        r'==|!=|<|>|<=|>='
+        return t
+
     def t_WORD(t):
-        r'[\w\d\+\-*//%]+'
+        r'[\w\d\+\-\*/%&]+'
         return t
 
     def t_error(t):
@@ -297,9 +309,9 @@ def parse(text, init=True):
         p[0] = ('if-then', cond, true)
 
     def p_logical_bin(p):
-        """expression : expression AND expression
-                      | expression XOR expression
-                      | expression OR expression
+        """expression : basic_expression AND expression
+                      | basic_expression XOR expression
+                      | basic_expression OR expression
         """
         p[0] = ('logic', p[2], p[1], p[3])
 
@@ -308,19 +320,23 @@ def parse(text, init=True):
         p[0] = ('not', p[2])
 
     def p_pipe_py(p):
-        'expression : expression PIPE expression'
+        'expression : basic_expression PIPE expression'
         p[0] = ('pipe', p[2], p[1], p[3])
 
     def p_pipe_bash(p):
-        'expression : expression BASH expression'
+        'expression : basic_expression BASH expression'
         p[0] = ('bash', p[2], p[1], p[3])
 
     def p_assign(p):
-        'expression : expression ASSIGN expression'
+        'expression : basic_expression ASSIGN expression'
         p[0] = ('assign', p[2], p[1], p[3])
 
     def p_expression_infix(p):
-        'expression : expression INFIX_OPERATOR expression'
+        'expression : basic_expression INFIX_OPERATOR expression'
+        p[0] = ('binary-expression', p[2], p[1], p[3])
+
+    def p_expression_infix_equals(p):
+        'expression : basic_expression EQUALS expression'
         p[0] = ('binary-expression', p[2], p[1], p[3])
 
     def p_expression_basic(p):

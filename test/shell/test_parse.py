@@ -29,6 +29,14 @@ def test_parse_cmds():
     assert result[1][2][1] == ['echo', 'c']
 
 
+def test_parse_assign():
+    key, op, left, right = parse_line('a <- 10')
+    assert key == 'assign'
+    assert op == '<-'
+    assert left == 'a'
+    assert right == '10'
+
+
 def test_parse_infix():
     key, op, left, right = parse_line('x = 2')
     assert key == 'assign'
