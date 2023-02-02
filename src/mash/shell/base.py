@@ -227,7 +227,9 @@ class BaseShell(Cmd):
         self._last_results[self._last_results_index] = value
 
     def is_function(self, func_name: str) -> bool:
-        return has_method(self, f'do_{func_name}') or self.is_inline_function(func_name)
+        return has_method(self, f'do_{func_name}') \
+            or self.is_inline_function(func_name) \
+            or func_name in self._chars_allowed_for_char_method
 
     def is_inline_function(self, func_name: str) -> bool:
         return func_name in self.env and isinstance(self.env[func_name], InlineFunction)
@@ -454,6 +456,8 @@ class BaseShell(Cmd):
         try:
             lines = self.onecmd_prehook(lines)
             ast = parse(lines)
+            if ast is None:
+                raise ShellError('Invalid syntax: AST is empty')
 
             # for line in ast:
             result = self.run_commands_new_wrapper(ast, result, run=True)
@@ -499,7 +503,7 @@ class BaseShell(Cmd):
                 elif ast.type != 'term':
                     return str(term)
 
-                raise ShellError(f'Cannot execute the function {k}')
+                raise ShellError(f'Cannot execute the function {term}')
             return term
 
         elif isinstance(ast, str):

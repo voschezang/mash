@@ -221,7 +221,8 @@ def test_set_do_char_method():
 
     # verify that clashes are resolved
     for op in [delimiters.bash[0], delimiters.RIGHT_ASSIGNMENT]:
-        assert catch_output(op, shell=shell, strict=True) == ''
+        with raises(ShellError):
+            assert catch_output(op, shell=shell, strict=True) == ''
 
         with raises(ShellError):
             shell.set_do_char_method(print, [op])
