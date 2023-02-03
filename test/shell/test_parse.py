@@ -1,6 +1,6 @@
 from pytest import raises
 
-from mash.shell import ShellError
+from mash import io_util
 from mash.shell.lex_parser import parse
 
 
@@ -237,12 +237,29 @@ def test_parse_pipe():
 
 def test_parse_pipe_multiple():
     result = parse_line('print a |> echo 1 | echo 2')
-    assert result[0] == 'pipe'
+    assert result[1] == '|'
+    assert result[3][1] == ['echo', '2']
+    assert result[2][1] == '|>'
+    assert result[2][2][1] == ['print', 'a']
+
+
+def test_parse_pipe_assign():
+    result = parse_line('a <- print a |> echo b')
+    assert result[0] == 'assign'
+    assert result[1] == '<-'
+    assert result[3][0] == 'pipe'
+    assert result[3][1] == '|>'
+
+
+def test_parse_pipes_with_assign():
+    result = parse_line('echo a |> echo b == c |> echo c')
     assert result[1] == '|>'
-    assert result[2][0] == 'list'
-    assert result[2][1] == ['print', 'a']
-    assert result[3][0] == 'bash'
-    assert result[3][1] == '|'
+    assert result[2][1] == '|>'
+    assert result[2][3][1] == '=='
+
+    line = 'echo a |> echo b =='
+    result = io_util.catch_output(line, parse)
+    assert 'Syntax error' in result
 
 
 def test_parse_math():

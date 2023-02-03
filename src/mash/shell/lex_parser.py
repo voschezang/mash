@@ -18,6 +18,7 @@ tokens = (
     'DEFINE_FUNCTION',  # f ( ):
 
     'ASSIGN',  # =
+    'ASSIGN_RIGHT',  # ->
     'EQUALS',  # ==
     'INFIX_OPERATOR',  # == < >
 
@@ -44,7 +45,6 @@ reserved = {
     'not': 'NOT',
     'and': 'AND',
     'or': 'OR',
-    'xor': 'XOR',
     'math': 'MATH',
 }
 tokens += tuple(reserved.values())
@@ -174,11 +174,15 @@ def init_lex():
         return t
 
     def t_ASSIGN(t):
-        r'<-|=|->'
+        r'<-|='
+        return t
+
+    def t_ASSIGN_RIGHT(t):
+        r'->'
         return t
 
     def t_INFIX_OPERATOR(t):
-        r'==|!=|<|>|<=|>='
+        r'!=|<|>|<=|>='
         return t
 
     def t_WORD(t):
@@ -213,6 +217,19 @@ def tokenize(data: str):
 def parse(text, init=True):
     # TODO use Node/Tree classes rather than tuples
     # e.g. classes with a .run() method (extends Runnable<>)
+
+    precedence = (
+        ('left', 'BREAK'),
+        ('left', 'INDENT'),
+        ('left', 'ASSIGN', 'ASSIGN'),
+        ('left', 'PIPE', 'BASH'),
+        ('left',  'MATH'),
+        ('left', 'INFIX_OPERATOR'),
+        ('left', 'EQUALS'),
+        ('left', 'OR'),
+        ('left', 'AND'),
+        ('left', 'NOT')
+    )
 
     def p_newlines_empty(p):
         'lines : BREAK'
@@ -251,17 +268,10 @@ def parse(text, init=True):
 
     def p_def_inline_function(p):
         'definition : METHOD LBRACE basic_expression RBRACE DEFINE_FUNCTION expression'
-        # 'definition : scope DEFINE_FUNCTION expression'
-        # 'definition : METHOD scope DEFINE_FUNCTION expression'
-        # 'expression : METHOD SCOPE DEFINE_FUNCTION'
-        # 'expression : METHOD LPAREN list RPAREN DEFINE_FUNCTION expression'
-        # scope = parse(p[2], False)
-        # p[0] = ('define-inline-function', p[1], p[2], p[4])
         p[0] = ('define-inline-function', p[1], p[3], p[6])
 
     def p_def_function(p):
         'definition : METHOD LBRACE basic_expression RBRACE DEFINE_FUNCTION'
-        # 'definition : scope DEFINE_FUNCTION'
         p[0] = ('define-function', p[1], p[3])
 
     def p_scope(p):
@@ -281,6 +291,7 @@ def parse(text, init=True):
 
     def p_return(p):
         'expression : RETURN expression'
+        # 'definition : RETURN expression'
         p[0] = ('return', p[2])
 
     def p_if_then(p):
@@ -310,7 +321,6 @@ def parse(text, init=True):
 
     def p_logical_bin(p):
         """expression : basic_expression AND expression
-                      | basic_expression XOR expression
                       | basic_expression OR expression
         """
         # TODO use flat tree any/all (or, a, b, c) = any : e OR any  | e OR e
@@ -321,15 +331,19 @@ def parse(text, init=True):
         p[0] = ('not', p[2])
 
     def p_pipe_py(p):
-        'expression : basic_expression PIPE expression'
+        'expression : expression PIPE expression'
         p[0] = ('pipe', p[2], p[1], p[3])
 
     def p_pipe_bash(p):
-        'expression : basic_expression BASH expression'
+        'expression : expression BASH expression'
         p[0] = ('bash', p[2], p[1], p[3])
 
     def p_assign(p):
         'expression : basic_expression ASSIGN expression'
+        p[0] = ('assign', p[2], p[1], p[3])
+
+    def p_assign_right(p):
+        'expression : expression ASSIGN_RIGHT basic_expression'
         p[0] = ('assign', p[2], p[1], p[3])
 
     def p_expression_infix(p):
@@ -337,7 +351,7 @@ def parse(text, init=True):
         p[0] = ('binary-expression', p[2], p[1], p[3])
 
     def p_expression_infix_equals(p):
-        'expression : basic_expression EQUALS expression'
+        'expression : expression EQUALS expression'
         p[0] = ('binary-expression', p[2], p[1], p[3])
 
     def p_expression_basic(p):

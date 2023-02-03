@@ -665,8 +665,6 @@ class BaseShell(Cmd):
                     return a or b
                 elif op == 'and':
                     return a and b
-                elif op == 'xor':
-                    return (a and not b) or (b and not a)
 
             return ' '.join(quote_all((a, op, b), ignore=list('*<>')))
 
