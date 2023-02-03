@@ -313,6 +313,7 @@ def parse(text, init=True):
                       | basic_expression XOR expression
                       | basic_expression OR expression
         """
+        # TODO use flat tree any/all (or, a, b, c) = any : e OR any  | e OR e
         p[0] = ('logic', p[2], p[1], p[3])
 
     def p_logical_not(p):

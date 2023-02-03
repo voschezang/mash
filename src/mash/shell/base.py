@@ -440,9 +440,7 @@ class BaseShell(Cmd):
         return ''
 
     def do_not(self, args: str) -> str:
-        if args == FALSE:
-            return TRUE
-        return FALSE
+        return FALSE if to_bool(args) else TRUE
 
     ############################################################################
     # Overrides
@@ -500,6 +498,9 @@ class BaseShell(Cmd):
             if run:
                 if self.is_function(term):
                     return self.pipe_cmd_py(term, prev_result)
+                elif ast.type == 'variable':
+                    k = ast[1:]
+                    return self.env[k]
                 elif ast.type != 'term':
                     return str(term)
 
@@ -652,6 +653,34 @@ class BaseShell(Cmd):
             if run:
                 return self.pipe_cmd_py(line, prev_result)
             return line
+
+        elif key == 'logic':
+            op, a, b = values
+            a = self.run_commands_new(a, run=run)
+            b = self.run_commands_new(b, run=run)
+            if run:
+                a = to_bool(a)
+                b = to_bool(b)
+                if op == 'or':
+                    return a or b
+                elif op == 'and':
+                    return a and b
+                elif op == 'xor':
+                    return (a and not b) or (b and not a)
+
+            return ' '.join(quote_all((a, op, b), ignore=list('*<>')))
+
+        elif key == 'if-then':
+            condition, then = values
+            if not run:
+                raise NotImplementedError()
+
+            result = self.run_commands_new(condition, run=run)
+
+            if to_bool(result):
+                return self.run_commands_new(then, run=run)
+            return ''
+
         else:
             0
 
@@ -1212,6 +1241,10 @@ def is_function_definition(terms: List[str]) -> bool:
         _f, first, *_, last = terms
 
     return first.startswith('(') and last.endswith(')')
+
+
+def to_bool(line: str) -> bool:
+    return TRUE if line != FALSE else FALSE
 
 
 def is_public(key: str) -> bool:

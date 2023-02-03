@@ -164,7 +164,7 @@ def concat_empty_container(items):
     raise TypeError()
 
 
-def quote_all(items: List[str], ignore=[]):
+def quote_all(items: List[str], ignore=[]) -> Iterable[str]:
     for item in items:
         item = str(item)
         if item in ignore:

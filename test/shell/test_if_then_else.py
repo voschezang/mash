@@ -25,7 +25,7 @@ def test_shell_if_then():
     assert catch_output('if echo 1 |> echo then 2', shell=shell) == '2'
     assert catch_output('if echo "" |> echo then 2', shell=shell) == ''
 
-    assert catch_output('if 10 echo then 2 |> echo 1', shell=shell) == '1 2'
+    assert catch_output('if 10 then 2 |> echo 1', shell=shell) == '1 2'
     assert catch_output('if "" then 2 |> echo 1', shell=shell) == ''
 
 
