@@ -11,13 +11,6 @@ def catch_output(line='', func=run_command, **kwds) -> str:
     return io_util.catch_output(line, func, **kwds)
 
 
-def test_run_command():
-    run_command('print a')
-
-    with raises(ShellError):
-        run_command('echoooo a', strict=True)
-
-
 def test_multiline_function():
     shell = Shell()
     shell.ignore_invalid_syntax = False

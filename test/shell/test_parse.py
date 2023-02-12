@@ -158,6 +158,17 @@ def test_parse_if_else():
     assert right == '3'
 
 
+def test_parse_if_with_colons():
+    line = 'if 1 then print a; print b'
+    result = parse(line)
+    assert result[0] == 'lines'
+    assert result[1][0][0] == 'if-then'
+    assert result[1][0][1] == '1'
+    assert result[1][0][2][0] == 'list'
+    assert result[1][0][2][1] == ['print', 'a']
+    assert result[1][1][1] == ['print', 'b']
+
+
 def test_parse_if_then_multiline():
     text = """
 

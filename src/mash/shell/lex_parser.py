@@ -233,6 +233,7 @@ def parse(text, init=True):
 
     def p_newlines_empty(p):
         'lines : BREAK'
+        # TODO handle `indent expr ; expr`
         p[0] = ('lines', [])
 
     def p_newlines_suffix(p):
@@ -320,14 +321,14 @@ def parse(text, init=True):
         p[0] = ('if-then', cond, true)
 
     def p_logical_bin(p):
-        """expression : basic_expression AND expression
-                      | basic_expression OR expression
+        """expression : expression AND expression
+                      | expression OR expression
         """
         # TODO use flat tree any/all (or, a, b, c) = any : e OR any  | e OR e
         p[0] = ('logic', p[2], p[1], p[3])
 
     def p_logical_not(p):
-        'expression : NOT expression'
+        'expression : NOT basic_expression'
         p[0] = ('not', p[2])
 
     def p_pipe_py(p):
