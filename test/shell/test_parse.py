@@ -215,6 +215,8 @@ def test_parse_function():
 f (x): 
     if x == 1 then return 2
     return x + 1
+
+print outer 
     """
     results = parse(text)[1]
     assert results[0][0] == 'define-function'
@@ -228,6 +230,9 @@ f (x):
     assert results[1][2][1][0] == 'binary-expression'
     assert results[1][2][2] == ('return', '2')
     assert results[2][2][0] == 'return'
+    # non-indented code
+    assert results[3][0] == 'list'
+    assert results[3][1] == ['print', 'outer']
 
 
 def test_parse_bash_pipe():

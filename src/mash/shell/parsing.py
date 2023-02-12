@@ -114,6 +114,7 @@ def expand_variables(terms: List[str], env: dict,
     ```
     """
     for v in terms:
+        v = str(v)
         matches = match_words(v, prefix=r'\$')
         if matches:
             for match in matches:

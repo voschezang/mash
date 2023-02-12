@@ -271,6 +271,10 @@ def parse(text, init=True):
         'definition : METHOD LBRACE basic_expression RBRACE DEFINE_FUNCTION expression'
         p[0] = ('define-inline-function', p[1], p[3], p[6])
 
+    def p_def_inline_function_constant(p):
+        'definition : METHOD LBRACE RBRACE DEFINE_FUNCTION expression'
+        p[0] = ('define-inline-function', p[1], '', p[5])
+
     def p_def_function(p):
         'definition : METHOD LBRACE basic_expression RBRACE DEFINE_FUNCTION'
         p[0] = ('define-function', p[1], p[3])

@@ -515,6 +515,11 @@ class BaseShell(Cmd):
             items = values[0]
             k = items[0]
             if run and self.is_function(k):
+                # TODO expand vars in other branches as well
+                items = list(expand_variables(items, self.env,
+                                              self.completenames_options,
+                                              self.ignore_invalid_syntax))
+
                 line = ' '.join(quote_all(items, ignore='*'))
 
                 return self.pipe_cmd_py(line, prev_result)
@@ -607,28 +612,6 @@ class BaseShell(Cmd):
             next = self.pipe_cmd_sh(line, prev, delimiter=op)
             return next
 
-        # elif key == 'seq':
-        #     _seq_type, *values = values
-        #     if len(values) == 0:
-        #         return
-
-        #     values = [self.run_commands_new(v) for v in values]
-        #     items = []
-        #     for v in values:
-        #         if isinstance(v, list):
-        #             items.extend(v)
-        #         else:
-        #             items.append(v)
-
-        #     values = items
-        #     k = values[0]
-
-        #     if run and self.is_function(k):
-        #         line = ' '.join(values)
-        #         return self.pipe_cmd_py(line, prev_result)
-
-        #     return values
-
         elif key == 'break':
             _, a, b = ast
             a = self.run_commands_new(a, prev_result, run=True)
@@ -679,6 +662,24 @@ class BaseShell(Cmd):
                 return self.run_commands_new(then, run=run)
             return ''
 
+        elif key == 'define-inline-function':
+            f, args, body = values
+            if args:
+                args = self.run_commands_new(args)
+
+            body = self.run_commands_new(body)
+            if isinstance(body, str):
+                line = body
+            else:
+                if isinstance(body, Term):
+                    body = [body]
+
+                line = ' '.join(quote_all(body, ignore='*'))
+
+            self.env[f] = InlineFunction(line, *args, func_name=f)
+
+        elif key == 'define-function':
+            method, args = values
         else:
             0
 
