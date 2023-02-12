@@ -515,6 +515,8 @@ class BaseShell(Cmd):
             items = values[0]
             k = items[0]
             if run and self.is_function(k):
+                # TODO if self.is_inline_function(func_name): ...
+
                 # TODO expand vars in other branches as well
                 items = list(expand_variables(items, self.env,
                                               self.completenames_options,
@@ -590,10 +592,15 @@ class BaseShell(Cmd):
             if op == '|>':
                 next = self.run_commands_new(b, prev, run=run)
             elif op == '>>=':
-                assert isinstance(b, str) or isinstance(b, Term)
                 # monadic bind
                 # https://en.wikipedia.org/wiki/Monad_(functional_programming)
-                line = f'map {b}'
+
+                if isinstance(b, str) or isinstance(b, Term):
+                    line = f'map {b}'
+                else:
+                    items = ['map'] + self.run_commands_new(b, '')
+                    line = ' '.join(quote_all(items, ignore=['*', '$']))
+
                 return self.pipe_cmd_py(line, prev)
 
             else:
@@ -667,16 +674,16 @@ class BaseShell(Cmd):
             if args:
                 args = self.run_commands_new(args)
 
-            body = self.run_commands_new(body)
-            if isinstance(body, str):
-                line = body
-            else:
-                if isinstance(body, Term):
-                    body = [body]
+            # body = self.run_commands_new(body)
+            # if isinstance(body, str):
+            #     line = body
+            # else:
+            #     if isinstance(body, Term):
+            #         body = [body]
 
-                line = ' '.join(quote_all(body, ignore='*'))
+            #     line = ' '.join(quote_all(body, ignore='*'))
 
-            self.env[f] = InlineFunction(line, *args, func_name=f)
+            self.env[f] = InlineFunction(body, *args, func_name=f)
 
         elif key == 'define-function':
             method, args = values
@@ -1143,6 +1150,9 @@ class BaseShell(Cmd):
             for i, k in enumerate(f.args):
                 # quote item to preserve `\n`
                 self.env[k] = shlex.quote(args[i])
+
+            if f.inner == []:
+                return self.run_commands_new(f.command, run=True)
 
             for line in f.inner:
                 self.onecmd(line, print_result=False)

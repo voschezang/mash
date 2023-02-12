@@ -70,14 +70,14 @@ def test_inline_function_with_args():
 def test_inline_function_with_pipe():
     shell = Shell()
 
-    run_command('f (x): print x |> print', shell=shell)
+    run_command('f (x): print $x |> print', shell=shell)
     assert catch_output('f 100', shell=shell) == '100'
 
     run_command('f (x): math 1 + 2 |> echo result is', shell=shell)
     assert catch_output('f 100', shell=shell) == 'result is 3'
 
     run_command('f (x): math 1 + 2 |> echo result "=" ', shell=shell)
-    assert catch_output('f 100', shell=shell) == 'result "=" 3'
+    assert catch_output('f 100', shell=shell) == 'result = 3'
 
 
 def test_inline_function_with_macros():
@@ -92,7 +92,7 @@ def test_inline_function_with_map():
     shell = Shell()
     shell.ignore_invalid_syntax = False
 
-    line = 'f (n) : range n >>= echo - $ -'
+    line = 'f (n) : range $n >>= echo - $ -'
     run_command(line, shell=shell)
     line = 'f 3'
     assert catch_output('f 3', shell=shell) == '- 0 -\n- 1 -\n- 2 -'

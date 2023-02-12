@@ -199,42 +199,6 @@ outer = c
     assert results[4][1:] == ('=', 'outer', 'c')
 
 
-def test_parse_inline_function():
-    text = """
-f (x y): x + y
-    """
-    result = parse(text)[1]
-    assert result[0][0] == 'define-inline-function'
-    assert result[0][1] == 'f'
-    assert result[0][2] == ('list', ['x', 'y'])
-    assert result[0][3] == ('list', ['x', '+', 'y'])
-
-
-def test_parse_function():
-    text = """
-f (x): 
-    if x == 1 then return 2
-    return x + 1
-
-print outer 
-    """
-    results = parse(text)[1]
-    assert results[0][0] == 'define-function'
-    assert results[0][1] == 'f'
-    assert results[0][2] == 'x'
-    assert results[1][0] == 'indent'
-    assert results[1][1] == (4, 0)
-    assert results[2][0] == 'indent'
-    assert results[2][1] == (4, 0)
-    assert results[1][2][0] == 'if-then'
-    assert results[1][2][1][0] == 'binary-expression'
-    assert results[1][2][2] == ('return', '2')
-    assert results[2][2][0] == 'return'
-    # non-indented code
-    assert results[3][0] == 'list'
-    assert results[3][1] == ['print', 'outer']
-
-
 def test_parse_bash_pipe():
     result = parse_line('print a | echo')
     assert result[0] == 'bash'
@@ -276,6 +240,53 @@ def test_parse_pipes_with_assign():
     line = 'echo a |> echo b =='
     result = io_util.catch_output(line, parse)
     assert 'Syntax error' in result
+
+
+def test_parse_inline_function():
+    text = """
+f (x y): x + y
+    """
+    result = parse_line(text)
+    assert result[0] == 'define-inline-function'
+    assert result[1] == 'f'
+    assert result[2] == ('list', ['x', 'y'])
+    assert result[3] == ('list', ['x', '+', 'y'])
+
+
+def test_parse_inline_function_with_pipe():
+    text = 'f (x y): echo x |> echo'
+    result = parse_line(text)
+    assert result[0] == 'define-inline-function'
+    assert result[1] == 'f'
+    assert result[2][1] == ['x', 'y']
+    assert result[3][0] == 'pipe'
+    assert result[3][2][1] == ['echo', 'x']
+    assert result[3][3] == 'echo'
+
+
+def test_parse_function():
+    text = """
+f (x): 
+    if $x == 1 then return 2
+    return $x + 1
+
+print outer 
+    """
+    results = parse(text)[1]
+    assert results[0][0] == 'define-function'
+    assert results[0][1] == 'f'
+    assert results[0][2] == 'x'
+    assert results[1][0] == 'indent'
+    assert results[1][1] == (4, 0)
+    assert results[2][0] == 'indent'
+    assert results[2][1] == (4, 0)
+    assert results[1][2][0] == 'if-then'
+    assert results[1][2][1][0] == 'binary-expression'
+    assert results[1][2][2] == ('return', '2')
+    assert results[2][2][0] == 'return'
+    # non-indented code
+    assert results[3][0] == 'list'
+    assert results[3][1] == ['print', 'outer']
 
 
 def test_parse_math():

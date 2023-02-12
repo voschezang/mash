@@ -90,24 +90,28 @@ An environment is a key-value map.
 
 ### Functions
 
-| Example                               | Description                                              |
-| ------------------------------------- | -------------------------------------------------------- |
-| `f (x): x`                            | Identity function. Echo the input.                       |
-| `triple (i): i i i`                   | Repeat a term.                                           |
-| `add (a b): math a + b`               | Arithmetic.                                              |
-| `f (x): math x + $a`                  | Combine positional arguments with environment variables. |
-| `powers (n): range n >>= math $ ** 2` | A function that iterates over a loop.                    |
-| `f (n): range n |> reduce sum 0`      | Aggregate a sequence using a reduction operator.         |
+| Example                                | Description                                              |
+| -------------------------------------- | -------------------------------------------------------- |
+| `f (x): $x`                            | Identity function. Echo the input.                       |
+| `triple (i): $i $i $i`                 | Repeat a term.                                           |
+| `add (a b): math $a + $b`              | Arithmetic.                                              |
+| `f (x): math $x + $a`                  | Combine positional arguments with environment variables. |
+| `powers (n): range $n >>= math $ ** 2` | A function that iterates over a loop.                    |
+| `f (n): range $n |> reduce sum 0`      | Aggregate a sequence using a reduction operator.         |
 
 #### Multiline Functions
 
-```python
+Using the `return` keyword.
+
+```bash
 b = 10 # a global variable
 
 f (x):
     # a magic formula
-    x <- math x * 3 # a local variable
-    return math a * x + b
+    x <- math $x * 3 # a local variable
+    if x > 2:
+        return $x
+    return math 2 * $x + $b
 
 # call the function with argument '10'
 f 10
