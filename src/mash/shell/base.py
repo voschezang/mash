@@ -511,6 +511,20 @@ class BaseShell(Cmd):
             return self.run_commands_new(Term(ast), prev_result, run=run)
 
         key, *values = ast
+
+        if DEFINE_FUNCTION in self.locals:
+            # self._extend_inline_function_definition(line)
+            if key == 'indent':
+                # TODO compare indent width
+                _, _width, value = ast
+                if value is not None:
+                    self.locals[DEFINE_FUNCTION].inner.append(value)
+                return
+            elif key != 'lines':
+                f = self.locals[DEFINE_FUNCTION]
+                self.env[f.func_name] = f
+                self.locals.rm(DEFINE_FUNCTION)
+
         if key == 'list':
             items = values[0]
             k = items[0]
@@ -535,6 +549,11 @@ class BaseShell(Cmd):
             items = values[0]
             for item in items:
                 result = self.run_commands_new(item, run=run)
+
+                # TODO if isinstance(result, tuple):
+                # return ('return', result)
+                if isinstance(result, tuple) and result[0] == 'return':
+                    return result[1]
 
                 if isinstance(result, list):
                     result = ' '.join(quote_all(result))
@@ -632,6 +651,8 @@ class BaseShell(Cmd):
         elif key == 'indent':
             # TODO
             _, _width, value = ast
+            if value is None:
+                return
             return self.run_commands_new(value, prev_result, run=True)
 
         elif key == 'math':
@@ -674,19 +695,23 @@ class BaseShell(Cmd):
             if args:
                 args = self.run_commands_new(args)
 
-            # body = self.run_commands_new(body)
-            # if isinstance(body, str):
-            #     line = body
-            # else:
-            #     if isinstance(body, Term):
-            #         body = [body]
-
-            #     line = ' '.join(quote_all(body, ignore='*'))
+            if not run:
+                raise NotImplementedError()
 
             self.env[f] = InlineFunction(body, *args, func_name=f)
 
         elif key == 'define-function':
-            method, args = values
+            f, args = values
+            if not run:
+                raise NotImplementedError()
+
+            # TODO use line_indent=self.locals[RAW_LINE_INDENT]
+            self.locals.set(DEFINE_FUNCTION,
+                            InlineFunction('', *args, func_name=f))
+        elif key == 'return':
+            line = values[0]
+            result = self.run_commands_new(line, prev_result, run=run)
+            return ('return', result)
         else:
             0
 
@@ -1154,22 +1179,35 @@ class BaseShell(Cmd):
             if f.inner == []:
                 return self.run_commands_new(f.command, run=True)
 
-            for line in f.inner:
-                self.onecmd(line, print_result=False)
+            # TODO rm impossible state
+            assert f.command == ''
 
-                if RETURN in self.locals:
-                    if self.locals[RETURN] is None:
-                        raise ShellError('invalid state')
-                    return self.locals[RETURN]
+            result = ''
+            for ast in f.inner:
+                result = self.run_commands_new(ast, prev_result=result,
+                                               run=True)
+                if isinstance(result, tuple) and result[0] == 'return':
+                    return result[1]
 
-            terms = [term for term in f.command.split(' ') if term != '']
-            if not f.multiline:
-                terms = list(translate_terms(terms, translations))
+            if isinstance(result, tuple) and result[0] == 'return':
+                return result[1]
 
-            # don't re-quote terms to maintain newlines
-            result = self.eval(terms, quote=False)
+        #     for line in f.inner:
+        #         self.onecmd(line, print_result=False)
 
-        return result
+        #         if RETURN in self.locals:
+        #             if self.locals[RETURN] is None:
+        #                 raise ShellError('invalid state')
+        #             return self.locals[RETURN]
+
+        #     terms = [term for term in f.command.split(' ') if term != '']
+        #     if not f.multiline:
+        #         terms = list(translate_terms(terms, translations))
+
+        #     # don't re-quote terms to maintain newlines
+        #     result = self.eval(terms, quote=False)
+
+        # return result
 
     def handle_define_inline_function(self, terms: List[str]) -> str:
         f, *args = terms

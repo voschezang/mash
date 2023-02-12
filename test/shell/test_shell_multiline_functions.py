@@ -36,7 +36,7 @@ f (x):
 print 20
     """
     # continue to extend the function definition
-    assert catch_output(cmd, shell=shell) == ''
+    assert catch_output(cmd, shell=shell) == '20'
     assert catch_output(f'f 1', shell=shell) == ''
 
     # return with too large indent should be skipped
