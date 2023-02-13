@@ -504,7 +504,8 @@ class BaseShell(Cmd):
                 elif ast.type != 'term':
                     return str(term)
 
-                raise ShellError(f'Cannot execute the function {term}')
+                # raise ShellError(f'Cannot execute the function {term}')
+                return term
             return term
 
         elif isinstance(ast, str):
@@ -527,23 +528,24 @@ class BaseShell(Cmd):
 
         if key == 'list':
             items = values[0]
+
+            # TODO expand vars in other branches as well
+            items = list(expand_variables(items, self.env,
+                                          self.completenames_options,
+                                          self.ignore_invalid_syntax))
+
             k = items[0]
             if run and self.is_function(k):
-                # TODO if self.is_inline_function(func_name): ...
-
-                # TODO expand vars in other branches as well
-                items = list(expand_variables(items, self.env,
-                                              self.completenames_options,
-                                              self.ignore_invalid_syntax))
-
+                # TODO if self.is_inline_function(k): ...
                 line = ' '.join(quote_all(items, ignore='*'))
-
                 return self.pipe_cmd_py(line, prev_result)
 
-            elif self.ignore_invalid_syntax or not run:
-                return items
+            # elif self.ignore_invalid_syntax or not run:
+            #     return items
 
-            raise ShellError(f'Cannot execute the function {k}')
+            # TODO if return
+            # raise ShellError(f'Cannot execute the function {k}')
+            return items
 
         elif key == 'lines':
             items = values[0]
@@ -574,10 +576,11 @@ class BaseShell(Cmd):
 
             elif op == LEFT_ASSIGNMENT:
                 b = self.run_commands_new(b, run=run)
+                if b is None:
+                    b = ''
+
                 if run:
-                    # self.set_env_variables(a, b)
-                    self.locals.set(LEFT_ASSIGNMENT, a)
-                    self._save_assignee('')
+                    self.set_env_variables(a, b)
                     return TRUE
                 return a, op, b
             elif op == RIGHT_ASSIGNMENT:
@@ -660,6 +663,11 @@ class BaseShell(Cmd):
             if values[0] == 'binary-expression':
                 values = values
             terms = self.run_commands_new(values)
+
+            terms = list(expand_variables(terms, self.env,
+                                          self.completenames_options,
+                                          self.ignore_invalid_syntax))
+
             line = 'math ' + ' '.join(quote_all(terms, ignore=list('*<>')))
             if run:
                 return self.pipe_cmd_py(line, prev_result)
@@ -688,7 +696,7 @@ class BaseShell(Cmd):
 
             if to_bool(result):
                 return self.run_commands_new(then, run=run)
-            return ''
+            return
 
         elif key == 'define-inline-function':
             f, args, body = values
@@ -710,7 +718,7 @@ class BaseShell(Cmd):
                             InlineFunction('', *args, func_name=f))
         elif key == 'return':
             line = values[0]
-            result = self.run_commands_new(line, prev_result, run=run)
+            result = self.run_commands_new(line, run=run)
             return ('return', result)
         else:
             0
@@ -1073,6 +1081,8 @@ class BaseShell(Cmd):
             pass
 
         if len(keys) == 1:
+            if isinstance(result, list):
+                result = ' '.join(quote_all(result))
             self.env[keys[0]] = result
         elif isinstance(result, str):
             lines = result.split('\n')
