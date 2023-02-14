@@ -261,6 +261,7 @@ class BaseShell(Cmd):
                 f'Assignments cannot be used inside other assignments: {assignee}')
 
         self.locals.set(LEFT_ASSIGNMENT, keys)
+        self.set_env_variables(keys, '')
 
         # return value must be empty to prevent side-effects in the next command
         return ''
