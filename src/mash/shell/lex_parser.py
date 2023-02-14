@@ -25,8 +25,6 @@ tokens = (
 
     'RPAREN',  # (
     'LPAREN',  # )
-    'RBRACE',
-    'LBRACE',
     'DOUBLE_QUOTED_STRING',  # "a 'b' c"
     'SINGLE_QUOTED_STRING',  # 'a\'bc'
 
@@ -36,7 +34,6 @@ tokens = (
     'WORD',
     'WORD_WITH_DOT',
     'NUMBER',  # 0123456789
-    'SCOPE'
 )
 reserved = {
     'if': 'IF',
@@ -73,45 +70,14 @@ def init_lex():
 
     t_ignore = ''
     t_ignore_COMMENT = r'\#.*'
-    t_scope_ignore = ' \t\n'
 
-    states = (('scope', 'exclusive'),)
-
-    def t_LBRACE(t):
+    def t_LPAREN(t):
         r'\('
         return t
 
-    def t_RBRACE(t):
+    def t_RPAREN(t):
         r'\)'
         return t
-
-    def t_scope(t):
-        r'\{'
-        # TODO deprecate state "scope"
-        t.lexer.scope_start = t.lexer.lexpos
-        t.lexer.begin('scope')
-        t.lexer.level = 1
-
-    def t_scope_LPAREN(t):
-        r'\{'
-        t.lexer.level += 1
-
-    def t_scope_RPAREN(t):
-        r'\}'
-        t.lexer.level -= 1
-
-        if t.lexer.level == 0:
-            t.value = t.lexer.lexdata[t.lexer.scope_start:t.lexer.lexpos-1]
-            t.type = 'SCOPE'
-            t.lexer.lineno += t.value.count('\n') + t.value.count(';')
-            t.lexer.begin('INITIAL')
-            return t
-
-    def t_scope_quotes(t):
-        r'("((\\\")|[^\""])*")' '|' r"('(?:\.|(\\\')|[^\''])*')"
-
-    def t_scope_all(t):
-        r'[^\s]'
 
     def t_BREAK(t):
         r'[\n\r]|((\;)+[\ \t]*)'
@@ -199,11 +165,6 @@ def init_lex():
         t.lexer.skip(1)
         raise ShellError(f'Illegal character: `{t.value[0]}`')
 
-    def t_scope_error(t):
-        print(f'Illegal character: `{t.value[0]}`')
-        t.lexer.skip(1)
-        raise ShellError(f'Illegal character in scope: `{t.value[0]}`')
-
     return lex.lex()
 
 
@@ -273,31 +234,25 @@ def parse(text, init=True):
         p[0] = ('indent', n, None)
 
     def p_def_inline_function(p):
-        'definition : METHOD LBRACE basic_expression RBRACE DEFINE_FUNCTION expression'
+        'definition : METHOD LPAREN basic_expression RPAREN DEFINE_FUNCTION expression'
         p[0] = ('define-inline-function', p[1], p[3], p[6])
 
     def p_def_inline_function_constant(p):
-        'definition : METHOD LBRACE RBRACE DEFINE_FUNCTION expression'
+        'definition : METHOD LPAREN RPAREN DEFINE_FUNCTION expression'
         p[0] = ('define-inline-function', p[1], '', p[5])
 
     def p_def_function(p):
-        'definition : METHOD LBRACE basic_expression RBRACE DEFINE_FUNCTION'
+        'definition : METHOD LPAREN basic_expression RPAREN DEFINE_FUNCTION'
         p[0] = ('define-function', p[1], p[3])
 
     def p_scope(p):
-        'scope : LBRACE expression RBRACE'
-        # 'scope : SCOPE'
-        # q = parse(p[1], False)
+        'scope : LPAREN expression RPAREN'
         q = p[2]
         p[0] = ('scope', q)
 
     def p_math(p):
         'expression : MATH expression'
         p[0] = ('math', p[2])
-
-    # def p_parentheses(p):
-    #     'expression : LPAREN expression RPAREN'
-    #     p[0] = p[2]
 
     def p_return(p):
         'expression : RETURN expression'
