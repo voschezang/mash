@@ -470,9 +470,6 @@ class BaseShell(Cmd):
     def run_commands_new_wrapper(self, *args, **kwds):
         try:
             result = self.run_commands_new(*args, **kwds)
-            # if isinstance(result, list):
-            #     result = ' '.join(result)
-
             return result
 
         except ShellPipeError as e:
@@ -495,6 +492,15 @@ class BaseShell(Cmd):
         print_result = True
         if isinstance(ast, Term):
             term = ast
+
+            if ast.type == 'quoted string':
+                # TODO consider other delimiters
+                items = ast.split(' ')
+                items = list(expand_variables(items, self.env,
+                                              self.completenames_options,
+                                              self.ignore_invalid_syntax))
+                return ' '.join(items)
+
             if run:
                 if self.is_function(term):
                     return self.pipe_cmd_py(term, prev_result)
@@ -502,7 +508,7 @@ class BaseShell(Cmd):
                     k = ast[1:]
                     return self.env[k]
                 elif ast.type != 'term':
-                    return str(term)
+                    return str(ast)
 
                 # raise ShellError(f'Cannot execute the function {term}')
                 return term
@@ -720,6 +726,17 @@ class BaseShell(Cmd):
             line = values[0]
             result = self.run_commands_new(line, run=run)
             return ('return', result)
+
+        elif key == '!':
+            inner = self.run_commands_new(values[0])
+            if isinstance(inner, str) or isinstance(inner, Term):
+                inner = [str(inner)]
+            if prev_result:
+                inner += [prev_result]
+            line = ' '.join(inner)
+            if run:
+                return self.pipe_cmd_sh(line, '', delimiter=None)
+            return line
         else:
             0
 
@@ -1005,13 +1022,14 @@ class BaseShell(Cmd):
         """
         May raise subprocess.CalledProcessError
         """
-        assert delimiter in delimiters.bash
+        assert delimiter in delimiters.bash or delimiter is None
 
         if delimiter == '>-':
             delimiter = '>'
 
-        # pass last result to stdin
-        line = f'echo {shlex.quote(prev_result)} {delimiter} {line}'
+        if delimiter is not None:
+            # pass last result to stdin
+            line = f'echo {shlex.quote(prev_result)} {delimiter} {line}'
 
         logging.info(f'Cmd = {line}')
 
@@ -1070,7 +1088,7 @@ class BaseShell(Cmd):
         if result is None:
             raise ShellError(f'Missing return value in assignment: {keys}')
 
-        if isinstance(keys, str):
+        if isinstance(keys, str) or isinstance(keys, Term):
             keys = keys.split(' ')
 
         try:
@@ -1084,7 +1102,7 @@ class BaseShell(Cmd):
             if isinstance(result, list):
                 result = ' '.join(quote_all(result))
             self.env[keys[0]] = result
-        elif isinstance(result, str):
+        elif isinstance(result, str) or isinstance(result, Term):
             lines = result.split('\n')
             terms = result.split(' ')
             if len(lines) == len(keys):

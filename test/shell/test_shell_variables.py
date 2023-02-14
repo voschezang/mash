@@ -30,9 +30,9 @@ def test_set_variable_infix_multiple_values():
 
     run_command(f'{k} = {v}', shell=shell)
     assert k in shell.env
-    assert shell.env[k] == v
+    assert shell.env[k] == '1 2'
 
-    assert catch_output(f'echo ${k}', shell=shell) == v
+    assert catch_output(f'echo ${k}', shell=shell) == "'1 2'"
 
 
 def test_set_variable_infix_multiple_keys():

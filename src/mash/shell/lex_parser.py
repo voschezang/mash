@@ -10,6 +10,7 @@ lexer = None
 
 tokens = (
     'BASH',  # | >>
+    'SHELL',  # !
     'PIPE',  # |>
 
     'BREAK',  # \n ;
@@ -189,6 +190,10 @@ def init_lex():
         r'[\w\d\+\-\*/%&\~]+'
         return t
 
+    def t_SHELL(t):
+        r'\!'
+        return t
+
     def t_error(t):
         print(f'Illegal character: `{t.value[0]}`')
         t.lexer.skip(1)
@@ -335,6 +340,10 @@ def parse(text, init=True):
         'expression : NOT basic_expression'
         p[0] = ('not', p[2])
 
+    def p_logical_not(p):
+        'expression : SHELL basic_expression'
+        p[0] = ('!', p[2])
+
     def p_pipe_py(p):
         'expression : expression PIPE expression'
         p[0] = ('pipe', p[2], p[1], p[3])
@@ -413,10 +422,12 @@ def parse(text, init=True):
         'value : VARIABLE'
         p[0] = Term(p[1], 'variable')
 
+    def p_value_literal_string(p):
+        'value : SINGLE_QUOTED_STRING'
+        p[0] = Term(p[1], 'literal string')
+
     def p_value_string(p):
-        """value : SINGLE_QUOTED_STRING
-                 | DOUBLE_QUOTED_STRING
-        """
+        'value : DOUBLE_QUOTED_STRING'
         p[0] = Term(p[1], 'quoted string')
 
     def p_error(p):
