@@ -41,6 +41,12 @@ def test_parse_term():
     assert result[2].type == 'wildcard'
 
 
+def test_parse_range():
+    line = 'pre{1..3}post'
+    result = parse_line(line)
+    assert result == line
+
+
 def test_parse_assign():
     key, op, left, right = parse_line('a <- 10')
     assert key == 'assign'

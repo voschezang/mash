@@ -36,6 +36,7 @@ tokens = (
     'WORD',
     'WORD_WITH_DOT',
     'WILDCARD',
+    'WILDCARD_RANGE',
     'NUMBER',  # 0123456789
 )
 reserved = {
@@ -125,7 +126,13 @@ def init_lex():
         # TODO use `t_ignore` to improve performance
 
     def t_WILDCARD(t):
-        r'[\w\d\-]*[\*\?\[][\w\d\-\*\?\[\]]+'
+        r'[\w\d\-]*[\*\?\[][\w\d\-\*\?\[\]]*'
+        # TODO verify matching []
+        return t
+
+    def t_WILDCARD_RANGE(t):
+        r'[\w\d\-]*\{\d\.\.\d}[\w\d\-]*'
+        # TODO verify matching []
         return t
 
     def t_WORD_WITH_DOT(t):
@@ -382,6 +389,10 @@ def parse(text, init=True):
     def p_value_wildcard(p):
         'value : WILDCARD'
         p[0] = Term(p[1], 'wildcard')
+
+    def p_value_wildcard_range(p):
+        'value : WILDCARD_RANGE'
+        p[0] = Term(p[1], 'range')
 
     def p_value_number(p):
         'value : NUMBER'

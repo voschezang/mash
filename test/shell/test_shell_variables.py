@@ -239,7 +239,7 @@ def test_variable_expansion_regex():
     assert catch_output('echo *', shell=shell) == f"'{all}'"
 
     assert catch_output('echo ab?', shell=shell) == 'abc'
-    assert catch_output('echo ???b', shell=shell) == '???b'
+    assert catch_output('echo ???b', shell=shell) == "'???b'"
     assert catch_output('echo a*', shell=shell) == 'abc'
     assert catch_output('echo [a-z]*123', shell=shell) == 'prefix123'
 
@@ -248,12 +248,13 @@ def test_variable_expansion_range():
     shell = Shell()
     # assert catch_output('echo {1..3}', shell=shell) == '1 2 3'
     run_command('x = 3', shell=shell)
-    assert catch_output('print "{1..$x}"', shell=shell) == '1 2 3'
+    assert catch_output('print "{1..$x}"', shell=shell) == "'1 2 3'"
 
     # TODO this should result in `{1..3`
-    assert catch_output("echo '{1..3}'", shell=shell) == '1 2 3'
+    assert catch_output("echo '{1..3}'", shell=shell) == "'1 2 3'"
     # TODO this should result in `{1..3`
-    assert catch_output('echo \{1..3\}', shell=shell) == '1 2 3'
+    with raises(ShellError):
+        assert catch_output('echo \{1..3\}', shell=shell) == "'1 2 3'"
 
 
 def test_variable_assignment_with_pipes():
