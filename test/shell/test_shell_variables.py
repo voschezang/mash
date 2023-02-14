@@ -236,7 +236,7 @@ def test_variable_expansion_regex():
     shell.completenames_options = ['abc', 'prefix123']
 
     all = ' '.join(shell.completenames_options)
-    assert catch_output('echo *', shell=shell) == all
+    assert catch_output('echo *', shell=shell) == f"'{all}'"
 
     assert catch_output('echo ab?', shell=shell) == 'abc'
     assert catch_output('echo ???b', shell=shell) == '???b'

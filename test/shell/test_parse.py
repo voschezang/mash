@@ -29,6 +29,18 @@ def test_parse_cmds():
     assert result[1][2][1] == ['echo', 'c']
 
 
+def test_parse_term():
+    line = 'abc d-?e* [a-z]10'
+    key, result = parse_line(line)
+    assert key == 'list'
+    assert result[0] == 'abc'
+    assert result[0].type == 'method'
+    assert result[1] == 'd-?e*'
+    assert result[1].type == 'wildcard'
+    assert result[2] == '[a-z]10'
+    assert result[2].type == 'wildcard'
+
+
 def test_parse_assign():
     key, op, left, right = parse_line('a <- 10')
     assert key == 'assign'
@@ -122,10 +134,13 @@ x = 2'"""
 
 
 def test_parse_indent():
-    line = '    echo'
+    # TODO handle double spaces
+    # line = '    echo   c'
+    line = '    echo b c'
     result = parse_line(line)
     assert result[0] == 'indent'
-    assert result[2] == 'echo'
+    assert result[2][0] == 'list'
+    assert result[2][1] == ['echo', 'b', 'c']
 
 
 def test_parse_indent_multiline():

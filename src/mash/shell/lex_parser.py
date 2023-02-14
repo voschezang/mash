@@ -25,6 +25,8 @@ tokens = (
 
     'RPAREN',  # (
     'LPAREN',  # )
+    # 'RBRACE',  # [
+    # 'LBRACE',  # ]
     'DOUBLE_QUOTED_STRING',  # "a 'b' c"
     'SINGLE_QUOTED_STRING',  # 'a\'bc'
 
@@ -33,6 +35,7 @@ tokens = (
     'VARIABLE',  # $x
     'WORD',
     'WORD_WITH_DOT',
+    'WILDCARD',
     'NUMBER',  # 0123456789
 )
 reserved = {
@@ -66,7 +69,6 @@ def init_lex():
 
     t_SPECIAL = r'\$'
     t_VARIABLE = r'\$[a-zA-Z_][a-zA-Z_0-9]*'
-    # t_WILDCARD = r'[\w\d\*\?]+'
 
     t_ignore = ''
     t_ignore_COMMENT = r'\#.*'
@@ -78,6 +80,14 @@ def init_lex():
     def t_RPAREN(t):
         r'\)'
         return t
+
+    # def t_LBRACE(t):
+    #     r'\{'
+    #     return t
+
+    # def t_RBRACE(t):
+    #     r'\}'
+    #     return t
 
     def t_BREAK(t):
         r'[\n\r]|((\;)+[\ \t]*)'
@@ -113,6 +123,10 @@ def init_lex():
     def t_SPACE(t):
         r'\ '
         # TODO use `t_ignore` to improve performance
+
+    def t_WILDCARD(t):
+        r'[\w\d\-]*[\*\?\[][\w\d\-\*\?\[\]]+'
+        return t
 
     def t_WORD_WITH_DOT(t):
         r'([\w\d]+\.[\.\w\d]*)|([\w\d]*\.[\.\w\d]+)'
@@ -364,6 +378,10 @@ def parse(text, init=True):
                 | scope
         """
         p[0] = p[1]
+
+    def p_value_wildcard(p):
+        'value : WILDCARD'
+        p[0] = Term(p[1], 'wildcard')
 
     def p_value_number(p):
         'value : NUMBER'
