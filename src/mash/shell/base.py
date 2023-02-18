@@ -579,8 +579,7 @@ class BaseShell(Cmd):
                     return self.eval(['math', a, op, b])
                 return a, op, b
 
-            else:
-                raise ValueError('??')
+            raise NotImplementedError()
 
         elif key == 'pipe':
             op, a, b = values
