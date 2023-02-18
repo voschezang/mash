@@ -698,7 +698,7 @@ class BaseShell(Cmd):
                 return self.pipe_cmd_sh(line, '', delimiter=None)
             return line
         else:
-            0
+            raise NotImplementedError()
 
     def run_handle_list(self, values, prev_result: str, run: bool):
         # list = sequence of terms
@@ -763,7 +763,6 @@ class BaseShell(Cmd):
             if print_result and result is not None:
                 if result or not self.locals[IF]:
                     print(result)
-
 
     def run_handle_assign(self, values, prev_result, run):
         op, a, b = values
