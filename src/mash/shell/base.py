@@ -557,91 +557,11 @@ class BaseShell(Cmd):
                 self.locals.rm(DEFINE_FUNCTION)
 
         if key == 'list':
-            # list = sequence of terms
-
-            items = values[0]
-
-            if len(items) >= 2 and run:
-                k, *args = items
-                if k == 'map':
-                    args = ('list', list(args))
-                    return self.map2(args, prev_result)
-                elif k in ['reduce', 'foldr']:
-                    return self.foldr2(args, prev_result)
-
-            # TODO expand vars in other branches as well
-            wildcard_value = ''
-            if '$' in items:
-                wildcard_value = prev_result
-                prev_result = ''
-
-            items = list(expand_variables(items, self.env,
-                                          self.completenames_options,
-                                          self.ignore_invalid_syntax,
-                                          wildcard_value))
-
-            k = items[0]
-            if run:
-                if k == 'echo':
-                    args = items[1:]
-                    if prev_result:
-                        args += [prev_result]
-                    line = ' '.join(str(arg) for arg in args)
-                    return line
-
-            if run and self.is_function(k):
-                # TODO if self.is_inline_function(k): ...
-                line = ' '.join(quote_all(items, ignore='*$'))
-                return self.pipe_cmd_py(line, prev_result)
-
-            # elif self.ignore_invalid_syntax or not run:
-            #     return items
-
-            # TODO if return
-            # raise ShellError(f'Cannot execute the function {k}')
-            if prev_result:
-                return items + [prev_result]
-            return items
-
+            return self.run_handle_list(values, prev_result, run)
         elif key == 'lines':
-            items = values[0]
-            for item in items:
-                result = self.run_commands_new(item, run=run)
-
-                # TODO if isinstance(result, tuple):
-                # return ('return', result)
-                if isinstance(result, tuple) and result[0] == 'return':
-                    return result[1]
-
-                if isinstance(result, list):
-                    result = ' '.join(quote_all(result))
-
-                if print_result and result is not None:
-                    if result or not self.locals[IF]:
-                        print(result)
-
+            return self.run_handle_lines(values, prev_result, run, print_result)
         elif key == 'assign':
-            op, a, b = values
-            a = self.run_commands_new(a)
-            if op == '=':
-                b = self.run_commands_new(b)
-                if run:
-                    self.set_env_variables(a, b)
-                    return TRUE
-                return a, op, b
-
-            elif op == LEFT_ASSIGNMENT:
-                b = self.run_commands_new(b, run=run)
-                if b is None:
-                    b = ''
-
-                if run:
-                    self.set_env_variables(a, b)
-                    return TRUE
-                return a, op, b
-            elif op == RIGHT_ASSIGNMENT:
-                raise NotImplementedError(RIGHT_ASSIGNMENT)
-
+            return self.run_handle_assign(values, prev_result, run)
         elif key == 'binary-expression':
             op, a, b = values
             b = self.run_commands_new(b, run=run)
@@ -779,6 +699,93 @@ class BaseShell(Cmd):
             return line
         else:
             0
+
+    def run_handle_list(self, values, prev_result: str, run: bool):
+        # list = sequence of terms
+
+        items = values[0]
+
+        if len(items) >= 2 and run:
+            k, *args = items
+            if k == 'map':
+                args = ('list', list(args))
+                return self.map2(args, prev_result)
+            elif k in ['reduce', 'foldr']:
+                return self.foldr2(args, prev_result)
+
+        # TODO expand vars in other branches as well
+        wildcard_value = ''
+        if '$' in items:
+            wildcard_value = prev_result
+            prev_result = ''
+
+        items = list(expand_variables(items, self.env,
+                                      self.completenames_options,
+                                      self.ignore_invalid_syntax,
+                                      wildcard_value))
+
+        k = items[0]
+        if run:
+            if k == 'echo':
+                args = items[1:]
+                if prev_result:
+                    args += [prev_result]
+                line = ' '.join(str(arg) for arg in args)
+                return line
+
+        if run and self.is_function(k):
+            # TODO if self.is_inline_function(k): ...
+            line = ' '.join(quote_all(items, ignore='*$'))
+            return self.pipe_cmd_py(line, prev_result)
+
+        # elif self.ignore_invalid_syntax or not run:
+        #     return items
+
+        # TODO if return
+        # raise ShellError(f'Cannot execute the function {k}')
+        if prev_result:
+            return items + [prev_result]
+        return items
+
+    def run_handle_lines(self, values, prev_result: str, run: bool, print_result: bool):
+        items = values[0]
+        for item in items:
+            result = self.run_commands_new(item, run=run)
+
+            # TODO if isinstance(result, tuple):
+            # return ('return', result)
+            if isinstance(result, tuple) and result[0] == 'return':
+                return result[1]
+
+            if isinstance(result, list):
+                result = ' '.join(quote_all(result))
+
+            if print_result and result is not None:
+                if result or not self.locals[IF]:
+                    print(result)
+
+
+    def run_handle_assign(self, values, prev_result, run):
+        op, a, b = values
+        a = self.run_commands_new(a)
+        if op == '=':
+            b = self.run_commands_new(b)
+            if run:
+                self.set_env_variables(a, b)
+                return TRUE
+            return a, op, b
+
+        elif op == LEFT_ASSIGNMENT:
+            b = self.run_commands_new(b, run=run)
+            if b is None:
+                b = ''
+
+            if run:
+                self.set_env_variables(a, b)
+                return TRUE
+            return a, op, b
+        elif op == RIGHT_ASSIGNMENT:
+            raise NotImplementedError(RIGHT_ASSIGNMENT)
 
     def onecmd2(self, line: str, print_result=True) -> bool:
         """Parse and run `line`.
