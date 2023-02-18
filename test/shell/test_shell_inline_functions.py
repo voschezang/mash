@@ -14,7 +14,7 @@ def test_inline_function_simple():
     shell.ignore_invalid_syntax = False
 
     # identity
-    run_command('f (x): x', shell=shell)
+    run_command('f (x): $x', shell=shell)
     assert catch_output('f 100', shell=shell) == '100'
 
     # too many arguments

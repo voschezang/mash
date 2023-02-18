@@ -172,7 +172,7 @@ class Shell(BaseShell):
 
         try:
             result = eval(line)
-        except (NameError, SyntaxError) as e:
+        except (NameError, SyntaxError, TypeError) as e:
             raise ShellError(f'eval failed: {line}') from e
 
         # SMELL avoid side-effects on top of a return type

@@ -353,6 +353,15 @@ class BaseShell(Cmd):
 
         return acc
 
+    def foldr2(self, commands: List[str], prev_results: str, delimiter='\n'):
+        items = prev_results.split(delimiter)
+        k, acc = commands
+        for item in items:
+            command = [k, acc, item]
+            line = ' '.join(quote_all(command, ignore='*$'))
+            acc = self.pipe_cmd_py(line, '')
+        return acc
+
     def do_map(self, args: str, delimiter='\n'):
         """Apply a function to every line.
         If `$` is present, then each line from stdin is inserted there.
@@ -542,9 +551,18 @@ class BaseShell(Cmd):
                                           self.ignore_invalid_syntax))
 
             k = items[0]
+            if run:
+                args = items[1:]
+                # TODO refactor and ensure consistency
+                if k == 'reduce':
+                    return self.foldr2(args, prev_result)
+                elif k == 'echo':
+                    line = ' '.join(args)
+                    return line
+
             if run and self.is_function(k):
                 # TODO if self.is_inline_function(k): ...
-                line = ' '.join(quote_all(items, ignore='*'))
+                line = ' '.join(quote_all(items, ignore='*$'))
                 return self.pipe_cmd_py(line, prev_result)
 
             # elif self.ignore_invalid_syntax or not run:
@@ -625,10 +643,30 @@ class BaseShell(Cmd):
                 # https://en.wikipedia.org/wiki/Monad_(functional_programming)
 
                 if isinstance(b, str) or isinstance(b, Term):
+                    # TODO insert if $, otherwise append
+                    items = prev.split('\n')
+                    results = []
+                    for item in items:
+                        results.append(self.run_commands_new(b, item, run=run))
+                    # result = '\n'.join(results)
+                    result = '\n'.join(quote_all(results))
+                    return result
+
+                    # if self.is_function(b):
+                    #     if has_method(self, f'do_{b}'):
+                    #         self.getattr(f'do_{b}')(prev)
+                    #     if self.is_inline_function(b):
+                    #         0
+                    # or func_name in self._chars_allowed_for_char_method
+
                     line = f'map {b}'
                 else:
-                    items = ['map'] + self.run_commands_new(b, '')
-                    line = ' '.join(quote_all(items, ignore=['*', '$']))
+                    b = self.run_commands_new(b, '')
+                    if isinstance(b, str) or isinstance(b, Term):
+                        line = f'map {b}'
+                    else:
+                        items = ['map'] + b
+                        line = ' '.join(quote_all(items, ignore=['*', '$']))
 
                 return self.pipe_cmd_py(line, prev)
 
@@ -675,7 +713,7 @@ class BaseShell(Cmd):
                                           self.completenames_options,
                                           self.ignore_invalid_syntax))
 
-            line = 'math ' + ' '.join(quote_all(terms, ignore=list('*<>')))
+            line = 'math ' + ' '.join(quote_all(terms, ignore=list('*$<>')))
             if run:
                 return self.pipe_cmd_py(line, prev_result)
             return line
@@ -1203,7 +1241,8 @@ class BaseShell(Cmd):
 
             for i, k in enumerate(f.args):
                 # quote item to preserve `\n`
-                self.env[k] = shlex.quote(args[i])
+                # self.env[k] = shlex.quote(args[i])
+                self.env[k] = args[i]
 
             if f.inner == []:
                 return self.run_commands_new(f.command, run=True)
