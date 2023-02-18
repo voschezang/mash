@@ -245,20 +245,21 @@ def test_set_do_flatten():
     assert catch_output(line, shell=shell) == 'a\nb'
 
     run_command('x <- flatten a b c', shell=shell)
+    assert shell.env['x'] == 'a\nb\nc'
     line = 'echo $x $x'
-    assert catch_output(line, shell=shell) == "'a\nb\nc' 'a\nb\nc'"
+    assert catch_output(line, shell=shell) == 'a\nb\nc a\nb\nc'
 
     line = 'echo $x $x |> flatten'
-    assert catch_output(line, shell=shell) == "'a\nb\nc'\n'a\nb\nc'"
+    assert catch_output(line, shell=shell) == 'a\nb\nc\na\nb\nc'
 
 
 def test_set_do_map():
     shell = Shell()
     line = 'echo a b |> flatten |> map echo'
-    # assert catch_output(line, shell=shell, strict=True) == 'a\nb'
+    assert catch_output(line, shell=shell, strict=True) == 'a\nb'
 
     line = 'echo a b |> flatten |> map echo p $ q'
-    assert catch_output(line, shell=shell, strict=True) == 'p a q\np b q'
+    assert catch_output(line, shell=shell, strict=True) == "'p a q'\n'p b q'"
 
     line = 'range 3 |> map echo $'
     assert catch_output(line, shell=shell, strict=True) == '0\n1\n2'
@@ -270,7 +271,7 @@ def test_set_do_pipe_map():
     assert catch_output(line, shell=shell, strict=True) == 'a\nb'
 
     line = 'echo a b |> flatten >>= echo p $ q'
-    assert catch_output(line, shell=shell, strict=True) == 'p a q\np b q'
+    assert catch_output(line, shell=shell, strict=True) == "'p a q'\n'p b q'"
 
 
 def test_set_do_foreach():
@@ -284,10 +285,14 @@ def test_set_do_foreach():
 
 def test_set_map_reduce():
     shell = Shell()
+    shell.ignore_invalid_syntax = False
+
+    # note the absent $-signs in the args of `math`
     run_command('sum (a b): math a + b', shell=shell)
+    assert catch_output('sum 1 1', shell=shell) == '2'
 
     line = 'range 4 >>= math 2 * $ |> reduce sum 0 $'
-    assert catch_output(line, shell=shell, strict=True) == '12'
+    assert catch_output(line, shell=shell) == '12'
 
 
 def test_product_reduce():

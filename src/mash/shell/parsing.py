@@ -105,7 +105,8 @@ def unquote_delimiters(terms: List[str], delimiters: List[str]) -> List[str]:
 
 def expand_variables(terms: List[str], env: dict,
                      completenames_options: List[str],
-                     ignore_invalid_syntax: bool) -> Iterable[str]:
+                     ignore_invalid_syntax: bool,
+                     wildcard_value='$') -> Iterable[str]:
     """Replace variables with their values.
     E.g.
     ```sh
@@ -115,6 +116,10 @@ def expand_variables(terms: List[str], env: dict,
     """
     for v in terms:
         v = str(v)
+        if v == '$':
+            yield wildcard_value
+            continue
+
         matches = match_words(v, prefix=r'\$')
         if matches:
             for match in matches:

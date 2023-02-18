@@ -353,13 +353,27 @@ class BaseShell(Cmd):
 
         return acc
 
-    def foldr2(self, commands: List[str], prev_results: str, delimiter='\n'):
-        items = prev_results.split(delimiter)
-        k, acc = commands
+    def map2(self, ast: tuple, prev_results: str, delimiter='\n') -> Iterable:
+        # monadic bind
+        # https://en.wikipedia.org/wiki/Monad_(functional_programming)
+
+        # items = prev_results.split(delimiter)
+        _lines, items = parse(prev_results)
+
+        results = []
         for item in items:
-            command = [k, acc, item]
-            line = ' '.join(quote_all(command, ignore='*$'))
-            acc = self.pipe_cmd_py(line, '')
+            results.append(self.run_commands_new(ast, item, run=True))
+        return delimiter.join(quote_all(results))
+
+    def foldr2(self, commands: List[Term], prev_results: str, delimiter='\n'):
+        items = prev_results.split(delimiter)
+        k, acc, *args = commands
+        for item in items:
+            command = ('list', [k, acc] + args)
+            # command = [k, acc, item]
+            # line = ' '.join(quote_all(command, ignore='*$'))
+            # acc = self.pipe_cmd_py(line, '')
+            acc = self.run_commands_new(command, item, run=True)
         return acc
 
     def do_map(self, args: str, delimiter='\n'):
@@ -543,21 +557,36 @@ class BaseShell(Cmd):
                 self.locals.rm(DEFINE_FUNCTION)
 
         if key == 'list':
+            # list = sequence of terms
+
             items = values[0]
 
+            if len(items) >= 2 and run:
+                k, *args = items
+                if k == 'map':
+                    args = ('list', list(args))
+                    return self.map2(args, prev_result)
+                elif k in ['reduce', 'foldr']:
+                    return self.foldr2(args, prev_result)
+
             # TODO expand vars in other branches as well
+            wildcard_value = ''
+            if '$' in items:
+                wildcard_value = prev_result
+                prev_result = ''
+
             items = list(expand_variables(items, self.env,
                                           self.completenames_options,
-                                          self.ignore_invalid_syntax))
+                                          self.ignore_invalid_syntax,
+                                          wildcard_value))
 
             k = items[0]
             if run:
-                args = items[1:]
-                # TODO refactor and ensure consistency
-                if k == 'reduce':
-                    return self.foldr2(args, prev_result)
-                elif k == 'echo':
-                    line = ' '.join(args)
+                if k == 'echo':
+                    args = items[1:]
+                    if prev_result:
+                        args += [prev_result]
+                    line = ' '.join(str(arg) for arg in args)
                     return line
 
             if run and self.is_function(k):
@@ -570,6 +599,8 @@ class BaseShell(Cmd):
 
             # TODO if return
             # raise ShellError(f'Cannot execute the function {k}')
+            if prev_result:
+                return items + [prev_result]
             return items
 
         elif key == 'lines':
@@ -639,37 +670,9 @@ class BaseShell(Cmd):
             if op == '|>':
                 next = self.run_commands_new(b, prev, run=run)
             elif op == '>>=':
-                # monadic bind
-                # https://en.wikipedia.org/wiki/Monad_(functional_programming)
-
                 if isinstance(b, str) or isinstance(b, Term):
-                    # TODO insert if $, otherwise append
-                    items = prev.split('\n')
-                    results = []
-                    for item in items:
-                        results.append(self.run_commands_new(b, item, run=run))
-                    # result = '\n'.join(results)
-                    result = '\n'.join(quote_all(results))
-                    return result
-
-                    # if self.is_function(b):
-                    #     if has_method(self, f'do_{b}'):
-                    #         self.getattr(f'do_{b}')(prev)
-                    #     if self.is_inline_function(b):
-                    #         0
-                    # or func_name in self._chars_allowed_for_char_method
-
-                    line = f'map {b}'
-                else:
-                    b = self.run_commands_new(b, '')
-                    if isinstance(b, str) or isinstance(b, Term):
-                        line = f'map {b}'
-                    else:
-                        items = ['map'] + b
-                        line = ' '.join(quote_all(items, ignore=['*', '$']))
-
-                return self.pipe_cmd_py(line, prev)
-
+                    b = ('list', [b])
+                return self.map2(b, prev)
             else:
                 raise ShellError(f'unknown operator {op}')
             return next
@@ -707,16 +710,14 @@ class BaseShell(Cmd):
             _key, values = ast
             if values[0] == 'binary-expression':
                 values = values
-            terms = self.run_commands_new(values)
 
-            terms = list(expand_variables(terms, self.env,
-                                          self.completenames_options,
-                                          self.ignore_invalid_syntax))
+            args = self.run_commands_new(values, prev_result)
 
-            line = 'math ' + ' '.join(quote_all(terms, ignore=list('*$<>')))
-            if run:
-                return self.pipe_cmd_py(line, prev_result)
-            return line
+            if not run:
+                return ['math'] + args
+
+            line = 'math ' + ' '.join(quote_all(args, ignore=list('*$<>')))
+            return self.pipe_cmd_py(line, '')
 
         elif key == 'logic':
             op, a, b = values

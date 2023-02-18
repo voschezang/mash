@@ -359,6 +359,7 @@ def parse(text, init=True):
         """list : term term
                 | term list
         """
+        # TODO rename list => terms
         if isinstance(p[1], list):
             0
         if isinstance(p[2], str) or isinstance(p[2], Term):
