@@ -775,15 +775,23 @@ class BaseShell(Cmd):
 
         elif op == LEFT_ASSIGNMENT:
             b = self.run_commands_new(b, run=run)
+
             if b is None:
                 b = ''
+
+            if b.strip() == '' and self._last_results:
+                b = self._last_results
+                self.env[LAST_RESULTS] = []
 
             if run:
                 self.set_env_variables(a, b)
                 return TRUE
             return a, op, b
+
         elif op == RIGHT_ASSIGNMENT:
             raise NotImplementedError(RIGHT_ASSIGNMENT)
+
+        raise NotImplementedError()
 
     def onecmd2(self, line: str, print_result=True) -> bool:
         """Parse and run `line`.
