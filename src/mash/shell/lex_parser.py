@@ -280,17 +280,17 @@ def parse(text, init=True):
         # 'definition : RETURN expression'
         p[0] = ('return', p[2])
 
-    def p_if_then(p):
+    def p_if(p):
+        """expression : IF expression THEN
+                      | IF expression
+        """
+        p[0] = ('if', p[2])
+
+    def p_if_then_else(p):
         """expression : IF expression THEN expression ELSE expression
                       | IF expression THEN expression ELSE
                       | IF expression THEN expression
-                      | IF expression THEN
-                      | IF expression
         """
-        if len(p) == 3 or len(p) == 4:
-            p[0] = ('if', p[2])
-            return
-
         _, _if, cond, *then_else = p
 
         if len(then_else) == 4:
