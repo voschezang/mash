@@ -522,7 +522,8 @@ class BaseShell(Cmd):
                 items = ast.split(' ')
                 items = list(expand_variables(items, self.env,
                                               self.completenames_options,
-                                              self.ignore_invalid_syntax))
+                                              self.ignore_invalid_syntax,
+                                              escape=True))
                 return ' '.join(items)
 
             if run:
@@ -627,9 +628,6 @@ class BaseShell(Cmd):
 
         elif key == 'math':
             _key, values = ast
-            if values[0] == 'binary-expression':
-                values = values
-
             args = self.run_commands_new(values, prev_result)
 
             if not run:
@@ -662,6 +660,9 @@ class BaseShell(Cmd):
             if to_bool(result):
                 return self.run_commands_new(then, run=run)
             return
+
+        elif key == 'if':
+            raise NotImplementedError()
 
         elif key == 'define-inline-function':
             f, args, body = values
@@ -732,10 +733,10 @@ class BaseShell(Cmd):
                 line = ' '.join(str(arg) for arg in args)
                 return line
 
-        if run and self.is_function(k):
-            # TODO if self.is_inline_function(k): ...
-            line = ' '.join(quote_all(items, ignore='*$'))
-            return self.pipe_cmd_py(line, prev_result)
+            if self.is_function(k):
+                # TODO if self.is_inline_function(k): ...
+                line = ' '.join(quote_all(items, ignore='*$'))
+                return self.pipe_cmd_py(line, prev_result)
 
         # elif self.ignore_invalid_syntax or not run:
         #     return items
@@ -743,7 +744,9 @@ class BaseShell(Cmd):
         # TODO if return
         # raise ShellError(f'Cannot execute the function {k}')
         if prev_result:
-            return items + [prev_result]
+            items += [prev_result]
+        if run:
+            return ' '.join(items)
         return items
 
     def run_handle_lines(self, values, prev_result: str, run: bool, print_result: bool):
@@ -757,7 +760,9 @@ class BaseShell(Cmd):
                 return result[1]
 
             if isinstance(result, list):
-                result = ' '.join(quote_all(result))
+                # result = ' '.join(quote_all(result))
+                # result = ' '.join(str(s) for s in result)
+                result = str(result)
 
             if print_result and result is not None:
                 if result or not self.locals[IF]:
@@ -774,19 +779,22 @@ class BaseShell(Cmd):
             return a, op, b
 
         elif op == LEFT_ASSIGNMENT:
-            b = self.run_commands_new(b, run=run)
+            values = self.run_commands_new(b, run=run)
 
-            if b is None:
-                b = ''
+            if values is None:
+                values = ''
 
-            if b.strip() == '' and self._last_results:
-                b = self._last_results
+            # if isinstance(values, list):
+            #     values = ' '.join(values)
+
+            if values.strip() == '' and self._last_results:
+                values = self._last_results
                 self.env[LAST_RESULTS] = []
 
             if run:
-                self.set_env_variables(a, b)
+                self.set_env_variables(a, values)
                 return TRUE
-            return a, op, b
+            return a, op, values
 
         elif op == RIGHT_ASSIGNMENT:
             raise NotImplementedError(RIGHT_ASSIGNMENT)

@@ -6,7 +6,7 @@ from mash.io_util import log
 from mash.shell import delimiters
 from mash.shell.delimiters import ELSE, FALSE, IF, THEN, TRUE
 from mash.shell.errors import ShellError
-from mash.util import is_globbable, is_valid_method_name, match_words, removeprefix, split_sequence, glob
+from mash.util import is_globbable, is_valid_method_name, match_words, quote, quote_all, removeprefix, split_sequence, glob
 
 
 def infer_infix_args(op: str, *args: str) -> Tuple[Tuple[str], Tuple[str]]:
@@ -106,7 +106,8 @@ def unquote_delimiters(terms: List[str], delimiters: List[str]) -> List[str]:
 def expand_variables(terms: List[str], env: dict,
                      completenames_options: List[str],
                      ignore_invalid_syntax: bool,
-                     wildcard_value='$') -> Iterable[str]:
+                     wildcard_value='$',
+                     escape=False) -> Iterable[str]:
     """Replace variables with their values.
     E.g.
     ```sh
@@ -117,7 +118,10 @@ def expand_variables(terms: List[str], env: dict,
     for v in terms:
         v = str(v)
         if v == '$':
-            yield wildcard_value
+            if escape:
+                yield quote(wildcard_value, ignore=list('*$<>'))
+            else:
+                yield wildcard_value
             continue
 
         matches = match_words(v, prefix=r'\$')
@@ -142,6 +146,8 @@ def expand_variables(terms: List[str], env: dict,
         if is_globbable(v):
             try:
                 matches = glob(v, completenames_options, strict=True)
+                if escape:
+                    matches = quote_all(matches, ignore=['*'])
                 yield ' '.join(matches)
                 continue
 
@@ -151,7 +157,10 @@ def expand_variables(terms: List[str], env: dict,
                 else:
                     raise ShellError(e)
 
-        yield v
+        if escape:
+            yield quote(v, ignore=list('*$<>'))
+        else:
+            yield v
 
 
 def to_string(value: Any) -> str:

@@ -126,7 +126,7 @@ def init_lex():
         # TODO use `t_ignore` to improve performance
 
     def t_WILDCARD(t):
-        r'[\w\d\-]*[\*\?\[][\w\d\-\*\?\[\]]*'
+        r'[\w\d\-]*[\*\?\[][\w\d\-\*\?\!\[\]]*'
         # TODO verify matching []
         return t
 

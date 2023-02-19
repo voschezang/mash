@@ -166,11 +166,14 @@ def concat_empty_container(items):
 
 def quote_all(items: List[str], ignore=[]) -> Iterable[str]:
     for item in items:
-        item = str(item)
-        if item in ignore:
-            yield item
-        else:
-            yield shlex.quote(item)
+        yield quote(item, ignore)
+
+
+def quote(item: str, ignore=[]) -> str:
+    item = str(item)
+    if item in ignore:
+        return item
+    return shlex.quote(item)
 
 
 def split(line: str, delimiters=',.'):

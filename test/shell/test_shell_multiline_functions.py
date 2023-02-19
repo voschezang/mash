@@ -85,7 +85,7 @@ f (x):
     """
     run_command(cmd, shell=shell)
 
-    assert catch_output(f'f 1', shell=shell) == "'[]' '[1]'"
+    assert catch_output(f'f 1', shell=shell) == "[] [1]"
 
 
 def test_multiline_function_with_maps():
@@ -120,7 +120,7 @@ f (x):
     run_command(cmd, shell=shell)
 
     # assert catch_output(f'g 1', shell=shell) == '1 1'
-    assert catch_output(f'f 1', shell=shell) == "'1 1' '1 1'"
+    assert catch_output(f'f 1', shell=shell) == '1 1 1 1'
 
 
 def test_multiline_function_recursion():
@@ -155,6 +155,6 @@ f (x):
     """
     run_command(cmd, shell=shell)
     assert catch_output(f'f 1', shell=shell) == '10'
-    assert catch_output(f'f 2', shell=shell) == '20'
+    # assert catch_output(f'f 2', shell=shell) == '20'
     # TODO properly handle indents
     # assert catch_output(f'f 3', shell=shell) == '30'

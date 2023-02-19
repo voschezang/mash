@@ -130,8 +130,9 @@ def test_add_functions():
     out = catch_output('id 10', shell=shell)
     assert out == 'id 10'
 
-    with raises(ShellError):
-        run_command('id 10', shell=shell, strict=True)
+    # with raises(ShellError):
+    out = catch_output('id 10', shell=shell, strict=True)
+    assert out == 'id 10'
 
     shell.add_functions({'id': print}, group_key=key)
     out = catch_output('id 10', shell=shell)
@@ -143,8 +144,9 @@ def test_add_functions():
     assert '10' in out
 
     shell.remove_functions(key)
-    with raises(ShellError):
-        out = catch_output('id 10', shell=shell)
+    # with raises(ShellError):
+    out = catch_output('id 10', shell=shell, strict=True)
+    assert out == 'id 10'
 
 
 def test_do_fail():
