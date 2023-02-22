@@ -135,19 +135,20 @@ def expand_variables(terms: List[str], env: dict,
                 error_msg = f'Variable `{match}` is not set'
 
                 if k in env:
+                    # TODO continue after finding a match
                     v = v.replace(match, to_string(env[k]))
                 elif ignore_invalid_syntax:
-                    debug(' '.join(terms))
+                    debug(' '.join(str(s) for s in terms))
                     log(error_msg)
                 else:
-                    debug(' '.join(terms))
+                    debug(' '.join(str(s) for s in terms))
                     raise ShellError(error_msg)
 
         if is_globbable(v):
             try:
                 matches = glob(v, completenames_options, strict=True)
                 if escape:
-                    matches = quote_all(matches, ignore=['*'])
+                    matches = quote_all(matches, ignore=['$*'])
                 yield ' '.join(matches)
                 continue
 
@@ -157,7 +158,7 @@ def expand_variables(terms: List[str], env: dict,
                 else:
                     raise ShellError(e)
 
-        if escape:
+        if escape and matches:
             yield quote(v, ignore=list('*$<>'))
         else:
             yield v

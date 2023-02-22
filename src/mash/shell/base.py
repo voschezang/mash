@@ -356,24 +356,33 @@ class BaseShell(Cmd):
     def map2(self, ast: tuple, prev_results: str, delimiter='\n') -> Iterable:
         # monadic bind
         # https://en.wikipedia.org/wiki/Monad_(functional_programming)
-
-        # items = prev_results.split(delimiter)
-        _lines, items = parse(prev_results)
+        _key, items = parse(prev_results)
 
         results = []
-        for item in items:
+        for i, item in enumerate(items):
+            self.env[LAST_RESULTS_INDEX] = i
+
             results.append(self.run_commands_new(ast, item, run=True))
+
+        self.env[LAST_RESULTS_INDEX] = 0
+        agg = delimiter.join(results)
+        if agg.strip() == '':
+            return ''
+
         return delimiter.join(quote_all(results))
 
     def foldr2(self, commands: List[Term], prev_results: str, delimiter='\n'):
-        items = prev_results.split(delimiter)
+        _key, items = parse(prev_results)
         k, acc, *args = commands
+
         for item in items:
             command = ('list', [k, acc] + args)
-            # command = [k, acc, item]
-            # line = ' '.join(quote_all(command, ignore='*$'))
-            # acc = self.pipe_cmd_py(line, '')
             acc = self.run_commands_new(command, item, run=True)
+
+            if acc.strip() == '' and self._last_results:
+                acc = self._last_results[-1]
+                self.env[LAST_RESULTS] = []
+
         return acc
 
     def do_map(self, args: str, delimiter='\n'):
@@ -483,10 +492,6 @@ class BaseShell(Cmd):
 
             # for line in ast:
             result = self.run_commands_new_wrapper(ast, result, run=True)
-
-            # if print_result and result is not None:
-            #     if result or not self.locals[IF]:
-            #         print(result)
 
         except CancelledError:
             pass
@@ -688,15 +693,16 @@ class BaseShell(Cmd):
             return ('return', result)
 
         elif key == '!':
-            inner = self.run_commands_new(values[0])
-            if isinstance(inner, str) or isinstance(inner, Term):
-                inner = [str(inner)]
-            if prev_result:
-                inner += [prev_result]
-            line = ' '.join(inner)
+            terms = self.run_commands_new(values[0])
+            if isinstance(terms, str) or isinstance(terms, Term):
+                line = str(terms)
+            else:
+                line = ' '.join(terms)
+
             if run:
-                return self.pipe_cmd_sh(line, '', delimiter=None)
-            return line
+                return self.pipe_cmd_sh(line, prev_result, delimiter=None)
+            return ' '.join(line)
+
         else:
             raise NotImplementedError()
 
@@ -783,9 +789,6 @@ class BaseShell(Cmd):
 
             if values is None:
                 values = ''
-
-            # if isinstance(values, list):
-            #     values = ' '.join(values)
 
             if values.strip() == '' and self._last_results:
                 values = self._last_results
@@ -1094,7 +1097,7 @@ class BaseShell(Cmd):
 
         logging.info(f'Cmd = {line}')
 
-        result = subprocess.run(args=line,
+        result = subprocess.run(line,
                                 capture_output=True,
                                 check=True,
                                 shell=True)
