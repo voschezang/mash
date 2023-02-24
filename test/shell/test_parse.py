@@ -29,6 +29,13 @@ def test_parse_cmds():
     assert result[1][2][1] == ['echo', 'c']
 
 
+def test_parse_comment():
+    text = '# a comment'
+    result = list(parse(text))
+    assert result[0] == 'lines'
+    assert result[1] == []
+
+
 def test_parse_term():
     line = 'abc d-?e* [a-z]10'
     key, result = parse_line(line)
@@ -39,6 +46,14 @@ def test_parse_term():
     assert result[1].type == 'wildcard'
     assert result[2] == '[a-z]10'
     assert result[2].type == 'wildcard'
+
+
+def test_parse_word():
+    line = '238u3r'
+    result = parse(line)
+    assert result[0] == 'lines'
+    assert result[1][0].type == 'term'
+    assert result[1][0] == '238u3r'
 
 
 def test_parse_range():

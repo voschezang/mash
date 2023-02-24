@@ -1,3 +1,3 @@
 # this is an example script 
-echo abc \n b
+echo 'abc \n b'
 echo def

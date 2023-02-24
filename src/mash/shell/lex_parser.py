@@ -72,7 +72,7 @@ def init_lex():
     t_VARIABLE = r'\$[a-zA-Z_][a-zA-Z_0-9]*'
 
     t_ignore = ''
-    t_ignore_COMMENT = r'\#.*'
+    t_ignore_COMMENT = r'\#[^\n]*'
 
     def t_LPAREN(t):
         r'\('
@@ -98,6 +98,9 @@ def init_lex():
         # TOOD if not ;
         t.lexer.lineno += len(t.value)
         return t
+
+    # def t_COMMENT(t):
+    #     r'\#.*'
 
     def t_INDENT(t):
         r'\ {2,}|\t+'
@@ -145,9 +148,6 @@ def init_lex():
         t.type = reserved.get(t.value, 'METHOD')
         return t
 
-    def t_NUMBER(t):
-        r'\d+'
-        return t
 
     def t_PIPE(t):
         r'\|>' '|' r'>>='
@@ -175,6 +175,10 @@ def init_lex():
 
     def t_WORD(t):
         r'[\w\d\+\-\*/%&\~]+'
+        return t
+
+    def t_NUMBER(t):
+        r'\d+'
         return t
 
     def t_SHELL(t):
@@ -210,7 +214,7 @@ def parse(text, init=True):
         ('left', 'INDENT'),
         ('left', 'ASSIGN', 'ASSIGN'),
         ('left', 'PIPE', 'BASH'),
-        ('left',  'MATH'),
+        ('left', 'MATH'),
         ('left', 'INFIX_OPERATOR'),
         ('left', 'EQUALS'),
         ('left', 'OR'),
@@ -426,7 +430,8 @@ def parse(text, init=True):
 
     parser = yacc.yacc(debug=True)
 
-    return parser.parse(text)
+    # add a newline to allow empty strings to be matched
+    return parser.parse('\n' + text)
 
 
 if __name__ == '__main__':
