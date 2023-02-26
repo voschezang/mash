@@ -15,7 +15,7 @@ from mash import io_util
 from mash.filesystem.filesystem import FileSystem, cd
 from mash.io_util import log, shell_ready_signal, print_shell_ready_signal, check_output
 from mash.shell import delimiters
-from mash.shell.if_statement import LINE_INDENT, Abort, Done, close_prev_if_statements, handle_else_statement, handle_if_statement, handle_then_else_statements, handle_prev_then_else_statements, handle_then_statement
+from mash.shell.if_statement import LINE_INDENT, Abort, Done, State, close_prev_if_statements, handle_else_statement, handle_if_statement, handle_then_else_statements, handle_prev_then_else_statements, handle_then_statement
 from mash.shell.delimiters import ELSE, comparators, DEFINE_FUNCTION, FALSE, IF, LEFT_ASSIGNMENT, RETURN, RIGHT_ASSIGNMENT, THEN, TRUE
 from mash.filesystem.scope import Scope, show
 from mash.shell.errors import ShellError, ShellPipeError
@@ -187,6 +187,10 @@ class BaseShell(Cmd):
         raise RuntimeError('Cannot retrieve result')
 
     def eval_compare(self, line: str) -> bool:
+        result = self.run_commands_new(line, '', run=True)
+        return to_bool(result)
+
+    def eval_compare2(self, line: str) -> bool:
         f, *_ = line.split(' ')
         terms = line.split(' ')
 
@@ -655,19 +659,46 @@ class BaseShell(Cmd):
 
             return ' '.join(quote_all((a, op, b), ignore=list('*<>')))
 
+        elif key == 'if':
+            condition, = values
+            if not run:
+                raise NotImplementedError()
+
+            # TODO use line_indent=self.locals[RAW_LINE_INDENT]
+            indent = None
+            self.locals.set(LINE_INDENT, indent_width(''))
+            return handle_if_statement(self, condition, prev_result)
+
         elif key == 'if-then':
             condition, then = values
             if not run:
                 raise NotImplementedError()
 
-            result = self.run_commands_new(condition, run=run)
+            value = self.run_commands_new(condition, run=run)
+            value = to_bool(value)
 
-            if to_bool(result):
-                return self.run_commands_new(then, run=run)
-            return
+            # TODO use line_indent=self.locals[RAW_LINE_INDENT]
+            indent = None
+            self.locals.set(LINE_INDENT, indent_width(''))
+            self.locals[IF].append(State(self, value))
 
-        elif key == 'if':
-            raise NotImplementedError()
+            if value == TRUE:
+                return self.run_commands_new(then, prev_result, run=run)
+            return FALSE
+
+        elif key == 'if-then-else':
+            condition, true, false = values
+            value = self.run_commands_new(condition, run=run)
+            value = to_bool(value)
+
+            indent = None
+            self.locals.set(LINE_INDENT, indent_width(''))
+            self.locals[IF].append(State(self, value))
+            # prev_result = handle_if_statement(self, condition, prev_result)
+            if value == TRUE:
+                return self.run_commands_new(true, prev_result, run=run)
+            else:
+                return self.run_commands_new(false, prev_result, run=run)
 
         elif key == 'define-inline-function':
             f, args, body = values

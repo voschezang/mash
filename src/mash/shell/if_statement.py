@@ -2,7 +2,6 @@ from operator import contains
 from typing import Tuple
 from mash.shell.delimiters import ELSE, IF, THEN
 from mash.shell.errors import ShellError
-from mash.util import for_any
 
 LINE_INDENT = 'line_indent'
 

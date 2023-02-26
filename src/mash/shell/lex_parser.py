@@ -148,7 +148,6 @@ def init_lex():
         t.type = reserved.get(t.value, 'METHOD')
         return t
 
-
     def t_PIPE(t):
         r'\|>' '|' r'>>='
         return t
@@ -270,6 +269,10 @@ def parse(text, init=True):
         'definition : METHOD LPAREN basic_expression RPAREN DEFINE_FUNCTION'
         p[0] = ('define-function', p[1], p[3])
 
+    def p_def_function_constant(p):
+        'definition : METHOD LPAREN RPAREN DEFINE_FUNCTION'
+        p[0] = ('define-function', p[1], p[3])
+
     def p_scope(p):
         'scope : LPAREN expression RPAREN'
         q = p[2]
@@ -289,6 +292,15 @@ def parse(text, init=True):
                       | IF expression
         """
         p[0] = ('if', p[2])
+
+    def p_then(p):
+        """expression : THEN expression
+                      | THEN
+        """
+        if len(p) == 2:
+            p[0] = ('then',)
+        else:
+            p[0] = ('then', p[2])
 
     def p_if_then_else(p):
         """expression : IF expression THEN expression ELSE expression
@@ -320,7 +332,7 @@ def parse(text, init=True):
         'expression : NOT basic_expression'
         p[0] = ('not', p[2])
 
-    def p_logical_not(p):
+    def p_shell(p):
         'expression : SHELL basic_expression'
         p[0] = ('!', p[2])
 
@@ -349,8 +361,7 @@ def parse(text, init=True):
         p[0] = ('binary-expression', p[2], p[1], p[3])
 
     def p_expression_basic(p):
-        """expression : basic_expression
-        """
+        'expression : basic_expression'
         p[0] = p[1]
 
     def p_basic_expression(p):
@@ -421,6 +432,7 @@ def parse(text, init=True):
 
     def p_error(p):
         print(f'Syntax error: {p}')
+        raise ShellError(f'Syntax error: {p}')
 
     if init:
         global lexer

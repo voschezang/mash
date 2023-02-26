@@ -66,22 +66,7 @@ def test_shell_if_then_semicolons():
     shell.ignore_invalid_syntax = False
 
     assert catch_output('if 10 then print 1 ; print 2', shell=shell) == '1\n2'
-    assert catch_output('if "" then print 1 ; print 2', shell=shell) == ''
-
-
-def test_shell_if_then_then():
-    shell = Shell()
-    shell.ignore_invalid_syntax = False
-
-    with raises(ShellError):
-        run_command('then print 1', shell=shell)
-
-    # missing `then` keyword should be handled
-    assert catch_output('if 1 then if 2 print 3', shell=shell) == ''
-
-    # double `then` should be allowed
-    run_command('if 1 then print 1 then print 2', shell=shell)
-    run_command('if 1 then print 1 ; print 2 then print 3', shell=shell)
+    assert catch_output('if "" then print 1 ; print 2', shell=shell) == '2'
 
 
 def test_shell_if_then_nested():
@@ -137,15 +122,14 @@ def test_shell_if_else_with_pipes():
     assert catch_output('if echo 10 |> echo then 2 else 3', shell=shell) == '2'
     assert catch_output('if echo 10 |> echo then 2 else 3', shell=shell) == '2'
 
-    # TODO fix leaking pipes
-    assert catch_output(
-        'if echo "" |> echo 1 then 2 else 3', shell=shell) == '3 1'
+    assert catch_output('if echo "" |> echo 1 then 2 else 3',
+                        shell=shell) == '2'
 
     # pipe in THEN
-    assert catch_output(
-        'if 10 then echo 2 |> echo 3 else 4', shell=shell) == '3 2'
-    assert catch_output(
-        'if "" then echo 2 |> echo 3 else 4', shell=shell) == '4'
+    assert catch_output('if 10 then echo 2 |> echo 3 else 4',
+                        shell=shell) == '3 2'
+    assert catch_output('if "" then echo 2 |> echo 3 else 4',
+                        shell=shell) == '4'
 
     assert catch_output(
         'if 10 then echo 2 |> math 1 + else 4', shell=shell) == '3'
@@ -153,13 +137,10 @@ def test_shell_if_else_with_pipes():
         'if "" then echo 2 |> math 1 + else 4', shell=shell) == '4'
 
     # pipe in ELSE
-    # TODO
-    # with raises(ShellError):
-    #     run_command('if 1 then 2 else echo 2 |> echo', shell=shell)
-    # assert catch_output(
-    #     'if 10 then echo 4 else 2 |> echo 3', shell=shell) == '4'
-    # assert catch_output(
-    #     'if "" then echo 4 else 2 |> echo 3', shell=shell) == '3 2'
+    assert catch_output('if 10 then echo 4 else 2 |> echo 3',
+                        shell=shell) == '4'
+    assert catch_output('if "" then echo 4 else 2 |> echo 3',
+                        shell=shell) == '3 2'
 
 
 def test_shell_if_then_if_else():
@@ -184,11 +165,11 @@ def test_shell_if_then_if_else():
     assert catch_output(f'if 10 then {x} else print 3') == '1'
     # True & False
     # the double else behaves like a |> operator
-    assert catch_output(f'if 10 then {not_x} else print 3') == '3 2'
+    assert catch_output(f'if 10 then {not_x} else print 3') == '2'
     # # False & True
-    # assert catch_output(f'if "" then {x} else print 3') == '3'
+    assert catch_output(f'if "" then {x} else print 3') == '3'
     # # False & False
-    # assert catch_output(f'if "" then {not_x} else print 3') == '3'
+    assert catch_output(f'if "" then {not_x} else print 3') == '3'
 
 
 def test_shell_if_then_else_if_then():
@@ -227,9 +208,8 @@ def test_shell_if_else_unhappy():
     with raises(ShellError):
         run_command('if "" else print 2')
 
-    # TODO
-    # with raises(ShellError):
-    run_command('if "" then print 1 else print 2 else print 3')
+    with raises(ShellError):
+        run_command('if "" then print 1 else print 2 else print 3')
 
 
 def test_shell_if_else_multiline():

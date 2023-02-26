@@ -1,6 +1,6 @@
 from pytest import raises
 
-from mash import io_util
+from mash.shell.errors import ShellError
 from mash.shell.lex_parser import parse
 
 
@@ -194,6 +194,28 @@ def test_parse_if_else():
     assert right == '3'
 
 
+def test_parse_if_then():
+    line = 'if 1 == 3 then 2'
+    key, result, then = parse_line(line)
+    assert key == 'if-then'
+    assert result[1] == '=='
+    assert then == '2'
+
+    line = 'if true print 2'
+    key, result = parse_line(line)
+    assert key == 'if'
+    assert result[0] == 'list'
+    assert result[1] == ['true', 'print', '2']
+
+    # double then
+    text = 'if 1 then print 1 then print 2'
+    with raises(ShellError):
+        parse_line(text)
+
+    text = 'if 1 then print 1 ; then print 2'
+    result = parse_line(text)
+
+
 def test_parse_if_with_colons():
     line = 'if 1 then print a; print b'
     result = parse(line)
@@ -274,8 +296,20 @@ def test_parse_pipes_with_assign():
     assert result[2][3][1] == '=='
 
     line = 'echo a |> echo b =='
-    result = io_util.catch_output(line, parse)
-    assert 'Syntax error' in result
+    with raises(ShellError):
+        parse_line(line)
+
+
+def test_parse_pipes_if_then():
+    text = 'echo 1 |> if true then echo true else echo false'
+    result = parse_line(text)
+    assert result[0] == 'pipe'
+    assert result[2][1] == ['echo', '1']
+    assert result[3][0] == 'if-then-else'
+
+    text = 'if f 1 |> g then echo true else echo false'
+    result = parse_line(text)
+    assert result[0] == 'if-then-else'
 
 
 def test_parse_inline_function():
