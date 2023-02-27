@@ -227,6 +227,13 @@ def test_parse_if_with_colons():
     assert result[1][1][1] == ['print', 'b']
 
 
+def test_parse_else():
+    text = 'else if 2 == 2'
+    key, result = parse_line(text)
+    assert key == 'else'
+    assert result[0] == 'if'
+
+
 def test_parse_if_then_multiline():
     text = """
 
@@ -241,7 +248,7 @@ outer = c
 
     """
     results = parse(text)[1]
-    assert results[0][0] == 'if'
+    assert results[0][0] == 'if-then'
     assert results[0][1][0] == 'binary-expression'
     assert results[0][1][1:] == ('==', 'x', 'y')
     assert results[1][0] == 'indent'
