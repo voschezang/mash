@@ -10,9 +10,10 @@ def parse_line(text: str):
 
 def test_parse_cmd():
     text = 'echo a 10'
+    result = parse(text)
     result = list(parse(text))
     assert result[0] == 'lines'
-    assert result[1][0][0] == 'list'
+    assert result[1][0][0] == 'terms'
     assert result[1][0][1] == ['echo', 'a', '10']
     assert parse_line(text)[1] == ['echo', 'a', '10']
 
@@ -21,11 +22,11 @@ def test_parse_cmds():
     text = 'echo a 10 ; echo b \n echo c'
     result = list(parse(text))
     assert result[0] == 'lines'
-    assert result[1][0][0] == 'list'
+    assert result[1][0][0] == 'terms'
     assert result[1][0][1] == ['echo', 'a', '10']
-    assert result[1][1][0] == 'list'
+    assert result[1][1][0] == 'terms'
     assert result[1][1][1] == ['echo', 'b']
-    assert result[1][2][0] == 'list'
+    assert result[1][2][0] == 'terms'
     assert result[1][2][1] == ['echo', 'c']
 
 
@@ -39,7 +40,7 @@ def test_parse_comment():
 def test_parse_term():
     line = 'abc d-?e* [a-z]10'
     key, result = parse_line(line)
-    assert key == 'list'
+    assert key == 'terms'
     assert result[0] == 'abc'
     assert result[0].type == 'method'
     assert result[1] == 'd-?e*'
@@ -80,7 +81,7 @@ def test_parse_infix():
     key, op, left, right = parse_line('a b = 2')
     assert key == 'assign'
     assert op == '='
-    assert left == ('list', ['a', 'b'])
+    assert left == ('terms', ['a', 'b'])
     assert right == '2'
 
 
@@ -115,17 +116,17 @@ def test_parse_parentheses():
 
     _, results = parse('(a b c)')
     assert results[0][0] == 'scope'
-    assert results[0][1][0] == 'list'
+    assert results[0][1][0] == 'terms'
     assert results[0][1][1] == ['a', 'b', 'c']
 
     _, results = parse('(a (b c) (d))')
     assert results[0][0] == 'scope'
-    assert results[0][1][0] == 'list'
+    assert results[0][1][0] == 'terms'
 
     inner = results[0][1][1]
     assert inner[0] == 'a'
     assert inner[1][0] == 'scope'
-    assert inner[1][1] == ('list', ['b', 'c'])
+    assert inner[1][1] == ('terms', ['b', 'c'])
     assert inner[2] == ('scope', 'd')
 
 
@@ -160,7 +161,7 @@ def test_parse_indent():
     line = '    echo b c'
     result = parse_line(line)
     assert result[0] == 'indent'
-    assert result[2][0] == 'list'
+    assert result[2][0] == 'terms'
     assert result[2][1] == ['echo', 'b', 'c']
 
 
@@ -204,7 +205,7 @@ def test_parse_if_then():
     line = 'if true print 2'
     key, result = parse_line(line)
     assert key == 'if'
-    assert result[0] == 'list'
+    assert result[0] == 'terms'
     assert result[1] == ['true', 'print', '2']
 
     # double then
@@ -222,7 +223,7 @@ def test_parse_if_with_colons():
     assert result[0] == 'lines'
     assert result[1][0][0] == 'if-then'
     assert result[1][0][1] == '1'
-    assert result[1][0][2][0] == 'list'
+    assert result[1][0][2][0] == 'terms'
     assert result[1][0][2][1] == ['print', 'a']
     assert result[1][1][1] == ['print', 'b']
 
@@ -276,7 +277,7 @@ def test_parse_bash_pipe():
     result = parse_line('print a | echo')
     assert result[0] == 'bash'
     assert result[1] == '|'
-    assert result[2][0] == 'list'
+    assert result[2][0] == 'terms'
     assert result[3] == 'echo'
 
 
@@ -284,7 +285,7 @@ def test_parse_pipe():
     result = parse_line('print a |> echo')
     assert result[0] == 'pipe'
     assert result[1] == '|>'
-    assert result[2][0] == 'list'
+    assert result[2][0] == 'terms'
     assert result[3] == 'echo'
 
 
@@ -334,8 +335,8 @@ f (x y): x + y
     result = parse_line(text)
     assert result[0] == 'define-inline-function'
     assert result[1] == 'f'
-    assert result[2] == ('list', ['x', 'y'])
-    assert result[3] == ('list', ['x', '+', 'y'])
+    assert result[2] == ('terms', ['x', 'y'])
+    assert result[3] == ('terms', ['x', '+', 'y'])
 
 
 def test_parse_inline_function_with_pipe():
@@ -370,14 +371,14 @@ print outer
     assert results[1][2][2] == ('return', '2')
     assert results[2][2][0] == 'return'
     # non-indented code
-    assert results[3][0] == 'list'
+    assert results[3][0] == 'terms'
     assert results[3][1] == ['print', 'outer']
 
 
 def test_parse_math():
     key, results = parse_line('math 1 + 1')
     assert key == 'math'
-    assert results[0] == 'list'
+    assert results[0] == 'terms'
     assert results[1] == ['1', '+', '1']
 
     key, results = parse_line('math 1 == 1')

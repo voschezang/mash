@@ -211,7 +211,7 @@ def parse(text, init=True):
     precedence = (
         ('left', 'BREAK'),
         ('left', 'INDENT'),
-        ('left', 'ASSIGN', 'ASSIGN'),
+        ('left', 'ASSIGN'),
         ('left', 'PIPE', 'BASH'),
         ('left', 'MATH'),
         ('left', 'INFIX_OPERATOR'),
@@ -221,52 +221,74 @@ def parse(text, init=True):
         ('left', 'NOT')
     )
 
-    def p_newlines_empty(p):
+    def p_lines_empty(p):
         'lines : BREAK'
+        # """lines : BREAK
+        #          | INDENT
+        # """
         # TODO handle `indent expr ; expr`
         p[0] = ('lines', [])
 
-    def p_newlines_suffix(p):
-        """lines : statement
-                 | statement BREAK
+    def p_lines_suffix(p):
+        """lines : line
+                 | line BREAK
         """
         p[0] = ('lines', [p[1]])
 
-    def p_newlines_infix(p):
-        'lines : statement BREAK lines'
+    def p_lines_infix(p):
+        'lines : line BREAK lines'
         _, lines = p[3]
         p[0] = ('lines', [p[1]] + lines)
 
-    def p_newlines_prefix(p):
+    def p_lines_prefix(p):
         'lines : BREAK lines'
         p[0] = p[2]
 
-    def p_statement(p):
-        """statement : definition
-                     | expression
-        """
-        p[0] = p[1]
-
-    def p_statement_indent(p):
-        'statement : INDENT expression'
+    def p_line_indented(p):
+        'line : INDENT statement'
         n = indent_width(p[1])
         p[0] = ('indent', n, p[2])
 
-    def p_indent_empty(p):
-        'expression : INDENT'
-        n = indent_width(p[1])
-        p[0] = ('indent', n, None)
+    def p_line(p):
+        'line : statement'
+        p[0] = p[1]
+
+    def p_statement(p):
+        """statement : assignment
+                     | conditional
+                     | definition
+                     | inner_statement
+        """
+        p[0] = p[1]
+
+    def p_statement_return(p):
+        'statement : RETURN inner_statement'
+        p[0] = ('return', p[2])
+
+    def p_statement_inline(p):
+        """inner_statement : conjunction
+                           | full_conditional
+        """
+        p[0] = p[1]
+
+    def p_assign(p):
+        'assignment : terms ASSIGN inner_statement'
+        p[0] = ('assign', p[2], p[1], p[3])
+
+    def p_assign_right(p):
+        'assignment : inner_statement ASSIGN_RIGHT terms'
+        p[0] = ('assign', p[2], p[1], p[3])
 
     def p_def_inline_function(p):
-        'definition : METHOD LPAREN basic_expression RPAREN DEFINE_FUNCTION expression'
+        'definition : METHOD LPAREN terms RPAREN DEFINE_FUNCTION inner_statement'
         p[0] = ('define-inline-function', p[1], p[3], p[6])
 
     def p_def_inline_function_constant(p):
-        'definition : METHOD LPAREN RPAREN DEFINE_FUNCTION expression'
+        'definition : METHOD LPAREN RPAREN DEFINE_FUNCTION inner_statement'
         p[0] = ('define-inline-function', p[1], '', p[5])
 
     def p_def_function(p):
-        'definition : METHOD LPAREN basic_expression RPAREN DEFINE_FUNCTION'
+        'definition : METHOD LPAREN terms RPAREN DEFINE_FUNCTION'
         p[0] = ('define-function', p[1], p[3])
 
     def p_def_function_constant(p):
@@ -274,44 +296,35 @@ def parse(text, init=True):
         p[0] = ('define-function', p[1], p[3])
 
     def p_scope(p):
-        'scope : LPAREN expression RPAREN'
+        'scope : LPAREN inner_statement RPAREN'
         q = p[2]
         p[0] = ('scope', q)
 
-    def p_math(p):
-        'expression : MATH expression'
-        p[0] = ('math', p[2])
-
-    def p_return(p):
-        'expression : RETURN expression'
-        # 'definition : RETURN expression'
-        p[0] = ('return', p[2])
-
     def p_if(p):
-        'expression : IF expression'
+        'conditional : IF conjunction'
         p[0] = ('if', p[2])
 
-    def p_if_then_else_inline(p):
-        'expression : IF expression THEN expression ELSE expression'
+    def p_full_conditional(p):
+        'full_conditional : IF conjunction THEN conjunction ELSE conjunction'
         _, _if, cond, _then, true, _else, false = p
         p[0] = ('if-then-else', cond, true, false)
 
     def p_if_then_else(p):
-        'expression : IF expression THEN expression ELSE'
+        'conditional : IF conjunction THEN conjunction ELSE'
         _, _if, cond, _then, true, _else = p
         p[0] = ('if-then-else', cond, true, None)
 
     def p_if_then(p):
-        'expression : IF expression THEN'
+        'conditional : IF conjunction THEN'
         p[0] = ('if-then', p[2], None)
 
     def p_if_then_inline(p):
-        'expression : IF expression THEN expression'
+        'conditional : IF conjunction THEN conjunction'
         _, _if, cond, _then, true = p
         p[0] = ('if-then', cond, true)
 
     def p_then(p):
-        """expression : THEN expression
+        """conditional : THEN conjunction
                       | THEN
         """
         if len(p) == 2:
@@ -320,8 +333,8 @@ def parse(text, init=True):
             p[0] = ('then', p[2])
 
     def p_else_if_then(p):
-        """expression : ELSE IF expression THEN expression
-                      | ELSE IF expression THEN
+        """conditional : ELSE IF conjunction THEN conjunction
+                      | ELSE IF conjunction THEN
         """
         if len(p) == 5:
             p[0] = ('else-if-then', p[3], p[4])
@@ -329,11 +342,11 @@ def parse(text, init=True):
             p[0] = ('else-if-then', p[3], None)
 
     def p_else_if(p):
-        'expression : ELSE IF expression'
+        'conditional : ELSE IF conjunction'
         p[0] = ('else-if', p[3])
 
     def p_else(p):
-        """expression : ELSE expression
+        """conditional : ELSE conjunction
                       | ELSE
         """
         if len(p) == 2:
@@ -341,75 +354,84 @@ def parse(text, init=True):
         else:
             p[0] = ('else', p[2])
 
-    def p_logical_bin(p):
-        """expression : expression AND expression
-                      | expression OR expression
+    def p_conditional(p):
+        """conditional : conjunction
+                       | full_conditional
+        """
+        # 'conditional : conjunction'
+        p[0] = p[1]
+
+    def p_pipe_py(p):
+        'conjunction : expression PIPE conjunction'
+        p[0] = ('pipe', p[2], p[1], p[3])
+
+    def p_pipe_bash(p):
+        'conjunction : expression BASH conjunction'
+        p[0] = ('bash', p[2], p[1], p[3])
+
+    def p_conjunction(p):
+        'conjunction : expression'
+        p[0] = p[1]
+
+    def p_expression(p):
+        'expression : basic_expression'
+        p[0] = p[1]
+
+    def p_shell(p):
+        'expression : SHELL expression'
+        p[0] = ('!', p[2])
+
+    def p_math(p):
+        'expression : MATH expression'
+        p[0] = ('math', p[2])
+
+    def p_basic_expression(p):
+        """basic_expression : join
+                            | logic_expression
+                            | terms
+        """
+        p[0] = p[1]
+
+    def p_logic_binary(p):
+        """join : logic_expression AND join
+                | logic_expression AND logic_expression
+                | logic_expression OR join
+                | logic_expression OR logic_expression
         """
         # TODO use flat tree any/all (or, a, b, c) = any : e OR any  | e OR e
         p[0] = ('logic', p[2], p[1], p[3])
 
-    def p_logical_not(p):
-        'expression : NOT basic_expression'
+    def p_logic_expression_infix(p):
+        'logic_expression : terms INFIX_OPERATOR logic_expression'
+        p[0] = ('binary-expression', p[2], p[1], p[3])
+
+    def p_logic_expression_infix_equals(p):
+        'logic_expression : logic_expression EQUALS logic_expression'
+        p[0] = ('binary-expression', p[2], p[1], p[3])
+
+    def p_logic_negation(p):
+        'logic_expression : NOT terms'
         p[0] = ('not', p[2])
 
-    def p_shell(p):
-        'expression : SHELL basic_expression'
-        p[0] = ('!', p[2])
-
-    def p_pipe_py(p):
-        'expression : expression PIPE expression'
-        p[0] = ('pipe', p[2], p[1], p[3])
-
-    def p_pipe_bash(p):
-        'expression : expression BASH expression'
-        p[0] = ('bash', p[2], p[1], p[3])
-
-    def p_assign(p):
-        'expression : basic_expression ASSIGN expression'
-        p[0] = ('assign', p[2], p[1], p[3])
-
-    def p_assign_right(p):
-        'expression : expression ASSIGN_RIGHT basic_expression'
-        p[0] = ('assign', p[2], p[1], p[3])
-
-    def p_expression_infix(p):
-        'expression : basic_expression INFIX_OPERATOR expression'
-        p[0] = ('binary-expression', p[2], p[1], p[3])
-
-    def p_expression_infix_equals(p):
-        'expression : expression EQUALS expression'
-        p[0] = ('binary-expression', p[2], p[1], p[3])
-
-    def p_expression_basic(p):
-        'expression : basic_expression'
+    def p_logic(p):
+        'logic_expression : terms'
         p[0] = p[1]
 
-    def p_basic_expression(p):
-        """basic_expression : term
-                            | list
-        """
+    def p_terms_pair(p):
+        'terms : term term'
+        p[0] = ('terms', [p[1], p[2]])
+
+    def p_terms_tail(p):
+        'terms : term terms'
+        key, tail = p[2]
+        p[0] = ('terms', [p[1]] + tail)
+
+    def p_terms_singleton(p):
+        'terms : term'
         p[0] = p[1]
-
-    def p_list(p):
-        """list : term term
-                | term list
-        """
-        # TODO rename list => terms
-        if isinstance(p[1], list):
-            0
-        if isinstance(p[2], str) or isinstance(p[2], Term):
-            # if len(p) == 3:
-            p[0] = ('list', [p[1], p[2]])
-        else:
-            a = p[1]
-            key, values = p[2]
-            if key == 'scope':
-                values = [p[2]]
-
-            p[0] = ('list', [a] + values)
 
     def p_term(p):
-        """term : SPECIAL 
+        """term : SPECIAL
                 | WORD
                 | WORD_WITH_DOT
         """

@@ -574,8 +574,8 @@ class BaseShell(Cmd):
             except Abort:
                 return prev_result
 
-        if key == 'list':
-            return self.run_handle_list(values, prev_result, run)
+        if key == 'terms':
+            return self.run_handle_terms(values, prev_result, run)
         elif key == 'lines':
             self.locals.set(LINE_INDENT, indent_width(''))
             return self.run_handle_lines(values, prev_result, run, print_result)
@@ -609,7 +609,7 @@ class BaseShell(Cmd):
                 next = self.run_commands_new(b, prev, run=run)
             elif op == '>>=':
                 if isinstance(b, str) or isinstance(b, Term):
-                    b = ('list', [b])
+                    b = ('terms', [b])
                 return self.map2(b, prev)
             else:
                 raise ShellError(f'unknown operator {op}')
@@ -850,9 +850,7 @@ class BaseShell(Cmd):
         else:
             raise NotImplementedError()
 
-    def run_handle_list(self, values, prev_result: str, run: bool):
-        # list = sequence of terms
-
+    def run_handle_terms(self, values, prev_result: str, run: bool):
         items = values[0]
 
         if len(items) >= 2 and run:
