@@ -1,6 +1,6 @@
 from operator import contains
 from typing import Tuple
-from mash.shell.delimiters import ELSE, IF, THEN
+from mash.shell.delimiters import ELSE, IF, INLINE_THEN, THEN
 from mash.shell.errors import ShellError
 
 LINE_INDENT = 'line_indent'
@@ -14,9 +14,9 @@ class Done(RuntimeError):
     pass
 
 
-def State(self, value) -> dict:
+def State(self, value, branch=None) -> dict:
     return {'value': value,
-            'branch': None,
+            'branch': branch,
             LINE_INDENT: self.locals[LINE_INDENT]}
 
 

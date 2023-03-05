@@ -16,7 +16,7 @@ from mash.filesystem.filesystem import FileSystem, cd
 from mash.io_util import log, shell_ready_signal, print_shell_ready_signal, check_output
 from mash.shell import delimiters
 from mash.shell.if_statement import LINE_INDENT, Abort, Done, State, close_prev_if_statements, handle_else_statement, handle_if_statement, handle_then_else_statements, handle_prev_then_else_statements, handle_then_statement
-from mash.shell.delimiters import ELSE, comparators, DEFINE_FUNCTION, FALSE, IF, LEFT_ASSIGNMENT, RETURN, RIGHT_ASSIGNMENT, THEN, TRUE
+from mash.shell.delimiters import ELSE, INLINE_ELSE, INLINE_THEN, comparators, DEFINE_FUNCTION, FALSE, IF, LEFT_ASSIGNMENT, RETURN, RIGHT_ASSIGNMENT, THEN, TRUE
 from mash.filesystem.scope import Scope, show
 from mash.shell.errors import ShellError, ShellPipeError
 from mash.shell.function import InlineFunction
@@ -566,9 +566,18 @@ class BaseShell(Cmd):
                 self.env[f.func_name] = f
                 self.locals.rm(DEFINE_FUNCTION)
 
+        # if key.startswith('if'):
+        #     # TODO parse if after an else-clause
+        if key not in ('lines', 'indent'):
+            try:
+                handle_prev_then_else_statements(self)
+            except Abort:
+                return prev_result
+
         if key == 'list':
             return self.run_handle_list(values, prev_result, run)
         elif key == 'lines':
+            self.locals.set(LINE_INDENT, indent_width(''))
             return self.run_handle_lines(values, prev_result, run, print_result)
         elif key == 'assign':
             return self.run_handle_assign(values, prev_result, run)
@@ -630,10 +639,41 @@ class BaseShell(Cmd):
 
         elif key == 'indent':
             # TODO
-            _, _width, value = ast
-            if value is None:
+            _, width, inner = ast
+            if inner is None:
                 return
-            return self.run_commands_new(value, prev_result, run=True)
+
+            if self.locals[IF]:
+                if not run:
+                    raise NotImplementedError()
+
+                closed = self._last_if['branch'] in (INLINE_THEN, INLINE_ELSE)
+                if width > self._last_if['line_indent']:
+                    if closed:
+                        raise ShellError(
+                            'Unexpected indent after if-else clause')
+                    try:
+                        handle_prev_then_else_statements(self)
+                    except Abort:
+                        return prev_result
+                elif width == self.last_if['line_indent']:
+                    if not closed:
+                        raise ShellError(
+                            'Expected deeper indent for if-else clause')
+                elif width < self.last_if['line_indent']:
+                    if self._last_if['branch'] is None:
+                        raise ShellError(
+                            'Unexpected indent. If-clause was not closed')
+                    # close prev if-statments
+                    while True:
+                        self.locals[IF].pop()
+                        if not self.locals[IF]:
+                            break
+                        if width <= self.last_if['line_indent']:
+                            break
+
+            self.locals.set(LINE_INDENT, width)
+            return self.run_commands_new(inner, prev_result, run=run)
 
         elif key == 'math':
             _key, values = ast
@@ -660,14 +700,34 @@ class BaseShell(Cmd):
             return ' '.join(quote_all((a, op, b), ignore=list('*<>')))
 
         elif key == 'if':
+            # multiline if-statement
             condition, = values
             if not run:
                 raise NotImplementedError()
 
-            # TODO use line_indent=self.locals[RAW_LINE_INDENT]
-            indent = None
-            self.locals.set(LINE_INDENT, indent_width(''))
-            return handle_if_statement(self, condition, prev_result)
+            value = self.run_commands_new(condition, run=run)
+            value = to_bool(value) == TRUE
+            self.locals[IF].append(State(self, value))
+            return
+
+        elif key == 'then':
+            then, = values
+            if not run:
+                raise NotImplementedError()
+
+            result = None
+            try:
+                # verify & update state
+                handle_then_statement(self)
+                if then:
+                    result = self.run_commands_new(then, prev_result, run=run)
+            except Abort:
+                pass
+
+            if then:
+                self._last_if['branch'] = INLINE_THEN
+
+            return result
 
         elif key == 'if-then':
             condition, then = values
@@ -675,30 +735,83 @@ class BaseShell(Cmd):
                 raise NotImplementedError()
 
             value = self.run_commands_new(condition, run=run)
-            value = to_bool(value)
+            value = to_bool(value) == TRUE
 
-            # TODO use line_indent=self.locals[RAW_LINE_INDENT]
-            indent = None
-            self.locals.set(LINE_INDENT, indent_width(''))
-            self.locals[IF].append(State(self, value))
+            if value and then:
+                result = self.run_commands_new(then, prev_result, run=run)
+            else:
+                result = None
 
-            if value == TRUE:
-                return self.run_commands_new(then, prev_result, run=run)
-            return FALSE
+            branch = THEN if then is None else INLINE_THEN
+            self.locals[IF].append(State(self, value, branch))
+            return result
 
         elif key == 'if-then-else':
+            # inline if-then-else
             condition, true, false = values
-            value = self.run_commands_new(condition, run=run)
-            value = to_bool(value)
 
-            indent = None
-            self.locals.set(LINE_INDENT, indent_width(''))
-            self.locals[IF].append(State(self, value))
-            # prev_result = handle_if_statement(self, condition, prev_result)
-            if value == TRUE:
+            value = self.run_commands_new(condition, run=run)
+            value = to_bool(value) == TRUE
+
+            if value:
                 return self.run_commands_new(true, prev_result, run=run)
             else:
                 return self.run_commands_new(false, prev_result, run=run)
+
+        elif key == 'else-if-then':
+            condition, then = values
+            if not run:
+                raise NotImplementedError()
+
+            try:
+                # verify & update state
+                handle_else_statement(self)
+                value = self.run_commands_new(condition, prev_result, run=run)
+                value = to_bool(value) == TRUE
+            except Abort:
+                value = False
+
+            if value and then:
+                result = self.run_commands_new(then, prev_result, run=run)
+            else:
+                result = None
+
+            branch = THEN if then is None else INLINE_THEN
+            self.locals[IF].append(State(self, value, branch))
+            return result
+
+        elif key == 'else-if':
+            condition, = values
+            if not run:
+                raise NotImplementedError()
+
+            try:
+                # verify & update state
+                handle_else_statement(self)
+                value = self.run_commands_new(condition, prev_result, run=run)
+                value = to_bool(value) == TRUE
+            except Abort:
+                value = False
+
+            self.locals[IF].append(State(self, value, THEN))
+            return
+
+        elif key == 'else':
+            otherwise, = values
+            if not run:
+                raise NotImplementedError()
+
+            result = None
+            try:
+                # verify & update state
+                handle_else_statement(self)
+                result = self.run_commands_new(otherwise, prev_result, run=run)
+            except Abort:
+                pass
+
+            if otherwise is not None:
+                self._last_if['branch'] = INLINE_ELSE
+            return result
 
         elif key == 'define-inline-function':
             f, args, body = values
@@ -1415,7 +1528,9 @@ def is_function_definition(terms: List[str]) -> bool:
 
 
 def to_bool(line: str) -> bool:
-    return TRUE if line != FALSE else FALSE
+    if line != FALSE and line is not None:
+        return TRUE
+    return FALSE
 
 
 def is_public(key: str) -> bool:

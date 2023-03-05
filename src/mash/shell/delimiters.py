@@ -39,6 +39,8 @@ THEN = Python.THEN.value
 ELSE = Python.ELSE.value
 # AND = Python.AND.value
 # OR = Python.OR.value
+INLINE_THEN = 'inline-then'
+INLINE_ELSE = 'inline-else'
 
 
 class KeyWords(Enum):

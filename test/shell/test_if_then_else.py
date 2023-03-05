@@ -2,6 +2,7 @@ from pytest import raises
 
 from mash import io_util
 from mash.shell import ShellError
+from mash.shell.delimiters import TRUE
 from mash.shell.shell import Shell, run_command
 
 
@@ -238,10 +239,12 @@ else
 if {c} then print 4
     """
 
-    assert catch_output(line('1', ' ', ' ')).strip() == '1'
-    assert catch_output(line('1', '1', ' ')).strip() == '1'
-    # assert catch_output(line(' ', '1', ' ')).strip() == '2'
-    # assert catch_output(line(' ', ' ', ' ')).strip() == '3'
+    t = TRUE
+    f = '""'
+    assert catch_output(line(t, f, f)) == '1'
+    # assert catch_output(line('1', '1', ' ')) == '1'
+    # assert catch_output(line(' ', '1', ' ')) == '2'
+    # assert catch_output(line(' ', ' ', ' ')) == '3'
 
     # assert catch_output(line('1', ' ', '1')).strip() == '1\n4'
     # assert catch_output(line('1', '1', '1')).strip() == '1\n4'

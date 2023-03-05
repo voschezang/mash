@@ -288,38 +288,58 @@ def parse(text, init=True):
         p[0] = ('return', p[2])
 
     def p_if(p):
-        """expression : IF expression THEN
-                      | IF expression
-        """
+        'expression : IF expression'
         p[0] = ('if', p[2])
+
+    def p_if_then_else_inline(p):
+        'expression : IF expression THEN expression ELSE expression'
+        _, _if, cond, _then, true, _else, false = p
+        p[0] = ('if-then-else', cond, true, false)
+
+    def p_if_then_else(p):
+        'expression : IF expression THEN expression ELSE'
+        _, _if, cond, _then, true, _else = p
+        p[0] = ('if-then-else', cond, true, None)
+
+    def p_if_then(p):
+        'expression : IF expression THEN'
+        p[0] = ('if-then', p[2], None)
+
+    def p_if_then_inline(p):
+        'expression : IF expression THEN expression'
+        _, _if, cond, _then, true = p
+        p[0] = ('if-then', cond, true)
 
     def p_then(p):
         """expression : THEN expression
                       | THEN
         """
         if len(p) == 2:
-            p[0] = ('then',)
+            p[0] = ('then', None)
         else:
             p[0] = ('then', p[2])
 
-    def p_if_then_else(p):
-        """expression : IF expression THEN expression ELSE expression
-                      | IF expression THEN expression ELSE
-                      | IF expression THEN expression
+    def p_else_if_then(p):
+        """expression : ELSE IF expression THEN expression
+                      | ELSE IF expression THEN
         """
-        _, _if, cond, *then_else = p
+        if len(p) == 5:
+            p[0] = ('else-if-then', p[3], p[4])
+        else:
+            p[0] = ('else-if-then', p[3], None)
 
-        if len(then_else) == 4:
-            _then, true, _else, false = then_else
-            p[0] = ('if-then-else', cond, true, false)
-            return
+    def p_else_if(p):
+        'expression : ELSE IF expression'
+        p[0] = ('else-if', p[3])
 
-        if len(then_else) == 2:
-            _then, true = then_else
-        elif len(then_else) == 3:
-            _then, true, _else = then_else
-
-        p[0] = ('if-then', cond, true)
+    def p_else(p):
+        """expression : ELSE expression
+                      | ELSE
+        """
+        if len(p) == 2:
+            p[0] = ('else', None)
+        else:
+            p[0] = ('else', p[2])
 
     def p_logical_bin(p):
         """expression : expression AND expression

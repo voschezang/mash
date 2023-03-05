@@ -264,6 +264,14 @@ outer = c
     assert results[4][1:] == ('=', 'outer', 'c')
 
 
+def test_parse_else_if():
+    text = 'else if 1 then echo 2'
+    result = parse_line(text)
+    key, result = parse_line(text)
+    assert key == 'else-if-then'
+    assert result[0][0] == 'if-then'
+
+
 def test_parse_bash_pipe():
     result = parse_line('print a | echo')
     assert result[0] == 'bash'
