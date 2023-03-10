@@ -158,6 +158,19 @@ f 10
 
 Proposals for future changes.
 
+
+
+**Predicate logic**
+
+```python
+a and b or c
+a and b => not c
+x > 1 for all x in X
+x + y == 1 for any x in X, y in Y
+```
+
+
+
 **Basic Functions**
 
 Inf loop: `f x = f x |> repeat x` 
@@ -166,74 +179,11 @@ Inf loop: `f x = f x |> repeat x`
 
 
 
-**Break-like return statement**
-
-```python
-abs (x):
-  if x > 0 then return x
-  return math -x
-```
-
-
-
-**Multiline if-then-else conditions**
-
-Options:
-
-```python
-f (n):
-  if $n == 0 then 
-    result = 1
-  else if $n > 0 then
-    result <- range $n |> product
-
-  if $n == 0 then 
-    return 1
-  if $n > 0 then 
-    return range $n |> product
-
-  result <- if $n == 0 then echo 1
-			 else if $n >= 0 then range $n |> product
-
-  result <- if $n == 0 then 
-		  	echo 1
-		  else if $n > 0 then
-  			range $n |> product
-        
-	if $n |> math 1 + $ |> echo
-  then result = 1
-  else if $n > 1
-  then
-  	result = 0
-```
-
-
-
-Choose precedence
-
-```python
-x <- if $y then (range 3 |> product) else (range 10 |> product)
-x <- if $y then range 3 |> product else range 10 |> product
-
-x <- if $y then range 3 else range 10 |> product
-x <- (if $y then range 3 else range 10) |> product
-```
-
-
-
 **Skip `then` keyword in if-then statements**
 
 ```python
 if 1:
   print 1
-```
-
-
-
-**Logical operators: `and, or`**
-
-```python
-if $x and math 1 + 3 then ..
 ```
 
 

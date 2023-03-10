@@ -222,10 +222,10 @@ def parse(text, init=True):
     )
 
     def p_lines_empty(p):
+        """lines : BREAK
+                 | INDENT BREAK
+        """
         'lines : BREAK'
-        # """lines : BREAK
-        #          | INDENT
-        # """
         # TODO handle `indent expr ; expr`
         p[0] = ('lines', [])
 
@@ -252,6 +252,31 @@ def parse(text, init=True):
     def p_line(p):
         'line : statement'
         p[0] = p[1]
+
+    # def p_lines_infix_whitespace(p):
+    #     'lines : line BREAK INDENT BREAK lines'
+    #     _, lines = p[5]
+    #     p[0] = ('lines', [p[1]] + lines)
+
+    # def p_line_indented_suffix(p):
+    #     """lines : lines INDENT
+    #              | lines INDENT BREAK
+    #              | lines BREAK INDENT
+    #     """
+    #     p[0] = p[1]
+
+    # def p_line_indented_2(p):
+    #     'lines : lines INDENT BREAK line'
+    #     _, lines = p[1]
+    #     p[0] = ('lines', lines + [p[4]])
+
+    def p_line_indent_empty(p):
+        'line : INDENT'
+        # """line : INDENT
+        #         | INDENT BREAK
+        # """
+        n = indent_width(p[1])
+        p[0] = ('indent', n, None)
 
     def p_statement(p):
         """statement : assignment
@@ -421,7 +446,7 @@ def parse(text, init=True):
         'terms : term term'
         p[0] = ('terms', [p[1], p[2]])
 
-    def p_terms_tail(p):
+    def p_terms_head_tail(p):
         'terms : term terms'
         key, tail = p[2]
         p[0] = ('terms', [p[1]] + tail)

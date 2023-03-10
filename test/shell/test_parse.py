@@ -168,8 +168,10 @@ def test_parse_indent():
 def test_parse_indent_multiline():
     text = '\n\n    \n\t\t\n    echo'
     result = parse(text)[1]
-    assert result[0][0] == 'indent'
-    assert result[1][0] == 'indent'
+    assert result[0][0] is 'indent'
+    assert result[0][2] is None
+    assert result[1][0] is 'indent'
+    assert result[1][2] is None
     assert result[2][0] == 'indent'
     assert result[2][2] == 'echo'
 
@@ -231,8 +233,8 @@ def test_parse_if_with_colons():
 def test_parse_else():
     text = 'else if 2 == 2'
     key, result = parse_line(text)
-    assert key == 'else'
-    assert result[0] == 'if'
+    assert key == 'else-if'
+    assert result[1:] == ('==', '2', '2')
 
 
 def test_parse_if_then_multiline():
