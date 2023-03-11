@@ -269,10 +269,10 @@ outer = c
 
 def test_parse_else_if():
     text = 'else if 1 then echo 2'
-    result = parse_line(text)
-    key, result = parse_line(text)
+    key, condition, true = parse_line(text)
     assert key == 'else-if-then'
-    assert result[0][0] == 'if-then'
+    assert condition == '1'
+    assert true[1] == ['echo', '2']
 
 
 def test_parse_bash_pipe():
@@ -293,10 +293,11 @@ def test_parse_pipe():
 
 def test_parse_pipe_multiple():
     result = parse_line('print a |> echo 1 | echo 2')
-    assert result[1] == '|'
-    assert result[3][1] == ['echo', '2']
-    assert result[2][1] == '|>'
-    assert result[2][2][1] == ['print', 'a']
+    assert result[1] == '|>'
+    assert result[2][1] == ['print', 'a']
+    assert result[3][1] == '|'
+    assert result[3][2][1] == ['echo', '1']
+    assert result[3][3][1] == ['echo', '2']
 
 
 def test_parse_pipe_assign():
@@ -310,8 +311,9 @@ def test_parse_pipe_assign():
 def test_parse_pipes_with_assign():
     result = parse_line('echo a |> echo b == c |> echo c')
     assert result[1] == '|>'
-    assert result[2][1] == '|>'
-    assert result[2][3][1] == '=='
+    assert result[2][1] == ['echo', 'a']
+    assert result[3][1] == '|>'
+    assert result[3][2][1] == '=='
 
     line = 'echo a |> echo b =='
     with raises(ShellError):
@@ -324,6 +326,10 @@ def test_parse_pipes_if_then():
     assert result[0] == 'pipe'
     assert result[2][1] == ['echo', '1']
     assert result[3][0] == 'if-then-else'
+
+    with raises(ShellError):
+        text = 'echo 1 |> if true'
+        parse_line(text)
 
     text = 'if f 1 |> g then echo true else echo false'
     result = parse_line(text)

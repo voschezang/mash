@@ -253,28 +253,8 @@ def parse(text, init=True):
         'line : statement'
         p[0] = p[1]
 
-    # def p_lines_infix_whitespace(p):
-    #     'lines : line BREAK INDENT BREAK lines'
-    #     _, lines = p[5]
-    #     p[0] = ('lines', [p[1]] + lines)
-
-    # def p_line_indented_suffix(p):
-    #     """lines : lines INDENT
-    #              | lines INDENT BREAK
-    #              | lines BREAK INDENT
-    #     """
-    #     p[0] = p[1]
-
-    # def p_line_indented_2(p):
-    #     'lines : lines INDENT BREAK line'
-    #     _, lines = p[1]
-    #     p[0] = ('lines', lines + [p[4]])
-
     def p_line_indent_empty(p):
         'line : INDENT'
-        # """line : INDENT
-        #         | INDENT BREAK
-        # """
         n = indent_width(p[1])
         p[0] = ('indent', n, None)
 
@@ -283,16 +263,24 @@ def parse(text, init=True):
                      | conditional
                      | definition
                      | inner_statement
+                     | return_statement
         """
         p[0] = p[1]
 
     def p_statement_return(p):
-        'statement : RETURN inner_statement'
+        'return_statement : RETURN inner_statement'
         p[0] = ('return', p[2])
 
-    def p_statement_inline(p):
+    def p_inner_statement(p):
         """inner_statement : conjunction
                            | full_conditional
+        """
+        p[0] = p[1]
+
+    def p_final_statement(p):
+        """final_statement : assignment
+                           | inner_statement
+                           | return_statement
         """
         p[0] = p[1]
 
@@ -344,13 +332,13 @@ def parse(text, init=True):
         p[0] = ('if-then', p[2], None)
 
     def p_if_then_inline(p):
-        'conditional : IF conjunction THEN conjunction'
+        'conditional : IF conjunction THEN final_statement'
         _, _if, cond, _then, true = p
         p[0] = ('if-then', cond, true)
 
     def p_then(p):
-        """conditional : THEN conjunction
-                      | THEN
+        """conditional : THEN final_statement
+                       | THEN
         """
         if len(p) == 2:
             p[0] = ('then', None)
@@ -358,11 +346,11 @@ def parse(text, init=True):
             p[0] = ('then', p[2])
 
     def p_else_if_then(p):
-        """conditional : ELSE IF conjunction THEN conjunction
+        """conditional : ELSE IF conjunction THEN final_statement
                       | ELSE IF conjunction THEN
         """
-        if len(p) == 5:
-            p[0] = ('else-if-then', p[3], p[4])
+        if len(p) == 6:
+            p[0] = ('else-if-then', p[3], p[5])
         else:
             p[0] = ('else-if-then', p[3], None)
 
@@ -371,8 +359,8 @@ def parse(text, init=True):
         p[0] = ('else-if', p[3])
 
     def p_else(p):
-        """conditional : ELSE conjunction
-                      | ELSE
+        """conditional : ELSE final_statement
+                       | ELSE
         """
         if len(p) == 2:
             p[0] = ('else', None)
@@ -383,7 +371,6 @@ def parse(text, init=True):
         """conditional : conjunction
                        | full_conditional
         """
-        # 'conditional : conjunction'
         p[0] = p[1]
 
     def p_pipe_py(p):
@@ -396,6 +383,10 @@ def parse(text, init=True):
 
     def p_conjunction(p):
         'conjunction : expression'
+        p[0] = p[1]
+
+    def p_expression_full_conditional(p):
+        'expression : full_conditional'
         p[0] = p[1]
 
     def p_expression(p):
