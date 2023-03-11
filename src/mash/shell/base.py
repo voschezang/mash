@@ -555,14 +555,26 @@ class BaseShell(Cmd):
 
         if DEFINE_FUNCTION in self.locals:
             # self._extend_inline_function_definition(line)
+            f = self.locals[DEFINE_FUNCTION]
             if key == 'indent':
                 # TODO compare indent width
-                _, _width, value = ast
-                if value is not None:
-                    self.locals[DEFINE_FUNCTION].inner.append(value)
-                return
+                _, width, value = ast
+                if value is None:
+                    return
+
+                if f.line_indent is None:
+                    f.line_indent = width
+
+                if width >= f.line_indent:
+                    self.locals[DEFINE_FUNCTION].inner.append(ast)
+                    return
+
+                # finalize function definition
+                self.env[f.func_name] = f
+                self.locals.rm(DEFINE_FUNCTION)
+
             elif key != 'lines':
-                f = self.locals[DEFINE_FUNCTION]
+                # finalize function definition
                 self.env[f.func_name] = f
                 self.locals.rm(DEFINE_FUNCTION)
 
@@ -653,11 +665,11 @@ class BaseShell(Cmd):
                         handle_prev_then_else_statements(self)
                     except Abort:
                         return prev_result
-                elif width == self.last_if['line_indent']:
+                elif width == self._last_if['line_indent']:
                     if not closed:
                         raise ShellError(
                             'Expected deeper indent for if-else clause')
-                elif width < self.last_if['line_indent']:
+                elif width < self._last_if['line_indent']:
                     if self._last_if['branch'] is None:
                         raise ShellError(
                             'Unexpected indent. If-clause was not closed')
@@ -666,7 +678,7 @@ class BaseShell(Cmd):
                         self.locals[IF].pop()
                         if not self.locals[IF]:
                             break
-                        if width <= self.last_if['line_indent']:
+                        if width <= self._last_if['line_indent']:
                             break
 
             self.locals.set(LINE_INDENT, width)
