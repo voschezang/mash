@@ -20,7 +20,7 @@ from mash.shell.delimiters import ELSE, INLINE_ELSE, INLINE_THEN, comparators, D
 from mash.filesystem.scope import Scope, show
 from mash.shell.errors import ShellError, ShellPipeError
 from mash.shell.function import InlineFunction
-from mash.shell.lex_parser import Term, parse
+from mash.shell.lex_parser import Term, Terms, parse
 from mash.shell.parsing import expand_variables, expand_variables_inline, filter_comments, indent_width, infer_infix_args, inline_indent_with, parse_commands, quote_items
 from mash.util import for_any, has_method, identity, is_valid_method_name, omit_prefixes, quote_all, removeprefix, split_prefixes, translate_terms
 
@@ -380,7 +380,7 @@ class BaseShell(Cmd):
         k, acc, *args = commands
 
         for item in items:
-            command = ('list', [k, acc] + args)
+            command = Terms([k, acc] + args)
             acc = self.run_commands_new(command, item, run=True)
 
             if acc.strip() == '' and self._last_results:
@@ -566,8 +566,6 @@ class BaseShell(Cmd):
                 self.env[f.func_name] = f
                 self.locals.rm(DEFINE_FUNCTION)
 
-        # if key.startswith('if'):
-        #     # TODO parse if after an else-clause
         if key not in ('lines', 'indent'):
             try:
                 handle_prev_then_else_statements(self)
@@ -600,19 +598,18 @@ class BaseShell(Cmd):
 
             raise NotImplementedError()
 
+        elif key == 'map':
+            lhs, rhs = values
+            prev = self.run_commands_new(lhs, prev_result, run=run)
+
+            if isinstance(rhs, str) or isinstance(rhs, Term):
+                rhs = Terms([rhs])
+            return self.map2(rhs, prev)
+
         elif key == 'pipe':
-            op, a, b = values
-
+            a, b = values
             prev = self.run_commands_new(a, prev_result, run=run)
-
-            if op == '|>':
-                next = self.run_commands_new(b, prev, run=run)
-            elif op == '>>=':
-                if isinstance(b, str) or isinstance(b, Term):
-                    b = ('terms', [b])
-                return self.map2(b, prev)
-            else:
-                raise ShellError(f'unknown operator {op}')
+            next = self.run_commands_new(b, prev, run=run)
             return next
 
         elif key == 'bash':
@@ -740,7 +737,8 @@ class BaseShell(Cmd):
             if value and then:
                 result = self.run_commands_new(then, prev_result, run=run)
             else:
-                result = None
+                # set default value
+                result = FALSE
 
             branch = THEN if then is None else INLINE_THEN
             self.locals[IF].append(State(self, value, branch))
@@ -856,7 +854,7 @@ class BaseShell(Cmd):
         if len(items) >= 2 and run:
             k, *args = items
             if k == 'map':
-                args = ('list', list(args))
+                args = Terms(list(args))
                 return self.map2(args, prev_result)
             elif k in ['reduce', 'foldr']:
                 return self.foldr2(args, prev_result)

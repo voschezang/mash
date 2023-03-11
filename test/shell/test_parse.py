@@ -275,6 +275,22 @@ def test_parse_else_if():
     assert true[1] == ['echo', '2']
 
 
+def test_parse_if_with_assign():
+    text = 'a <- if 20 then echo 10'
+    key, *result = parse_line(text)
+    assert key == 'assign'
+    assert result[0] == '<-'
+    assert result[1] == 'a'
+    assert result[2][0] == 'if-then'
+
+
+def test_parse_map():
+    key, lhs, rhs = parse_line('range 4 >>= echo')
+    assert key == 'map'
+    assert lhs[1] == ['range', '4']
+    assert rhs == 'echo'
+
+
 def test_parse_bash_pipe():
     result = parse_line('print a | echo')
     assert result[0] == 'bash'
@@ -292,12 +308,18 @@ def test_parse_pipe():
 
 
 def test_parse_pipe_multiple():
-    result = parse_line('print a |> echo 1 | echo 2')
-    assert result[1] == '|>'
-    assert result[2][1] == ['print', 'a']
-    assert result[3][1] == '|'
-    assert result[3][2][1] == ['echo', '1']
-    assert result[3][3][1] == ['echo', '2']
+    result = parse_line('print a |> echo 1 >>= echo 2 | echo')
+    key, symbol, lhs, rhs = result
+    assert key == 'pipe'
+    assert symbol == '|>'
+    assert lhs[1] == ['print', 'a']
+    assert rhs[1] == '|'
+    assert rhs[2][0] == 'map'
+    assert rhs[3] == 'echo'
+
+    key, a, b = rhs[2]
+    assert a[1] == ['echo', '1']
+    assert b[1] == ['echo', '2']
 
 
 def test_parse_pipe_assign():

@@ -12,6 +12,7 @@ tokens = (
     'BASH',  # | >>
     'SHELL',  # !
     'PIPE',  # |>
+    'MAP',  # >>=
 
     'BREAK',  # \n ;
     'INDENT',
@@ -148,8 +149,12 @@ def init_lex():
         t.type = reserved.get(t.value, 'METHOD')
         return t
 
+    def t_MAP(t):
+        r'>>='
+        return t
+
     def t_PIPE(t):
-        r'\|>' '|' r'>>='
+        r'\|>'
         return t
 
     def t_BASH(t):
@@ -278,8 +283,7 @@ def parse(text, init=True):
         p[0] = p[1]
 
     def p_final_statement(p):
-        """final_statement : assignment
-                           | inner_statement
+        """final_statement : conjunction
                            | return_statement
         """
         p[0] = p[1]
@@ -322,6 +326,11 @@ def parse(text, init=True):
         _, _if, cond, _then, true, _else, false = p
         p[0] = ('if-then-else', cond, true, false)
 
+    def p_if_then_inline(p):
+        'full_conditional : IF conjunction THEN conjunction'
+        _, _if, cond, _then, true = p
+        p[0] = ('if-then', cond, true)
+
     def p_if_then_else(p):
         'conditional : IF conjunction THEN conjunction ELSE'
         _, _if, cond, _then, true, _else = p
@@ -331,8 +340,8 @@ def parse(text, init=True):
         'conditional : IF conjunction THEN'
         p[0] = ('if-then', p[2], None)
 
-    def p_if_then_inline(p):
-        'conditional : IF conjunction THEN final_statement'
+    def p_if_then_inline_final(p):
+        'conditional : IF conjunction THEN return_statement'
         _, _if, cond, _then, true = p
         p[0] = ('if-then', cond, true)
 
@@ -375,7 +384,7 @@ def parse(text, init=True):
 
     def p_pipe_py(p):
         'conjunction : expression PIPE conjunction'
-        p[0] = ('pipe', p[2], p[1], p[3])
+        p[0] = ('pipe', p[1], p[3])
 
     def p_pipe_bash(p):
         'conjunction : expression BASH conjunction'
@@ -384,6 +393,10 @@ def parse(text, init=True):
     def p_conjunction(p):
         'conjunction : expression'
         p[0] = p[1]
+
+    def p_pipe_map(p):
+        'expression : expression MAP expression'
+        p[0] = ('map', p[1], p[3])
 
     def p_expression_full_conditional(p):
         'expression : full_conditional'
@@ -502,6 +515,10 @@ def parse(text, init=True):
 
     # add a newline to allow empty strings to be matched
     return parser.parse('\n' + text)
+
+
+def Terms(args):
+    return ('terms', args)
 
 
 if __name__ == '__main__':
