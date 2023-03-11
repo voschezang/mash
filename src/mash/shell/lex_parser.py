@@ -386,13 +386,13 @@ def parse(text, init=True):
         'conjunction : expression PIPE conjunction'
         p[0] = ('pipe', p[1], p[3])
 
-    def p_pipe_bash(p):
-        'conjunction : expression BASH conjunction'
-        p[0] = ('bash', p[2], p[1], p[3])
-
     def p_conjunction(p):
         'conjunction : expression'
         p[0] = p[1]
+
+    def p_pipe_bash(p):
+        'expression : expression BASH expression'
+        p[0] = ('bash', p[2], p[1], p[3])
 
     def p_pipe_map(p):
         'expression : expression MAP expression'
