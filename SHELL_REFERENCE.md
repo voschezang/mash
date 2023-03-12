@@ -31,10 +31,16 @@ For examples, see [lib](https://github.com/voschezang/mash/blob/main/src/lib/mat
 Multiline if-then-else statement
 
 ```python
-if .. then
+if 10 < 1 then
 	print 1
 else
 	print 2
+```
+
+Assignment
+
+```bash
+x <- if today then yes else no
 ```
 
 ### Maps and Loops
