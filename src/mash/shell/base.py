@@ -691,7 +691,8 @@ class BaseShell(Cmd):
             if not run:
                 return ['math'] + args
 
-            line = 'math ' + ' '.join(quote_all(args, ignore=list('*$<>')))
+            line = 'math ' + ' '.join(quote_all(args,
+                                                ignore=list('*$<>') + ['>=', '<=']))
             return self.pipe_cmd_py(line, '')
 
         elif key == 'logic':

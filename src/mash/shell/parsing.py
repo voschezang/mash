@@ -198,7 +198,7 @@ def quote_items(items: List[str]) -> Iterable[str]:
     """
     for arg in items:
         arg = str(arg)
-        if arg in delimiters.python:
+        if arg in delimiters.python or arg in delimiters.comparators:
             yield arg
         else:
             yield shlex.quote(arg)

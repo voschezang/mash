@@ -36,9 +36,12 @@ tokens = (
     'VARIABLE',  # $x
     'WORD',
     'WORD_WITH_DOT',
+    'NUMBER_WITH_DOT',
+
     'WILDCARD',
     'WILDCARD_RANGE',
     'NUMBER',  # 0123456789
+    'SYMBOL',
 )
 reserved = {
     'if': 'IF',
@@ -139,14 +142,19 @@ def init_lex():
         # TODO verify matching []
         return t
 
+    def t_METHOD(t):
+        r'\b[a-zA-Z_][a-zA-Z_0-9]*\b'
+        t.type = reserved.get(t.value, 'METHOD')
+        return t
+
     def t_WORD_WITH_DOT(t):
-        r'([\w\d]+\.[\.\w\d]*)|([\w\d]*\.[\.\w\d]+)'
+        r'\b([\w\d]+\.[\.\w\d]*)|([\w\d]*\.[\.\w\d]+)\b'
         # match *. or .* or *.*
         return t
 
-    def t_METHOD(t):
-        r'[a-zA-Z_][a-zA-Z_0-9]*'
-        t.type = reserved.get(t.value, 'METHOD')
+    def t_NUMBER_WITH_DOT(t):
+        r'-?(\d+\.\d*)|(\d*\.\d+)'
+        # match *. or .* or *.*
         return t
 
     def t_MAP(t):
@@ -174,19 +182,23 @@ def init_lex():
         return t
 
     def t_INFIX_OPERATOR(t):
-        r'!=|<|>|<=|>='
+        r'!=|<=|>=|<|>'
         return t
 
     def t_WORD(t):
-        r'[\w\d\+\-\*/%&\~]+'
+        r'[\w\d\-%&\~]+'
         return t
 
     def t_NUMBER(t):
-        r'\d+'
+        r'-?\d+'
         return t
 
     def t_SHELL(t):
         r'\!'
+        return t
+
+    def t_SYMBOL(t):
+        r'\~|\+|\*|-|%|&'
         return t
 
     def t_error(t):
@@ -481,8 +493,12 @@ def parse(text, init=True):
         'value : WILDCARD_RANGE'
         p[0] = Term(p[1], 'range')
 
-    def p_value_number(p):
+    def p_value_number_int(p):
         'value : NUMBER'
+        p[0] = Term(p[1], 'number')
+
+    def p_value_number_float(p):
+        'value : NUMBER_WITH_DOT'
         p[0] = Term(p[1], 'number')
 
     def p_value_method(p):
@@ -492,6 +508,10 @@ def parse(text, init=True):
     def p_value_variable(p):
         'value : VARIABLE'
         p[0] = Term(p[1], 'variable')
+
+    def p_value_symbol(p):
+        'value : SYMBOL'
+        p[0] = Term(p[1], 'symbol')
 
     def p_value_literal_string(p):
         'value : SINGLE_QUOTED_STRING'

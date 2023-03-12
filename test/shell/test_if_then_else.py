@@ -77,7 +77,8 @@ def test_shell_if_then_nested():
     assert catch_output('if 1 then if 2 then print 3',
                         shell=shell) == '3'
 
-    assert catch_output('if 1 then if "" print 3', shell=shell) == ''
+    with raises(ShellError):
+        run_command('if 1 then if "" print 3', shell=shell)
 
     assert catch_output('if "" then if 2 then print 3',
                         shell=shell) == ''

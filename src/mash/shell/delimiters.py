@@ -5,7 +5,7 @@ from enum import Enum
 FALSE = ''
 TRUE = '1'
 
-comparators = ['==', '!=', '>', '<']
+comparators = ['==', '!=', '>', '<', '>=', '<=']
 
 
 class Python(Enum):

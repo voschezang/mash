@@ -56,6 +56,23 @@ def test_parse_word():
     assert result[1][0].type == 'term'
     assert result[1][0] == '238u3r'
 
+    line = '+'
+    result = parse(line)
+    assert result[1][0].type == 'symbol'
+    assert result[1][0] == '+'
+
+
+def test_parse_equations():
+    text = '1+a'
+    key, result = parse_line(text)
+    assert key == 'terms'
+    assert result[0] == '1'
+    assert result[0].type == 'term'
+    assert result[1] == '+'
+    assert result[1].type == 'symbol'
+    assert result[2] == 'a'
+    assert result[2].type == 'method'
+
 
 def test_parse_range():
     line = 'pre{1..3}post'
@@ -83,6 +100,16 @@ def test_parse_infix():
     assert op == '='
     assert left == ('terms', ['a', 'b'])
     assert right == '2'
+
+
+def test_parse_numbers():
+    numbers = ['-1', '-0.1', '.2', '-100.']
+    text = 'x = ' + ' '.join(numbers)
+    # text = '-1.'
+    result = parse_line(text)
+    assert result[0] == 'assign'
+    assert result[2] == 'x'
+    assert result[3][1] == numbers
 
 
 def test_parse_quotes():
@@ -168,9 +195,9 @@ def test_parse_indent():
 def test_parse_indent_multiline():
     text = '\n\n    \n\t\t\n    echo'
     result = parse(text)[1]
-    assert result[0][0] is 'indent'
+    assert result[0][0] == 'indent'
     assert result[0][2] is None
-    assert result[1][0] is 'indent'
+    assert result[1][0] == 'indent'
     assert result[1][2] is None
     assert result[2][0] == 'indent'
     assert result[2][2] == 'echo'
