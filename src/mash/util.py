@@ -299,8 +299,8 @@ def split_prefixes(items: Sequence[T], prefixes: Sequence[T]) -> Iterable[T]:
     return takewhile(predicate, items)
 
 
-def translate_terms(terms: Iterable[str], translations: dict):
-    """Iterate over `terms` and return any translations found.
+def translate_items(terms: Iterable[str], translations: dict):
+    """Iterate over `items` and return any translations found.
     """
     for term in terms:
         term = term.strip()

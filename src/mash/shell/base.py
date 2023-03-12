@@ -13,16 +13,16 @@ import subprocess
 
 from mash import io_util
 from mash.filesystem.filesystem import FileSystem, cd
+from mash.filesystem.scope import Scope, show
 from mash.io_util import log, shell_ready_signal, print_shell_ready_signal, check_output
 from mash.shell import delimiters
-from mash.shell.if_statement import LINE_INDENT, Abort, Done, State, close_prev_if_statements, handle_else_statement, handle_if_statement, handle_then_else_statements, handle_prev_then_else_statements, handle_then_statement
 from mash.shell.delimiters import ELSE, INLINE_ELSE, INLINE_THEN, comparators, DEFINE_FUNCTION, FALSE, IF, LEFT_ASSIGNMENT, RETURN, RIGHT_ASSIGNMENT, THEN, TRUE
-from mash.filesystem.scope import Scope, show
 from mash.shell.errors import ShellError, ShellPipeError
 from mash.shell.function import InlineFunction
+from mash.shell.if_statement import LINE_INDENT, Abort, Done, State, close_prev_if_statements, handle_else_statement, handle_if_statement, handle_then_else_statements, handle_prev_then_else_statements, handle_then_statement
 from mash.shell.lex_parser import Term, Terms, parse
-from mash.shell.parsing import expand_variables, expand_variables_inline, filter_comments, indent_width, infer_infix_args, inline_indent_with, parse_commands, quote_items
-from mash.util import for_any, has_method, identity, is_valid_method_name, omit_prefixes, quote_all, removeprefix, split_prefixes, translate_terms
+from mash.shell.parsing import expand_variables, expand_variables_inline, filter_comments, indent_width, infer_infix_args, parse_commands, quote_items
+from mash.util import for_any, has_method, identity, is_valid_method_name, omit_prefixes, quote_all, removeprefix, split_prefixes
 
 
 confirmation_mode = False
@@ -578,13 +578,15 @@ class BaseShell(Cmd):
                 self.env[f.func_name] = f
                 self.locals.rm(DEFINE_FUNCTION)
 
-        if key not in ('lines', 'indent'):
+        if key not in ('lines', 'indent', 'else', 'else-if', 'else-if-then'):
             try:
                 handle_prev_then_else_statements(self)
             except Abort:
                 return prev_result
 
-        if key == 'terms':
+        if key == 'indent':
+            return self.run_handle_indent(values, prev_result, run)
+        elif key == 'terms':
             return self.run_handle_terms(values, prev_result, run)
         elif key == 'lines':
             self.locals.set(LINE_INDENT, indent_width(''))
@@ -646,44 +648,6 @@ class BaseShell(Cmd):
             b = self.run_commands_new(b, run=True)
             return b
 
-        elif key == 'indent':
-            # TODO
-            _, width, inner = ast
-            if inner is None:
-                return
-
-            if self.locals[IF]:
-                if not run:
-                    raise NotImplementedError()
-
-                closed = self._last_if['branch'] in (INLINE_THEN, INLINE_ELSE)
-                if width > self._last_if['line_indent']:
-                    if closed:
-                        raise ShellError(
-                            'Unexpected indent after if-else clause')
-                    try:
-                        handle_prev_then_else_statements(self)
-                    except Abort:
-                        return prev_result
-                elif width == self._last_if['line_indent']:
-                    if not closed:
-                        raise ShellError(
-                            'Expected deeper indent for if-else clause')
-                elif width < self._last_if['line_indent']:
-                    if self._last_if['branch'] is None:
-                        raise ShellError(
-                            'Unexpected indent. If-clause was not closed')
-                    # close prev if-statments
-                    while True:
-                        self.locals[IF].pop()
-                        if not self.locals[IF]:
-                            break
-                        if width <= self._last_if['line_indent']:
-                            break
-
-            self.locals.set(LINE_INDENT, width)
-            return self.run_commands_new(inner, prev_result, run=run)
-
         elif key == 'math':
             _key, values = ast
             args = self.run_commands_new(values, prev_result)
@@ -730,7 +694,7 @@ class BaseShell(Cmd):
                 # verify & update state
                 handle_then_statement(self)
                 if then:
-                    result = self.run_commands_new(then, prev_result, run=run)
+                    result = self.run_commands_new(then, run=run)
             except Abort:
                 pass
 
@@ -748,6 +712,7 @@ class BaseShell(Cmd):
             value = to_bool(value) == TRUE
 
             if value and then:
+                # include prev_result for inline if-then statement
                 result = self.run_commands_new(then, prev_result, run=run)
             else:
                 # set default value
@@ -763,11 +728,10 @@ class BaseShell(Cmd):
 
             value = self.run_commands_new(condition, run=run)
             value = to_bool(value) == TRUE
+            line = true if value else false
 
-            if value:
-                return self.run_commands_new(true, prev_result, run=run)
-            else:
-                return self.run_commands_new(false, prev_result, run=run)
+            # include prev_result for inline if-then-else statement
+            return self.run_commands_new(line, prev_result, run=run)
 
         elif key == 'else-if-then':
             condition, then = values
@@ -777,13 +741,13 @@ class BaseShell(Cmd):
             try:
                 # verify & update state
                 handle_else_statement(self)
-                value = self.run_commands_new(condition, prev_result, run=run)
+                value = self.run_commands_new(condition, run=run)
                 value = to_bool(value) == TRUE
             except Abort:
                 value = False
 
             if value and then:
-                result = self.run_commands_new(then, prev_result, run=run)
+                result = self.run_commands_new(then, run=run)
             else:
                 result = None
 
@@ -799,7 +763,7 @@ class BaseShell(Cmd):
             try:
                 # verify & update state
                 handle_else_statement(self)
-                value = self.run_commands_new(condition, prev_result, run=run)
+                value = self.run_commands_new(condition, run=run)
                 value = to_bool(value) == TRUE
             except Abort:
                 value = False
@@ -816,7 +780,8 @@ class BaseShell(Cmd):
             try:
                 # verify & update state
                 handle_else_statement(self)
-                result = self.run_commands_new(otherwise, prev_result, run=run)
+                if otherwise:
+                    result = self.run_commands_new(otherwise, run=run)
             except Abort:
                 pass
 
@@ -860,6 +825,45 @@ class BaseShell(Cmd):
 
         else:
             raise NotImplementedError()
+
+    def run_handle_indent(self, args, prev_result, run):
+        width, inner = args
+        if inner is None:
+            return
+
+        if self.locals[IF]:
+            if not run:
+                raise NotImplementedError()
+
+            closed = self._last_if['branch'] in (INLINE_THEN, INLINE_ELSE)
+
+            if width < self._last_if['line_indent'] or (
+                width == self._last_if['line_indent'] and
+                    inner[0] not in ['then', 'else']):
+
+                if self._last_if['branch'] is None:
+                    raise ShellError(
+                        'Unexpected indent. If-clause was not closed')
+                # close prev if-statments
+                while True:
+                    self.locals[IF].pop()
+                    if not self.locals[IF]:
+                        break
+                    if width <= self._last_if['line_indent']:
+                        # compare width to next if-clause
+                        break
+
+            if self.locals[IF] and width > self._last_if['line_indent']:
+                if closed:
+                    raise ShellError(
+                        'Unexpected indent after if-else clause')
+                try:
+                    handle_prev_then_else_statements(self)
+                except Abort:
+                    return prev_result
+
+        self.locals.set(LINE_INDENT, width)
+        return self.run_commands_new(inner, prev_result, run=run)
 
     def run_handle_terms(self, values, prev_result: str, run: bool):
         items = values[0]
@@ -1437,23 +1441,6 @@ class BaseShell(Cmd):
 
             if isinstance(result, tuple) and result[0] == 'return':
                 return result[1]
-
-        #     for line in f.inner:
-        #         self.onecmd(line, print_result=False)
-
-        #         if RETURN in self.locals:
-        #             if self.locals[RETURN] is None:
-        #                 raise ShellError('invalid state')
-        #             return self.locals[RETURN]
-
-        #     terms = [term for term in f.command.split(' ') if term != '']
-        #     if not f.multiline:
-        #         terms = list(translate_terms(terms, translations))
-
-        #     # don't re-quote terms to maintain newlines
-        #     result = self.eval(terms, quote=False)
-
-        # return result
 
     def handle_define_inline_function(self, terms: List[str]) -> str:
         f, *args = terms

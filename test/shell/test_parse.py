@@ -311,6 +311,20 @@ def test_parse_if_with_assign():
     assert result[2][0] == 'if-then'
 
 
+def test_parse_if_none():
+    with raises(ShellError):
+        parse('if    then')
+
+    with raises(ShellError):
+        parse('if then')
+
+    with raises(ShellError):
+        parse('else then')
+
+    with raises(ShellError):
+        parse('if else')
+
+
 def test_parse_map():
     key, lhs, rhs = parse_line('range 4 >>= echo')
     assert key == 'map'

@@ -521,6 +521,16 @@ def parse(text, init=True):
         'value : DOUBLE_QUOTED_STRING'
         p[0] = Term(p[1], 'quoted string')
 
+    def p_illegal_if_then(p):
+        """conditional : IF THEN
+                       | IF INDENT THEN
+                       | IF ELSE
+                       | IF INDENT ELSE
+                       | ELSE THEN
+                       | ELSE INDENT THEN
+        """
+        raise ShellError(f'Syntax error: invalid if-then-else statement: {p}')
+
     def p_error(p):
         print(f'Syntax error: {p}')
         raise ShellError(f'Syntax error: {p}')

@@ -12,11 +12,11 @@ import traceback
 
 from mash import io_util
 from mash.io_util import ArgparseWrapper, bold, has_argument, has_output, log, read_file
-from mash.util import has_method, is_valid_method_name
+from mash.util import has_method, is_valid_method_name, translate_items
 
 from mash.shell.function import ShellFunction as Function
 import mash.shell.function as func
-from mash.shell.base import ENV, FALSE, TRUE, BaseShell, ShellError, filter_private_keys, translate_terms
+from mash.shell.base import ENV, FALSE, TRUE, BaseShell, ShellError, filter_private_keys
 
 description = 'If no positional arguments are given then an interactive subshell is started.'
 epilog = f"""
@@ -167,7 +167,7 @@ class Shell(BaseShell):
         return '\n'.join((str(i) for i in range(*args)))
 
     def _eval_terms(self, terms=List[str]) -> str:
-        line = ''.join(translate_terms(terms, self.env.asdict()))
+        line = ''.join(translate_items(terms, self.env.asdict()))
         log(line)
 
         try:
