@@ -305,59 +305,18 @@ class BaseShell(Cmd):
     def do_fail(self, msg: str):
         raise ShellError(f'Fail: {msg}')
 
-    def do_reduce(self, *args: str):
-        """Reduce a sequence of items to using an operator.
-
-        See https://en.wikipedia.org/wiki/Reduction_operator
-
-        E.g. compute the sum:
-        `range 10 |> reduce sum 0 $
-        """
-        return self.do_foldr(*args)
-
-    def do_foldr(self, args: str, delimiter='\n'):
-        """Fold or reduce from right to left.
-
-        See https://wiki.haskell.org/Foldr_Foldl_Foldl'
-        """
-        lines = args.split(delimiter)
-        msg = 'Not enough arguments. Usage: `foldl f zero [args] $ [args]`.'
-        # if len(lines) <= 1:
-        if not lines:
-            log(msg)
-            return
-
-        items = lines[0].split(' ')
-        if len(items) <= 1:
-            log(msg)
-            return
-
-        f, zero, *args, line = items
-        lines = [line] + lines[1:]
-
-        if '$' in args:
-            i = args.index('$')
-        else:
-            i = -1
-
-        # apply the reduction
-        acc = zero
-        for line in lines:
-            local_args = args.copy()
-            line = line.split(' ')
-
-            if i == -1:
-                local_args += line
-            else:
-                local_args[i:i+1] = line
-
-            line = [f, acc] + local_args
-
-            acc = self.run_single_command(line)
-
-        return acc
-
     def map2(self, ast: tuple, prev_results: str, delimiter='\n') -> Iterable:
+        """Apply a function to every line.
+        If `$` is present, then each line from stdin is inserted there.
+        Otherwise each line is appended.
+
+        Usage
+        -----
+        ```sh
+        println a b |> map echo
+        println a b |> map echo prefix $ suffix
+        ```
+        """
         # monadic bind
         # https://en.wikipedia.org/wiki/Monad_(functional_programming)
         _key, items = parse(prev_results)
@@ -375,6 +334,18 @@ class BaseShell(Cmd):
 
         return delimiter.join(quote_all(results))
 
+    def foreach(self, ast: tuple, prev_results: str) -> Iterable:
+        """Apply a function to every term or word.
+
+        Usage
+        ```sh
+        echo a b |> foreach echo
+        echo a b |> foreach echo prefix $ suffix
+        ```
+        """
+        prev_results = '\n'.join(prev_results.split(' '))
+        return self.map2(ast, prev_results, delimiter=' ')
+
     def foldr2(self, commands: List[Term], prev_results: str, delimiter='\n'):
         _key, items = parse(prev_results)
         k, acc, *args = commands
@@ -388,71 +359,6 @@ class BaseShell(Cmd):
                 self.env[LAST_RESULTS] = []
 
         return acc
-
-    def do_map(self, args: str, delimiter='\n'):
-        """Apply a function to every line.
-        If `$` is present, then each line from stdin is inserted there.
-        Otherwise each line is appended.
-
-        Usage
-        -----
-        ```sh
-        println a b |> map echo
-        println a b |> map echo prefix $ suffix
-        ```
-        """
-        self.env[LAST_RESULTS] = []
-
-        lines = args.split(delimiter)
-        msg = 'Not enough arguments. Usage: `map f [args..] $ [args..]`.'
-        if len(lines) <= 1:
-            log(msg)
-            return
-
-        items = lines[0].split(' ')
-        if len(items) <= 1:
-            log(msg)
-            return
-
-        f, *args, line = items
-        lines = [line] + lines[1:]
-
-        if '$' in args:
-            i = args.index('$')
-        else:
-            i = -1
-
-        # collect all results
-        results = []
-        for j, line in enumerate(lines):
-            local_args = args.copy()
-            line = line.split(' ')
-
-            if i == -1:
-                local_args += line
-            else:
-                local_args[i:i+1] = line
-
-            line = [f] + local_args
-
-            self.env[LAST_RESULTS_INDEX] = j
-            results.append(self.run_single_command(line))
-
-        self.env[LAST_RESULTS_INDEX] = 0
-        return delimiter.join([str(result) for result in results])
-
-    def do_foreach(self, args):
-        """Apply a function to every term or word.
-
-        Usage
-        ```sh
-        echo a b |> foreach echo
-        echo a b |> foreach echo prefix $ suffix
-        ```
-        """
-        f, *args = args.split(' ')
-        args = '\n'.join(args)
-        return self.do_map(f'{f} {args}')
 
     def do_flatten(self, args: str) -> str:
         """Convert a space-separated string to a newline-separates string.
@@ -863,6 +769,9 @@ class BaseShell(Cmd):
             if k == 'map':
                 args = Terms(list(args))
                 return self.map2(args, prev_result)
+            elif k == 'foreach':
+                args = Terms(list(args))
+                return self.foreach(args, prev_result)
             elif k in ['reduce', 'foldr']:
                 return self.foldr2(args, prev_result)
 
@@ -960,31 +869,6 @@ class BaseShell(Cmd):
 
         raise NotImplementedError()
 
-    def onecmd2(self, line: str, print_result=True) -> bool:
-        """Parse and run `line`.
-        Returns 0 on success and None otherwise
-        """
-        try:
-            line = self.onecmd_prehook(line)
-            self.locals.set(RAW_LINE_INDENT, indent_width(line))
-
-            if DEFINE_FUNCTION in self.locals and self.locals[DEFINE_FUNCTION].multiline:
-                self._define_multiline_function(line)
-            else:
-                lines = list(parse_commands(line,
-                                            self.delimiters,
-                                            self.ignore_invalid_syntax))
-                result = self.run_commands(lines)
-
-                if print_result and result is not None:
-                    if result or not self.locals[IF]:
-                        print(result)
-
-        except CancelledError:
-            pass
-
-        return False
-
     def postcmd(self, stop, _):
         """Display the shell_ready_signal to indicate termination to a parent process.
         """
@@ -1030,165 +914,6 @@ class BaseShell(Cmd):
     ############################################################################
     # Pipes
     ############################################################################
-
-    def run_commands(self, lines: Iterable[List[str]], result=''):
-        """Run each command in `lines`.
-        The partial results are passed through to subsequent commands.
-        """
-        if not lines:
-            return
-
-        if LEFT_ASSIGNMENT in self.locals:
-            self.locals.rm(LEFT_ASSIGNMENT)
-
-        for i, line in enumerate(lines):
-            # indent = inline_indent_with(*self.locals[RAW_LINE_INDENT], i)
-            indent = self.locals[RAW_LINE_INDENT] + (i,)
-            self.locals.set(LINE_INDENT, indent)
-
-            if DEFINE_FUNCTION in self.locals:
-                self._extend_inline_function_definition(line)
-                result = None
-                continue
-
-            self._conditionally_insert_assign_operator(lines, i, line)
-
-            try:
-                result = self.run_single_command(line, result)
-
-            except ShellPipeError as e:
-                if self.ignore_invalid_syntax:
-                    log(e)
-                    return
-
-                raise ShellError(e)
-
-            except subprocess.CalledProcessError as e:
-                returncode, stderr = e.args
-                log(f'Shell exited with {returncode}: {stderr}')
-
-                if self.ignore_invalid_syntax:
-                    return
-
-                raise ShellError(str(e))
-
-            # handle inline `<-`
-            if DEFINE_FUNCTION not in self.locals \
-                    and LEFT_ASSIGNMENT in self.locals \
-                    and 'assign' not in line \
-                    and not \
-                        (len(lines) > i + 1
-                         and lines[i+1][0] == LEFT_ASSIGNMENT):
-                self._save_assignee(result)
-                result = None
-
-        if DEFINE_FUNCTION in self.locals:
-            if not self.locals[DEFINE_FUNCTION].multiline:
-                if self.locals[DEFINE_FUNCTION].command:
-                    self._save_inline_function()
-                else:
-                    self.locals[DEFINE_FUNCTION].multiline = True
-            return
-
-        elif LEFT_ASSIGNMENT in self.locals and not io_util.interactive:
-            # cancel assignment
-            self._save_assignee(result)
-            return
-
-        if RETURN in self.locals:
-            self.locals.set(RETURN,  result)
-            return
-
-        return result
-
-    def _conditionally_insert_assign_operator(self, lines, i, line):
-        if LEFT_ASSIGNMENT not in self.locals \
-                and i+1 < len(lines) \
-                and '<-' in lines[i+1]:
-            # prefix line if '<-' is used later on
-            j = 1 if ';' in line else 0
-            line.insert(j, 'assign')
-
-    def _extend_inline_function_definition(self, line):
-        if not self.locals[DEFINE_FUNCTION].multiline:
-            if ':' in line:
-                line = line[1:]
-
-        cmd = ' ' + ' '.join(line)
-        if self.locals[DEFINE_FUNCTION].multiline:
-            self.locals[DEFINE_FUNCTION].inner[-1] += cmd
-        else:
-            self.locals[DEFINE_FUNCTION].command += cmd
-        return line
-
-    def run_single_command(self, command_and_args: List[str], prev_result: str = '') -> str:
-        prev_result = self.filter_result(command_and_args, prev_result)
-
-        prefixes, line, infix_operator_args = self.parse_single_command(
-            command_and_args)
-
-        close_prev_if_statements(self, prefixes)
-
-        if not for_any([IF, THEN, ELSE], contains, prefixes):
-            try:
-                handle_prev_then_else_statements(self)
-            except Abort:
-                return prev_result
-
-        if prefixes:
-            if THEN in prefixes or ELSE in prefixes:
-                try:
-                    handle_then_else_statements(self, prefixes, prev_result)
-                except Done as result:
-                    return result.args[0]
-
-                if not self.is_function(line.split(' ')[0]):
-                    line = 'echo ' + line
-
-            if RETURN in prefixes:
-                if RETURN not in self.locals:
-                    self.locals.set(RETURN, None)
-
-                if len(prefixes) == 1 and not self.is_function(line.split(' ')[0]):
-                    line = 'echo ' + line
-
-            if prefixes[-1] == IF:
-                return handle_if_statement(self, line, prev_result)
-
-            elif prefixes[-1] in delimiters.bash:
-                return self.pipe_cmd_sh(line, prev_result, delimiter=prefixes[-1])
-
-            elif prefixes[-1] == '>>=':
-                # monadic bind
-                # https://en.wikipedia.org/wiki/Monad_(functional_programming)
-                line = f'map {line}'
-                return self.pipe_cmd_py(line, prev_result)
-
-            elif prefixes[-1] == RIGHT_ASSIGNMENT:
-                # TODO verify syntax of `line`
-                assert ' ' not in line
-                self.set_env_variables(line, prev_result)
-                return ''
-
-        if infix_operator_args:
-            return self.infix_command(*infix_operator_args)
-        elif is_function_definition(command_and_args):
-            return self.handle_define_inline_function(command_and_args)
-
-        return self.pipe_cmd_py(line, prev_result)
-
-    def _save_assignee(self, result: str):
-        keys = self.locals[LEFT_ASSIGNMENT]
-
-        self.locals.rm(LEFT_ASSIGNMENT)
-
-        if result is None:
-            raise ShellError(f'Missing return value in assignment: {keys}')
-        elif result.strip() == '' and self._last_results:
-            result = self._last_results
-            self.env[LAST_RESULTS] = []
-
-        self.set_env_variables(keys, result)
 
     def filter_result(self, command_and_args, result):
         if ';' in command_and_args:

@@ -270,6 +270,7 @@ def test_set_do_map():
 def test_set_do_pipe_map():
     shell = Shell()
     line = 'echo a b |> flatten >>= echo'
+
     assert catch_output(line, shell=shell, strict=True) == 'a\nb'
 
     line = 'echo a b |> flatten >>= echo p $ q'
@@ -279,10 +280,10 @@ def test_set_do_pipe_map():
 def test_set_do_foreach():
     shell = Shell()
     line = 'echo a b |> foreach echo'
-    assert catch_output(line, shell=shell, strict=True) == 'a\nb'
+    assert catch_output(line, shell=shell, strict=True) == 'a b'
 
     line = 'echo 1 2 |> foreach echo 0'
-    assert catch_output(line, shell=shell, strict=True) == '0\n1\n2'
+    assert catch_output(line, shell=shell, strict=True) == "'0 1' '0 2'"
 
 
 def test_set_map_reduce():
