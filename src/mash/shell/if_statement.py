@@ -131,3 +131,21 @@ def close_prev_if_statements(self, prefixes):
         elif self.locals[LINE_INDENT] <= self._last_if[LINE_INDENT]:
             # case of: if-then fully terminated
             self.locals[IF].pop()
+
+
+def close_prev_if_statements2(self, width):
+    while True:
+        close_prev_if_statement(self)
+        if not self.locals[IF]:
+            break
+        if width <= self._last_if['line_indent']:
+            # compare width to next if-clause
+            break
+
+
+def close_prev_if_statement(self):
+    if self._last_if['branch'] is None:
+        raise ShellError(
+            'Unexpected indent. If-clause was not closed')
+
+    self.locals[IF].pop()

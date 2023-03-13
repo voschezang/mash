@@ -19,7 +19,7 @@ from mash.shell import delimiters
 from mash.shell.delimiters import ELSE, INLINE_ELSE, INLINE_THEN, comparators, DEFINE_FUNCTION, FALSE, IF, LEFT_ASSIGNMENT, RETURN, RIGHT_ASSIGNMENT, THEN, TRUE
 from mash.shell.errors import ShellError, ShellPipeError
 from mash.shell.function import InlineFunction
-from mash.shell.if_statement import LINE_INDENT, Abort, Done, State, close_prev_if_statements, handle_else_statement, handle_if_statement, handle_then_else_statements, handle_prev_then_else_statements, handle_then_statement
+from mash.shell.if_statement import LINE_INDENT, Abort, Done, State, close_prev_if_statement, close_prev_if_statements, close_prev_if_statements2, handle_else_statement, handle_if_statement, handle_then_else_statements, handle_prev_then_else_statements, handle_then_statement
 from mash.shell.lex_parser import Term, Terms, parse
 from mash.shell.parsing import expand_variables, expand_variables_inline, filter_comments, indent_width, infer_infix_args, parse_commands, quote_items
 from mash.util import for_any, has_method, identity, is_valid_method_name, omit_prefixes, quote_all, removeprefix, split_prefixes
@@ -841,17 +841,7 @@ class BaseShell(Cmd):
                 width == self._last_if['line_indent'] and
                     inner[0] not in ['then', 'else']):
 
-                if self._last_if['branch'] is None:
-                    raise ShellError(
-                        'Unexpected indent. If-clause was not closed')
-                # close prev if-statments
-                while True:
-                    self.locals[IF].pop()
-                    if not self.locals[IF]:
-                        break
-                    if width <= self._last_if['line_indent']:
-                        # compare width to next if-clause
-                        break
+                close_prev_if_statements2(self, width)
 
             if self.locals[IF] and width > self._last_if['line_indent']:
                 if closed:
@@ -915,6 +905,15 @@ class BaseShell(Cmd):
     def run_handle_lines(self, values, prev_result: str, run: bool, print_result: bool):
         items = values[0]
         for item in items:
+
+            width = indent_width('')
+            if self.locals[IF] and item[0] != 'indent' and width > self._last_if['line_indent']:
+                close_prev_if_statements2(self, width)
+
+            if self.locals[IF] and item[0] != 'indent':
+                if not item[0].startswith('then') and not item[0].startswith('else'):
+                    close_prev_if_statement(self)
+
             result = self.run_commands_new(item, run=run)
 
             # TODO if isinstance(result, tuple):
