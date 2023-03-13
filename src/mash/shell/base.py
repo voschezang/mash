@@ -19,10 +19,10 @@ from mash.shell import delimiters
 from mash.shell.delimiters import ELSE, INLINE_ELSE, INLINE_THEN, comparators, DEFINE_FUNCTION, FALSE, IF, LEFT_ASSIGNMENT, RETURN, RIGHT_ASSIGNMENT, THEN, TRUE
 from mash.shell.errors import ShellError, ShellPipeError
 from mash.shell.function import InlineFunction
-from mash.shell.if_statement import LINE_INDENT, Abort, Done, State, close_prev_if_statement, close_prev_if_statements, close_prev_if_statements2, handle_else_statement, handle_if_statement, handle_then_else_statements, handle_prev_then_else_statements, handle_then_statement
+from mash.shell.if_statement import LINE_INDENT, Abort, State, close_prev_if_statement, close_prev_if_statements, handle_else_statement, handle_prev_then_else_statements, handle_then_statement
 from mash.shell.lex_parser import Term, Terms, parse
-from mash.shell.parsing import expand_variables, expand_variables_inline, filter_comments, indent_width, infer_infix_args, parse_commands, quote_items
-from mash.util import for_any, has_method, identity, is_valid_method_name, omit_prefixes, quote_all, removeprefix, split_prefixes
+from mash.shell.parsing import expand_variables, filter_comments, indent_width, infer_infix_args, quote_items
+from mash.util import for_any, has_method, identity, is_valid_method_name, omit_prefixes, quote_all, split_prefixes
 
 
 confirmation_mode = False
@@ -305,7 +305,7 @@ class BaseShell(Cmd):
     def do_fail(self, msg: str):
         raise ShellError(f'Fail: {msg}')
 
-    def map2(self, ast: tuple, prev_results: str, delimiter='\n') -> Iterable:
+    def do_map(self, ast: tuple, prev_results: str, delimiter='\n') -> Iterable:
         """Apply a function to every line.
         If `$` is present, then each line from stdin is inserted there.
         Otherwise each line is appended.
@@ -334,7 +334,7 @@ class BaseShell(Cmd):
 
         return delimiter.join(quote_all(results))
 
-    def foreach(self, ast: tuple, prev_results: str) -> Iterable:
+    def do_foreach(self, ast: tuple, prev_results: str) -> Iterable:
         """Apply a function to every term or word.
 
         Usage
@@ -344,7 +344,7 @@ class BaseShell(Cmd):
         ```
         """
         prev_results = '\n'.join(prev_results.split(' '))
-        return self.map2(ast, prev_results, delimiter=' ')
+        return self.do_map(ast, prev_results, delimiter=' ')
 
     def foldr2(self, commands: List[Term], prev_results: str, delimiter='\n'):
         _key, items = parse(prev_results)
@@ -524,7 +524,7 @@ class BaseShell(Cmd):
 
             if isinstance(rhs, str) or isinstance(rhs, Term):
                 rhs = Terms([rhs])
-            return self.map2(rhs, prev)
+            return self.do_map(rhs, prev)
 
         elif key == 'pipe':
             a, b = values
@@ -703,6 +703,7 @@ class BaseShell(Cmd):
             if not run:
                 raise NotImplementedError()
 
+            # TODO use parsing.expand_variables_inline
             self.env[f] = InlineFunction(body, *args, func_name=f)
 
         elif key == 'define-function':
@@ -747,7 +748,7 @@ class BaseShell(Cmd):
                 width == self._last_if['line_indent'] and
                     inner[0] not in ['then', 'else']):
 
-                close_prev_if_statements2(self, width)
+                close_prev_if_statements(self, width)
 
             if self.locals[IF] and width > self._last_if['line_indent']:
                 if closed:
@@ -768,10 +769,10 @@ class BaseShell(Cmd):
             k, *args = items
             if k == 'map':
                 args = Terms(list(args))
-                return self.map2(args, prev_result)
+                return self.do_map(args, prev_result)
             elif k == 'foreach':
                 args = Terms(list(args))
-                return self.foreach(args, prev_result)
+                return self.do_foreach(args, prev_result)
             elif k in ['reduce', 'foldr']:
                 return self.foldr2(args, prev_result)
 
@@ -817,7 +818,7 @@ class BaseShell(Cmd):
 
             width = indent_width('')
             if self.locals[IF] and item[0] != 'indent' and width > self._last_if['line_indent']:
-                close_prev_if_statements2(self, width)
+                close_prev_if_statements(self, width)
 
             if self.locals[IF] and item[0] != 'indent':
                 if not item[0].startswith('then') and not item[0].startswith('else'):
@@ -1165,70 +1166,6 @@ class BaseShell(Cmd):
 
             if isinstance(result, tuple) and result[0] == 'return':
                 return result[1]
-
-    def handle_define_inline_function(self, terms: List[str]) -> str:
-        f, *args = terms
-        args = [arg for arg in args if arg != '']
-
-        if not args or not args[0].startswith('(') or not args[-1].endswith(')'):
-            lhs = ' '.join(terms)
-            raise ShellError(f'Invalid syntax for inline function: {lhs}')
-
-        # strip braces
-        if args[0] == '()':
-            args = []
-        else:
-            args[0] = args[0][1:]
-            args[-1] = args[-1][:-1]
-
-        self.locals.set(DEFINE_FUNCTION,
-                        InlineFunction('', *args, func_name=f,
-                                       line_indent=self.locals[RAW_LINE_INDENT]))
-
-    def _define_multiline_function(self, indented_line: str):
-        line = indented_line.lstrip()
-
-        if line.startswith(RETURN + ' ') and (
-                self.locals[RAW_LINE_INDENT] <= self.locals[DEFINE_FUNCTION].line_indent or
-                not self.locals[DEFINE_FUNCTION].inner):
-
-            if self.locals[RAW_LINE_INDENT] < self.locals[DEFINE_FUNCTION].line_indent:
-                raise ShellError(
-                    f'Function defintion did not end with {RETURN}')
-
-            # TODO fix indent
-            line = removeprefix(line, RETURN + ' ')
-            self.locals[DEFINE_FUNCTION].command = line
-            self._save_inline_function()
-
-        else:
-            # update line indent on the first line
-            if self.locals[DEFINE_FUNCTION].inner == []:
-                self.locals[DEFINE_FUNCTION].line_indent = self.locals[RAW_LINE_INDENT]
-
-            self.locals[DEFINE_FUNCTION].inner.append(indented_line)
-
-    def _save_inline_function(self) -> str:
-        func = self.locals[DEFINE_FUNCTION]
-        self.locals.rm(DEFINE_FUNCTION)
-
-        f = func.func_name
-        if has_method(self, f'do_{f}'):
-            raise ShellError(
-                f'Name conflict: Cannot define inline function {f}, '
-                f'because there already exists a method do_{f}.')
-
-        if not is_valid_method_name(f):
-            raise ShellError(f'Invalid function name format: {f}')
-
-        if not func.multiline:
-            func.command = expand_variables_inline(func.command, self.env,
-                                                   self.completenames_options,
-                                                   self.ignore_invalid_syntax)
-
-        self.env[f] = func
-        positionals = ' '.join(func.args)
-        log(f'function {f}({positionals});')
 
 
 def is_function_definition(terms: List[str]) -> bool:
