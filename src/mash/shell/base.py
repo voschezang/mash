@@ -16,7 +16,7 @@ from mash.filesystem.filesystem import FileSystem, cd
 from mash.filesystem.scope import Scope, show
 from mash.io_util import log, shell_ready_signal, print_shell_ready_signal, check_output
 from mash.shell import delimiters
-from mash.shell.delimiters import ELSE, INLINE_ELSE, INLINE_THEN, comparators, DEFINE_FUNCTION, FALSE, IF, LEFT_ASSIGNMENT, RETURN, RIGHT_ASSIGNMENT, THEN, TRUE
+from mash.shell.delimiters import INLINE_ELSE, INLINE_THEN, DEFINE_FUNCTION, FALSE, IF, LEFT_ASSIGNMENT, RETURN, RIGHT_ASSIGNMENT, THEN, TRUE
 from mash.shell.errors import ShellError, ShellPipeError
 from mash.shell.function import InlineFunction
 from mash.shell.if_statement import LINE_INDENT, Abort, State, close_prev_if_statement, close_prev_if_statements, handle_else_statement, handle_prev_then_else_statements, handle_then_statement
@@ -186,23 +186,6 @@ class BaseShell(Cmd):
 
         raise RuntimeError('Cannot retrieve result')
 
-    def eval_compare(self, line: str) -> bool:
-        result = self.run_commands_new(line, '', run=True)
-        return to_bool(result)
-
-    def eval_compare2(self, line: str) -> bool:
-        f, *_ = line.split(' ')
-        terms = line.split(' ')
-
-        if self.is_function(f):
-            result = self.eval(terms)
-        elif for_any(comparators, contains, line):
-            result = self.eval(['math'] + terms)
-        else:
-            result = line
-
-        return result != FALSE
-
     def onecmd_prehook(self, line):
         """Similar to cmd.precmd but executed before cmd.onecmd
         """
@@ -325,7 +308,7 @@ class BaseShell(Cmd):
         for i, item in enumerate(items):
             self.env[LAST_RESULTS_INDEX] = i
 
-            results.append(self.run_commands_new(ast, item, run=True))
+            results.append(self.run_commands(ast, item, run=True))
 
         self.env[LAST_RESULTS_INDEX] = 0
         agg = delimiter.join(results)
@@ -352,7 +335,7 @@ class BaseShell(Cmd):
 
         for item in items:
             command = Terms([k, acc] + args)
-            acc = self.run_commands_new(command, item, run=True)
+            acc = self.run_commands(command, item, run=True)
 
             if acc.strip() == '' and self._last_results:
                 acc = self._last_results[-1]
@@ -408,7 +391,7 @@ class BaseShell(Cmd):
 
     def run_commands_new_wrapper(self, *args, **kwds):
         try:
-            result = self.run_commands_new(*args, **kwds)
+            result = self.run_commands(*args, **kwds)
             return result
 
         except ShellPipeError as e:
@@ -427,7 +410,7 @@ class BaseShell(Cmd):
 
             raise ShellError(str(e))
 
-    def run_commands_new(self, ast: Tuple, prev_result='', run=False):
+    def run_commands(self, ast: Tuple, prev_result='', run=False):
         print_result = True
         if isinstance(ast, Term):
             term = ast
@@ -455,7 +438,7 @@ class BaseShell(Cmd):
             return term
 
         elif isinstance(ast, str):
-            return self.run_commands_new(Term(ast), prev_result, run=run)
+            return self.run_commands(Term(ast), prev_result, run=run)
 
         key, *values = ast
 
@@ -501,8 +484,8 @@ class BaseShell(Cmd):
             return self.run_handle_assign(values, prev_result, run)
         elif key == 'binary-expression':
             op, a, b = values
-            b = self.run_commands_new(b, run=run)
-            a = self.run_commands_new(a, run=run)
+            b = self.run_commands(b, run=run)
+            a = self.run_commands(a, run=run)
 
             if op in delimiters.comparators:
                 # TODO join a, b
@@ -520,7 +503,7 @@ class BaseShell(Cmd):
 
         elif key == 'map':
             lhs, rhs = values
-            prev = self.run_commands_new(lhs, prev_result, run=run)
+            prev = self.run_commands(lhs, prev_result, run=run)
 
             if isinstance(rhs, str) or isinstance(rhs, Term):
                 rhs = Terms([rhs])
@@ -528,14 +511,14 @@ class BaseShell(Cmd):
 
         elif key == 'pipe':
             a, b = values
-            prev = self.run_commands_new(a, prev_result, run=run)
-            next = self.run_commands_new(b, prev, run=run)
+            prev = self.run_commands(a, prev_result, run=run)
+            next = self.run_commands(b, prev, run=run)
             return next
 
         elif key == 'bash':
             op, a, b = values
-            prev = self.run_commands_new(a, prev_result, run=run)
-            line = self.run_commands_new(b, run=False)
+            prev = self.run_commands(a, prev_result, run=run)
+            line = self.run_commands(b, run=False)
 
             # TODO also quote prev result
             if not isinstance(line, str) and not isinstance(line, Term):
@@ -546,17 +529,17 @@ class BaseShell(Cmd):
 
         elif key == 'break':
             _, a, b = ast
-            a = self.run_commands_new(a, prev_result, run=True)
+            a = self.run_commands(a, prev_result, run=True)
             print_result = True
             if print_result and a is not None:
                 print(a)
 
-            b = self.run_commands_new(b, run=True)
+            b = self.run_commands(b, run=True)
             return b
 
         elif key == 'math':
             _key, values = ast
-            args = self.run_commands_new(values, prev_result)
+            args = self.run_commands(values, prev_result)
 
             if not run:
                 return ['math'] + args
@@ -567,8 +550,8 @@ class BaseShell(Cmd):
 
         elif key == 'logic':
             op, a, b = values
-            a = self.run_commands_new(a, run=run)
-            b = self.run_commands_new(b, run=run)
+            a = self.run_commands(a, run=run)
+            b = self.run_commands(b, run=run)
             if run:
                 a = to_bool(a)
                 b = to_bool(b)
@@ -585,7 +568,7 @@ class BaseShell(Cmd):
             if not run:
                 raise NotImplementedError()
 
-            value = self.run_commands_new(condition, run=run)
+            value = self.run_commands(condition, run=run)
             value = to_bool(value) == TRUE
             self.locals[IF].append(State(self, value))
             return
@@ -600,7 +583,7 @@ class BaseShell(Cmd):
                 # verify & update state
                 handle_then_statement(self)
                 if then:
-                    result = self.run_commands_new(then, run=run)
+                    result = self.run_commands(then, run=run)
             except Abort:
                 pass
 
@@ -614,12 +597,12 @@ class BaseShell(Cmd):
             if not run:
                 raise NotImplementedError()
 
-            value = self.run_commands_new(condition, run=run)
+            value = self.run_commands(condition, run=run)
             value = to_bool(value) == TRUE
 
             if value and then:
                 # include prev_result for inline if-then statement
-                result = self.run_commands_new(then, prev_result, run=run)
+                result = self.run_commands(then, prev_result, run=run)
             else:
                 # set default value
                 result = FALSE
@@ -632,12 +615,12 @@ class BaseShell(Cmd):
             # inline if-then-else
             condition, true, false = values
 
-            value = self.run_commands_new(condition, run=run)
+            value = self.run_commands(condition, run=run)
             value = to_bool(value) == TRUE
             line = true if value else false
 
             # include prev_result for inline if-then-else statement
-            return self.run_commands_new(line, prev_result, run=run)
+            return self.run_commands(line, prev_result, run=run)
 
         elif key == 'else-if-then':
             condition, then = values
@@ -647,13 +630,13 @@ class BaseShell(Cmd):
             try:
                 # verify & update state
                 handle_else_statement(self)
-                value = self.run_commands_new(condition, run=run)
+                value = self.run_commands(condition, run=run)
                 value = to_bool(value) == TRUE
             except Abort:
                 value = False
 
             if value and then:
-                result = self.run_commands_new(then, run=run)
+                result = self.run_commands(then, run=run)
             else:
                 result = None
 
@@ -669,7 +652,7 @@ class BaseShell(Cmd):
             try:
                 # verify & update state
                 handle_else_statement(self)
-                value = self.run_commands_new(condition, run=run)
+                value = self.run_commands(condition, run=run)
                 value = to_bool(value) == TRUE
             except Abort:
                 value = False
@@ -687,7 +670,7 @@ class BaseShell(Cmd):
                 # verify & update state
                 handle_else_statement(self)
                 if otherwise:
-                    result = self.run_commands_new(otherwise, run=run)
+                    result = self.run_commands(otherwise, run=run)
             except Abort:
                 pass
 
@@ -698,7 +681,7 @@ class BaseShell(Cmd):
         elif key == 'define-inline-function':
             f, args, body = values
             if args:
-                args = self.run_commands_new(args)
+                args = self.run_commands(args)
 
             if not run:
                 raise NotImplementedError()
@@ -716,11 +699,11 @@ class BaseShell(Cmd):
                             InlineFunction('', *args, func_name=f))
         elif key == 'return':
             line = values[0]
-            result = self.run_commands_new(line, run=run)
+            result = self.run_commands(line, run=run)
             return ('return', result)
 
         elif key == '!':
-            terms = self.run_commands_new(values[0])
+            terms = self.run_commands(values[0])
             if isinstance(terms, str) or isinstance(terms, Term):
                 line = str(terms)
             else:
@@ -760,11 +743,13 @@ class BaseShell(Cmd):
                     return prev_result
 
         self.locals.set(LINE_INDENT, width)
-        return self.run_commands_new(inner, prev_result, run=run)
+        return self.run_commands(inner, prev_result, run=run)
 
     def run_handle_terms(self, values, prev_result: str, run: bool):
         items = values[0]
 
+        if len(items) == 1 and run:
+            return super().onecmd(items[0])
         if len(items) >= 2 and run:
             k, *args = items
             if k == 'map':
@@ -824,7 +809,7 @@ class BaseShell(Cmd):
                 if not item[0].startswith('then') and not item[0].startswith('else'):
                     close_prev_if_statement(self)
 
-            result = self.run_commands_new(item, run=run)
+            result = self.run_commands(item, run=run)
 
             # TODO if isinstance(result, tuple):
             # return ('return', result)
@@ -842,16 +827,16 @@ class BaseShell(Cmd):
 
     def run_handle_assign(self, values, prev_result, run):
         op, a, b = values
-        a = self.run_commands_new(a)
+        a = self.run_commands(a)
         if op == '=':
-            b = self.run_commands_new(b)
+            b = self.run_commands(b)
             if run:
                 self.set_env_variables(a, b)
                 return TRUE
             return a, op, b
 
         elif op == LEFT_ASSIGNMENT:
-            values = self.run_commands_new(b, run=run)
+            values = self.run_commands(b, run=run)
 
             if values is None:
                 values = ''
@@ -1152,15 +1137,15 @@ class BaseShell(Cmd):
                 self.env[k] = args[i]
 
             if f.inner == []:
-                return self.run_commands_new(f.command, run=True)
+                return self.run_commands(f.command, run=True)
 
             # TODO rm impossible state
             assert f.command == ''
 
             result = ''
             for ast in f.inner:
-                result = self.run_commands_new(ast, prev_result=result,
-                                               run=True)
+                result = self.run_commands(ast, prev_result=result,
+                                           run=True)
                 if isinstance(result, tuple) and result[0] == 'return':
                     return result[1]
 

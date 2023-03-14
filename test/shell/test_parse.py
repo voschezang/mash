@@ -61,6 +61,11 @@ def test_parse_word():
     assert result[1][0].type == 'symbol'
     assert result[1][0] == '+'
 
+    line = '?'
+    result = parse(line)
+    assert result[1][0].type == 'wildcard'
+    assert result[1][0] == '?'
+
 
 def test_parse_equations():
     text = '1+a'

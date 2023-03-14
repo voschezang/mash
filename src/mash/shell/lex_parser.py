@@ -198,7 +198,7 @@ def init_lex():
         return t
 
     def t_SYMBOL(t):
-        r'[\~\+\*\-%&.]+'
+        r'[\~\+\*\-%&.?]+'
         return t
 
     def t_error(t):
