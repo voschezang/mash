@@ -216,7 +216,8 @@ class BaseShell(Cmd):
     def is_function(self, func_name: str) -> bool:
         return has_method(self, f'do_{func_name}') \
             or self.is_inline_function(func_name) \
-            or func_name in self._chars_allowed_for_char_method
+            or func_name in self._chars_allowed_for_char_method \
+            or func_name == '?'
 
     def is_inline_function(self, func_name: str) -> bool:
         return func_name in self.env and isinstance(self.env[func_name], InlineFunction)
@@ -288,7 +289,22 @@ class BaseShell(Cmd):
     def do_fail(self, msg: str):
         raise ShellError(f'Fail: {msg}')
 
-    def do_map(self, ast: tuple, prev_results: str, delimiter='\n') -> Iterable:
+    def do_map(self, args=''):
+        """Apply a function to every line.
+        If `$` is present, then each line from stdin is inserted there.
+        Otherwise each line is appended.
+
+        Usage
+        -----
+        ```sh
+        println a b |> map echo
+        println a b |> map echo prefix $ suffix
+        ```
+        """
+        log('Expected arguments')
+        return ''
+
+    def _do_map(self, ast: tuple, prev_results: str, delimiter='\n') -> Iterable:
         """Apply a function to every line.
         If `$` is present, then each line from stdin is inserted there.
         Otherwise each line is appended.
@@ -317,7 +333,7 @@ class BaseShell(Cmd):
 
         return delimiter.join(quote_all(results))
 
-    def do_foreach(self, ast: tuple, prev_results: str) -> Iterable:
+    def _do_foreach(self, ast: tuple, prev_results: str) -> Iterable:
         """Apply a function to every term or word.
 
         Usage
@@ -327,9 +343,9 @@ class BaseShell(Cmd):
         ```
         """
         prev_results = '\n'.join(prev_results.split(' '))
-        return self.do_map(ast, prev_results, delimiter=' ')
+        return self._do_map(ast, prev_results, delimiter=' ')
 
-    def foldr2(self, commands: List[Term], prev_results: str, delimiter='\n'):
+    def foldr(self, commands: List[Term], prev_results: str, delimiter='\n'):
         _key, items = parse(prev_results)
         k, acc, *args = commands
 
@@ -507,7 +523,7 @@ class BaseShell(Cmd):
 
             if isinstance(rhs, str) or isinstance(rhs, Term):
                 rhs = Terms([rhs])
-            return self.do_map(rhs, prev)
+            return self._do_map(rhs, prev)
 
         elif key == 'pipe':
             a, b = values
@@ -748,18 +764,16 @@ class BaseShell(Cmd):
     def run_handle_terms(self, values, prev_result: str, run: bool):
         items = values[0]
 
-        if len(items) == 1 and run:
-            return super().onecmd(items[0])
         if len(items) >= 2 and run:
             k, *args = items
             if k == 'map':
                 args = Terms(list(args))
-                return self.do_map(args, prev_result)
+                return self._do_map(args, prev_result)
             elif k == 'foreach':
                 args = Terms(list(args))
-                return self.do_foreach(args, prev_result)
+                return self._do_foreach(args, prev_result)
             elif k in ['reduce', 'foldr']:
-                return self.foldr2(args, prev_result)
+                return self.foldr(args, prev_result)
 
         # TODO expand vars in other branches as well
         wildcard_value = ''
@@ -783,14 +797,10 @@ class BaseShell(Cmd):
 
             if self.is_function(k):
                 # TODO if self.is_inline_function(k): ...
-                line = ' '.join(quote_all(items, ignore='*$'))
+                # TODO standardize quote_all args
+                line = ' '.join(quote_all(items, ignore='*$?'))
                 return self.pipe_cmd_py(line, prev_result)
 
-        # elif self.ignore_invalid_syntax or not run:
-        #     return items
-
-        # TODO if return
-        # raise ShellError(f'Cannot execute the function {k}')
         if prev_result:
             items += [prev_result]
         if run:

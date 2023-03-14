@@ -13,6 +13,7 @@ def catch_output(line='', func=run_command, **kwds) -> str:
 
 def test_run_command():
     run_command('print a')
+    run_command('? echo')
 
     # with raises(ShellError):
     #     run_command('echoooo a', strict=True)
