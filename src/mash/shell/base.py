@@ -706,26 +706,20 @@ class BaseShell(Cmd):
             if args:
                 args = self.run_commands(args)
 
-            if not run:
-                raise NotImplementedError()
-
-            if self.auto_save:
-                # TODO `body` cannot be serialized
-                logging.warning(
-                    'Instances of InlineFunction are incompatible with serialization')
-                self.auto_save = False
+            self._define_function(f, run)
 
             # TODO use parsing.expand_variables_inline
             self.env[f] = InlineFunction(body, args, func_name=f)
 
         elif key == 'define-function':
             f, args = values
-            if not run:
-                raise NotImplementedError()
+
+            self._define_function(f, run)
 
             # TODO use line_indent=self.locals[RAW_LINE_INDENT]
             self.locals.set(DEFINE_FUNCTION,
                             InlineFunction('', args, func_name=f))
+
         elif key == 'return':
             line = values[0]
             result = self.run_commands(line, run=run)
@@ -881,6 +875,20 @@ class BaseShell(Cmd):
             raise NotImplementedError(RIGHT_ASSIGNMENT)
 
         raise NotImplementedError()
+
+    def _define_function(self, f, run):
+        if not run:
+            raise NotImplementedError()
+
+        if has_method(self, f'do_{f}'):
+            raise ShellError()
+        elif self.is_function(f):
+            logging.debug(f'Re-define existing function: {f}')
+
+        if self.auto_save:
+            logging.warning(
+                'Instances of InlineFunction are incompatible with serialization')
+            self.auto_save = False
 
     def postcmd(self, stop, _):
         """Display the shell_ready_signal to indicate termination to a parent process.
@@ -1148,8 +1156,12 @@ class BaseShell(Cmd):
         translations = {}
 
         if len(args) != len(f.args):
-            raise ShellError(
-                f'Invalid number of arguments: {len(f.args)} arguments expected .')
+            msg = f'Invalid number of arguments: {len(f.args)} arguments expected.'
+            if self.ignore_invalid_syntax:
+                print(msg)
+                return FALSE
+            else:
+                raise ShellError(msg)
 
         # translate variables in inline functions
         for i, k in enumerate(f.args):
