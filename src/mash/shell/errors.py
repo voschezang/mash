@@ -5,3 +5,7 @@ class ShellError(RuntimeError):
 
 class ShellPipeError(RuntimeError):
     pass
+
+
+class ShellSyntaxError(ShellError):
+    pass

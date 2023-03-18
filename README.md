@@ -15,6 +15,7 @@
 A subshell and various utilities.
 
 - A shell that can interpret a domain-specific language: `shell.py`.
+- A client application for REST APIs with a programmatic yet intuitive interface.
 - A subshell wrapper, to redirect the output of shell scripts: `subshell.py`.
 - An object parser which converts JSON data to Python classes: `object_parser.py`.
 - An OAS-generator for Python classes: `oas.py`.

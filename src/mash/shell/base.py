@@ -13,15 +13,16 @@ import subprocess
 
 from mash import io_util
 from mash.filesystem.filesystem import FileSystem, cd
+from mash.filesystem.scope import Scope, show
 from mash.io_util import log, shell_ready_signal, print_shell_ready_signal, check_output
 from mash.shell import delimiters
-from mash.shell.if_statement import LINE_INDENT, Abort, Done, close_prev_if_statements, handle_else_statement, handle_if_statement, handle_then_else_statements, handle_prev_then_else_statements, handle_then_statement
-from mash.shell.delimiters import ELSE, comparators, DEFINE_FUNCTION, FALSE, IF, LEFT_ASSIGNMENT, RETURN, RIGHT_ASSIGNMENT, THEN, TRUE
-from mash.filesystem.scope import Scope, show
-from mash.shell.errors import ShellError, ShellPipeError
+from mash.shell.delimiters import INLINE_ELSE, INLINE_THEN, DEFINE_FUNCTION, FALSE, IF, LEFT_ASSIGNMENT, RIGHT_ASSIGNMENT, THEN, TRUE
+from mash.shell.errors import ShellError, ShellPipeError, ShellSyntaxError
 from mash.shell.function import InlineFunction
-from mash.shell.parsing import expand_variables, expand_variables_inline, filter_comments, indent_width, infer_infix_args, inline_indent_with, parse_commands, quote_items
-from mash.util import for_any, has_method, identity, is_valid_method_name, omit_prefixes, removeprefix, split_prefixes, translate_terms
+from mash.shell.if_statement import LINE_INDENT, Abort, State, close_prev_if_statement, close_prev_if_statements, handle_else_statement, handle_prev_then_else_statements, handle_then_statement
+from mash.shell.lex_parser import Term, Terms, parse
+from mash.shell.parsing import expand_variables, filter_comments, indent_width, infer_infix_args, quote_items
+from mash.util import for_any, has_method, identity, is_valid_method_name, omit_prefixes, quote_all, split_prefixes
 
 
 confirmation_mode = False
@@ -52,7 +53,9 @@ class BaseShell(Cmd):
     - Error handling.
     """
 
-    intro = 'Welcome.  Type help or ? to list commands.\n' + shell_ready_signal + '\n'
+    intro = 'Press ctrl-d to exit, ctrl-c to cancel, ? for help, ! for shell interop.\n' + \
+        shell_ready_signal + '\n'
+
     prompt = '$ '
 
     # TODO save stdout in a tmp file
@@ -185,19 +188,6 @@ class BaseShell(Cmd):
 
         raise RuntimeError('Cannot retrieve result')
 
-    def eval_compare(self, line: str) -> bool:
-        f, *_ = line.split(' ')
-        terms = line.split(' ')
-
-        if self.is_function(f):
-            result = self.eval(terms)
-        elif for_any(comparators, contains, line):
-            result = self.eval(['math'] + terms)
-        else:
-            result = line
-
-        return result != FALSE
-
     def onecmd_prehook(self, line):
         """Similar to cmd.precmd but executed before cmd.onecmd
         """
@@ -226,7 +216,10 @@ class BaseShell(Cmd):
         self._last_results[self._last_results_index] = value
 
     def is_function(self, func_name: str) -> bool:
-        return has_method(self, f'do_{func_name}') or self.is_inline_function(func_name)
+        return has_method(self, f'do_{func_name}') \
+            or self.is_inline_function(func_name) \
+            or func_name in self._chars_allowed_for_char_method \
+            or func_name == '?'
 
     def is_inline_function(self, func_name: str) -> bool:
         return func_name in self.env and isinstance(self.env[func_name], InlineFunction)
@@ -258,6 +251,7 @@ class BaseShell(Cmd):
                 f'Assignments cannot be used inside other assignments: {assignee}')
 
         self.locals.set(LEFT_ASSIGNMENT, keys)
+        self.set_env_variables(keys, '')
 
         # return value must be empty to prevent side-effects in the next command
         return ''
@@ -297,59 +291,7 @@ class BaseShell(Cmd):
     def do_fail(self, msg: str):
         raise ShellError(f'Fail: {msg}')
 
-    def do_reduce(self, *args: str):
-        """Reduce a sequence of items to using an operator.
-
-        See https://en.wikipedia.org/wiki/Reduction_operator
-
-        E.g. compute the sum:
-        `range 10 |> reduce sum 0 $
-        """
-        return self.do_foldr(*args)
-
-    def do_foldr(self, args: str, delimiter='\n'):
-        """Fold or reduce from right to left.
-
-        See https://wiki.haskell.org/Foldr_Foldl_Foldl'
-        """
-        lines = args.split(delimiter)
-        msg = 'Not enough arguments. Usage: `foldl f zero [args] $ [args]`.'
-        # if len(lines) <= 1:
-        if not lines:
-            log(msg)
-            return
-
-        items = lines[0].split(' ')
-        if len(items) <= 1:
-            log(msg)
-            return
-
-        f, zero, *args, line = items
-        lines = [line] + lines[1:]
-
-        if '$' in args:
-            i = args.index('$')
-        else:
-            i = -1
-
-        # apply the reduction
-        acc = zero
-        for line in lines:
-            local_args = args.copy()
-            line = line.split(' ')
-
-            if i == -1:
-                local_args += line
-            else:
-                local_args[i:i+1] = line
-
-            line = [f, acc] + local_args
-
-            acc = self.run_single_command(line)
-
-        return acc
-
-    def do_map(self, args: str, delimiter='\n'):
+    def do_map(self, args=''):
         """Apply a function to every line.
         If `$` is present, then each line from stdin is inserted there.
         Otherwise each line is appended.
@@ -361,47 +303,39 @@ class BaseShell(Cmd):
         println a b |> map echo prefix $ suffix
         ```
         """
-        self.env[LAST_RESULTS] = []
+        log('Expected arguments')
+        return ''
 
-        lines = args.split(delimiter)
-        msg = 'Not enough arguments. Usage: `map f [args..] $ [args..]`.'
-        if len(lines) <= 1:
-            log(msg)
-            return
+    def _do_map(self, ast: tuple, prev_results: str, delimiter='\n') -> Iterable:
+        """Apply a function to every line.
+        If `$` is present, then each line from stdin is inserted there.
+        Otherwise each line is appended.
 
-        items = lines[0].split(' ')
-        if len(items) <= 1:
-            log(msg)
-            return
+        Usage
+        -----
+        ```sh
+        println a b |> map echo
+        println a b |> map echo prefix $ suffix
+        ```
+        """
+        # monadic bind
+        # https://en.wikipedia.org/wiki/Monad_(functional_programming)
+        _key, items = parse(prev_results)
 
-        f, *args, line = items
-        lines = [line] + lines[1:]
-
-        if '$' in args:
-            i = args.index('$')
-        else:
-            i = -1
-
-        # collect all results
         results = []
-        for j, line in enumerate(lines):
-            local_args = args.copy()
-            line = line.split(' ')
+        for i, item in enumerate(items):
+            self.env[LAST_RESULTS_INDEX] = i
 
-            if i == -1:
-                local_args += line
-            else:
-                local_args[i:i+1] = line
-
-            line = [f] + local_args
-
-            self.env[LAST_RESULTS_INDEX] = j
-            results.append(self.run_single_command(line))
+            results.append(self.run_commands(ast, item, run=True))
 
         self.env[LAST_RESULTS_INDEX] = 0
-        return delimiter.join([str(result) for result in results])
+        agg = delimiter.join(results)
+        if agg.strip() == '':
+            return ''
 
-    def do_foreach(self, args):
+        return delimiter.join(quote_all(results))
+
+    def _do_foreach(self, ast: tuple, prev_results: str) -> Iterable:
         """Apply a function to every term or word.
 
         Usage
@@ -410,9 +344,22 @@ class BaseShell(Cmd):
         echo a b |> foreach echo prefix $ suffix
         ```
         """
-        f, *args = args.split(' ')
-        args = '\n'.join(args)
-        return self.do_map(f'{f} {args}')
+        prev_results = '\n'.join(prev_results.split(' '))
+        return self._do_map(ast, prev_results, delimiter=' ')
+
+    def foldr(self, commands: List[Term], prev_results: str, delimiter='\n'):
+        _key, items = parse(prev_results)
+        k, acc, *args = commands
+
+        for item in items:
+            command = Terms([k, acc] + args)
+            acc = self.run_commands(command, item, run=True)
+
+            if acc.strip() == '' and self._last_results:
+                acc = self._last_results[-1]
+                self.env[LAST_RESULTS] = []
+
+        return acc
 
     def do_flatten(self, args: str) -> str:
         """Convert a space-separated string to a newline-separates string.
@@ -437,39 +384,518 @@ class BaseShell(Cmd):
         return ''
 
     def do_not(self, args: str) -> str:
-        if args == FALSE:
-            return TRUE
-        return FALSE
+        return FALSE if to_bool(args) else TRUE
 
     ############################################################################
     # Overrides
     ############################################################################
 
-    def onecmd(self, line: str, print_result=True) -> bool:
+    def onecmd(self, lines: str, print_result=True) -> bool:
         """Parse and run `line`.
         Returns 0 on success and None otherwise
         """
+        if lines == 'EOF':
+            logging.debug('Aborting: received EOF')
+            exit()
 
+        result = ''
         try:
-            line = self.onecmd_prehook(line)
-            self.locals.set(RAW_LINE_INDENT, indent_width(line))
+            lines = self.onecmd_prehook(lines)
+            ast = parse(lines)
+            if ast is None:
+                raise ShellError('Invalid syntax: AST is empty')
 
-            if DEFINE_FUNCTION in self.locals and self.locals[DEFINE_FUNCTION].multiline:
-                self._define_multiline_function(line)
+            # for line in ast:
+            result = self.run_commands_new_wrapper(ast, result, run=True)
+
+        except ShellSyntaxError as e:
+            if self.ignore_invalid_syntax:
+                log(e)
             else:
-                lines = list(parse_commands(line,
-                                            self.delimiters,
-                                            self.ignore_invalid_syntax))
-                result = self.run_commands(lines)
-
-                if print_result and result is not None:
-                    if result or not self.locals[IF]:
-                        print(result)
+                raise
 
         except CancelledError:
             pass
 
-        return False
+    def run_commands_new_wrapper(self, *args, **kwds):
+        try:
+            result = self.run_commands(*args, **kwds)
+            return result
+
+        except ShellPipeError as e:
+            if self.ignore_invalid_syntax:
+                log(e)
+                return
+
+            raise ShellError(e)
+
+        except subprocess.CalledProcessError as e:
+            returncode, stderr = e.args
+            log(f'Shell exited with {returncode}: {stderr}')
+
+            if self.ignore_invalid_syntax:
+                return
+
+            raise ShellError(str(e))
+
+    def run_commands(self, ast: Tuple, prev_result='', run=False):
+        print_result = True
+        if isinstance(ast, Term):
+            term = ast
+
+            if ast.type == 'quoted string':
+                # TODO consider other delimiters
+                items = ast.split(' ')
+                items = list(expand_variables(items, self.env,
+                                              self.completenames_options,
+                                              self.ignore_invalid_syntax,
+                                              escape=True))
+                return ' '.join(items)
+
+            if run:
+                if self.is_function(term):
+                    return self.pipe_cmd_py(term, prev_result)
+                elif ast.type == 'variable':
+                    k = ast[1:]
+                    return self.env[k]
+                elif ast.type != 'term':
+                    return str(ast)
+
+                # raise ShellError(f'Cannot execute the function {term}')
+                return term
+            return term
+
+        elif isinstance(ast, str):
+            return self.run_commands(Term(ast), prev_result, run=run)
+
+        key, *values = ast
+
+        if DEFINE_FUNCTION in self.locals:
+            # TODO change prompt to reflect this mode
+
+            # self._extend_inline_function_definition(line)
+            f = self.locals[DEFINE_FUNCTION]
+            if key == 'indent':
+                # TODO compare indent width
+                _, width, value = ast
+                if value is None:
+                    return
+
+                if f.line_indent is None:
+                    f.line_indent = width
+
+                if width >= f.line_indent:
+                    self.locals[DEFINE_FUNCTION].inner.append(ast)
+                    return
+
+                # finalize function definition
+                self.env[f.func_name] = f
+                self.locals.rm(DEFINE_FUNCTION)
+
+            elif key != 'lines':
+                # finalize function definition
+                self.env[f.func_name] = f
+                self.locals.rm(DEFINE_FUNCTION)
+
+        if key not in ('lines', 'indent', 'else', 'else-if', 'else-if-then'):
+            try:
+                handle_prev_then_else_statements(self)
+            except Abort:
+                return prev_result
+
+        if key == 'indent':
+            return self.run_handle_indent(values, prev_result, run)
+        elif key == 'terms':
+            return self.run_handle_terms(values, prev_result, run)
+        elif key == 'lines':
+            self.locals.set(LINE_INDENT, indent_width(''))
+            return self.run_handle_lines(values, prev_result, run, print_result)
+        elif key == 'assign':
+            return self.run_handle_assign(values, prev_result, run)
+        elif key == 'binary-expression':
+            op, a, b = values
+            b = self.run_commands(b, run=run)
+            a = self.run_commands(a, run=run)
+
+            if op in delimiters.comparators:
+                # TODO join a, b
+                if run:
+                    return self.eval(['math', a, op, b])
+                return a, op, b
+
+            if op in '+-*/':
+                # math
+                if run:
+                    return self.eval(['math', a, op, b])
+                return a, op, b
+
+            raise NotImplementedError()
+
+        elif key == 'map':
+            lhs, rhs = values
+            prev = self.run_commands(lhs, prev_result, run=run)
+
+            if isinstance(rhs, str) or isinstance(rhs, Term):
+                rhs = Terms([rhs])
+            return self._do_map(rhs, prev)
+
+        elif key == 'pipe':
+            a, b = values
+            prev = self.run_commands(a, prev_result, run=run)
+            next = self.run_commands(b, prev, run=run)
+            return next
+
+        elif key == 'bash':
+            op, a, b = values
+            prev = self.run_commands(a, prev_result, run=run)
+            line = self.run_commands(b, run=False)
+
+            # TODO also quote prev result
+            if not isinstance(line, str) and not isinstance(line, Term):
+                line = ' '.join(quote_all(line, ignore=['*']))
+
+            next = self.pipe_cmd_sh(line, prev, delimiter=op)
+            return next
+
+        elif key == 'break':
+            _, a, b = ast
+            a = self.run_commands(a, prev_result, run=True)
+            print_result = True
+            if print_result and a is not None:
+                print(a)
+
+            b = self.run_commands(b, run=True)
+            return b
+
+        elif key == 'math':
+            _key, values = ast
+            args = self.run_commands(values, prev_result)
+
+            if not run:
+                return ['math'] + args
+
+            line = 'math ' + ' '.join(quote_all(args,
+                                                ignore=list('*$<>') + ['>=', '<=']))
+            return self.pipe_cmd_py(line, '')
+
+        elif key == 'logic':
+            op, a, b = values
+            a = self.run_commands(a, run=run)
+            b = self.run_commands(b, run=run)
+            if run:
+                a = to_bool(a)
+                b = to_bool(b)
+                if op == 'or':
+                    return a or b
+                elif op == 'and':
+                    return a and b
+
+            return ' '.join(quote_all((a, op, b), ignore=list('*<>')))
+
+        elif key == 'if':
+            # multiline if-statement
+            condition, = values
+            if not run:
+                raise NotImplementedError()
+
+            value = self.run_commands(condition, run=run)
+            value = to_bool(value) == TRUE
+            self.locals[IF].append(State(self, value))
+            return
+
+        elif key == 'then':
+            then, = values
+            if not run:
+                raise NotImplementedError()
+
+            result = None
+            try:
+                # verify & update state
+                handle_then_statement(self)
+                if then:
+                    result = self.run_commands(then, run=run)
+            except Abort:
+                pass
+
+            if then:
+                self._last_if['branch'] = INLINE_THEN
+
+            return result
+
+        elif key == 'if-then':
+            condition, then = values
+            if not run:
+                raise NotImplementedError()
+
+            value = self.run_commands(condition, run=run)
+            value = to_bool(value) == TRUE
+
+            if value and then:
+                # include prev_result for inline if-then statement
+                result = self.run_commands(then, prev_result, run=run)
+            else:
+                # set default value
+                result = FALSE
+
+            branch = THEN if then is None else INLINE_THEN
+            self.locals[IF].append(State(self, value, branch))
+            return result
+
+        elif key == 'if-then-else':
+            # inline if-then-else
+            condition, true, false = values
+
+            value = self.run_commands(condition, run=run)
+            value = to_bool(value) == TRUE
+            line = true if value else false
+
+            # include prev_result for inline if-then-else statement
+            return self.run_commands(line, prev_result, run=run)
+
+        elif key == 'else-if-then':
+            condition, then = values
+            if not run:
+                raise NotImplementedError()
+
+            try:
+                # verify & update state
+                handle_else_statement(self)
+                value = self.run_commands(condition, run=run)
+                value = to_bool(value) == TRUE
+            except Abort:
+                value = False
+
+            if value and then:
+                result = self.run_commands(then, run=run)
+            else:
+                result = None
+
+            branch = THEN if then is None else INLINE_THEN
+            self.locals[IF].append(State(self, value, branch))
+            return result
+
+        elif key == 'else-if':
+            condition, = values
+            if not run:
+                raise NotImplementedError()
+
+            try:
+                # verify & update state
+                handle_else_statement(self)
+                value = self.run_commands(condition, run=run)
+                value = to_bool(value) == TRUE
+            except Abort:
+                value = False
+
+            self.locals[IF].append(State(self, value, THEN))
+            return
+
+        elif key == 'else':
+            otherwise, = values
+            if not run:
+                raise NotImplementedError()
+
+            result = None
+            try:
+                # verify & update state
+                handle_else_statement(self)
+                if otherwise:
+                    result = self.run_commands(otherwise, run=run)
+            except Abort:
+                pass
+
+            if otherwise is not None:
+                self._last_if['branch'] = INLINE_ELSE
+            return result
+
+        elif key == 'define-inline-function':
+            f, args, body = values
+            if args:
+                args = self.run_commands(args)
+
+            self._define_function(f, run)
+
+            # TODO use parsing.expand_variables_inline
+            self.env[f] = InlineFunction(body, args, func_name=f)
+
+        elif key == 'define-function':
+            f, args = values
+
+            self._define_function(f, run)
+
+            # TODO use line_indent=self.locals[RAW_LINE_INDENT]
+            self.locals.set(DEFINE_FUNCTION,
+                            InlineFunction('', args, func_name=f))
+
+        elif key == 'return':
+            line = values[0]
+            result = self.run_commands(line, run=run)
+            return ('return', result)
+
+        elif key == '!':
+            terms = self.run_commands(values[0])
+            if isinstance(terms, str) or isinstance(terms, Term):
+                line = str(terms)
+            else:
+                line = ' '.join(terms)
+
+            if line == '' and prev_result == '':
+                print('No arguments received for `!`')
+                return FALSE
+
+            if run:
+                return self.pipe_cmd_sh(line, prev_result, delimiter=None)
+            return ' '.join(line)
+
+        else:
+            raise NotImplementedError()
+
+    def run_handle_indent(self, args, prev_result, run):
+        width, inner = args
+        if inner is None:
+            return
+
+        if self.locals[IF]:
+            if not run:
+                raise NotImplementedError()
+
+            closed = self._last_if['branch'] in (INLINE_THEN, INLINE_ELSE)
+
+            if width < self._last_if['line_indent'] or (
+                width == self._last_if['line_indent'] and
+                    inner[0] not in ['then', 'else']):
+
+                close_prev_if_statements(self, width)
+
+            if self.locals[IF] and width > self._last_if['line_indent']:
+                if closed:
+                    raise ShellSyntaxError(
+                        'Unexpected indent after if-else clause')
+                try:
+                    handle_prev_then_else_statements(self)
+                except Abort:
+                    return prev_result
+
+        self.locals.set(LINE_INDENT, width)
+        return self.run_commands(inner, prev_result, run=run)
+
+    def run_handle_terms(self, values, prev_result: str, run: bool):
+        items = values[0]
+
+        if len(items) >= 2 and run:
+            k, *args = items
+            if k == 'map':
+                args = Terms(list(args))
+                return self._do_map(args, prev_result)
+            elif k == 'foreach':
+                args = Terms(list(args))
+                return self._do_foreach(args, prev_result)
+            elif k in ['reduce', 'foldr']:
+                return self.foldr(args, prev_result)
+
+        # TODO expand vars in other branches as well
+        wildcard_value = ''
+        if '$' in items:
+            wildcard_value = prev_result
+            prev_result = ''
+
+        items = list(expand_variables(items, self.env,
+                                      self.completenames_options,
+                                      self.ignore_invalid_syntax,
+                                      wildcard_value))
+
+        k = items[0]
+        if run:
+            if k == 'echo':
+                args = items[1:]
+                if prev_result:
+                    args += [prev_result]
+                line = ' '.join(str(arg) for arg in args)
+                return line
+
+            if self.is_function(k):
+                # TODO if self.is_inline_function(k): ...
+                # TODO standardize quote_all args
+                line = ' '.join(quote_all(items, ignore='*$?'))
+                return self.pipe_cmd_py(line, prev_result)
+
+        if prev_result:
+            items += [prev_result]
+        if run:
+            return ' '.join(items)
+        return items
+
+    def run_handle_lines(self, values, prev_result: str, run: bool, print_result: bool):
+        items = values[0]
+        for item in items:
+
+            width = indent_width('')
+            if self.locals[IF] and item[0] != 'indent' and width > self._last_if['line_indent']:
+                close_prev_if_statements(self, width)
+
+            if self.locals[IF] and item[0] != 'indent':
+                if not item[0].startswith('then') and not item[0].startswith('else'):
+                    close_prev_if_statement(self)
+
+            result = self.run_commands(item, run=run)
+
+            # TODO if isinstance(result, tuple):
+            # return ('return', result)
+            if isinstance(result, tuple) and result[0] == 'return':
+                return result[1]
+
+            if isinstance(result, list):
+                # result = ' '.join(quote_all(result))
+                # result = ' '.join(str(s) for s in result)
+                result = str(result)
+
+            if print_result and result is not None:
+                if result or not self.locals[IF]:
+                    print(result)
+
+    def run_handle_assign(self, values, prev_result, run):
+        op, a, b = values
+        a = self.run_commands(a)
+        if op == '=':
+            b = self.run_commands(b)
+            if run:
+                self.set_env_variables(a, b)
+                return TRUE
+            return a, op, b
+
+        elif op == LEFT_ASSIGNMENT:
+            values = self.run_commands(b, run=run)
+
+            if values is None:
+                values = ''
+
+            if values.strip() == '' and self._last_results:
+                values = self._last_results
+                self.env[LAST_RESULTS] = []
+
+            if run:
+                self.set_env_variables(a, values)
+                return TRUE
+            return a, op, values
+
+        elif op == RIGHT_ASSIGNMENT:
+            raise NotImplementedError(RIGHT_ASSIGNMENT)
+
+        raise NotImplementedError()
+
+    def _define_function(self, f, run):
+        if not run:
+            raise NotImplementedError()
+
+        if has_method(self, f'do_{f}'):
+            raise ShellError()
+        elif self.is_function(f):
+            logging.debug(f'Re-define existing function: {f}')
+
+        if self.auto_save:
+            logging.warning(
+                'Instances of InlineFunction are incompatible with serialization')
+            self.auto_save = False
 
     def postcmd(self, stop, _):
         """Display the shell_ready_signal to indicate termination to a parent process.
@@ -511,170 +937,11 @@ class BaseShell(Cmd):
         if self.ignore_invalid_syntax:
             return super().default(line)
 
-        raise ShellError(f'Unknown syntax: {line}')
+        raise ShellSyntaxError(f'Unknown syntax: {line}')
 
     ############################################################################
     # Pipes
     ############################################################################
-
-    def run_commands(self, lines: Iterable[List[str]], result=''):
-        """Run each command in `lines`.
-        The partial results are passed through to subsequent commands.
-        """
-        if not lines:
-            return
-
-        if LEFT_ASSIGNMENT in self.locals:
-            self.locals.rm(LEFT_ASSIGNMENT)
-
-        for i, line in enumerate(lines):
-            # indent = inline_indent_with(*self.locals[RAW_LINE_INDENT], i)
-            indent = self.locals[RAW_LINE_INDENT] + (i,)
-            self.locals.set(LINE_INDENT, indent)
-
-            if DEFINE_FUNCTION in self.locals:
-                self._extend_inline_function_definition(line)
-                result = None
-                continue
-
-            self._conditionally_insert_assign_operator(lines, i, line)
-
-            try:
-                result = self.run_single_command(line, result)
-
-            except ShellPipeError as e:
-                if self.ignore_invalid_syntax:
-                    log(e)
-                    return
-
-                raise ShellError(e)
-
-            except subprocess.CalledProcessError as e:
-                returncode, stderr = e.args
-                log(f'Shell exited with {returncode}: {stderr}')
-
-                if self.ignore_invalid_syntax:
-                    return
-
-                raise ShellError(str(e))
-
-            # handle inline `<-`
-            if DEFINE_FUNCTION not in self.locals \
-                    and LEFT_ASSIGNMENT in self.locals \
-                    and 'assign' not in line \
-                    and not \
-                        (len(lines) > i + 1
-                         and lines[i+1][0] == LEFT_ASSIGNMENT):
-                self._save_assignee(result)
-                result = None
-
-        if DEFINE_FUNCTION in self.locals:
-            if not self.locals[DEFINE_FUNCTION].multiline:
-                if self.locals[DEFINE_FUNCTION].command:
-                    self._save_inline_function()
-                else:
-                    self.locals[DEFINE_FUNCTION].multiline = True
-            return
-
-        elif LEFT_ASSIGNMENT in self.locals and not io_util.interactive:
-            # cancel assignment
-            self._save_assignee(result)
-            return
-
-        if RETURN in self.locals:
-            self.locals.set(RETURN,  result)
-            return
-
-        return result
-
-    def _conditionally_insert_assign_operator(self, lines, i, line):
-        if LEFT_ASSIGNMENT not in self.locals \
-                and i+1 < len(lines) \
-                and '<-' in lines[i+1]:
-            # prefix line if '<-' is used later on
-            j = 1 if ';' in line else 0
-            line.insert(j, 'assign')
-
-    def _extend_inline_function_definition(self, line):
-        if not self.locals[DEFINE_FUNCTION].multiline:
-            if ':' in line:
-                line = line[1:]
-
-        cmd = ' ' + ' '.join(line)
-        if self.locals[DEFINE_FUNCTION].multiline:
-            self.locals[DEFINE_FUNCTION].inner[-1] += cmd
-        else:
-            self.locals[DEFINE_FUNCTION].command += cmd
-        return line
-
-    def run_single_command(self, command_and_args: List[str], prev_result: str = '') -> str:
-        prev_result = self.filter_result(command_and_args, prev_result)
-
-        prefixes, line, infix_operator_args = self.parse_single_command(
-            command_and_args)
-
-        close_prev_if_statements(self, prefixes)
-
-        if not for_any([IF, THEN, ELSE], contains, prefixes):
-            try:
-                handle_prev_then_else_statements(self)
-            except Abort:
-                return prev_result
-
-        if prefixes:
-            if THEN in prefixes or ELSE in prefixes:
-                try:
-                    handle_then_else_statements(self, prefixes, prev_result)
-                except Done as result:
-                    return result.args[0]
-
-                if not self.is_function(line.split(' ')[0]):
-                    line = 'echo ' + line
-
-            if RETURN in prefixes:
-                if RETURN not in self.locals:
-                    self.locals.set(RETURN, None)
-
-                if len(prefixes) == 1 and not self.is_function(line.split(' ')[0]):
-                    line = 'echo ' + line
-
-            if prefixes[-1] == IF:
-                return handle_if_statement(self, line, prev_result)
-
-            elif prefixes[-1] in delimiters.bash:
-                return self.pipe_cmd_sh(line, prev_result, delimiter=prefixes[-1])
-
-            elif prefixes[-1] == '>>=':
-                # monadic bind
-                # https://en.wikipedia.org/wiki/Monad_(functional_programming)
-                line = f'map {line}'
-                return self.pipe_cmd_py(line, prev_result)
-
-            elif prefixes[-1] == RIGHT_ASSIGNMENT:
-                # TODO verify syntax of `line`
-                assert ' ' not in line
-                self.set_env_variables(line, prev_result)
-                return ''
-
-        if infix_operator_args:
-            return self.infix_command(*infix_operator_args)
-        elif is_function_definition(command_and_args):
-            return self.handle_define_inline_function(command_and_args)
-
-        return self.pipe_cmd_py(line, prev_result)
-
-    def _save_assignee(self, result: str):
-        keys = self.locals[LEFT_ASSIGNMENT]
-
-        self.locals.rm(LEFT_ASSIGNMENT)
-
-        if result is None:
-            raise ShellError(f'Missing return value in assignment: {keys}')
-        elif result.strip() == '' and self._last_results:
-            result = self._last_results
-            self.env[LAST_RESULTS] = []
-
-        self.set_env_variables(keys, result)
 
     def filter_result(self, command_and_args, result):
         if ';' in command_and_args:
@@ -728,17 +995,18 @@ class BaseShell(Cmd):
         """
         May raise subprocess.CalledProcessError
         """
-        assert delimiter in delimiters.bash
+        assert delimiter in delimiters.bash or delimiter is None
 
         if delimiter == '>-':
             delimiter = '>'
 
-        # pass last result to stdin
-        line = f'echo {shlex.quote(prev_result)} {delimiter} {line}'
+        if delimiter is not None:
+            # pass last result to stdin
+            line = f'echo {shlex.quote(prev_result)} {delimiter} {line}'
 
         logging.info(f'Cmd = {line}')
 
-        result = subprocess.run(args=line,
+        result = subprocess.run(line,
                                 capture_output=True,
                                 check=True,
                                 shell=True)
@@ -767,7 +1035,7 @@ class BaseShell(Cmd):
                 if self.ignore_invalid_syntax:
                     log(msg)
                     return
-                raise ShellError(msg)
+                raise ShellSyntaxError(msg)
 
             return method(lhs, *rhs)
 
@@ -793,7 +1061,7 @@ class BaseShell(Cmd):
         if result is None:
             raise ShellError(f'Missing return value in assignment: {keys}')
 
-        if isinstance(keys, str):
+        if isinstance(keys, str) or isinstance(keys, Term):
             keys = keys.split(' ')
 
         try:
@@ -804,8 +1072,10 @@ class BaseShell(Cmd):
             pass
 
         if len(keys) == 1:
+            if isinstance(result, list):
+                result = ' '.join(quote_all(result))
             self.env[keys[0]] = result
-        elif isinstance(result, str):
+        elif isinstance(result, str) or isinstance(result, Term):
             lines = result.split('\n')
             terms = result.split(' ')
             if len(lines) == len(keys):
@@ -893,8 +1163,12 @@ class BaseShell(Cmd):
         translations = {}
 
         if len(args) != len(f.args):
-            raise ShellError(
-                f'Invalid number of arguments: {len(f.args)} arguments expected .')
+            msg = f'Invalid number of arguments: {len(f.args)} arguments expected.'
+            if self.ignore_invalid_syntax:
+                log(msg)
+                return FALSE
+            else:
+                raise ShellError(msg)
 
         # translate variables in inline functions
         for i, k in enumerate(f.args):
@@ -905,88 +1179,24 @@ class BaseShell(Cmd):
 
             for i, k in enumerate(f.args):
                 # quote item to preserve `\n`
-                self.env[k] = shlex.quote(args[i])
+                # self.env[k] = shlex.quote(args[i])
+                self.env[k] = args[i]
 
-            for line in f.inner:
-                self.onecmd(line, print_result=False)
+            if f.inner == []:
+                return self.run_commands(f.command, run=True)
 
-                if RETURN in self.locals:
-                    if self.locals[RETURN] is None:
-                        raise ShellError('invalid state')
-                    return self.locals[RETURN]
+            # TODO rm impossible state
+            assert f.command == ''
 
-            terms = [term for term in f.command.split(' ') if term != '']
-            if not f.multiline:
-                terms = list(translate_terms(terms, translations))
+            result = ''
+            for ast in f.inner:
+                result = self.run_commands(ast, prev_result=result,
+                                           run=True)
+                if isinstance(result, tuple) and result[0] == 'return':
+                    return result[1]
 
-            # don't re-quote terms to maintain newlines
-            result = self.eval(terms, quote=False)
-
-        return result
-
-    def handle_define_inline_function(self, terms: List[str]) -> str:
-        f, *args = terms
-        args = [arg for arg in args if arg != '']
-
-        if not args or not args[0].startswith('(') or not args[-1].endswith(')'):
-            lhs = ' '.join(terms)
-            raise ShellError(f'Invalid syntax for inline function: {lhs}')
-
-        # strip braces
-        if args[0] == '()':
-            args = []
-        else:
-            args[0] = args[0][1:]
-            args[-1] = args[-1][:-1]
-
-        self.locals.set(DEFINE_FUNCTION,
-                        InlineFunction('', *args, func_name=f,
-                                       line_indent=self.locals[RAW_LINE_INDENT]))
-
-    def _define_multiline_function(self, indented_line: str):
-        line = indented_line.lstrip()
-
-        if line.startswith(RETURN + ' ') and (
-                self.locals[RAW_LINE_INDENT] <= self.locals[DEFINE_FUNCTION].line_indent or
-                not self.locals[DEFINE_FUNCTION].inner):
-
-            if self.locals[RAW_LINE_INDENT] < self.locals[DEFINE_FUNCTION].line_indent:
-                raise ShellError(
-                    f'Function defintion did not end with {RETURN}')
-
-            # TODO fix indent
-            line = removeprefix(line, RETURN + ' ')
-            self.locals[DEFINE_FUNCTION].command = line
-            self._save_inline_function()
-
-        else:
-            # update line indent on the first line
-            if self.locals[DEFINE_FUNCTION].inner == []:
-                self.locals[DEFINE_FUNCTION].line_indent = self.locals[RAW_LINE_INDENT]
-
-            self.locals[DEFINE_FUNCTION].inner.append(indented_line)
-
-    def _save_inline_function(self) -> str:
-        func = self.locals[DEFINE_FUNCTION]
-        self.locals.rm(DEFINE_FUNCTION)
-
-        f = func.func_name
-        if has_method(self, f'do_{f}'):
-            raise ShellError(
-                f'Name conflict: Cannot define inline function {f}, '
-                f'because there already exists a method do_{f}.')
-
-        if not is_valid_method_name(f):
-            raise ShellError(f'Invalid function name format: {f}')
-
-        if not func.multiline:
-            func.command = expand_variables_inline(func.command, self.env,
-                                                   self.completenames_options,
-                                                   self.ignore_invalid_syntax)
-
-        self.env[f] = func
-        positionals = ' '.join(func.args)
-        log(f'function {f}({positionals});')
+            if isinstance(result, tuple) and result[0] == 'return':
+                return result[1]
 
 
 def is_function_definition(terms: List[str]) -> bool:
@@ -1003,6 +1213,12 @@ def is_function_definition(terms: List[str]) -> bool:
         _f, first, *_, last = terms
 
     return first.startswith('(') and last.endswith(')')
+
+
+def to_bool(line: str) -> bool:
+    if line != FALSE and line is not None:
+        return TRUE
+    return FALSE
 
 
 def is_public(key: str) -> bool:
@@ -1027,7 +1243,7 @@ def scope() -> dict:
 
 @contextmanager
 def enter_new_scope(cls: BaseShell, scope_name=INNER_SCOPE):
-    """Create a new scope, then change directory into that scope. 
+    """Create a new scope, then change directory into that scope.
     Finally exit the new scope.
     """
     cls.locals.set(scope_name, scope())

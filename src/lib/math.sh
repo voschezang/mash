@@ -24,5 +24,5 @@ sub (a b): math a - b
 mul (a b): math a * b
 
 # reduction
-sum (x): echo x |> reduce add 0
-product (x): echo x |> reduce mul 1
+sum (x): echo $x |> reduce add 0
+product (x): echo $x |> reduce mul 1

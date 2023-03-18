@@ -1,6 +1,6 @@
 # My Automation Shell
 
-A tool to generate a [Domain-specific Language](https://en.wikipedia.org/wiki/Domain-specific_language) (DSL).  It can be used as a command line program or interactively as a subshell/repl.
+A tool to generate a [domain-specific language](https://en.wikipedia.org/wiki/Domain-specific_language) (DSL).  It can be used as a command line program or interactively as a subshell/repl.
 
 **Table of Contents**
 
@@ -16,7 +16,7 @@ A tool to generate a [Domain-specific Language](https://en.wikipedia.org/wiki/Do
 Main features
 
 - A CLI. Provide an interface to user-defined commands.
-- A file-browser. Query both static datastructures and APIs.
+- A file-browser. Query both static datastructures and REST APIs.
 - An automation tool. Pass user-defined commands to other programs, such as Bash functions.
 
 See [reference](SHELL_REFERENCE.md).

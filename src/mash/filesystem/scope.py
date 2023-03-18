@@ -8,8 +8,8 @@ class Scope:
     """A dict-like interface for a FileSystem instance.
     It mixes local and global scopes.
 
-    If a file is not present in the current directory, 
-    then this class attempts to acces it in each parent directory. 
+    If a file is not present in the current directory,
+    then this class attempts to acces it in each parent directory.
     """
 
     def __init__(self, data: FileSystem, key='env', **kwds):
@@ -72,7 +72,7 @@ class Scope:
         return {k: self[k] for k in self.keys()}
 
     def keys(self) -> Iterable[str]:
-        """Return the keys of all environment variables. 
+        """Return the keys of all environment variables.
         Keys of global variables that are shadowed by local variables are ignored.
         """
         # use an ordered list

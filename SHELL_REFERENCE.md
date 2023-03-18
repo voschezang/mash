@@ -31,10 +31,16 @@ For examples, see [lib](https://github.com/voschezang/mash/blob/main/src/lib/mat
 Multiline if-then-else statement
 
 ```python
-if .. then
+if 10 < 1 then
 	print 1
 else
 	print 2
+```
+
+Assignment
+
+```bash
+x <- if today then yes else no
 ```
 
 ### Maps and Loops
@@ -90,24 +96,28 @@ An environment is a key-value map.
 
 ### Functions
 
-| Example                               | Description                                              |
-| ------------------------------------- | -------------------------------------------------------- |
-| `f (x): x`                            | Identity function. Echo the input.                       |
-| `triple (i): i i i`                   | Repeat a term.                                           |
-| `add (a b): math a + b`               | Arithmetic.                                              |
-| `f (x): math x + $a`                  | Combine positional arguments with environment variables. |
-| `powers (n): range n >>= math $ ** 2` | A function that iterates over a loop.                    |
-| `f (n): range n |> reduce sum 0`      | Aggregate a sequence using a reduction operator.         |
+| Example                                | Description                                              |
+| -------------------------------------- | -------------------------------------------------------- |
+| `f (x): $x`                            | Identity function. Echo the input.                       |
+| `triple (i): $i $i $i`                 | Repeat a term.                                           |
+| `add (a b): math $a + $b`              | Arithmetic.                                              |
+| `f (x): math $x + $a`                  | Combine positional arguments with environment variables. |
+| `powers (n): range $n >>= math $ ** 2` | A function that iterates over a loop.                    |
+| `f (n): range $n |> reduce sum 0`      | Aggregate a sequence using a reduction operator.         |
 
 #### Multiline Functions
 
-```python
+Using the `return` keyword.
+
+```bash
 b = 10 # a global variable
 
 f (x):
     # a magic formula
-    x <- math x * 3 # a local variable
-    return math a * x + b
+    x <- math $x * 3 # a local variable
+    if x > 2:
+        return $x
+    return math 2 * $x + $b
 
 # call the function with argument '10'
 f 10
@@ -154,6 +164,19 @@ f 10
 
 Proposals for future changes.
 
+
+
+**Predicate logic**
+
+```python
+a and b or c
+a and b => not c
+x > 1 for all x in X
+x + y == 1 for any x in X, y in Y
+```
+
+
+
 **Basic Functions**
 
 Inf loop: `f x = f x |> repeat x` 
@@ -162,74 +185,11 @@ Inf loop: `f x = f x |> repeat x`
 
 
 
-**Break-like return statement**
-
-```python
-abs (x):
-  if x > 0 then return x
-  return math -x
-```
-
-
-
-**Multiline if-then-else conditions**
-
-Options:
-
-```python
-f (n):
-  if $n == 0 then 
-    result = 1
-  else if $n > 0 then
-    result <- range $n |> product
-
-  if $n == 0 then 
-    return 1
-  if $n > 0 then 
-    return range $n |> product
-
-  result <- if $n == 0 then echo 1
-			 else if $n >= 0 then range $n |> product
-
-  result <- if $n == 0 then 
-		  	echo 1
-		  else if $n > 0 then
-  			range $n |> product
-        
-	if $n |> math 1 + $ |> echo
-  then result = 1
-  else if $n > 1
-  then
-  	result = 0
-```
-
-
-
-Choose precedence
-
-```python
-x <- if $y then (range 3 |> product) else (range 10 |> product)
-x <- if $y then range 3 |> product else range 10 |> product
-
-x <- if $y then range 3 else range 10 |> product
-x <- (if $y then range 3 else range 10) |> product
-```
-
-
-
 **Skip `then` keyword in if-then statements**
 
 ```python
 if 1:
   print 1
-```
-
-
-
-**Logical operators: `and, or`**
-
-```python
-if $x and math 1 + 3 then ..
 ```
 
 

@@ -12,11 +12,12 @@ import traceback
 
 from mash import io_util
 from mash.io_util import ArgparseWrapper, bold, has_argument, has_output, log, read_file
-from mash.util import has_method, is_valid_method_name
+from mash.util import has_method, is_valid_method_name, translate_items
 
 from mash.shell.function import ShellFunction as Function
 import mash.shell.function as func
-from mash.shell.base import ENV, FALSE, TRUE, BaseShell, ShellError, filter_private_keys, translate_terms
+from mash.shell.base import FALSE, TRUE, BaseShell, filter_private_keys
+from mash.shell.errors import ShellSyntaxError
 
 description = 'If no positional arguments are given then an interactive subshell is started.'
 epilog = f"""
@@ -80,7 +81,7 @@ class Shell(BaseShell):
         if not args:
             args = 0
 
-        sys.exit(int(args))
+        exit(int(args))
 
     def do_cat(self, filename):
         """Concatenate and print files
@@ -153,7 +154,7 @@ class Shell(BaseShell):
         raise NotImplementedError()
 
     def do_math(self, args: str) -> str:
-        operators = ['-', '\\+', '\\*', '%']
+        operators = ['-', '\\+', '\\*', '%', '==', '!=', '<', '>']
         delimiters = ['\\(', '\\)']
         regex = '(' + '|'.join(operators + delimiters) + ')'
         terms = re.split(regex, args)
@@ -167,13 +168,13 @@ class Shell(BaseShell):
         return '\n'.join((str(i) for i in range(*args)))
 
     def _eval_terms(self, terms=List[str]) -> str:
-        line = ''.join(translate_terms(terms, self.env.asdict()))
+        line = ''.join(translate_items(terms, self.env.asdict()))
         log(line)
 
         try:
             result = eval(line)
-        except (NameError, SyntaxError) as e:
-            raise ShellError(f'eval failed: {line}') from e
+        except (NameError, SyntaxError, TypeError) as e:
+            raise ShellSyntaxError(f'eval failed: {line}') from e
 
         # SMELL avoid side-effects on top of a return type
         self._save_result(result)
@@ -232,9 +233,9 @@ class Shell(BaseShell):
         del self.functions[group_key]
 
 
-def all_commands(cls=Shell):
-    for cmd in vars(cls):
-        if cmd.startswith('do_') and has_method(cls, cmd):
+def all_commands(shell: Shell):
+    for cmd in dir(shell):
+        if cmd.startswith('do_') and has_method(shell, cmd):
             yield cmd.lstrip('do_')
 
 
@@ -355,6 +356,7 @@ def run_command(command='', shell: Shell = None, strict=None):
     if strict is not None:
         shell.ignore_invalid_syntax = not strict
 
+    # TODO skip splitlines
     for line in command.splitlines():
         if line:
             shell.onecmd(line)
@@ -363,11 +365,14 @@ def run_command(command='', shell: Shell = None, strict=None):
 def run_interactively(shell):
     io_util.interactive = True
     shell.auto_save = True
-    try:
-        shell.cmdloop()
-    except KeyboardInterrupt:
-        print('<KeyboardInterrupt>')
-        pass
+    i = 0
+    while True:
+        i += 1
+        try:
+            shell.cmdloop()
+        except KeyboardInterrupt:
+            print('\nKeyboardInterrupt')
+            shell.intro = ''
 
 
 def build(functions: Dict[str, Function] = None, completions: Dict[str, Callable] = None, instantiate=True) -> Shell:
@@ -418,7 +423,7 @@ def main(shell: Shell = None, functions: Dict[str, Function] = None, repl=True) 
 
     try:
         run(shell, commands, filename, repl)
-    except ShellError as e:
+    except ShellSyntaxError as e:
         log(e, prefix='')
         sys.exit(1)
 

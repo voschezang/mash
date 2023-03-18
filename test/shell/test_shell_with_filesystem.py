@@ -39,7 +39,7 @@ def test_crud_get():
 
     s = "{'worlds': [{'name': 'earth', 'animals':"
     assert s in catch_output('get', shell=shell)
-    s = "[{'name': 'earth', 'animals': [{'name': 'terrestrial',"
+    s = "{'name': 'earth', 'animals': [{'name': 'terrestrial',"
     assert s in catch_output('get worlds', shell=shell)
     s = "{'name': 'earth', 'animals':"
     assert s in catch_output('get worlds earth', shell=shell)
