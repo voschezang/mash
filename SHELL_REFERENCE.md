@@ -103,7 +103,7 @@ An environment is a key-value map.
 | `add (a b): math $a + $b`              | Arithmetic.                                              |
 | `f (x): math $x + $a`                  | Combine positional arguments with environment variables. |
 | `powers (n): range $n >>= math $ ** 2` | A function that iterates over a loop.                    |
-| `f (n): range $n |> reduce sum 0`      | Aggregate a sequence using a reduction operator.         |
+| `f (n): range $n `&vert;`> reduce sum 0`| Aggregate a sequence using a reduction operator.        |
 
 #### Multiline Functions
 
