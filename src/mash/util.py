@@ -1,5 +1,5 @@
 from contextlib import contextmanager
-from json import JSONDecoder, JSONEncoder
+from json import JSONEncoder
 import re
 import shlex
 from braceexpand import braceexpand, UnbalancedBracesError

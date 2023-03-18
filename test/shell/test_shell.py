@@ -3,7 +3,8 @@ from pytest import raises
 from time import perf_counter
 
 from mash import io_util
-from mash.shell import delimiters, ShellError
+from mash.shell import delimiters
+from mash.shell.errors import ShellError, ShellSyntaxError
 from mash.shell.shell import Shell, run_command
 
 
@@ -48,7 +49,7 @@ def test_onecmd_syntax():
     s = 'A string with ;'
     assert catch_output(f'print " {s} " ') == f"' {s} '"
 
-    with raises(ShellError):
+    with raises(ShellSyntaxError):
         run_command('print "\""', strict=True)
 
 
@@ -167,16 +168,16 @@ def test_do_fail():
 
 def test_shell_do_math():
     shell = Shell()
-    # assert catch_output(f'math 1 + 10', shell=shell) == '11'
-    assert catch_output(f'math 1 + 2 * 3', shell=shell) == '7'
+    assert catch_output('math 1 + 10', shell=shell) == '11'
+    assert catch_output('math 1 + 2 * 3', shell=shell) == '7'
 
 
 def test_shell_do_math_compare():
     shell = Shell()
-    assert catch_output(f'math 1 == 10', shell=shell) == ''
-    assert catch_output(f'math 1 < 10', shell=shell) == '1'
-    assert catch_output(f'math 1 > 10', shell=shell) == ''
-    assert catch_output(f'math 1 > 10', shell=shell) == ''
+    assert catch_output('math 1 == 10', shell=shell) == ''
+    assert catch_output('math 1 < 10', shell=shell) == '1'
+    assert catch_output('math 1 > 10', shell=shell) == ''
+    assert catch_output('math 1 > 10', shell=shell) == ''
 
 
 def test_shell_range():
@@ -188,14 +189,15 @@ def test_shell_range():
 
 def test_shell_numbers():
     shell = Shell()
-    run_command(f'x <- int 10', shell=shell)
+    shell.ignore_invalid_syntax = False
+    run_command('x <- int 10', shell=shell)
     assert 'x' in shell.env
     assert shell.env['x'] == 10
 
-    run_command(f'y <- float 1.5', shell=shell)
+    run_command('y <- float 1.5', shell=shell)
     assert 'y' in shell.env
 
-    run_command(f'z <- math x + y', shell=shell)
+    run_command('z <- math x + y', shell=shell)
     assert 'z' in shell.env
 
     assert catch_output('math x + 10', shell=shell) == '20'
@@ -204,11 +206,11 @@ def test_shell_numbers():
 
     # catch NameError
     with raises(ShellError):
-        run_command(f'math x + +', shell=shell)
+        run_command('math x + +', shell=shell)
 
     # catch SyntaxError
     with raises(ShellError):
-        run_command(f'math abc', shell=shell)
+        run_command('math abc', shell=shell)
 
 
 def test_set_do_char_method():

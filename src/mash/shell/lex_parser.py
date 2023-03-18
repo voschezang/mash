@@ -1,10 +1,9 @@
 from collections import UserString
+from logging import getLogger
 import ply.lex as lex
 import ply.yacc as yacc
 from mash.shell.parsing import indent_width
-from mash.shell.errors import ShellError
-# ShellError = RuntimeError
-# def indent_width(x): return 1
+from mash.shell.errors import ShellSyntaxError
 
 lexer = None
 
@@ -204,7 +203,7 @@ def init_lex():
     def t_error(t):
         print(f'Illegal character: `{t.value[0]}`')
         t.lexer.skip(1)
-        raise ShellError(f'Illegal character: `{t.value[0]}`')
+        raise ShellSyntaxError(f'Illegal character: `{t.value[0]}`')
 
     return lex.lex()
 
@@ -533,11 +532,12 @@ def parse(text, init=True):
                        | ELSE THEN
                        | ELSE INDENT THEN
         """
-        raise ShellError(f'Syntax error: invalid if-then-else statement: {p}')
+        raise ShellSyntaxError(
+            f'Syntax error: invalid if-then-else statement: {p}')
 
     def p_error(p):
         print(f'Syntax error: {p}')
-        raise ShellError(f'Syntax error: {p}')
+        raise ShellSyntaxError(f'Syntax error: {p}')
 
     if init:
         global lexer
@@ -545,7 +545,8 @@ def parse(text, init=True):
     else:
         lexer.clone()
 
-    parser = yacc.yacc(debug=True)
+    log = getLogger()
+    parser = yacc.yacc(debug=log)
 
     # add a newline to allow empty strings to be matched
     return parser.parse('\n' + text)

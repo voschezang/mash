@@ -255,6 +255,8 @@ def test_variable_expansion_regex():
 
 def test_variable_expansion_range():
     shell = Shell()
+    shell.ignore_invalid_syntax = False
+
     assert catch_output('echo {1..3}', shell=shell) == '1 2 3'
     run_command('x = 3', shell=shell)
     assert catch_output('print "{1..$x}"', shell=shell) == "'1 2 3'"
@@ -263,7 +265,7 @@ def test_variable_expansion_range():
     assert catch_output("echo '{1..3}'", shell=shell) == "1 2 3"
     # TODO this should result in `{1..3}`
     with raises(ShellError):
-        assert catch_output('echo \{1..3\}', shell=shell) == "1 2 3"
+        assert catch_output(r'echo \{1..3\}', shell=shell) == "1 2 3"
 
 
 def test_variable_assignment_with_pipes():

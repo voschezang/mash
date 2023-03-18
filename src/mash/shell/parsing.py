@@ -4,9 +4,9 @@ import shlex
 
 from mash.io_util import log
 from mash.shell import delimiters
-from mash.shell.delimiters import ELSE, FALSE, IF, THEN, TRUE
+from mash.shell.delimiters import FALSE, TRUE
 from mash.shell.errors import ShellError
-from mash.util import is_globbable, is_valid_method_name, match_words, quote, quote_all, removeprefix, split_sequence, glob
+from mash.util import is_globbable, is_valid_method_name, match_words, quote, quote_all, removeprefix, glob
 
 
 def infer_infix_args(op: str, *args: str) -> Tuple[Tuple[str], Tuple[str]]:

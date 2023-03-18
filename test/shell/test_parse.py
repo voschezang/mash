@@ -1,6 +1,6 @@
 from pytest import raises
 
-from mash.shell.errors import ShellError
+from mash.shell.errors import ShellSyntaxError
 from mash.shell.lex_parser import parse
 
 
@@ -244,7 +244,7 @@ def test_parse_if_then():
 
     # double then
     text = 'if 1 then print 1 then print 2'
-    with raises(ShellError):
+    with raises(ShellSyntaxError):
         parse_line(text)
 
     text = 'if 1 then print 1 ; then print 2'
@@ -317,16 +317,16 @@ def test_parse_if_with_assign():
 
 
 def test_parse_if_none():
-    with raises(ShellError):
+    with raises(ShellSyntaxError):
         parse('if    then')
 
-    with raises(ShellError):
+    with raises(ShellSyntaxError):
         parse('if then')
 
-    with raises(ShellError):
+    with raises(ShellSyntaxError):
         parse('else then')
 
-    with raises(ShellError):
+    with raises(ShellSyntaxError):
         parse('if else')
 
 
@@ -390,7 +390,7 @@ def test_parse_pipes_long():
     assert rhs[2][1] == ['echo', 'c']
 
     line = 'echo a |> echo b =='
-    with raises(ShellError):
+    with raises(ShellSyntaxError):
         parse_line(line)
 
 
@@ -402,7 +402,7 @@ def test_parse_pipes_if_then():
     assert lhs[1] == ['echo', '1']
     assert rhs[0] == 'if-then-else'
 
-    with raises(ShellError):
+    with raises(ShellSyntaxError):
         text = 'echo 1 |> if true'
         parse_line(text)
 

@@ -16,7 +16,8 @@ from mash.util import has_method, is_valid_method_name, translate_items
 
 from mash.shell.function import ShellFunction as Function
 import mash.shell.function as func
-from mash.shell.base import ENV, FALSE, TRUE, BaseShell, ShellError, filter_private_keys
+from mash.shell.base import FALSE, TRUE, BaseShell, filter_private_keys
+from mash.shell.errors import ShellSyntaxError
 
 description = 'If no positional arguments are given then an interactive subshell is started.'
 epilog = f"""
@@ -173,7 +174,7 @@ class Shell(BaseShell):
         try:
             result = eval(line)
         except (NameError, SyntaxError, TypeError) as e:
-            raise ShellError(f'eval failed: {line}') from e
+            raise ShellSyntaxError(f'eval failed: {line}') from e
 
         # SMELL avoid side-effects on top of a return type
         self._save_result(result)
@@ -422,7 +423,7 @@ def main(shell: Shell = None, functions: Dict[str, Function] = None, repl=True) 
 
     try:
         run(shell, commands, filename, repl)
-    except ShellError as e:
+    except ShellSyntaxError as e:
         log(e, prefix='')
         sys.exit(1)
 

@@ -3,6 +3,7 @@ from pytest import raises
 from mash import io_util
 from mash.shell import ShellError
 from mash.shell.delimiters import TRUE
+from mash.shell.errors import ShellSyntaxError
 from mash.shell.shell import Shell, run_command
 
 
@@ -207,11 +208,12 @@ def test_shell_if_else_unhappy():
     shell = Shell()
     shell.ignore_invalid_syntax = False
 
-    with raises(ShellError):
-        run_command('if "" else print 2')
+    with raises(ShellSyntaxError):
+        run_command('if "" else print 2', shell=shell)
 
     with raises(ShellError):
-        run_command('if "" then print 1 else print 2 else print 3')
+        run_command('if "" then print 1 else print 2 else print 3',
+                    shell=shell)
 
 
 def test_shell_if_else_multiline():

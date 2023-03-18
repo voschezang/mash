@@ -45,7 +45,6 @@ def test_route_scrambled():
 
 
 def test_route_noisy_happy_flow():
-    client = init()
     url = basepath + 'noisy'
     responses = requests(url)
     assert any(verify_response(r) for r in responses)

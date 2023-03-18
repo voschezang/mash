@@ -16,8 +16,8 @@ from mash.filesystem.filesystem import FileSystem, cd
 from mash.filesystem.scope import Scope, show
 from mash.io_util import log, shell_ready_signal, print_shell_ready_signal, check_output
 from mash.shell import delimiters
-from mash.shell.delimiters import INLINE_ELSE, INLINE_THEN, DEFINE_FUNCTION, FALSE, IF, LEFT_ASSIGNMENT, RETURN, RIGHT_ASSIGNMENT, THEN, TRUE
-from mash.shell.errors import ShellError, ShellPipeError
+from mash.shell.delimiters import INLINE_ELSE, INLINE_THEN, DEFINE_FUNCTION, FALSE, IF, LEFT_ASSIGNMENT, RIGHT_ASSIGNMENT, THEN, TRUE
+from mash.shell.errors import ShellError, ShellPipeError, ShellSyntaxError
 from mash.shell.function import InlineFunction
 from mash.shell.if_statement import LINE_INDENT, Abort, State, close_prev_if_statement, close_prev_if_statements, handle_else_statement, handle_prev_then_else_statements, handle_then_statement
 from mash.shell.lex_parser import Term, Terms, parse
@@ -395,6 +395,7 @@ class BaseShell(Cmd):
         Returns 0 on success and None otherwise
         """
         if lines == 'EOF':
+            logging.debug('Aborting: received EOF')
             exit()
 
         result = ''
@@ -406,6 +407,12 @@ class BaseShell(Cmd):
 
             # for line in ast:
             result = self.run_commands_new_wrapper(ast, result, run=True)
+
+        except ShellSyntaxError as e:
+            if self.ignore_invalid_syntax:
+                log(e)
+            else:
+                raise
 
         except CancelledError:
             pass
@@ -762,7 +769,7 @@ class BaseShell(Cmd):
 
             if self.locals[IF] and width > self._last_if['line_indent']:
                 if closed:
-                    raise ShellError(
+                    raise ShellSyntaxError(
                         'Unexpected indent after if-else clause')
                 try:
                     handle_prev_then_else_statements(self)
@@ -930,7 +937,7 @@ class BaseShell(Cmd):
         if self.ignore_invalid_syntax:
             return super().default(line)
 
-        raise ShellError(f'Unknown syntax: {line}')
+        raise ShellSyntaxError(f'Unknown syntax: {line}')
 
     ############################################################################
     # Pipes
@@ -1028,7 +1035,7 @@ class BaseShell(Cmd):
                 if self.ignore_invalid_syntax:
                     log(msg)
                     return
-                raise ShellError(msg)
+                raise ShellSyntaxError(msg)
 
             return method(lhs, *rhs)
 
@@ -1158,7 +1165,7 @@ class BaseShell(Cmd):
         if len(args) != len(f.args):
             msg = f'Invalid number of arguments: {len(f.args)} arguments expected.'
             if self.ignore_invalid_syntax:
-                print(msg)
+                log(msg)
                 return FALSE
             else:
                 raise ShellError(msg)
@@ -1236,7 +1243,7 @@ def scope() -> dict:
 
 @contextmanager
 def enter_new_scope(cls: BaseShell, scope_name=INNER_SCOPE):
-    """Create a new scope, then change directory into that scope. 
+    """Create a new scope, then change directory into that scope.
     Finally exit the new scope.
     """
     cls.locals.set(scope_name, scope())
