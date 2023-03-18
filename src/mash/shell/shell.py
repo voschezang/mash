@@ -80,7 +80,7 @@ class Shell(BaseShell):
         if not args:
             args = 0
 
-        sys.exit(int(args))
+        exit(int(args))
 
     def do_cat(self, filename):
         """Concatenate and print files
@@ -364,11 +364,14 @@ def run_command(command='', shell: Shell = None, strict=None):
 def run_interactively(shell):
     io_util.interactive = True
     shell.auto_save = True
-    try:
-        shell.cmdloop()
-    except KeyboardInterrupt:
-        print('<KeyboardInterrupt>')
-        pass
+    i = 0
+    while True:
+        i += 1
+        try:
+            shell.cmdloop()
+        except KeyboardInterrupt:
+            print('\nKeyboardInterrupt')
+            shell.intro = ''
 
 
 def build(functions: Dict[str, Function] = None, completions: Dict[str, Callable] = None, instantiate=True) -> Shell:

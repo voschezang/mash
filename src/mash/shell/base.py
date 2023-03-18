@@ -392,6 +392,9 @@ class BaseShell(Cmd):
         """Parse and run `line`.
         Returns 0 on success and None otherwise
         """
+        if lines == 'EOF':
+            exit()
+
         result = ''
         try:
             lines = self.onecmd_prehook(lines)
