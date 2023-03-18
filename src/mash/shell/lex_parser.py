@@ -422,6 +422,10 @@ def parse(text, init=True):
         'expression : SHELL expression'
         p[0] = ('!', p[2])
 
+    def p_shell_empty(p):
+        'expression : SHELL'
+        p[0] = ('!', '')
+
     def p_math(p):
         'expression : MATH expression'
         p[0] = ('math', p[2])

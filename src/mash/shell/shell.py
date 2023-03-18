@@ -232,9 +232,9 @@ class Shell(BaseShell):
         del self.functions[group_key]
 
 
-def all_commands(cls=Shell):
-    for cmd in vars(cls):
-        if cmd.startswith('do_') and has_method(cls, cmd):
+def all_commands(shell: Shell):
+    for cmd in dir(shell):
+        if cmd.startswith('do_') and has_method(shell, cmd):
             yield cmd.lstrip('do_')
 
 

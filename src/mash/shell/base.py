@@ -53,7 +53,9 @@ class BaseShell(Cmd):
     - Error handling.
     """
 
-    intro = 'Welcome.  Type help or ? to list commands.\n' + shell_ready_signal + '\n'
+    intro = 'Press ctrl-d to exit, ctrl-c to cancel, ? for help, ! for shell interop.\n' + \
+        shell_ready_signal + '\n'
+
     prompt = '$ '
 
     # TODO save stdout in a tmp file
@@ -727,6 +729,10 @@ class BaseShell(Cmd):
                 line = str(terms)
             else:
                 line = ' '.join(terms)
+
+            if line == '' and prev_result == '':
+                print('No arguments received for `!`')
+                return FALSE
 
             if run:
                 return self.pipe_cmd_sh(line, prev_result, delimiter=None)

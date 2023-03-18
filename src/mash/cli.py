@@ -25,10 +25,10 @@ def setup(shell: Shell) -> Tuple[Prompt, Shell]:
     shell.ignore_invalid_syntax = False
 
     # setup a completion-dropdown
-    completer = NestedCompleter.add({k: None for k in all_commands(Shell)})
+    completer = NestedCompleter.add({k: None for k in all_commands(shell)})
 
     # setup a history-completion
-    for cmd in all_commands(Shell):
+    for cmd in all_commands(shell):
         MemoryHistory.append(cmd)
 
     session = Prompt(
@@ -44,7 +44,7 @@ def setup(shell: Shell) -> Tuple[Prompt, Shell]:
 
 
 def run(session: Prompt, shell: Shell):
-    print('Press ctrl-d to exit, ctrl-c to cancel and TAB for word completion')
+    print('Press ctrl-d to exit, ctrl-c to cancel, TAB for word completion, ? for help and ! for shell interop.')
     while True:
         step(session, shell)
 
