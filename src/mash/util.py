@@ -1,8 +1,9 @@
 from contextlib import contextmanager
+from json import JSONDecoder, JSONEncoder
 import re
 import shlex
 from braceexpand import braceexpand, UnbalancedBracesError
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass, is_dataclass
 from enum import Enum
 from functools import partial
 from itertools import accumulate, dropwhile, takewhile
@@ -490,6 +491,57 @@ def use_recursion_limit(limit=100):
         yield
     finally:
         sys.setrecursionlimit(original)
+
+
+class Encoder(JSONEncoder):
+    _dataclass_key = '_dataclass_key'
+
+    def default(self, obj):
+        if is_dataclass(obj):
+            obj = self.serialize_dataclass(obj)
+
+        return super().default(obj)
+
+    def serialize_dataclass(self, obj: dataclass):
+        if not is_dataclass(obj):
+            return obj
+
+        fields = asdict(obj)
+        if self._dataclass_key in fields:
+            raise TypeError(f'Conflicting key: {self._dataclass_key}')
+
+        fields[self._dataclass_key] = type(obj).__name__
+        return fields
+
+
+def deserialize_dataclasses(obj: dict):
+    if isinstance(obj, list):
+        return [deserialize_dataclasses(item) for item in obj]
+
+    elif isinstance(obj, tuple):
+        return (deserialize_dataclasses(item) for item in obj)
+
+    elif hasattr(obj, 'items'):
+        if Encoder._dataclass_key in obj:
+            return deserialize_dataclass(obj)
+
+        for k, v in obj.items():
+            obj[k] = deserialize_dataclasses(v)
+
+    return obj
+
+
+def deserialize_dataclass(obj: dict):
+    key = obj[Encoder._dataclass_key]
+    del obj[Encoder._dataclass_key]
+
+    try:
+        cls = locals()[key]
+    except KeyError as e:
+        raise TypeError(
+            f'Cannot deserialize object: Unknown class {key}') from e
+
+    return cls.fromdict(obj)
 
 ################################################################################
 # Pure functions

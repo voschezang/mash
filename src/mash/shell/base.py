@@ -464,6 +464,8 @@ class BaseShell(Cmd):
         key, *values = ast
 
         if DEFINE_FUNCTION in self.locals:
+            # TODO change prompt to reflect this mode
+
             # self._extend_inline_function_definition(line)
             f = self.locals[DEFINE_FUNCTION]
             if key == 'indent':
@@ -707,8 +709,14 @@ class BaseShell(Cmd):
             if not run:
                 raise NotImplementedError()
 
+            if self.auto_save:
+                # TODO `body` cannot be serialized
+                logging.warning(
+                    'Instances of InlineFunction are incompatible with serialization')
+                self.auto_save = False
+
             # TODO use parsing.expand_variables_inline
-            self.env[f] = InlineFunction(body, *args, func_name=f)
+            self.env[f] = InlineFunction(body, args, func_name=f)
 
         elif key == 'define-function':
             f, args = values
@@ -717,7 +725,7 @@ class BaseShell(Cmd):
 
             # TODO use line_indent=self.locals[RAW_LINE_INDENT]
             self.locals.set(DEFINE_FUNCTION,
-                            InlineFunction('', *args, func_name=f))
+                            InlineFunction('', args, func_name=f))
         elif key == 'return':
             line = values[0]
             result = self.run_commands(line, run=run)

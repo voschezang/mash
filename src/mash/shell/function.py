@@ -1,6 +1,7 @@
 from copy import deepcopy
+from dataclasses import dataclass, field
 from types import TracebackType
-from typing import Dict, Tuple
+from typing import Dict, List
 import logging
 import sys
 
@@ -56,11 +57,11 @@ class ShellFunction:
 
 
 # TODO rename ShellFunction to ShellMethod, and rename InlineFunction to Function
+@dataclass
 class InlineFunction:
-    def __init__(self, command: str, *args: str, func_name='', multiline=False, line_indent=None) -> None:
-        self.command = command
-        self.args = args
-        self.func_name = func_name
-        self.multiline = multiline
-        self.line_indent = line_indent
-        self.inner = []
+    command: str
+    args: List[str]
+    func_name: str
+    multiline: bool = False
+    line_indent: str = None
+    inner: List[str] = field(default_factory=list)
