@@ -96,6 +96,7 @@ class BaseShell(Cmd):
         # internals
         self._do_char_method = self.none
         self._chars_allowed_for_char_method: List[str] = []
+        self._default_method = identity
 
         self.set_infix_operators()
         if self.auto_reload:
@@ -458,6 +459,8 @@ class BaseShell(Cmd):
                 elif ast.type == 'variable':
                     k = ast[1:]
                     return self.env[k]
+                elif ast.type == 'method':
+                    return self._default_method(str(ast))
                 elif ast.type != 'term':
                     return str(ast)
 

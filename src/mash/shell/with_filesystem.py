@@ -28,8 +28,11 @@ class ShellWithFileSystem:
         self.set_shell_completions(cls)
 
         self.shell = cls(save_session_prehook=self.repository.snapshot,
-                         load_session_posthook=self.repository.load)
+                         load_session_posthook=self.repository.load,
+                         completekey='tab'
+                         )
         self.shell.set_do_char_method(self.repository.cd, OPTIONS)
+        self.shell._default_method = self.default_method
 
     def _set_shell_functions(self, cls):
         # convert methods to functions
@@ -121,7 +124,6 @@ class ShellWithFileSystem:
         func = partial(self.repository.cd, dirname)
         name = f'{self.repository.cd.__name__}({dirname})'
         cd_dirname = Function(func, name, f'cd {dirname}')
-        # cd_dirname.__name__ = f'{self.repository.cd.__name__}({dirname})'
 
         self.shell.add_functions({dirname: cd_dirname},
                                  group_key=cd_aliasses)
@@ -159,3 +161,10 @@ class ShellWithFileSystem:
                 return results[:1]
 
         return results
+
+    def default_method(self, dirname: str):
+        candidates = self.complete_cd(dirname, None, None, None)
+        if candidates:
+            self.repository.cd(candidates[0])
+            return
+        return dirname

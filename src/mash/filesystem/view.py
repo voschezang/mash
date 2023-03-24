@@ -63,8 +63,12 @@ class View:
             return self.tree.keys()
         except AttributeError:
             if isinstance(self.tree, list):
-                return self.tree
-            return range(len(self.tree))
+                try:
+                    return [item[NAME] for item in self.tree]
+                except (TypeError, KeyError):
+                    pass
+
+        return range(len(self.tree))
 
     def cp(self, *references: Key):
         *sources, dst = references

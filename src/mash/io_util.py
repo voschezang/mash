@@ -215,7 +215,7 @@ def check_output(line: str) -> str:
     return result.stdout.decode().rstrip('\n')
 
 
-@functools.cache
+@functools.lru_cache(maxsize=64)
 def log_once(*msgs: str):
     logging.debug(*msgs)
 
