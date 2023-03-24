@@ -215,4 +215,9 @@ def check_output(line: str) -> str:
     return result.stdout.decode().rstrip('\n')
 
 
+@functools.cache
+def log_once(*msgs: str):
+    logging.debug(*msgs)
+
+
 set_verbosity()

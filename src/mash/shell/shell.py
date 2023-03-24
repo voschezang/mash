@@ -11,7 +11,7 @@ import sys
 import traceback
 
 from mash import io_util
-from mash.io_util import ArgparseWrapper, bold, has_argument, has_output, log, read_file
+from mash.io_util import ArgparseWrapper, bold, has_argument, has_output, log, log_once, read_file
 from mash.util import has_method, is_valid_method_name, translate_items
 
 from mash.shell.function import ShellFunction as Function
@@ -245,7 +245,7 @@ def set_functions(functions: Dict[str, Function], cls: Cmd = Shell) -> type:
     """
     for key, func in functions.items():
         if not is_valid_method_name(key):
-            logging.debug(f'Key: {key} is not a valid method name')
+            log_once(f'Key: {key} is not a valid method name')
 
         if not isinstance(func, Function):
             func = Function(func)

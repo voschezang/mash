@@ -4,6 +4,7 @@ from mash.filesystem.filesystem import FileSystem, OPTIONS, Option
 from mash.filesystem.discoverable import Discoverable
 from mash.filesystem.view import Path
 from mash.shell.shell import build, set_completions, set_functions
+from mash.shell.function import ShellFunction as Function
 from mash.util import find_fuzzy_matches, has_method, partial_simple
 
 cd_aliasses = 'cd_aliasses'
@@ -117,8 +118,10 @@ class ShellWithFileSystem:
 
     def add_cd_alias(self, dirname: str):
         # create alias
-        cd_dirname = partial(self.repository.cd, dirname)
-        cd_dirname.__name__ = f'{self.repository.cd.__name__}({dirname})'
+        func = partial(self.repository.cd, dirname)
+        name = f'{self.repository.cd.__name__}({dirname})'
+        cd_dirname = Function(func, name, f'cd {dirname}')
+        # cd_dirname.__name__ = f'{self.repository.cd.__name__}({dirname})'
 
         self.shell.add_functions({dirname: cd_dirname},
                                  group_key=cd_aliasses)

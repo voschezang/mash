@@ -2,7 +2,11 @@ from typing import Dict
 
 
 def infer_default_and_non_default_args(func):
-    args = list(func.__code__.co_varnames)
+    try:
+        args = list(func.__code__.co_varnames)
+    except AttributeError:
+        raise NotImplementedError()
+
     n_default_args = len(func.__defaults__) if func.__defaults__ else 0
     n_non_default_args = len(args) - n_default_args
     non_default_args = args[:n_non_default_args]

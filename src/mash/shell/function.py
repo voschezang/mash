@@ -2,11 +2,10 @@ from copy import deepcopy
 from dataclasses import dataclass, field
 from types import TracebackType
 from typing import Dict, List
-import logging
 import sys
 
 from mash.doc_inference import generate_docs
-from mash.io_util import log
+from mash.io_util import log, log_once
 from mash import util
 
 # this data is impacts by both the classes Function and Shell, hence it should be global
@@ -29,7 +28,7 @@ class ShellFunction:
             func = deepcopy(func)
         except TypeError as e:
             name = getattr(func, '__name__', 'func')
-            logging.debug(f'Cannot deepcopy `{name}`: {e.args[0]}')
+            log_once(f'Cannot deepcopy `{name}`: {e.args[0]}')
 
         self.func = func
 
