@@ -1,7 +1,7 @@
-from collections import UserString
 from logging import getLogger
 import ply.lex as lex
 import ply.yacc as yacc
+from mash.shell.model import Method, Quoted, Term, Terms, Variable, Word
 from mash.shell.parsing import indent_width
 from mash.shell.errors import ShellSyntaxError
 
@@ -53,12 +53,6 @@ reserved = {
     'math': 'MATH',
 }
 tokens += tuple(reserved.values())
-
-
-class Term(UserString):
-    def __init__(self, value, string_type='term'):
-        self.data = value
-        self.type = string_type
 
 
 def init_lex():
@@ -468,6 +462,8 @@ def parse(text, init=True):
     def p_terms_head_tail(p):
         'terms : term terms'
         key, tail = p[2]
+        # TODO
+        # p[0] = Terms([p[1]] + tail)
         p[0] = ('terms', [p[1]] + tail)
 
     def p_terms_singleton(p):
@@ -479,7 +475,7 @@ def parse(text, init=True):
                 | WORD
                 | WORD_WITH_DOT
         """
-        p[0] = Term(p[1])
+        p[0] = Word(p[1], 'term')
 
     def p_term_value(p):
         """term : value
@@ -490,39 +486,39 @@ def parse(text, init=True):
 
     def p_value_wildcard(p):
         'value : WILDCARD'
-        p[0] = Term(p[1], 'wildcard')
+        p[0] = Word(p[1], 'wildcard')
 
     def p_value_wildcard_range(p):
         'value : WILDCARD_RANGE'
-        p[0] = Term(p[1], 'range')
+        p[0] = Word(p[1], 'range')
 
     def p_value_number_int(p):
         'value : NUMBER'
-        p[0] = Term(p[1], 'number')
+        p[0] = Word(p[1], 'number')
 
     def p_value_number_float(p):
         'value : NUMBER_WITH_DOT'
-        p[0] = Term(p[1], 'number')
+        p[0] = Word(p[1], 'number')
 
     def p_value_method(p):
         'method : METHOD'
-        p[0] = Term(p[1], 'method')
+        p[0] = Method(p[1])
 
     def p_value_variable(p):
         'value : VARIABLE'
-        p[0] = Term(p[1], 'variable')
+        p[0] = Variable(p[1])
 
     def p_value_symbol(p):
         'value : SYMBOL'
-        p[0] = Term(p[1], 'symbol')
+        p[0] = Word(p[1], 'symbol')
 
     def p_value_literal_string(p):
         'value : SINGLE_QUOTED_STRING'
-        p[0] = Term(p[1], 'literal string')
+        p[0] = Word(p[1], 'literal string')
 
     def p_value_string(p):
         'value : DOUBLE_QUOTED_STRING'
-        p[0] = Term(p[1], 'quoted string')
+        p[0] = Quoted(p[1])
 
     def p_illegal_if_then(p):
         """conditional : IF THEN
@@ -550,10 +546,6 @@ def parse(text, init=True):
 
     # add a newline to allow empty strings to be matched
     return parser.parse('\n' + text)
-
-
-def Terms(args):
-    return ('terms', args)
 
 
 if __name__ == '__main__':

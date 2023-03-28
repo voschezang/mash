@@ -21,6 +21,7 @@ from mash.shell.errors import ShellError, ShellPipeError, ShellSyntaxError
 from mash.shell.function import InlineFunction
 from mash.shell.if_statement import LINE_INDENT, Abort, State, close_prev_if_statement, close_prev_if_statements, handle_else_statement, handle_prev_then_else_statements, handle_then_statement
 from mash.shell.lex_parser import Term, Terms, parse
+from mash.shell.model import Node
 from mash.shell.parsing import expand_variables, filter_comments, indent_width, infer_infix_args, quote_items
 from mash.util import for_any, has_method, identity, is_valid_method_name, omit_prefixes, quote_all, split_prefixes
 
@@ -441,32 +442,8 @@ class BaseShell(Cmd):
 
     def run_commands(self, ast: Tuple, prev_result='', run=False):
         print_result = True
-        if isinstance(ast, Term):
-            term = ast
-
-            if ast.type == 'quoted string':
-                # TODO consider other delimiters
-                items = ast.split(' ')
-                items = list(expand_variables(items, self.env,
-                                              self.completenames_options,
-                                              self.ignore_invalid_syntax,
-                                              escape=True))
-                return ' '.join(items)
-
-            if run:
-                if self.is_function(term):
-                    return self.pipe_cmd_py(term, prev_result)
-                elif ast.type == 'variable':
-                    k = ast[1:]
-                    return self.env[k]
-                elif ast.type == 'method':
-                    return self._default_method(str(ast))
-                elif ast.type != 'term':
-                    return str(ast)
-
-                # raise ShellError(f'Cannot execute the function {term}')
-                return term
-            return term
+        if isinstance(ast, Node) and not isinstance(ast, Terms):
+            return ast.run(prev_result, shell=self, lazy=not run)
 
         elif isinstance(ast, str):
             return self.run_commands(Term(ast), prev_result, run=run)
@@ -506,7 +483,9 @@ class BaseShell(Cmd):
             except Abort:
                 return prev_result
 
-        if key == 'indent':
+        if isinstance(ast, Node):
+            return ast.run(prev_result, shell=self, lazy=not run)
+        elif key == 'indent':
             return self.run_handle_indent(values, prev_result, run)
         elif key == 'terms':
             return self.run_handle_terms(values, prev_result, run)
@@ -825,7 +804,7 @@ class BaseShell(Cmd):
         if prev_result:
             items += [prev_result]
         if run:
-            return ' '.join(items)
+            return ' '.join(str(v) for v in items)
         return items
 
     def run_handle_lines(self, values, prev_result: str, run: bool, print_result: bool):

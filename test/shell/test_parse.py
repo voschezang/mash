@@ -2,6 +2,7 @@ from pytest import raises
 
 from mash.shell.errors import ShellSyntaxError
 from mash.shell.lex_parser import parse
+from mash.shell.model import Method
 
 
 def parse_line(text: str):
@@ -42,7 +43,7 @@ def test_parse_term():
     key, result = parse_line(line)
     assert key == 'terms'
     assert result[0] == 'abc'
-    assert result[0].type == 'method'
+    assert isinstance(result[0], Method)
     assert result[1] == 'd-?e*'
     assert result[1].type == 'wildcard'
     assert result[2] == '[a-z]10'
@@ -76,7 +77,7 @@ def test_parse_equations():
     assert result[1] == '+'
     assert result[1].type == 'symbol'
     assert result[2] == 'a'
-    assert result[2].type == 'method'
+    assert isinstance(result[2], Method)
 
 
 def test_parse_range():
