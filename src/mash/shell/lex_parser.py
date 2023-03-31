@@ -457,14 +457,11 @@ def parse(text, init=True):
 
     def p_terms_pair(p):
         'terms : term term'
-        p[0] = ('terms', [p[1], p[2]])
+        p[0] = Terms([p[1], p[2]])
 
     def p_terms_head_tail(p):
         'terms : term terms'
-        key, tail = p[2]
-        # TODO
-        # p[0] = Terms([p[1]] + tail)
-        p[0] = ('terms', [p[1]] + tail)
+        p[0] = Terms([p[1]] + p[2].values)
 
     def p_terms_singleton(p):
         'terms : term'

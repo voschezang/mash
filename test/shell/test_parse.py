@@ -2,7 +2,7 @@ from pytest import raises
 
 from mash.shell.errors import ShellSyntaxError
 from mash.shell.lex_parser import parse
-from mash.shell.model import Method
+from mash.shell.model import Method, Terms
 
 
 def parse_line(text: str):
@@ -11,24 +11,24 @@ def parse_line(text: str):
 
 def test_parse_cmd():
     text = 'echo a 10'
-    result = parse(text)
-    result = list(parse(text))
-    assert result[0] == 'lines'
-    assert result[1][0][0] == 'terms'
-    assert result[1][0][1] == ['echo', 'a', '10']
-    assert parse_line(text)[1] == ['echo', 'a', '10']
+    key, result = parse(text)
+    assert key == 'lines'
+    assert isinstance(result[0], Terms)
+    values = result[0].values
+    assert values == ['echo', 'a', '10']
+    assert parse_line(text).values == ['echo', 'a', '10']
 
 
 def test_parse_cmds():
     text = 'echo a 10 ; echo b \n echo c'
     result = list(parse(text))
     assert result[0] == 'lines'
-    assert result[1][0][0] == 'terms'
-    assert result[1][0][1] == ['echo', 'a', '10']
-    assert result[1][1][0] == 'terms'
-    assert result[1][1][1] == ['echo', 'b']
-    assert result[1][2][0] == 'terms'
-    assert result[1][2][1] == ['echo', 'c']
+    assert isinstance(result[1][0], Terms)
+    assert result[1][0].values == ['echo', 'a', '10']
+    assert isinstance(result[1][1], Terms)
+    assert result[1][1].values == ['echo', 'b']
+    assert isinstance(result[1][2], Terms)
+    assert result[1][2].values == ['echo', 'c']
 
 
 def test_parse_comment():
@@ -40,14 +40,17 @@ def test_parse_comment():
 
 def test_parse_term():
     line = 'abc d-?e* [a-z]10'
-    key, result = parse_line(line)
-    assert key == 'terms'
-    assert result[0] == 'abc'
-    assert isinstance(result[0], Method)
-    assert result[1] == 'd-?e*'
-    assert result[1].type == 'wildcard'
-    assert result[2] == '[a-z]10'
-    assert result[2].type == 'wildcard'
+    terms = parse_line(line)
+
+    assert isinstance(terms, Terms)
+    values = terms.values
+
+    assert values[0] == 'abc'
+    assert isinstance(values[0], Method)
+    assert values[1] == 'd-?e*'
+    assert values[1].type == 'wildcard'
+    assert values[2] == '[a-z]10'
+    assert values[2].type == 'wildcard'
 
 
 def test_parse_word():
@@ -70,14 +73,17 @@ def test_parse_word():
 
 def test_parse_equations():
     text = '1+a'
-    key, result = parse_line(text)
-    assert key == 'terms'
-    assert result[0] == '1'
-    assert result[0].type == 'term'
-    assert result[1] == '+'
-    assert result[1].type == 'symbol'
-    assert result[2] == 'a'
-    assert isinstance(result[2], Method)
+    result = parse_line(text)
+
+    assert isinstance(result, Terms)
+    values = result.values
+
+    assert values[0] == '1'
+    assert values[0].type == 'term'
+    assert values[1] == '+'
+    assert values[1].type == 'symbol'
+    assert values[2] == 'a'
+    assert isinstance(values[2], Method)
 
 
 def test_parse_range():
@@ -104,7 +110,9 @@ def test_parse_infix():
     key, op, left, right = parse_line('a b = 2')
     assert key == 'assign'
     assert op == '='
-    assert left == ('terms', ['a', 'b'])
+
+    assert isinstance(left, Terms)
+    assert left.values == ['a', 'b']
     assert right == '2'
 
 
@@ -115,7 +123,7 @@ def test_parse_numbers():
     result = parse_line(text)
     assert result[0] == 'assign'
     assert result[2] == 'x'
-    assert result[3][1] == numbers
+    assert result[3].values == numbers
 
 
 def test_parse_quotes():
@@ -147,19 +155,21 @@ def test_parse_parentheses():
     assert results[0][0] == 'scope'
     assert results[0][1] == 'a'
 
-    _, results = parse('(a b c)')
+    key, results = parse('(a b c)')
+    assert key == 'lines'
     assert results[0][0] == 'scope'
-    assert results[0][1][0] == 'terms'
-    assert results[0][1][1] == ['a', 'b', 'c']
+    assert isinstance(results[0][1], Terms)
+    assert results[0][1].values == ['a', 'b', 'c']
 
     _, results = parse('(a (b c) (d))')
-    assert results[0][0] == 'scope'
-    assert results[0][1][0] == 'terms'
+    key, result = results[0]
+    assert key == 'scope'
+    assert isinstance(result, Terms)
 
-    inner = results[0][1][1]
+    inner = result.values
     assert inner[0] == 'a'
-    assert inner[1][0] == 'scope'
-    assert inner[1][1] == ('terms', ['b', 'c'])
+    assert inner[1] == ('scope', 'b c')
+    assert isinstance(inner[1][1], Terms)
     assert inner[2] == ('scope', 'd')
 
 
@@ -194,8 +204,10 @@ def test_parse_indent():
     line = '    echo b c'
     result = parse_line(line)
     assert result[0] == 'indent'
-    assert result[2][0] == 'terms'
-    assert result[2][1] == ['echo', 'b', 'c']
+
+    inner = result[2]
+    assert isinstance(inner, Terms)
+    assert inner.values == ['echo', 'b', 'c']
 
 
 def test_parse_indent_multiline():
@@ -240,8 +252,8 @@ def test_parse_if_then():
     line = 'if true print 2'
     key, result = parse_line(line)
     assert key == 'if'
-    assert result[0] == 'terms'
-    assert result[1] == ['true', 'print', '2']
+    assert isinstance(result, Terms)
+    assert result.values == ['true', 'print', '2']
 
     # double then
     text = 'if 1 then print 1 then print 2'
@@ -258,9 +270,9 @@ def test_parse_if_with_colons():
     assert result[0] == 'lines'
     assert result[1][0][0] == 'if-then'
     assert result[1][0][1] == '1'
-    assert result[1][0][2][0] == 'terms'
-    assert result[1][0][2][1] == ['print', 'a']
-    assert result[1][1][1] == ['print', 'b']
+    assert isinstance(result[1][0][2], Terms)
+    assert result[1][0][2].values == ['print', 'a']
+    assert result[1][1].values == ['print', 'b']
 
 
 def test_parse_else():
@@ -305,7 +317,7 @@ def test_parse_else_if():
     key, condition, true = parse_line(text)
     assert key == 'else-if-then'
     assert condition == '1'
-    assert true[1] == ['echo', '2']
+    assert isinstance(true, Terms)
 
 
 def test_parse_if_with_assign():
@@ -334,7 +346,7 @@ def test_parse_if_none():
 def test_parse_map():
     key, lhs, rhs = parse_line('range 4 >>= echo')
     assert key == 'map'
-    assert lhs[1] == ['range', '4']
+    assert lhs.values == ['range', '4']
     assert rhs == 'echo'
 
 
@@ -342,7 +354,7 @@ def test_parse_bash_pipe():
     result = parse_line('print a | echo')
     assert result[0] == 'bash'
     assert result[1] == '|'
-    assert result[2][0] == 'terms'
+    assert result[2].values == ['print', 'a']
     assert result[3] == 'echo'
 
 
@@ -350,7 +362,7 @@ def test_parse_pipe():
     result = parse_line('print a |> echo')
     key, lhs, rhs = result
     assert key == 'pipe'
-    assert lhs[0] == 'terms'
+    assert isinstance(lhs, Terms)
     assert rhs == 'echo'
 
 
@@ -358,11 +370,11 @@ def test_parse_pipe_multiple():
     result = parse_line('print a |> echo 1 >>= echo 2 | echo')
     key, lhs, rhs = result
     assert key == 'pipe'
-    assert lhs[1] == ['print', 'a']
+    assert lhs.values == ['print', 'a']
     assert rhs[0] == 'map'
-    assert rhs[1][1] == ['echo', '1']
+    assert rhs[1].values == ['echo', '1']
     assert rhs[2][1] == '|'
-    assert rhs[2][2][1] == ['echo', '2']
+    assert rhs[2][2].values == ['echo', '2']
     assert rhs[2][3] == 'echo'
 
 
@@ -375,8 +387,8 @@ def test_parse_pipe_assign():
 
     key, lhs, rhs = line
     assert key == 'pipe'
-    assert lhs[1] == ['echo', 'a']
-    assert rhs[1] == ['echo', 'b']
+    assert lhs.values == ['echo', 'a']
+    assert rhs.values == ['echo', 'b']
 
 
 def test_parse_pipes_long():
@@ -384,11 +396,11 @@ def test_parse_pipes_long():
     key, lhs, rhs = result
 
     assert key == 'pipe'
-    assert lhs[1] == ['echo', 'a']
+    assert lhs.values == ['echo', 'a']
 
     assert rhs[1][1] == '=='
-    assert rhs[1][2][1] == ['echo', 'b']
-    assert rhs[2][1] == ['echo', 'c']
+    assert rhs[1][2].values == ['echo', 'b']
+    assert rhs[2].values == ['echo', 'c']
 
     line = 'echo a |> echo b =='
     with raises(ShellSyntaxError):
@@ -400,7 +412,7 @@ def test_parse_pipes_if_then():
     result = parse_line(text)
     key, lhs, rhs = result
     assert key == 'pipe'
-    assert lhs[1] == ['echo', '1']
+    assert lhs.values == ['echo', '1']
     assert rhs[0] == 'if-then-else'
 
     with raises(ShellSyntaxError):
@@ -419,8 +431,10 @@ f (x y): x + y
     result = parse_line(text)
     assert result[0] == 'define-inline-function'
     assert result[1] == 'f'
-    assert result[2] == ('terms', ['x', 'y'])
-    assert result[3] == ('terms', ['x', '+', 'y'])
+    assert isinstance(result[2], Terms)
+    assert result[2].values == ['x', 'y']
+    assert isinstance(result[3], Terms)
+    assert result[3].values == ['x', '+', 'y']
 
 
 def test_parse_inline_function_with_pipe():
@@ -428,9 +442,9 @@ def test_parse_inline_function_with_pipe():
     result = parse_line(text)
     assert result[0] == 'define-inline-function'
     assert result[1] == 'f'
-    assert result[2][1] == ['x', 'y']
+    assert result[2].values == ['x', 'y']
     assert result[3][0] == 'pipe'
-    assert result[3][1][1] == ['echo', 'x']
+    assert result[3][1].values == ['echo', 'x']
     assert result[3][2] == 'echo'
 
 
@@ -455,15 +469,15 @@ print outer
     assert results[1][2][2] == ('return', '2')
     assert results[2][2][0] == 'return'
     # non-indented code
-    assert results[3][0] == 'terms'
-    assert results[3][1] == ['print', 'outer']
+    assert isinstance(results[3], Terms)
+    assert results[3].values == ['print', 'outer']
 
 
 def test_parse_math():
     key, results = parse_line('math 1 + 1')
     assert key == 'math'
-    assert results[0] == 'terms'
-    assert results[1] == ['1', '+', '1']
+    assert isinstance(results, Terms)
+    assert results.values == ['1', '+', '1']
 
     key, results = parse_line('math 1 == 1')
     assert key == 'math'
