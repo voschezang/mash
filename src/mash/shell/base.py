@@ -21,13 +21,14 @@ from mash.shell.errors import ShellError, ShellPipeError, ShellSyntaxError
 from mash.shell.function import InlineFunction
 from mash.shell.if_statement import LINE_INDENT, Abort, State, close_prev_if_statement, close_prev_if_statements, handle_else_statement, handle_prev_then_else_statements, handle_then_statement
 from mash.shell.lex_parser import Term, Terms, parse
-from mash.shell.model import Indent, Lines, Node
+from mash.shell.model import Indent, Lines, Node, Nodes
 from mash.shell.parsing import expand_variables, filter_comments, indent_width, infer_infix_args, quote_items
 from mash.util import for_any, has_method, identity, is_valid_method_name, omit_prefixes, quote_all, split_prefixes
 
 
 confirmation_mode = False
 default_session_filename = '.shell_session.json'
+default_prompt = '$ '
 
 COMMENT = '#'
 LAST_RESULTS = '_last_results'
@@ -57,7 +58,7 @@ class BaseShell(Cmd):
     intro = 'Press ctrl-d to exit, ctrl-c to cancel, ? for help, ! for shell interop.\n' + \
         shell_ready_signal + '\n'
 
-    prompt = '$ '
+    prompt = default_prompt
 
     # TODO save stdout in a tmp file
 
@@ -441,15 +442,14 @@ class BaseShell(Cmd):
 
     def run_commands(self, ast: Tuple, prev_result='', run=False):
         print_result = True
-        if isinstance(ast, Node) and not isinstance(ast, Terms) and not isinstance(ast, Indent):
+        if isinstance(ast, Node) and not isinstance(ast, Nodes) and not isinstance(ast, Indent):
             return ast.run(prev_result, shell=self, lazy=not run)
 
         elif isinstance(ast, str):
             return self.run_commands(Term(ast), prev_result, run=run)
 
         if isinstance(ast, Node):
-            key = None
-            values = []
+            key, values = None, []
         else:
             key, *values = ast
 
@@ -472,14 +472,11 @@ class BaseShell(Cmd):
                     self.locals[DEFINE_FUNCTION].inner.append(ast)
                     return
 
-                # finalize function definition
-                self.env[f.func_name] = f
-                self.locals.rm(DEFINE_FUNCTION)
+                self._finalize_define_function(f)
 
             elif not isinstance(ast, Lines):
-                # finalize function definition
-                self.env[f.func_name] = f
-                self.locals.rm(DEFINE_FUNCTION)
+                # TODO this will only be triggered after a non-Word command
+                self._finalize_define_function(f)
 
         if key not in ('lines', 'indent', 'else', 'else-if', 'else-if-then') and \
                 not isinstance(ast, Indent) and \
@@ -710,6 +707,7 @@ class BaseShell(Cmd):
             # TODO use line_indent=self.locals[RAW_LINE_INDENT]
             self.locals.set(DEFINE_FUNCTION,
                             InlineFunction('', args, func_name=f))
+            self.prompt = '>>>    '
 
         elif key == 'return':
             line = values[0]
@@ -733,6 +731,11 @@ class BaseShell(Cmd):
 
         else:
             raise NotImplementedError()
+
+    def _finalize_define_function(self, f):
+        self.env[f.func_name] = f
+        self.locals.rm(DEFINE_FUNCTION)
+        self.prompt = default_prompt
 
     def run_handle_indent(self, args, prev_result, run):
         width, inner = args
