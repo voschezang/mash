@@ -1,6 +1,7 @@
 from collections import UserString
 from typing import List
-from mash.shell.parsing import expand_variables
+from mash.shell.if_statement import LINE_INDENT
+from mash.shell.parsing import expand_variables, indent_width
 
 
 class Node(UserString):
@@ -20,6 +21,15 @@ class Node(UserString):
 
     def __getitem__(self, i):
         return self.data[i]
+
+
+class Nodes(Node):
+    def __init__(self, values: List[Node]):
+        self.values = values
+
+    @property
+    def data(self):
+        return ' '.join(str(v) for v in self.values)
 
 
 class Term(Node):
@@ -67,14 +77,7 @@ class Quoted(Node):
         return delimiter.join(items)
 
 
-class Terms(Node):
-    def __init__(self, values: List[Term]):
-        self.values = values
-
-    @property
-    def data(self):
-        return ' '.join(str(v) for v in self.values)
-
+class Terms(Nodes):
     def run(self, prev_result='', shell=None, lazy=False):
         return shell.run_handle_terms([self.values], prev_result, run=not lazy)
 
@@ -87,3 +90,14 @@ class Indent(Node):
     def run(self, prev_result='', shell=None, lazy=False):
         return shell.run_handle_indent((self.indent, self.data),
                                        prev_result, run=not lazy)
+
+
+class Lines(Nodes):
+    def __iter__(self):
+        return iter(('lines', self.values))
+
+    def run(self, prev_result='', shell=None, lazy=False):
+        shell.locals.set(LINE_INDENT, indent_width(''))
+        print_result = True
+        return shell.run_handle_lines([self.values], prev_result,
+                                      run=not lazy, print_result=print_result)

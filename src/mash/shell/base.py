@@ -21,7 +21,7 @@ from mash.shell.errors import ShellError, ShellPipeError, ShellSyntaxError
 from mash.shell.function import InlineFunction
 from mash.shell.if_statement import LINE_INDENT, Abort, State, close_prev_if_statement, close_prev_if_statements, handle_else_statement, handle_prev_then_else_statements, handle_then_statement
 from mash.shell.lex_parser import Term, Terms, parse
-from mash.shell.model import Indent, Node
+from mash.shell.model import Indent, Lines, Node
 from mash.shell.parsing import expand_variables, filter_comments, indent_width, infer_infix_args, quote_items
 from mash.util import for_any, has_method, identity, is_valid_method_name, omit_prefixes, quote_all, split_prefixes
 
@@ -476,12 +476,14 @@ class BaseShell(Cmd):
                 self.env[f.func_name] = f
                 self.locals.rm(DEFINE_FUNCTION)
 
-            elif key != 'lines':
+            elif not isinstance(ast, Lines):
                 # finalize function definition
                 self.env[f.func_name] = f
                 self.locals.rm(DEFINE_FUNCTION)
 
-        if key not in ('lines', 'indent', 'else', 'else-if', 'else-if-then') and not isinstance(ast, Indent):
+        if key not in ('lines', 'indent', 'else', 'else-if', 'else-if-then') and \
+                not isinstance(ast, Indent) and \
+                not isinstance(ast, Lines):
             try:
                 handle_prev_then_else_statements(self)
             except Abort:
@@ -489,13 +491,6 @@ class BaseShell(Cmd):
 
         if isinstance(ast, Node):
             return ast.run(prev_result, shell=self, lazy=not run)
-        elif key == 'indent':
-            return self.run_handle_indent(values, prev_result, run)
-        elif key == 'terms':
-            return self.run_handle_terms(values, prev_result, run)
-        elif key == 'lines':
-            self.locals.set(LINE_INDENT, indent_width(''))
-            return self.run_handle_lines(values, prev_result, run, print_result)
         elif key == 'assign':
             return self.run_handle_assign(values, prev_result, run)
         elif key == 'binary-expression':

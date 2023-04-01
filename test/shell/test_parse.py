@@ -2,19 +2,19 @@ from pytest import raises
 
 from mash.shell.errors import ShellSyntaxError
 from mash.shell.lex_parser import parse
-from mash.shell.model import Indent, Method, Term, Terms, Word
+from mash.shell.model import Indent, Lines, Method, Term, Terms, Word
 
 
 def parse_line(text: str):
-    return list(parse(text))[1][0]
+    return parse(text).values[0]
 
 
 def test_parse_cmd():
     text = 'echo a 10'
-    key, result = parse(text)
-    assert key == 'lines'
-    assert isinstance(result[0], Terms)
-    values = result[0].values
+    result = parse(text)
+    assert isinstance(result, Lines)
+    assert isinstance(result.values[0], Terms)
+    values = result.values[0].values
     assert values == ['echo', 'a', '10']
     assert parse_line(text).values == ['echo', 'a', '10']
 
@@ -56,20 +56,20 @@ def test_parse_term():
 def test_parse_word():
     line = '238u3r'
     result = parse(line)
-    assert result[0] == 'lines'
-    assert isinstance(result[1][0], Word)
-    assert result[1][0] == '238u3r'
+    assert isinstance(result, Lines)
+    assert isinstance(result.values[0], Word)
+    assert result.values[0] == '238u3r'
 
     line = '+'
     result = parse(line)
-    assert isinstance(result[1][0], Word)
-    assert result[1][0].type == 'symbol'
-    assert result[1][0] == '+'
+    assert isinstance(result.values[0], Word)
+    assert result.values[0].type == 'symbol'
+    assert result.values[0] == '+'
 
     line = '?'
     result = parse(line)
-    assert result[1][0].type == 'wildcard'
-    assert result[1][0] == '?'
+    assert result.values[0].type == 'wildcard'
+    assert result.values[0] == '?'
 
 
 def test_parse_equations():
@@ -213,7 +213,7 @@ def test_parse_indent():
 
 def test_parse_indent_multiline():
     text = '\n\n    \n\t\t\n    echo'
-    result = parse(text)[1]
+    result = parse(text).values
     assert isinstance(result[0], Indent)
     assert isinstance(result[1], Indent)
     assert isinstance(result[2], Indent)
@@ -224,7 +224,7 @@ def test_parse_indent_multiline():
 
 def test_parse_indent_semicolon():
     text = ';    \n;    echo'
-    result = parse(text)[1]
+    result = parse(text).values
     assert result[0] == 'echo'
 
 
@@ -268,12 +268,13 @@ def test_parse_if_then():
 def test_parse_if_with_colons():
     line = 'if 1 then print a; print b'
     result = parse(line)
-    assert result[0] == 'lines'
-    assert result[1][0][0] == 'if-then'
-    assert result[1][0][1] == '1'
-    assert isinstance(result[1][0][2], Terms)
-    assert result[1][0][2].values == ['print', 'a']
-    assert result[1][1].values == ['print', 'b']
+    assert isinstance(result, Lines)
+    results = result.values
+    assert results[0][0] == 'if-then'
+    assert results[0][1] == '1'
+    assert isinstance(results[0][2], Terms)
+    assert results[0][2].values == ['print', 'a']
+    assert results[1].values == ['print', 'b']
 
 
 def test_parse_else():
@@ -296,7 +297,7 @@ if x == y then
 outer = c
 
     """
-    results = parse(text)[1]
+    results = parse(text).values
     assert results[0][0] == 'if-then'
     assert results[0][1][0] == 'binary-expression'
     assert results[0][1][1:] == ('==', 'x', 'y')
@@ -459,7 +460,7 @@ f (x):
 
 print outer 
     """
-    results = parse(text)[1]
+    results = parse(text).values
     assert results[0][0] == 'define-function'
     assert results[0][1] == 'f'
     assert results[0][2] == 'x'

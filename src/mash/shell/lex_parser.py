@@ -1,7 +1,7 @@
 from logging import getLogger
 import ply.lex as lex
 import ply.yacc as yacc
-from mash.shell.model import Indent, Method, Quoted, Term, Terms, Variable, Word
+from mash.shell.model import Indent, Lines, Method, Quoted, Term, Terms, Variable, Word
 from mash.shell.parsing import indent_width
 from mash.shell.errors import ShellSyntaxError
 
@@ -234,18 +234,18 @@ def parse(text, init=True):
         """
         'lines : BREAK'
         # TODO handle `indent expr ; expr`
-        p[0] = ('lines', [])
+        p[0] = Lines([])
 
     def p_lines_suffix(p):
         """lines : line
                  | line BREAK
         """
-        p[0] = ('lines', [p[1]])
+        p[0] = Lines([p[1]])
 
     def p_lines_infix(p):
         'lines : line BREAK lines'
         _, lines = p[3]
-        p[0] = ('lines', [p[1]] + lines)
+        p[0] = Lines([p[1]] + lines)
 
     def p_lines_prefix(p):
         'lines : BREAK lines'
