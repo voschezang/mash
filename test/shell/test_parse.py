@@ -2,7 +2,7 @@ from pytest import raises
 
 from mash.shell.errors import ShellSyntaxError
 from mash.shell.lex_parser import parse
-from mash.shell.model import Method, Terms
+from mash.shell.model import Indent, Method, Term, Terms, Word
 
 
 def parse_line(text: str):
@@ -57,11 +57,12 @@ def test_parse_word():
     line = '238u3r'
     result = parse(line)
     assert result[0] == 'lines'
-    assert result[1][0].type == 'term'
+    assert isinstance(result[1][0], Word)
     assert result[1][0] == '238u3r'
 
     line = '+'
     result = parse(line)
+    assert isinstance(result[1][0], Word)
     assert result[1][0].type == 'symbol'
     assert result[1][0] == '+'
 
@@ -203,9 +204,9 @@ def test_parse_indent():
     # line = '    echo   c'
     line = '    echo b c'
     result = parse_line(line)
-    assert result[0] == 'indent'
+    assert isinstance(result, Indent)
 
-    inner = result[2]
+    inner = result.data
     assert isinstance(inner, Terms)
     assert inner.values == ['echo', 'b', 'c']
 
@@ -213,12 +214,12 @@ def test_parse_indent():
 def test_parse_indent_multiline():
     text = '\n\n    \n\t\t\n    echo'
     result = parse(text)[1]
-    assert result[0][0] == 'indent'
-    assert result[0][2] is None
-    assert result[1][0] == 'indent'
-    assert result[1][2] is None
-    assert result[2][0] == 'indent'
-    assert result[2][2] == 'echo'
+    assert isinstance(result[0], Indent)
+    assert isinstance(result[1], Indent)
+    assert isinstance(result[2], Indent)
+    assert result[0].data is None
+    assert result[1].data is None
+    assert result[2] == 'echo'
 
 
 def test_parse_indent_semicolon():
@@ -299,14 +300,16 @@ outer = c
     assert results[0][0] == 'if-then'
     assert results[0][1][0] == 'binary-expression'
     assert results[0][1][1:] == ('==', 'x', 'y')
-    assert results[1][0] == 'indent'
-    assert results[1][1] == (4, 0)
-    assert results[2][0] == 'indent'
-    assert results[2][1] == (4, 0)
-    assert results[3][0] == 'indent'
-    assert results[3][1] == (8, 0)
-    assert results[3][2][0] == 'assign'
-    assert results[3][2][1:] == ('=', 'inner2', 'b')
+
+    assert isinstance(results[1], Indent)
+    assert isinstance(results[2], Indent)
+    assert isinstance(results[3], Indent)
+
+    assert results[1].indent == (4, 0)
+    assert results[2].indent == (4, 0)
+    assert results[3].indent == (8, 0)
+    assert results[3].data[0] == 'assign'
+    assert results[3].data[1:] == ('=', 'inner2', 'b')
 
     assert results[4][0] == 'assign'
     assert results[4][1:] == ('=', 'outer', 'c')
@@ -460,14 +463,15 @@ print outer
     assert results[0][0] == 'define-function'
     assert results[0][1] == 'f'
     assert results[0][2] == 'x'
-    assert results[1][0] == 'indent'
-    assert results[1][1] == (4, 0)
-    assert results[2][0] == 'indent'
-    assert results[2][1] == (4, 0)
-    assert results[1][2][0] == 'if-then'
-    assert results[1][2][1][0] == 'binary-expression'
-    assert results[1][2][2] == ('return', '2')
-    assert results[2][2][0] == 'return'
+    assert isinstance(results[1], Indent)
+    assert isinstance(results[2], Indent)
+    assert results[1].indent == (4, 0)
+    assert results[2].indent == (4, 0)
+
+    assert results[1][0] == 'if-then'
+    assert results[1][1][0] == 'binary-expression'
+    assert results[1][2] == ('return', '2')
+    assert results[2][0] == 'return'
     # non-indented code
     assert isinstance(results[3], Terms)
     assert results[3].values == ['print', 'outer']

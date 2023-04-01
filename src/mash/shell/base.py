@@ -21,7 +21,7 @@ from mash.shell.errors import ShellError, ShellPipeError, ShellSyntaxError
 from mash.shell.function import InlineFunction
 from mash.shell.if_statement import LINE_INDENT, Abort, State, close_prev_if_statement, close_prev_if_statements, handle_else_statement, handle_prev_then_else_statements, handle_then_statement
 from mash.shell.lex_parser import Term, Terms, parse
-from mash.shell.model import Node
+from mash.shell.model import Indent, Node
 from mash.shell.parsing import expand_variables, filter_comments, indent_width, infer_infix_args, quote_items
 from mash.util import for_any, has_method, identity, is_valid_method_name, omit_prefixes, quote_all, split_prefixes
 
@@ -407,7 +407,6 @@ class BaseShell(Cmd):
             if ast is None:
                 raise ShellError('Invalid syntax: AST is empty')
 
-            # for line in ast:
             result = self.run_commands_new_wrapper(ast, result, run=True)
 
         except ShellSyntaxError as e:
@@ -442,23 +441,28 @@ class BaseShell(Cmd):
 
     def run_commands(self, ast: Tuple, prev_result='', run=False):
         print_result = True
-        if isinstance(ast, Node) and not isinstance(ast, Terms):
+        if isinstance(ast, Node) and not isinstance(ast, Terms) and not isinstance(ast, Indent):
             return ast.run(prev_result, shell=self, lazy=not run)
 
         elif isinstance(ast, str):
             return self.run_commands(Term(ast), prev_result, run=run)
 
-        key, *values = ast
+        if isinstance(ast, Node):
+            key = None
+            values = []
+        else:
+            key, *values = ast
 
         if DEFINE_FUNCTION in self.locals:
             # TODO change prompt to reflect this mode
 
             # self._extend_inline_function_definition(line)
             f = self.locals[DEFINE_FUNCTION]
-            if key == 'indent':
+
+            if isinstance(ast, Indent):
                 # TODO compare indent width
-                _, width, value = ast
-                if value is None:
+                width = ast.indent
+                if ast.data is None:
                     return
 
                 if f.line_indent is None:
@@ -477,7 +481,7 @@ class BaseShell(Cmd):
                 self.env[f.func_name] = f
                 self.locals.rm(DEFINE_FUNCTION)
 
-        if key not in ('lines', 'indent', 'else', 'else-if', 'else-if-then'):
+        if key not in ('lines', 'indent', 'else', 'else-if', 'else-if-then') and not isinstance(ast, Indent):
             try:
                 handle_prev_then_else_statements(self)
             except Abort:
@@ -705,6 +709,9 @@ class BaseShell(Cmd):
 
             self._define_function(f, run)
 
+            if not isinstance(args, Terms):
+                args = [args]
+
             # TODO use line_indent=self.locals[RAW_LINE_INDENT]
             self.locals.set(DEFINE_FUNCTION,
                             InlineFunction('', args, func_name=f))
@@ -812,10 +819,10 @@ class BaseShell(Cmd):
         for item in items:
 
             width = indent_width('')
-            if self.locals[IF] and item[0] != 'indent' and width > self._last_if['line_indent']:
+            if self.locals[IF] and not isinstance(item, Indent) and width > self._last_if['line_indent']:
                 close_prev_if_statements(self, width)
 
-            if self.locals[IF] and item[0] != 'indent':
+            if self.locals[IF] and not isinstance(item, Indent):
                 if not item[0].startswith('then') and not item[0].startswith('else'):
                     close_prev_if_statement(self)
 

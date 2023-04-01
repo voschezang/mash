@@ -1,7 +1,7 @@
 from logging import getLogger
 import ply.lex as lex
 import ply.yacc as yacc
-from mash.shell.model import Method, Quoted, Term, Terms, Variable, Word
+from mash.shell.model import Indent, Method, Quoted, Term, Terms, Variable, Word
 from mash.shell.parsing import indent_width
 from mash.shell.errors import ShellSyntaxError
 
@@ -95,9 +95,6 @@ def init_lex():
         # TOOD if not ;
         t.lexer.lineno += len(t.value)
         return t
-
-    # def t_COMMENT(t):
-    #     r'\#.*'
 
     def t_INDENT(t):
         r'\ {2,}|\t+'
@@ -257,7 +254,7 @@ def parse(text, init=True):
     def p_line_indented(p):
         'line : INDENT statement'
         n = indent_width(p[1])
-        p[0] = ('indent', n, p[2])
+        p[0] = Indent(p[2], n)
 
     def p_line(p):
         'line : statement'
@@ -266,7 +263,7 @@ def parse(text, init=True):
     def p_line_indent_empty(p):
         'line : INDENT'
         n = indent_width(p[1])
-        p[0] = ('indent', n, None)
+        p[0] = Indent(None, n)
 
     def p_statement(p):
         """statement : assignment

@@ -13,6 +13,14 @@ class Node(UserString):
 
         return str(self.data)
 
+    def __iter__(self):
+        if self.data is None:
+            return iter([])
+        return iter(self.data)
+
+    def __getitem__(self, i):
+        return self.data[i]
+
 
 class Term(Node):
     def __init__(self, value):
@@ -69,3 +77,13 @@ class Terms(Node):
 
     def run(self, prev_result='', shell=None, lazy=False):
         return shell.run_handle_terms([self.values], prev_result, run=not lazy)
+
+
+class Indent(Node):
+    def __init__(self, value, indent, string_type=''):
+        self.data = value
+        self.indent = indent
+
+    def run(self, prev_result='', shell=None, lazy=False):
+        return shell.run_handle_indent((self.indent, self.data),
+                                       prev_result, run=not lazy)
