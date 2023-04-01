@@ -322,7 +322,7 @@ class BaseShell(Cmd):
         """
         # monadic bind
         # https://en.wikipedia.org/wiki/Monad_(functional_programming)
-        _key, items = parse(prev_results)
+        items = parse(prev_results).values
 
         results = []
         for i, item in enumerate(items):
@@ -350,7 +350,7 @@ class BaseShell(Cmd):
         return self._do_map(ast, prev_results, delimiter=' ')
 
     def foldr(self, commands: List[Term], prev_results: str, delimiter='\n'):
-        _key, items = parse(prev_results)
+        items = parse(prev_results).values
         k, acc, *args = commands
 
         for item in items:

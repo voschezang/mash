@@ -21,21 +21,22 @@ def test_parse_cmd():
 
 def test_parse_cmds():
     text = 'echo a 10 ; echo b \n echo c'
-    result = list(parse(text))
-    assert result[0] == 'lines'
-    assert isinstance(result[1][0], Terms)
-    assert result[1][0].values == ['echo', 'a', '10']
-    assert isinstance(result[1][1], Terms)
-    assert result[1][1].values == ['echo', 'b']
-    assert isinstance(result[1][2], Terms)
-    assert result[1][2].values == ['echo', 'c']
+    result = parse(text)
+    assert isinstance(result, Lines)
+    results = result.values
+    assert isinstance(results[0], Terms)
+    assert results[0].values == ['echo', 'a', '10']
+    assert isinstance(results[1], Terms)
+    assert results[1].values == ['echo', 'b']
+    assert isinstance(results[2], Terms)
+    assert results[2].values == ['echo', 'c']
 
 
 def test_parse_comment():
     text = '# a comment'
-    result = list(parse(text))
-    assert result[0] == 'lines'
-    assert result[1] == []
+    result = parse(text)
+    assert isinstance(result, Lines)
+    assert result.values == []
 
 
 def test_parse_term():
@@ -152,22 +153,22 @@ z"
 
 
 def test_parse_parentheses():
-    _, results = parse('(a)')
+    results = parse('(a)').values
     assert results[0][0] == 'scope'
     assert results[0][1] == 'a'
 
-    key, results = parse('(a b c)')
-    assert key == 'lines'
+    result = parse('(a b c)')
+    assert isinstance(result, Lines)
+    results = result.values
     assert results[0][0] == 'scope'
     assert isinstance(results[0][1], Terms)
     assert results[0][1].values == ['a', 'b', 'c']
 
-    _, results = parse('(a (b c) (d))')
-    key, result = results[0]
-    assert key == 'scope'
-    assert isinstance(result, Terms)
+    results = parse('(a (b c) (d))').values
+    assert results[0][0] == 'scope'
+    assert isinstance(results[0][1], Terms)
 
-    inner = result.values
+    inner = results[0][1].values
     assert inner[0] == 'a'
     assert inner[1] == ('scope', 'b c')
     assert isinstance(inner[1][1], Terms)
@@ -175,7 +176,7 @@ def test_parse_parentheses():
 
 
 def test_parse_parentheses_quoted():
-    _, results = parse('( "(" )')
+    results = parse('( "(" )').values
     assert results[0][0] == 'scope'
     assert results[0][1] == '('
 
@@ -186,17 +187,17 @@ def test_parse_multiline():
 x = 2
 
 """
-    key, results = parse(text)
-    assert key == 'lines'
-    assert results[0][0] == 'assign'
+    results = parse(text)
+    assert isinstance(results, Lines)
+    assert results.values[0][0] == 'assign'
 
 
 def test_parse_multiline_quoted():
     text = """'
 x = 2'"""
-    key, results = parse(text)
-    assert key == 'lines'
-    assert results[0] == '\nx = 2'
+    results = parse(text)
+    assert isinstance(results, Lines)
+    assert results.values[0] == '\nx = 2'
 
 
 def test_parse_indent():

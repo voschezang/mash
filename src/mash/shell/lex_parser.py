@@ -244,8 +244,7 @@ def parse(text, init=True):
 
     def p_lines_infix(p):
         'lines : line BREAK lines'
-        _, lines = p[3]
-        p[0] = Lines([p[1]] + lines)
+        p[0] = Lines([p[1]]) + p[3]
 
     def p_lines_prefix(p):
         'lines : BREAK lines'

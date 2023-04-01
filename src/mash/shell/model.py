@@ -27,6 +27,14 @@ class Nodes(Node):
     def __init__(self, values: List[Node]):
         self.values = values
 
+    def __add__(self, nodes: Node):
+        # assume type is equal
+        self.extend(nodes)
+        return self
+
+    def extend(self, nodes: Node):
+        self.values += nodes.values
+
     @property
     def data(self):
         return ' '.join(str(v) for v in self.values)
@@ -93,9 +101,6 @@ class Indent(Node):
 
 
 class Lines(Nodes):
-    def __iter__(self):
-        return iter(('lines', self.values))
-
     def run(self, prev_result='', shell=None, lazy=False):
         shell.locals.set(LINE_INDENT, indent_width(''))
         print_result = True
