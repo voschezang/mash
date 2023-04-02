@@ -2,7 +2,7 @@ from pytest import raises
 
 from mash.shell.errors import ShellSyntaxError
 from mash.shell.lex_parser import parse
-from mash.shell.model import Indent, Lines, Method, Term, Terms, Word
+from mash.shell.model import IfThenElse, Indent, Lines, Method, Term, Terms, Word
 
 
 def parse_line(text: str):
@@ -232,8 +232,8 @@ def test_parse_indent_semicolon():
 def test_parse_if_else():
     line = 'if 1 == 3 then 2 else 3'
     result = parse_line(line)
-    key, cond, true, false = result
-    assert 'if-then-else' in key
+    assert isinstance(result, IfThenElse)
+    cond, true, false = result.condition, result.then, result.otherwise
     assert true == '2'
     assert false == '3'
 
@@ -418,7 +418,7 @@ def test_parse_pipes_if_then():
     key, lhs, rhs = result
     assert key == 'pipe'
     assert lhs.values == ['echo', '1']
-    assert rhs[0] == 'if-then-else'
+    assert isinstance(rhs, IfThenElse)
 
     with raises(ShellSyntaxError):
         text = 'echo 1 |> if true'
@@ -426,7 +426,7 @@ def test_parse_pipes_if_then():
 
     text = 'if f 1 |> g then echo true else echo false'
     result = parse_line(text)
-    assert result[0] == 'if-then-else'
+    assert isinstance(result, IfThenElse)
 
 
 def test_parse_inline_function():

@@ -46,3 +46,9 @@ INLINE_ELSE = 'inline-else'
 class KeyWords(Enum):
     AND = 'and'
     OR = 'or'
+
+
+def to_bool(line: str) -> bool:
+    if line != FALSE and line is not None:
+        return TRUE
+    return FALSE

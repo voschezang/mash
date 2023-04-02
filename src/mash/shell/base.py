@@ -16,7 +16,7 @@ from mash.filesystem.filesystem import FileSystem, cd
 from mash.filesystem.scope import Scope, show
 from mash.io_util import log, shell_ready_signal, print_shell_ready_signal, check_output
 from mash.shell import delimiters
-from mash.shell.delimiters import INLINE_ELSE, INLINE_THEN, DEFINE_FUNCTION, FALSE, IF, LEFT_ASSIGNMENT, RIGHT_ASSIGNMENT, THEN, TRUE
+from mash.shell.delimiters import INLINE_ELSE, INLINE_THEN, DEFINE_FUNCTION, FALSE, IF, LEFT_ASSIGNMENT, RIGHT_ASSIGNMENT, THEN, TRUE, to_bool
 from mash.shell.errors import ShellError, ShellPipeError, ShellSyntaxError
 from mash.shell.function import InlineFunction
 from mash.shell.if_statement import LINE_INDENT, Abort, State, close_prev_if_statement, close_prev_if_statements, handle_else_statement, handle_prev_then_else_statements, handle_then_statement
@@ -619,17 +619,6 @@ class BaseShell(Cmd):
             self.locals[IF].append(State(self, value, branch))
             return result
 
-        elif key == 'if-then-else':
-            # inline if-then-else
-            condition, true, false = values
-
-            value = self.run_commands(condition, run=run)
-            value = to_bool(value) == TRUE
-            line = true if value else false
-
-            # include prev_result for inline if-then-else statement
-            return self.run_commands(line, prev_result, run=run)
-
         elif key == 'else-if-then':
             condition, then = values
             if not run:
@@ -1200,12 +1189,6 @@ def is_function_definition(terms: List[str]) -> bool:
         _f, first, *_, last = terms
 
     return first.startswith('(') and last.endswith(')')
-
-
-def to_bool(line: str) -> bool:
-    if line != FALSE and line is not None:
-        return TRUE
-    return FALSE
 
 
 def is_public(key: str) -> bool:

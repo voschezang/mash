@@ -1,7 +1,13 @@
 from collections import UserString
 from typing import List
+from mash.shell.base import to_bool
+from mash.shell.delimiters import TRUE
 from mash.shell.if_statement import LINE_INDENT
 from mash.shell.parsing import expand_variables, indent_width
+
+################################################################################
+# Units
+################################################################################
 
 
 class Node(UserString):
@@ -21,23 +27,6 @@ class Node(UserString):
 
     def __getitem__(self, i):
         return self.data[i]
-
-
-class Nodes(Node):
-    def __init__(self, values: List[Node]):
-        self.values = values
-
-    def __add__(self, nodes: Node):
-        # assume type is equal
-        self.extend(nodes)
-        return self
-
-    def extend(self, nodes: Node):
-        self.values += nodes.values
-
-    @property
-    def data(self):
-        return ' '.join(str(v) for v in self.values)
 
 
 class Term(Node):
@@ -85,19 +74,56 @@ class Quoted(Node):
         return delimiter.join(items)
 
 
-class Terms(Nodes):
-    def run(self, prev_result='', shell=None, lazy=False):
-        return shell.run_handle_terms([self.values], prev_result, run=not lazy)
-
-
 class Indent(Node):
-    def __init__(self, value, indent, string_type=''):
+    def __init__(self, value, indent):
         self.data = value
         self.indent = indent
 
     def run(self, prev_result='', shell=None, lazy=False):
         return shell.run_handle_indent((self.indent, self.data),
                                        prev_result, run=not lazy)
+
+
+class IfThenElse(Node):
+    def __init__(self, condition, then, otherwise):
+        self.condition = condition
+        self.then = then
+        self.otherwise = otherwise
+        self.data = TRUE
+
+    def run(self, prev_result='', shell=None, lazy=False):
+        value = shell.run_commands(self.condition, run=not lazy)
+        value = to_bool(value) == TRUE
+        line = self.then if value else self.otherwise
+
+        # include prev_result for inline if-then-else statement
+        return shell.run_commands(line, prev_result, run=not lazy)
+
+################################################################################
+# Containers
+################################################################################
+
+
+class Nodes(Node):
+    def __init__(self, values: List[Node]):
+        self.values = values
+
+    def __add__(self, nodes: Node):
+        # assume type is equal
+        self.extend(nodes)
+        return self
+
+    def extend(self, nodes: Node):
+        self.values += nodes.values
+
+    @property
+    def data(self):
+        return ' '.join(str(v) for v in self.values)
+
+
+class Terms(Nodes):
+    def run(self, prev_result='', shell=None, lazy=False):
+        return shell.run_handle_terms([self.values], prev_result, run=not lazy)
 
 
 class Lines(Nodes):
