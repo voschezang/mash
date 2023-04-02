@@ -1,7 +1,6 @@
 from collections import UserString
 from typing import List
-from mash.shell.base import to_bool
-from mash.shell.delimiters import IF, TRUE
+from mash.shell.delimiters import FALSE, IF, INLINE_THEN, THEN, TRUE, to_bool
 from mash.shell.if_statement import LINE_INDENT, State
 from mash.shell.parsing import expand_variables, indent_width
 
@@ -82,13 +81,16 @@ class Indent(Node):
         return shell.run_handle_indent((self.indent, self.data),
                                        prev_result, run=not lazy)
 
+    def __repr__(self):
+        return f'{type(self).__name__}( {repr(self.data)} )'
+
 
 class Condition(Node):
     def __init__(self, condition, then=None, otherwise=None):
         self.condition = condition
         self.then = then
         self.otherwise = otherwise
-        self.data = TRUE
+        self.data = '_'
 
 
 class If(Condition):
@@ -100,6 +102,26 @@ class If(Condition):
 
         value = shell.run_commands(self.condition, run=not lazy)
         value = to_bool(value) == TRUE
+
+
+class IfThen(Condition):
+    def run(self, prev_result='', shell=None, lazy=False):
+        if lazy:
+            raise NotImplementedError()
+
+        value = shell.run_commands(self.condition, run=not lazy)
+        value = to_bool(value) == TRUE
+
+        if value and self.then:
+            # include prev_result for inline if-then statement
+            result = shell.run_commands(self.then, prev_result, run=not lazy)
+        else:
+            # set default value
+            result = FALSE
+
+        branch = THEN if self.then is None else INLINE_THEN
+        shell.locals[IF].append(State(shell, value, branch))
+        return result
 
 
 class IfThenElse(Condition):

@@ -2,7 +2,7 @@ from pytest import raises
 
 from mash.shell.errors import ShellSyntaxError
 from mash.shell.lex_parser import parse
-from mash.shell.model import If, IfThenElse, Indent, Lines, Method, Term, Terms, Word
+from mash.shell.model import If, IfThen, IfThenElse, Indent, Lines, Method, Term, Terms, Word
 
 
 def parse_line(text: str):
@@ -246,10 +246,10 @@ def test_parse_if_else():
 
 def test_parse_if_then():
     line = 'if 1 == 3 then 2'
-    key, result, then = parse_line(line)
-    assert key == 'if-then'
-    assert result[1] == '=='
-    assert then == '2'
+    result = parse_line(line)
+    assert isinstance(result, IfThen)
+    assert result.condition[1] == '=='
+    assert result.then == '2'
 
     line = 'if true print 2'
     result = parse_line(line)
@@ -271,11 +271,11 @@ def test_parse_if_with_colons():
     result = parse(line)
     assert isinstance(result, Lines)
     results = result.values
-    assert results[0][0] == 'if-then'
-    assert results[0][1] == '1'
-    assert isinstance(results[0][2], Terms)
-    assert results[0][2].values == ['print', 'a']
-    assert results[1].values == ['print', 'b']
+    assert isinstance(results[0], IfThen)
+    assert results[0].condition == '1'
+    assert isinstance(results[0].then, Terms)
+    assert results[0].then.data == 'print a'
+    assert results[1].data == 'print b'
 
 
 def test_parse_else():
@@ -299,9 +299,9 @@ outer = c
 
     """
     results = parse(text).values
-    assert results[0][0] == 'if-then'
-    assert results[0][1][0] == 'binary-expression'
-    assert results[0][1][1:] == ('==', 'x', 'y')
+    assert isinstance(results[0], IfThen)
+    assert results[0].condition[0] == 'binary-expression'
+    assert results[0].condition[1:] == ('==', 'x', 'y')
 
     assert isinstance(results[1], Indent)
     assert isinstance(results[2], Indent)
@@ -331,7 +331,7 @@ def test_parse_if_with_assign():
     assert key == 'assign'
     assert result[0] == '<-'
     assert result[1] == 'a'
-    assert result[2][0] == 'if-then'
+    assert isinstance(result[2], IfThen)
 
 
 def test_parse_if_none():
@@ -470,9 +470,10 @@ print outer
     assert results[1].indent == (4, 0)
     assert results[2].indent == (4, 0)
 
-    assert results[1][0] == 'if-then'
-    assert results[1][1][0] == 'binary-expression'
-    assert results[1][2] == ('return', '2')
+    assert isinstance(results[1].data, IfThen)
+    assert results[1].data.condition[0] == 'binary-expression'
+    assert results[1].data.then[0] == 'return'
+    assert results[1].data.then[1].data == '2'
     assert results[2][0] == 'return'
     # non-indented code
     assert isinstance(results[3], Terms)

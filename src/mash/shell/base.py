@@ -20,8 +20,8 @@ from mash.shell.delimiters import INLINE_ELSE, INLINE_THEN, DEFINE_FUNCTION, FAL
 from mash.shell.errors import ShellError, ShellPipeError, ShellSyntaxError
 from mash.shell.function import InlineFunction
 from mash.shell.if_statement import LINE_INDENT, Abort, State, close_prev_if_statement, close_prev_if_statements, handle_else_statement, handle_prev_then_else_statements, handle_then_statement
-from mash.shell.lex_parser import Term, Terms, parse
-from mash.shell.model import Indent, Lines, Node, Nodes, Word
+from mash.shell.lex_parser import parse
+from mash.shell.model import Indent, Lines, Node, Nodes, Term, Terms, Word
 from mash.shell.parsing import expand_variables, filter_comments, indent_width, infer_infix_args, quote_items
 from mash.util import for_any, has_method, identity, is_valid_method_name, omit_prefixes, quote_all, split_prefixes
 
@@ -587,25 +587,6 @@ class BaseShell(Cmd):
             if then:
                 self._last_if['branch'] = INLINE_THEN
 
-            return result
-
-        elif key == 'if-then':
-            condition, then = values
-            if not run:
-                raise NotImplementedError()
-
-            value = self.run_commands(condition, run=run)
-            value = to_bool(value) == TRUE
-
-            if value and then:
-                # include prev_result for inline if-then statement
-                result = self.run_commands(then, prev_result, run=run)
-            else:
-                # set default value
-                result = FALSE
-
-            branch = THEN if then is None else INLINE_THEN
-            self.locals[IF].append(State(self, value, branch))
             return result
 
         elif key == 'else-if-then':

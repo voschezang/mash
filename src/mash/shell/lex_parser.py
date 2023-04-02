@@ -1,7 +1,7 @@
 from logging import getLogger
 import ply.lex as lex
 import ply.yacc as yacc
-from mash.shell.model import If, IfThenElse, Indent, Lines, Method, Quoted, Term, Terms, Variable, Word
+from mash.shell.model import If, IfThen, IfThenElse, Indent, Lines, Method, Quoted, Terms, Variable, Word
 from mash.shell.parsing import indent_width
 from mash.shell.errors import ShellSyntaxError
 
@@ -330,7 +330,7 @@ def parse(text, init=True):
     def p_if_then_inline(p):
         'full_conditional : IF conjunction THEN conjunction'
         _, _if, cond, _then, true = p
-        p[0] = ('if-then', cond, true)
+        p[0] = IfThen(cond, true)
 
     def p_if_then_else(p):
         'conditional : IF conjunction THEN conjunction ELSE'
@@ -339,12 +339,12 @@ def parse(text, init=True):
 
     def p_if_then(p):
         'conditional : IF conjunction THEN'
-        p[0] = ('if-then', p[2], None)
+        p[0] = IfThen(p[2], None)
 
     def p_if_then_inline_final(p):
         'conditional : IF conjunction THEN return_statement'
         _, _if, cond, _then, true = p
-        p[0] = ('if-then', cond, true)
+        p[0] = IfThen(cond, true)
 
     def p_then(p):
         """conditional : THEN final_statement
