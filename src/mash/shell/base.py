@@ -21,7 +21,7 @@ from mash.shell.errors import ShellError, ShellPipeError, ShellSyntaxError
 from mash.shell.function import InlineFunction
 from mash.shell.if_statement import LINE_INDENT, Abort, State, close_prev_if_statement, close_prev_if_statements, handle_else_statement, handle_prev_then_else_statements, handle_then_statement
 from mash.shell.lex_parser import Term, Terms, parse
-from mash.shell.model import Indent, Lines, Node, Nodes
+from mash.shell.model import Indent, Lines, Node, Nodes, Word
 from mash.shell.parsing import expand_variables, filter_comments, indent_width, infer_infix_args, quote_items
 from mash.util import for_any, has_method, identity, is_valid_method_name, omit_prefixes, quote_all, split_prefixes
 
@@ -442,7 +442,7 @@ class BaseShell(Cmd):
 
     def run_commands(self, ast: Tuple, prev_result='', run=False):
         print_result = True
-        if isinstance(ast, Node) and not isinstance(ast, Nodes) and not isinstance(ast, Indent):
+        if isinstance(ast, Term):
             return ast.run(prev_result, shell=self, lazy=not run)
 
         elif isinstance(ast, str):
@@ -478,7 +478,7 @@ class BaseShell(Cmd):
                 # TODO this will only be triggered after a non-Word command
                 self._finalize_define_function(f)
 
-        if key not in ('lines', 'indent', 'else', 'else-if', 'else-if-then') and \
+        if key not in ('else', 'else-if', 'else-if-then') and \
                 not isinstance(ast, Indent) and \
                 not isinstance(ast, Lines):
             try:
@@ -569,17 +569,6 @@ class BaseShell(Cmd):
                     return a and b
 
             return ' '.join(quote_all((a, op, b), ignore=list('*<>')))
-
-        elif key == 'if':
-            # multiline if-statement
-            condition, = values
-            if not run:
-                raise NotImplementedError()
-
-            value = self.run_commands(condition, run=run)
-            value = to_bool(value) == TRUE
-            self.locals[IF].append(State(self, value))
-            return
 
         elif key == 'then':
             then, = values

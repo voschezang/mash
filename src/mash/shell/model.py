@@ -1,8 +1,8 @@
 from collections import UserString
 from typing import List
 from mash.shell.base import to_bool
-from mash.shell.delimiters import TRUE
-from mash.shell.if_statement import LINE_INDENT
+from mash.shell.delimiters import IF, TRUE
+from mash.shell.if_statement import LINE_INDENT, State
 from mash.shell.parsing import expand_variables, indent_width
 
 ################################################################################
@@ -28,22 +28,21 @@ class Node(UserString):
     def __getitem__(self, i):
         return self.data[i]
 
+    def __repr__(self):
+        return f'{type(self).__name__}( {str(self.data)} )'
+
 
 class Term(Node):
-    def __init__(self, value):
-        self.data = value
-
-    def run(self, *args, **kwds):
-        return self.data
+    pass
 
 
-class Word(Node):
+class Word(Term):
     def __init__(self, value, string_type=''):
         self.data = value
         self.type = string_type
 
 
-class Method(Node):
+class Method(Term):
     def run(self, prev_result='', shell=None, lazy=False):
         if not lazy:
             if shell.is_function(self.data):
@@ -54,7 +53,7 @@ class Method(Node):
         return super().run(prev_result, shell, lazy)
 
 
-class Variable(Node):
+class Variable(Term):
     def run(self, prev_result='', shell=None, lazy=False):
         if not lazy:
             k = self.data[1:]
@@ -63,7 +62,7 @@ class Variable(Node):
         return super().run(prev_result, shell, lazy)
 
 
-class Quoted(Node):
+class Quoted(Term):
     def run(self, prev_result='', shell=None, lazy=False):
         delimiter = ' '
         items = self.data.split(delimiter)
@@ -84,13 +83,26 @@ class Indent(Node):
                                        prev_result, run=not lazy)
 
 
-class IfThenElse(Node):
-    def __init__(self, condition, then, otherwise):
+class Condition(Node):
+    def __init__(self, condition, then=None, otherwise=None):
         self.condition = condition
         self.then = then
         self.otherwise = otherwise
         self.data = TRUE
 
+
+class If(Condition):
+    # A multiline if-statement
+
+    def run(self, prev_result='', shell=None, lazy=False):
+        if lazy:
+            raise NotImplementedError()
+
+        value = shell.run_commands(self.condition, run=not lazy)
+        value = to_bool(value) == TRUE
+
+
+class IfThenElse(Condition):
     def run(self, prev_result='', shell=None, lazy=False):
         value = shell.run_commands(self.condition, run=not lazy)
         value = to_bool(value) == TRUE

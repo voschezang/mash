@@ -2,7 +2,7 @@ from pytest import raises
 
 from mash.shell.errors import ShellSyntaxError
 from mash.shell.lex_parser import parse
-from mash.shell.model import IfThenElse, Indent, Lines, Method, Term, Terms, Word
+from mash.shell.model import If, IfThenElse, Indent, Lines, Method, Term, Terms, Word
 
 
 def parse_line(text: str):
@@ -252,10 +252,10 @@ def test_parse_if_then():
     assert then == '2'
 
     line = 'if true print 2'
-    key, result = parse_line(line)
-    assert key == 'if'
-    assert isinstance(result, Terms)
-    assert result.values == ['true', 'print', '2']
+    result = parse_line(line)
+    assert isinstance(result, If)
+    assert isinstance(result.condition, Terms)
+    assert result.condition.values == ['true', 'print', '2']
 
     # double then
     text = 'if 1 then print 1 then print 2'
