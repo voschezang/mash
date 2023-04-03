@@ -192,7 +192,7 @@ class ElseIf(ElseCondition):
         try:
             # verify & update state
             handle_else_statement(shell)
-            shell = self.run_commands(self.condition, run=not lazy)
+            value = shell.run_commands(self.condition, run=not lazy)
             value = to_bool(value) == TRUE
         except Abort:
             value = False
