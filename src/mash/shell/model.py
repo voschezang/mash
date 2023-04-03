@@ -139,9 +139,12 @@ class Then(Condition):
             pass
 
         if self.then:
-            self._last_if['branch'] = INLINE_THEN
+            shell._last_if['branch'] = INLINE_THEN
 
         return result
+
+    def __repr__(self):
+        return f'{type(self).__name__}( {repr(self.then)} )'
 
 
 class IfThenElse(Condition):
@@ -154,14 +157,18 @@ class IfThenElse(Condition):
         return shell.run_commands(line, prev_result, run=not lazy)
 
 
-class ElseIfThen(Condition):
+class ElseCondition(Condition):
+    pass
+
+
+class ElseIfThen(ElseCondition):
     def run(self, prev_result='', shell=None, lazy=False):
         if lazy:
             raise NotImplementedError()
 
         try:
             # verify & update state
-            handle_else_statement(self)
+            handle_else_statement(shell)
             value = shell.run_commands(self.condition, run=not lazy)
             value = to_bool(value) == TRUE
         except Abort:
@@ -175,6 +182,26 @@ class ElseIfThen(Condition):
         branch = THEN if self.then is None else INLINE_THEN
         shell.locals[IF].append(State(shell, value, branch))
         return result
+
+
+class ElseIf(ElseCondition):
+    def run(self, prev_result='', shell=None, lazy=False):
+        if lazy:
+            raise NotImplementedError()
+
+        try:
+            # verify & update state
+            handle_else_statement(shell)
+            shell = self.run_commands(self.condition, run=not lazy)
+            value = to_bool(value) == TRUE
+        except Abort:
+            value = False
+
+        shell.locals[IF].append(State(shell, value, THEN))
+        return
+
+    def __repr__(self):
+        return f'{type(self).__name__}( {repr(self.condition)} )'
 
 ################################################################################
 # Containers

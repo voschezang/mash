@@ -1,7 +1,7 @@
 from logging import getLogger
 import ply.lex as lex
 import ply.yacc as yacc
-from mash.shell.model import ElseIfThen, If, IfThen, IfThenElse, Indent, Lines, Method, Quoted, Terms, Then, Variable, Word
+from mash.shell.model import ElseIf, ElseIfThen, If, IfThen, IfThenElse, Indent, Lines, Method, Quoted, Terms, Then, Variable, Word
 from mash.shell.parsing import indent_width
 from mash.shell.errors import ShellSyntaxError
 
@@ -366,7 +366,7 @@ def parse(text, init=True):
 
     def p_else_if(p):
         'conditional : ELSE IF conjunction'
-        p[0] = ('else-if', p[3])
+        p[0] = ElseIf(p[3])
 
     def p_else(p):
         """conditional : ELSE final_statement

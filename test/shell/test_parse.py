@@ -2,7 +2,7 @@ from pytest import raises
 
 from mash.shell.errors import ShellSyntaxError
 from mash.shell.lex_parser import parse
-from mash.shell.model import ElseIfThen, If, IfThen, IfThenElse, Indent, Lines, Method, Term, Terms, Word
+from mash.shell.model import ElseIf, ElseIfThen, If, IfThen, IfThenElse, Indent, Lines, Method, Term, Terms, Word
 
 
 def parse_line(text: str):
@@ -280,9 +280,9 @@ def test_parse_if_with_colons():
 
 def test_parse_else():
     text = 'else if 2 == 2'
-    key, result = parse_line(text)
-    assert key == 'else-if'
-    assert result[1:] == ('==', '2', '2')
+    result = parse_line(text)
+    assert isinstance(result, ElseIf)
+    assert result.condition[1:] == ('==', '2', '2')
 
 
 def test_parse_if_then_multiline():
