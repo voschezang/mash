@@ -1,7 +1,7 @@
 from collections import UserString
 from typing import List
 from mash.shell.delimiters import FALSE, IF, INLINE_THEN, THEN, TRUE, to_bool
-from mash.shell.if_statement import LINE_INDENT, State
+from mash.shell.if_statement import LINE_INDENT, Abort, State, handle_then_statement
 from mash.shell.parsing import expand_variables, indent_width
 
 ################################################################################
@@ -121,6 +121,26 @@ class IfThen(Condition):
 
         branch = THEN if self.then is None else INLINE_THEN
         shell.locals[IF].append(State(shell, value, branch))
+        return result
+
+
+class Then(Condition):
+    def run(self, prev_result='', shell=None, lazy=False):
+        if lazy:
+            raise NotImplementedError()
+
+        result = None
+        try:
+            # verify & update state
+            handle_then_statement(self)
+            if self.then:
+                result = self.run_commands(self.then, run=not lazy)
+        except Abort:
+            pass
+
+        if self.then:
+            self._last_if['branch'] = INLINE_THEN
+
         return result
 
 

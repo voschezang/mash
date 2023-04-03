@@ -570,25 +570,6 @@ class BaseShell(Cmd):
 
             return ' '.join(quote_all((a, op, b), ignore=list('*<>')))
 
-        elif key == 'then':
-            then, = values
-            if not run:
-                raise NotImplementedError()
-
-            result = None
-            try:
-                # verify & update state
-                handle_then_statement(self)
-                if then:
-                    result = self.run_commands(then, run=run)
-            except Abort:
-                pass
-
-            if then:
-                self._last_if['branch'] = INLINE_THEN
-
-            return result
-
         elif key == 'else-if-then':
             condition, then = values
             if not run:
