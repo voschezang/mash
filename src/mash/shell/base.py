@@ -21,7 +21,7 @@ from mash.shell.errors import ShellError, ShellPipeError, ShellSyntaxError
 from mash.shell.function import InlineFunction
 from mash.shell.if_statement import LINE_INDENT, Abort, State, close_prev_if_statement, close_prev_if_statements, handle_else_statement, handle_prev_then_else_statements, handle_then_statement
 from mash.shell.lex_parser import parse
-from mash.shell.model import Indent, Lines, Node, Nodes, Term, Terms, Word
+from mash.shell.model import ElseIfThen, Indent, Lines, Node, Nodes, Term, Terms, Word
 from mash.shell.parsing import expand_variables, filter_comments, indent_width, infer_infix_args, quote_items
 from mash.util import for_any, has_method, identity, is_valid_method_name, omit_prefixes, quote_all, split_prefixes
 
@@ -479,6 +479,7 @@ class BaseShell(Cmd):
                 self._finalize_define_function(f)
 
         if key not in ('else', 'else-if', 'else-if-then') and \
+                not isinstance(ast, ElseIfThen) and \
                 not isinstance(ast, Indent) and \
                 not isinstance(ast, Lines):
             try:
@@ -570,27 +571,7 @@ class BaseShell(Cmd):
 
             return ' '.join(quote_all((a, op, b), ignore=list('*<>')))
 
-        elif key == 'else-if-then':
-            condition, then = values
-            if not run:
-                raise NotImplementedError()
 
-            try:
-                # verify & update state
-                handle_else_statement(self)
-                value = self.run_commands(condition, run=run)
-                value = to_bool(value) == TRUE
-            except Abort:
-                value = False
-
-            if value and then:
-                result = self.run_commands(then, run=run)
-            else:
-                result = None
-
-            branch = THEN if then is None else INLINE_THEN
-            self.locals[IF].append(State(self, value, branch))
-            return result
 
         elif key == 'else-if':
             condition, = values
