@@ -2,7 +2,7 @@ from pytest import raises
 
 from mash.shell.errors import ShellSyntaxError
 from mash.shell.lex_parser import parse
-from mash.shell.model import ElseIf, ElseIfThen, If, IfThen, IfThenElse, Indent, Lines, Method, Term, Terms, Word
+from mash.shell.model import ElseIf, ElseIfThen, If, IfThen, IfThenElse, Indent, Lines, Map, Method, Term, Terms, Word
 
 
 def parse_line(text: str):
@@ -349,10 +349,10 @@ def test_parse_if_none():
 
 
 def test_parse_map():
-    key, lhs, rhs = parse_line('range 4 >>= echo')
-    assert key == 'map'
-    assert lhs.values == ['range', '4']
-    assert rhs == 'echo'
+    result = parse_line('range 4 >>= echo')
+    assert isinstance(result, Map)
+    assert result.lhs.values == ['range', '4']
+    assert result.rhs == 'echo'
 
 
 def test_parse_bash_pipe():
@@ -373,14 +373,14 @@ def test_parse_pipe():
 
 def test_parse_pipe_multiple():
     result = parse_line('print a |> echo 1 >>= echo 2 | echo')
-    key, lhs, rhs = result
+    key, lhs, m = result
     assert key == 'pipe'
     assert lhs.values == ['print', 'a']
-    assert rhs[0] == 'map'
-    assert rhs[1].values == ['echo', '1']
-    assert rhs[2][1] == '|'
-    assert rhs[2][2].values == ['echo', '2']
-    assert rhs[2][3] == 'echo'
+    assert isinstance(m, Map)
+    assert m.lhs.values == ['echo', '1']
+    assert m.rhs[1] == '|'
+    assert m.rhs[2].values == ['echo', '2']
+    assert m.rhs[3] == 'echo'
 
 
 def test_parse_pipe_assign():

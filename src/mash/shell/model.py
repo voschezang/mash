@@ -1,8 +1,12 @@
 from collections import UserString
-from typing import List
+from typing import Iterable, List
 from mash.shell.delimiters import FALSE, IF, INLINE_ELSE, INLINE_THEN, THEN, TRUE, to_bool
 from mash.shell.if_statement import LINE_INDENT, Abort, State, handle_else_statement, handle_then_statement
 from mash.shell.parsing import expand_variables, indent_width
+from mash.util import quote_all
+
+LAST_RESULTS = '_last_results'
+LAST_RESULTS_INDEX = '_last_results_index'
 
 ################################################################################
 # Units
@@ -83,6 +87,60 @@ class Indent(Node):
 
     def __repr__(self):
         return f'{type(self).__name__}( {repr(self.data)} )'
+
+
+class Map(Node):
+    def __init__(self, lhs, rhs):
+        self.lhs = lhs
+        self.rhs = rhs
+
+    @property
+    def data(self):
+        return TRUE
+
+    def run(self, prev_result='', shell=None, lazy=False):
+        lhs, rhs = self.lhs, self.rhs
+        prev = shell.run_commands(lhs, prev_result, run=not lazy)
+
+        if isinstance(rhs, str) or isinstance(rhs, Term):
+            rhs = Terms([rhs])
+
+        return self.map(rhs, prev, shell)
+
+    @staticmethod
+    def map(command, values: str, shell, delimiter='\n') -> Iterable:
+        """Apply a function to every line.
+        If `$` is present, then each line from stdin is inserted there.
+        Otherwise each line is appended.
+
+        Usage
+        -----
+        ```sh
+        println a b |> map echo
+        println a b |> map echo prefix $ suffix
+        ```
+        """
+        # monadic bind
+        # https://en.wikipedia.org/wiki/Monad_(functional_programming)
+
+        items = shell.parse(values).values
+
+        results = []
+        for i, item in enumerate(items):
+            shell.env[LAST_RESULTS_INDEX] = i
+
+            results.append(shell.run_commands(command, item, run=True))
+
+        shell.env[LAST_RESULTS_INDEX] = 0
+        agg = delimiter.join(results)
+        if agg.strip() == '':
+            return ''
+
+        return delimiter.join(quote_all(results))
+
+################################################################################
+# Conditions
+################################################################################
 
 
 class Condition(Node):

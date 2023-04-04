@@ -1,7 +1,7 @@
 from logging import getLogger
 import ply.lex as lex
 import ply.yacc as yacc
-from mash.shell.model import Else, ElseIf, ElseIfThen, If, IfThen, IfThenElse, Indent, Lines, Method, Quoted, Terms, Then, Variable, Word
+from mash.shell.model import Else, ElseIf, ElseIfThen, If, IfThen, IfThenElse, Indent, Lines, Map, Method, Quoted, Terms, Then, Variable, Word
 from mash.shell.parsing import indent_width
 from mash.shell.errors import ShellSyntaxError
 
@@ -397,7 +397,7 @@ def parse(text, init=True):
 
     def p_pipe_map(p):
         'expression : expression MAP expression'
-        p[0] = ('map', p[1], p[3])
+        p[0] = Map(p[1], p[3])
 
     def p_expression_full_conditional(p):
         'expression : full_conditional'

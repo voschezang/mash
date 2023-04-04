@@ -19,9 +19,9 @@ from mash.shell import delimiters
 from mash.shell.delimiters import INLINE_ELSE, INLINE_THEN, DEFINE_FUNCTION, FALSE, IF, LEFT_ASSIGNMENT, RIGHT_ASSIGNMENT, THEN, TRUE, to_bool
 from mash.shell.errors import ShellError, ShellPipeError, ShellSyntaxError
 from mash.shell.function import InlineFunction
-from mash.shell.if_statement import LINE_INDENT, Abort, State, close_prev_if_statement, close_prev_if_statements, handle_else_statement, handle_prev_then_else_statements, handle_then_statement
+from mash.shell.if_statement import LINE_INDENT, Abort, close_prev_if_statement, close_prev_if_statements,  handle_prev_then_else_statements
 from mash.shell.lex_parser import parse
-from mash.shell.model import Else, ElseCondition, ElseIf, ElseIfThen, Indent, Lines, Node, Nodes, Term, Terms, Then, Word
+from mash.shell.model import LAST_RESULTS, LAST_RESULTS_INDEX, Else, ElseCondition, Indent, Lines, Map, Node, Term, Terms, Then, Word
 from mash.shell.parsing import expand_variables, filter_comments, indent_width, infer_infix_args, quote_items
 from mash.util import for_any, has_method, identity, is_valid_method_name, omit_prefixes, quote_all, split_prefixes
 
@@ -31,8 +31,6 @@ default_session_filename = '.shell_session.json'
 default_prompt = '$ '
 
 COMMENT = '#'
-LAST_RESULTS = '_last_results'
-LAST_RESULTS_INDEX = '_last_results_index'
 INNER_SCOPE = 'inner_scope'
 RAW_LINE_INDENT = 'raw_line_indent'
 ENV = 'env'
@@ -309,35 +307,6 @@ class BaseShell(Cmd):
         log('Expected arguments')
         return ''
 
-    def _do_map(self, ast: tuple, prev_results: str, delimiter='\n') -> Iterable:
-        """Apply a function to every line.
-        If `$` is present, then each line from stdin is inserted there.
-        Otherwise each line is appended.
-
-        Usage
-        -----
-        ```sh
-        println a b |> map echo
-        println a b |> map echo prefix $ suffix
-        ```
-        """
-        # monadic bind
-        # https://en.wikipedia.org/wiki/Monad_(functional_programming)
-        items = parse(prev_results).values
-
-        results = []
-        for i, item in enumerate(items):
-            self.env[LAST_RESULTS_INDEX] = i
-
-            results.append(self.run_commands(ast, item, run=True))
-
-        self.env[LAST_RESULTS_INDEX] = 0
-        agg = delimiter.join(results)
-        if agg.strip() == '':
-            return ''
-
-        return delimiter.join(quote_all(results))
-
     def _do_foreach(self, ast: tuple, prev_results: str) -> Iterable:
         """Apply a function to every term or word.
 
@@ -348,7 +317,7 @@ class BaseShell(Cmd):
         ```
         """
         prev_results = '\n'.join(prev_results.split(' '))
-        return self._do_map(ast, prev_results, delimiter=' ')
+        return Map.map(ast, prev_results, self, delimiter=' ')
 
     def foldr(self, commands: List[Term], prev_results: str, delimiter='\n'):
         items = parse(prev_results).values
@@ -509,14 +478,6 @@ class BaseShell(Cmd):
 
             raise NotImplementedError()
 
-        elif key == 'map':
-            lhs, rhs = values
-            prev = self.run_commands(lhs, prev_result, run=run)
-
-            if isinstance(rhs, str) or isinstance(rhs, Term):
-                rhs = Terms([rhs])
-            return self._do_map(rhs, prev)
-
         elif key == 'pipe':
             a, b = values
             prev = self.run_commands(a, prev_result, run=run)
@@ -654,12 +615,11 @@ class BaseShell(Cmd):
 
     def run_handle_terms(self, values, prev_result: str, run: bool):
         items = values[0]
-
         if len(items) >= 2 and run:
             k, *args = items
             if k == 'map':
                 args = Terms(list(args))
-                return self._do_map(args, prev_result)
+                return Map.map(args, prev_result, self)
             elif k == 'foreach':
                 args = Terms(list(args))
                 return self._do_foreach(args, prev_result)
@@ -1071,6 +1031,9 @@ class BaseShell(Cmd):
 
             if isinstance(result, tuple) and result[0] == 'return':
                 return result[1]
+
+    def parse(self, results: str):
+        return parse(results)
 
 
 def is_function_definition(terms: List[str]) -> bool:
