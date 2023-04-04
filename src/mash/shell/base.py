@@ -496,16 +496,6 @@ class BaseShell(Cmd):
             next = self.pipe_cmd_sh(line, prev, delimiter=op)
             return next
 
-        elif key == 'break':
-            _, a, b = ast
-            a = self.run_commands(a, prev_result, run=True)
-            print_result = True
-            if print_result and a is not None:
-                print(a)
-
-            b = self.run_commands(b, run=True)
-            return b
-
         elif key == 'math':
             _key, values = ast
             args = self.run_commands(values, prev_result)
