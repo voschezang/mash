@@ -1,7 +1,7 @@
 from logging import getLogger
 import ply.lex as lex
 import ply.yacc as yacc
-from mash.shell.model import Else, ElseIf, ElseIfThen, If, IfThen, IfThenElse, Indent, Lines, Map, Method, Quoted, Terms, Then, Variable, Word
+from mash.shell.model import BinaryExpression, Else, ElseIf, ElseIfThen, If, IfThen, IfThenElse, Indent, Lines, Map, Method, Quoted, Terms, Then, Variable, Word
 from mash.shell.parsing import indent_width
 from mash.shell.errors import ShellSyntaxError
 
@@ -437,11 +437,11 @@ def parse(text, init=True):
 
     def p_logic_expression_infix(p):
         'logic_expression : terms INFIX_OPERATOR logic_expression'
-        p[0] = ('binary-expression', p[2], p[1], p[3])
+        p[0] = BinaryExpression(p[1], p[3], p[2])
 
     def p_logic_expression_infix_equals(p):
         'logic_expression : logic_expression EQUALS logic_expression'
-        p[0] = ('binary-expression', p[2], p[1], p[3])
+        p[0] = BinaryExpression(p[1], p[3], p[2])
 
     def p_logic_negation(p):
         'logic_expression : NOT terms'

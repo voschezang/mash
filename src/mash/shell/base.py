@@ -459,24 +459,6 @@ class BaseShell(Cmd):
             return ast.run(prev_result, shell=self, lazy=not run)
         elif key == 'assign':
             return self.run_handle_assign(values, prev_result, run)
-        elif key == 'binary-expression':
-            op, a, b = values
-            b = self.run_commands(b, run=run)
-            a = self.run_commands(a, run=run)
-
-            if op in delimiters.comparators:
-                # TODO join a, b
-                if run:
-                    return self.eval(['math', a, op, b])
-                return a, op, b
-
-            if op in '+-*/':
-                # math
-                if run:
-                    return self.eval(['math', a, op, b])
-                return a, op, b
-
-            raise NotImplementedError()
 
         elif key == 'pipe':
             a, b = values
@@ -526,7 +508,7 @@ class BaseShell(Cmd):
             if args:
                 args = self.run_commands(args)
 
-            self._define_function(f, run)
+            self._define_function(f, args, run)
 
             # TODO use parsing.expand_variables_inline
             self.env[f] = InlineFunction(body, args, func_name=f)
@@ -534,10 +516,12 @@ class BaseShell(Cmd):
         elif key == 'define-function':
             f, args = values
 
-            self._define_function(f, run)
+            self._define_function(f, args, run)
 
-            if not isinstance(args, Terms):
-                args = [args]
+            if isinstance(args, Terms):
+                args = [str(arg) for arg in args]
+            else:
+                args = [str(args)]
 
             # TODO use line_indent=self.locals[RAW_LINE_INDENT]
             self.locals.set(DEFINE_FUNCTION,
@@ -707,7 +691,7 @@ class BaseShell(Cmd):
 
         raise NotImplementedError()
 
-    def _define_function(self, f, run):
+    def _define_function(self, f, args, run):
         if not run:
             raise NotImplementedError()
 
@@ -720,6 +704,12 @@ class BaseShell(Cmd):
             logging.warning(
                 'Instances of InlineFunction are incompatible with serialization')
             self.auto_save = False
+
+        if isinstance(args, Terms):
+            args = [str(arg) for arg in args]
+        else:
+            args = [str(args)]
+        return args
 
     def postcmd(self, stop, _):
         """Display the shell_ready_signal to indicate termination to a parent process.

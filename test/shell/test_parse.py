@@ -2,7 +2,7 @@ from pytest import raises
 
 from mash.shell.errors import ShellSyntaxError
 from mash.shell.lex_parser import parse
-from mash.shell.model import ElseIf, ElseIfThen, If, IfThen, IfThenElse, Indent, Lines, Map, Method, Term, Terms, Word
+from mash.shell.model import BinaryExpression, ElseIf, ElseIfThen, If, IfThen, IfThenElse, Indent, Lines, Map, Method, Term, Terms, Word
 
 
 def parse_line(text: str):
@@ -170,7 +170,8 @@ def test_parse_parentheses():
 
     inner = results[0][1].values
     assert inner[0] == 'a'
-    assert inner[1] == ('scope', 'b c')
+    assert inner[1][0] == 'scope'
+    assert inner[1][1].values == ['b', 'c']
     assert isinstance(inner[1][1], Terms)
     assert inner[2] == ('scope', 'd')
 
@@ -220,7 +221,7 @@ def test_parse_indent_multiline():
     assert isinstance(result[2], Indent)
     assert result[0].data is None
     assert result[1].data is None
-    assert result[2] == 'echo'
+    assert result[2].data == 'echo'
 
 
 def test_parse_indent_semicolon():
@@ -237,18 +238,17 @@ def test_parse_if_else():
     assert true == '2'
     assert false == '3'
 
-    key, op, left, right = cond
-    assert 'binary' in key
-    assert op == '=='
-    assert left == '1'
-    assert right == '3'
+    assert isinstance(cond, BinaryExpression)
+    assert cond.op == '=='
+    assert cond.lhs == '1'
+    assert cond.rhs == '3'
 
 
 def test_parse_if_then():
     line = 'if 1 == 3 then 2'
     result = parse_line(line)
     assert isinstance(result, IfThen)
-    assert result.condition[1] == '=='
+    assert result.condition.op == '=='
     assert result.then == '2'
 
     line = 'if true print 2'
@@ -282,7 +282,10 @@ def test_parse_else():
     text = 'else if 2 == 2'
     result = parse_line(text)
     assert isinstance(result, ElseIf)
-    assert result.condition[1:] == ('==', '2', '2')
+
+    assert result.condition.op == '=='
+    assert result.condition.lhs == '2'
+    assert result.condition.rhs == '2'
 
 
 def test_parse_if_then_multiline():
@@ -300,8 +303,10 @@ outer = c
     """
     results = parse(text).values
     assert isinstance(results[0], IfThen)
-    assert results[0].condition[0] == 'binary-expression'
-    assert results[0].condition[1:] == ('==', 'x', 'y')
+
+    assert isinstance(results[0].condition, BinaryExpression)
+
+    assert results[0].condition == BinaryExpression('x', 'y', '==')
 
     assert isinstance(results[1], Indent)
     assert isinstance(results[2], Indent)
@@ -403,8 +408,9 @@ def test_parse_pipes_long():
     assert key == 'pipe'
     assert lhs.values == ['echo', 'a']
 
-    assert rhs[1][1] == '=='
-    assert rhs[1][2].values == ['echo', 'b']
+    assert rhs[1].op == '=='
+    assert rhs[1].lhs.values == ['echo', 'b']
+    assert rhs[1].rhs == 'c'
     assert rhs[2].values == ['echo', 'c']
 
     line = 'echo a |> echo b =='
@@ -471,7 +477,7 @@ print outer
     assert results[2].indent == (4, 0)
 
     assert isinstance(results[1].data, IfThen)
-    assert results[1].data.condition[0] == 'binary-expression'
+    assert isinstance(results[1].data.condition, BinaryExpression)
     assert results[1].data.then[0] == 'return'
     assert results[1].data.then[1].data == '2'
     assert results[2][0] == 'return'
@@ -488,5 +494,7 @@ def test_parse_math():
 
     key, results = parse_line('math 1 == 1')
     assert key == 'math'
-    assert results[0] == 'binary-expression'
-    assert results[1:] == ('==', '1', '1')
+    assert isinstance(results, BinaryExpression)
+    assert results.op == '=='
+    assert results.lhs == '1'
+    assert results.rhs == '1'

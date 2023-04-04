@@ -1,5 +1,6 @@
 from collections import UserString
 from typing import Iterable, List
+from mash.shell import delimiters
 from mash.shell.delimiters import FALSE, IF, INLINE_ELSE, INLINE_THEN, THEN, TRUE, to_bool
 from mash.shell.if_statement import LINE_INDENT, Abort, State, handle_else_statement, handle_then_statement
 from mash.shell.parsing import expand_variables, indent_width
@@ -34,9 +35,15 @@ class Node(UserString):
     def __repr__(self):
         return f'{type(self).__name__}( {str(self.data)} )'
 
+    def __eq__(self, other):
+        return hasattr(other, 'data') and self.data == other.data and type(self) == type(other)
+
 
 class Term(Node):
-    pass
+    def __eq__(self, other):
+        """Literal comparison
+        """
+        return self.data == other
 
 
 class Word(Term):
@@ -89,15 +96,34 @@ class Indent(Node):
         return f'{type(self).__name__}( {repr(self.data)} )'
 
 
-class Map(Node):
-    def __init__(self, lhs, rhs):
+class Infix(Node):
+    def __init__(self, lhs, rhs, op=None):
+        """An infix operator expression.
+
+        Parameters
+        ----------
+        lsh : left-hand side
+        rsh : right-hand side
+        op : operator
+        """
         self.lhs = lhs
+        self.op = op
         self.rhs = rhs
+
+    def __eq__(self, other):
+        return all((self.lhs == other.lhs,
+                   self.rhs == other.rhs,
+                   self.op == other.op))
+
+    def __repr__(self):
+        return f'{type(self).__name__}( {repr(self.lhs)}, {repr(self.rhs)} )'
 
     @property
     def data(self):
         return TRUE
 
+
+class Map(Infix):
     def run(self, prev_result='', shell=None, lazy=False):
         lhs, rhs = self.lhs, self.rhs
         prev = shell.run_commands(lhs, prev_result, run=not lazy)
@@ -137,6 +163,30 @@ class Map(Node):
             return ''
 
         return delimiter.join(quote_all(results))
+
+
+class BinaryExpression(Infix):
+    def run(self, prev_result='', shell=None, lazy=False):
+        if prev_result not in (TRUE, FALSE):
+            raise NotImplementedError('prev_result was not empty')
+
+        op = self.op
+        a = shell.run_commands(self.lhs, run=not lazy)
+        b = shell.run_commands(self.rhs, run=not lazy)
+
+        if op in delimiters.comparators:
+            # TODO join a, b
+            if not lazy:
+                return shell.eval(['math', a, op, b])
+            return a, op, b
+
+        if op in '+-*/':
+            # math
+            if not lazy:
+                return shell.eval(['math', a, op, b])
+            return a, op, b
+
+        raise NotImplementedError()
 
 ################################################################################
 # Conditions
@@ -296,6 +346,9 @@ class Nodes(Node):
 
     def extend(self, nodes: Node):
         self.values += nodes.values
+
+    def __eq__(self, other):
+        return self.values == other.values and type(self) == type(other)
 
     @property
     def data(self):
