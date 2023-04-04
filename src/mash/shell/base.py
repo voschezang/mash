@@ -21,7 +21,7 @@ from mash.shell.errors import ShellError, ShellPipeError, ShellSyntaxError
 from mash.shell.function import InlineFunction
 from mash.shell.if_statement import LINE_INDENT, Abort, State, close_prev_if_statement, close_prev_if_statements, handle_else_statement, handle_prev_then_else_statements, handle_then_statement
 from mash.shell.lex_parser import parse
-from mash.shell.model import ElseCondition, ElseIf, ElseIfThen, Indent, Lines, Node, Nodes, Term, Terms, Word
+from mash.shell.model import Else, ElseCondition, ElseIf, ElseIfThen, Indent, Lines, Node, Nodes, Term, Terms, Then, Word
 from mash.shell.parsing import expand_variables, filter_comments, indent_width, infer_infix_args, quote_items
 from mash.util import for_any, has_method, identity, is_valid_method_name, omit_prefixes, quote_all, split_prefixes
 
@@ -478,9 +478,7 @@ class BaseShell(Cmd):
                 # TODO this will only be triggered after a non-Word command
                 self._finalize_define_function(f)
 
-        if key not in ('else', ) and \
-                not isinstance(ast, ElseIf) and \
-                not isinstance(ast, ElseIfThen) and \
+        if not isinstance(ast, ElseCondition) and \
                 not isinstance(ast, Indent) and \
                 not isinstance(ast, Lines):
             try:
@@ -572,24 +570,6 @@ class BaseShell(Cmd):
 
             return ' '.join(quote_all((a, op, b), ignore=list('*<>')))
 
-        elif key == 'else':
-            otherwise, = values
-            if not run:
-                raise NotImplementedError()
-
-            result = None
-            try:
-                # verify & update state
-                handle_else_statement(self)
-                if otherwise:
-                    result = self.run_commands(otherwise, run=run)
-            except Abort:
-                pass
-
-            if otherwise is not None:
-                self._last_if['branch'] = INLINE_ELSE
-            return result
-
         elif key == 'define-inline-function':
             f, args, body = values
             if args:
@@ -653,8 +633,10 @@ class BaseShell(Cmd):
             closed = self._last_if['branch'] in (INLINE_THEN, INLINE_ELSE)
 
             if width < self._last_if['line_indent'] or (
-                width == self._last_if['line_indent'] and
-                    inner[0] not in ['then', 'else']):
+                    width == self._last_if['line_indent'] and
+                inner[0] not in ['then', 'else'] and
+                    not isinstance(inner[0], Then) and
+                    not isinstance(inner[0], Else)):
 
                 close_prev_if_statements(self, width)
 
@@ -725,8 +707,7 @@ class BaseShell(Cmd):
                 close_prev_if_statements(self, width)
 
             if self.locals[IF] and not isinstance(item, Indent):
-                if not item[0].startswith('then') and \
-                        not item[0].startswith('else') and \
+                if not isinstance(item, Then) and \
                         not isinstance(item, ElseCondition):
                     close_prev_if_statement(self)
 

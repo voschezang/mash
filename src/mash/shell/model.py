@@ -1,6 +1,6 @@
 from collections import UserString
 from typing import List
-from mash.shell.delimiters import FALSE, IF, INLINE_THEN, THEN, TRUE, to_bool
+from mash.shell.delimiters import FALSE, IF, INLINE_ELSE, INLINE_THEN, THEN, TRUE, to_bool
 from mash.shell.if_statement import LINE_INDENT, Abort, State, handle_else_statement, handle_then_statement
 from mash.shell.parsing import expand_variables, indent_width
 
@@ -202,6 +202,25 @@ class ElseIf(ElseCondition):
 
     def __repr__(self):
         return f'{type(self).__name__}( {repr(self.condition)} )'
+
+
+class Else(ElseCondition):
+    def run(self, prev_result='', shell=None, lazy=False):
+        if lazy:
+            raise NotImplementedError()
+
+        result = None
+        try:
+            # verify & update state
+            handle_else_statement(shell)
+            if self.otherwise:
+                result = shell.run_commands(self.otherwise, run=not lazy)
+        except Abort:
+            pass
+
+        if self.otherwise is not None:
+            self._last_if['branch'] = INLINE_ELSE
+        return result
 
 ################################################################################
 # Containers
