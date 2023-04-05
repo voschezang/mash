@@ -1,7 +1,7 @@
 from logging import getLogger
 import ply.lex as lex
 import ply.yacc as yacc
-from mash.shell.model import BinaryExpression, Else, ElseIf, ElseIfThen, If, IfThen, IfThenElse, Indent, Lines, Map, Method, Quoted, Terms, Then, Variable, Word
+from mash.shell.model import BinaryExpression, Else, ElseIf, ElseIfThen, If, IfThen, IfThenElse, Indent, Lines, LogicExpression, Map, Method, Quoted, Terms, Then, Variable, Word
 from mash.shell.parsing import indent_width
 from mash.shell.errors import ShellSyntaxError
 
@@ -433,7 +433,7 @@ def parse(text, init=True):
                 | logic_expression OR logic_expression
         """
         # TODO use flat tree any/all (or, a, b, c) = any : e OR any  | e OR e
-        p[0] = ('logic', p[2], p[1], p[3])
+        p[0] = LogicExpression(p[1], p[3], p[2])
 
     def p_logic_expression_infix(p):
         'logic_expression : terms INFIX_OPERATOR logic_expression'

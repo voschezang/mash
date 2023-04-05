@@ -489,19 +489,6 @@ class BaseShell(Cmd):
                                                 ignore=list('*$<>') + ['>=', '<=']))
             return self.pipe_cmd_py(line, '')
 
-        elif key == 'logic':
-            op, a, b = values
-            a = self.run_commands(a, run=run)
-            b = self.run_commands(b, run=run)
-            if run:
-                a = to_bool(a)
-                b = to_bool(b)
-                if op == 'or':
-                    return a or b
-                elif op == 'and':
-                    return a and b
-
-            return ' '.join(quote_all((a, op, b), ignore=list('*<>')))
 
         elif key == 'define-inline-function':
             f, args, body = values

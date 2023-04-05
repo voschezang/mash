@@ -188,6 +188,22 @@ class BinaryExpression(Infix):
 
         raise NotImplementedError()
 
+
+class LogicExpression(Infix):
+    def run(self, prev_result='', shell=None, lazy=False):
+        a = shell.run_commands(self.lhs, run=not lazy)
+        b = shell.run_commands(self.rhs, run=not lazy)
+        if not lazy:
+            a = to_bool(a)
+            b = to_bool(b)
+            if self.op == 'or':
+                return a or b
+            elif self.op == 'and':
+                return a and b
+
+        return ' '.join(quote_all((a, self.op, b), ignore=list('*<>')))
+
+
 ################################################################################
 # Conditions
 ################################################################################
