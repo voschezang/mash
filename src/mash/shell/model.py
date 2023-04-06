@@ -90,6 +90,19 @@ class Pipe(Infix):
         return next
 
 
+class BashPipe(Infix):
+    def run(self, prev_result='', shell=None, lazy=False):
+        prev = shell.run_commands(self.lhs, prev_result, run=not lazy)
+        line = shell.run_commands(self.rhs, run=False)
+
+        # TODO also quote prev result
+        if not isinstance(line, str) and not isinstance(line, Term):
+            line = ' '.join(quote_all(line, ignore=['*']))
+
+        next = shell.pipe_cmd_sh(line, prev, delimiter=self.op)
+        return next
+
+
 class Map(Infix):
     def run(self, prev_result='', shell=None, lazy=False):
         lhs, rhs = self.lhs, self.rhs

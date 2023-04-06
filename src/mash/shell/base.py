@@ -460,18 +460,6 @@ class BaseShell(Cmd):
         elif key == 'assign':
             return self.run_handle_assign(values, prev_result, run)
 
-        elif key == 'bash':
-            op, a, b = values
-            prev = self.run_commands(a, prev_result, run=run)
-            line = self.run_commands(b, run=False)
-
-            # TODO also quote prev result
-            if not isinstance(line, str) and not isinstance(line, Term):
-                line = ' '.join(quote_all(line, ignore=['*']))
-
-            next = self.pipe_cmd_sh(line, prev, delimiter=op)
-            return next
-
         elif key == 'math':
             _key, values = ast
             args = self.run_commands(values, prev_result)
