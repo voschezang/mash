@@ -39,50 +39,6 @@ class Node(UserString):
         return hasattr(other, 'data') and self.data == other.data and type(self) == type(other)
 
 
-class Term(Node):
-    def __eq__(self, other):
-        """Literal comparison
-        """
-        return self.data == other
-
-
-class Word(Term):
-    def __init__(self, value, string_type=''):
-        self.data = value
-        self.type = string_type
-
-
-class Method(Term):
-    def run(self, prev_result='', shell=None, lazy=False):
-        if not lazy:
-            if shell.is_function(self.data):
-                return shell.pipe_cmd_py(self.data, prev_result)
-
-            return shell._default_method(str(self.data))
-
-        return super().run(prev_result, shell, lazy)
-
-
-class Variable(Term):
-    def run(self, prev_result='', shell=None, lazy=False):
-        if not lazy:
-            k = self.data[1:]
-            return shell.env[k]
-
-        return super().run(prev_result, shell, lazy)
-
-
-class Quoted(Term):
-    def run(self, prev_result='', shell=None, lazy=False):
-        delimiter = ' '
-        items = self.data.split(delimiter)
-        items = list(expand_variables(items, shell.env,
-                                      shell.completenames_options,
-                                      shell.ignore_invalid_syntax,
-                                      escape=True))
-        return delimiter.join(items)
-
-
 class Indent(Node):
     def __init__(self, value, indent):
         self.data = value
@@ -116,11 +72,22 @@ class Infix(Node):
                    self.op == other.op))
 
     def __repr__(self):
-        return f'{type(self).__name__}( {repr(self.lhs)}, {repr(self.rhs)} )'
+        f = f'{type(self).__name__}'
+        args = f'( {repr(self.lhs)}, {repr(self.rhs)} )'
+        if self.op:
+            return f'{f}[{self.op}]{args}'
+        return f'{f}{args}'
 
     @property
     def data(self):
         return TRUE
+
+
+class Pipe(Infix):
+    def run(self, prev_result='', shell=None, lazy=False):
+        prev = shell.run_commands(self.lhs, prev_result, run=not lazy)
+        next = shell.run_commands(self.rhs, prev, run=not lazy)
+        return next
 
 
 class Map(Infix):
@@ -188,6 +155,9 @@ class BinaryExpression(Infix):
 
         raise NotImplementedError()
 
+    def __repr__(self):
+        return f'{type(self).__name__}[{self.op}]( {repr(self.lhs)}, {repr(self.rhs)} )'
+
 
 class LogicExpression(Infix):
     def run(self, prev_result='', shell=None, lazy=False):
@@ -202,6 +172,55 @@ class LogicExpression(Infix):
                 return a and b
 
         return ' '.join(quote_all((a, self.op, b), ignore=list('*<>')))
+
+
+################################################################################
+# Terms
+################################################################################
+
+
+class Term(Node):
+    def __eq__(self, other):
+        """Literal comparison
+        """
+        return self.data == other
+
+
+class Word(Term):
+    def __init__(self, value, string_type=''):
+        self.data = value
+        self.type = string_type
+
+
+class Method(Term):
+    def run(self, prev_result='', shell=None, lazy=False):
+        if not lazy:
+            if shell.is_function(self.data):
+                return shell.pipe_cmd_py(self.data, prev_result)
+
+            return shell._default_method(str(self.data))
+
+        return super().run(prev_result, shell, lazy)
+
+
+class Variable(Term):
+    def run(self, prev_result='', shell=None, lazy=False):
+        if not lazy:
+            k = self.data[1:]
+            return shell.env[k]
+
+        return super().run(prev_result, shell, lazy)
+
+
+class Quoted(Term):
+    def run(self, prev_result='', shell=None, lazy=False):
+        delimiter = ' '
+        items = self.data.split(delimiter)
+        items = list(expand_variables(items, shell.env,
+                                      shell.completenames_options,
+                                      shell.ignore_invalid_syntax,
+                                      escape=True))
+        return delimiter.join(items)
 
 
 ################################################################################

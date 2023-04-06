@@ -2,7 +2,7 @@ from pytest import raises
 
 from mash.shell.errors import ShellSyntaxError
 from mash.shell.lex_parser import parse
-from mash.shell.model import BinaryExpression, ElseIf, ElseIfThen, If, IfThen, IfThenElse, Indent, Lines, Map, Method, Term, Terms, Word
+from mash.shell.model import BinaryExpression, ElseIf, ElseIfThen, If, IfThen, IfThenElse, Indent, Lines, Map, Method, Pipe, Term, Terms, Word
 
 
 def parse_line(text: str):
@@ -370,17 +370,16 @@ def test_parse_bash_pipe():
 
 def test_parse_pipe():
     result = parse_line('print a |> echo')
-    key, lhs, rhs = result
-    assert key == 'pipe'
-    assert isinstance(lhs, Terms)
-    assert rhs == 'echo'
+    assert isinstance(result, Pipe)
+    assert isinstance(result.lhs, Terms)
+    assert result.rhs == 'echo'
 
 
 def test_parse_pipe_multiple():
     result = parse_line('print a |> echo 1 >>= echo 2 | echo')
-    key, lhs, m = result
-    assert key == 'pipe'
-    assert lhs.values == ['print', 'a']
+    assert isinstance(result, Pipe)
+    assert result.lhs.values == ['print', 'a']
+    m = result.rhs
     assert isinstance(m, Map)
     assert m.lhs.values == ['echo', '1']
     assert m.rhs[1] == '|'
@@ -395,23 +394,22 @@ def test_parse_pipe_assign():
     assert symbol == '<-'
     assert var == 'a'
 
-    key, lhs, rhs = line
-    assert key == 'pipe'
-    assert lhs.values == ['echo', 'a']
-    assert rhs.values == ['echo', 'b']
+    assert isinstance(line, Pipe)
+    assert line.lhs.values == ['echo', 'a']
+    assert line.rhs.values == ['echo', 'b']
 
 
 def test_parse_pipes_long():
     result = parse_line('echo a |> echo b == c |> echo c')
-    key, lhs, rhs = result
+    assert isinstance(result, Pipe)
 
-    assert key == 'pipe'
-    assert lhs.values == ['echo', 'a']
+    assert result.lhs.values == ['echo', 'a']
+    inner = result.rhs.lhs
 
-    assert rhs[1].op == '=='
-    assert rhs[1].lhs.values == ['echo', 'b']
-    assert rhs[1].rhs == 'c'
-    assert rhs[2].values == ['echo', 'c']
+    assert inner.op == '=='
+    assert inner.lhs.values == ['echo', 'b']
+    assert inner.rhs == 'c'
+    assert result.rhs.rhs.values == ['echo', 'c']
 
     line = 'echo a |> echo b =='
     with raises(ShellSyntaxError):
@@ -421,10 +419,9 @@ def test_parse_pipes_long():
 def test_parse_pipes_if_then():
     text = 'echo 1 |> if true then echo true else echo false'
     result = parse_line(text)
-    key, lhs, rhs = result
-    assert key == 'pipe'
-    assert lhs.values == ['echo', '1']
-    assert isinstance(rhs, IfThenElse)
+    assert isinstance(result, Pipe)
+    assert result.lhs.values == ['echo', '1']
+    assert isinstance(result.rhs, IfThenElse)
 
     with raises(ShellSyntaxError):
         text = 'echo 1 |> if true'
@@ -454,9 +451,9 @@ def test_parse_inline_function_with_pipe():
     assert result[0] == 'define-inline-function'
     assert result[1] == 'f'
     assert result[2].values == ['x', 'y']
-    assert result[3][0] == 'pipe'
-    assert result[3][1].values == ['echo', 'x']
-    assert result[3][2] == 'echo'
+    assert isinstance(result[3], Pipe)
+    assert result[3].lhs.values == ['echo', 'x']
+    assert result[3].rhs == 'echo'
 
 
 def test_parse_function():

@@ -460,12 +460,6 @@ class BaseShell(Cmd):
         elif key == 'assign':
             return self.run_handle_assign(values, prev_result, run)
 
-        elif key == 'pipe':
-            a, b = values
-            prev = self.run_commands(a, prev_result, run=run)
-            next = self.run_commands(b, prev, run=run)
-            return next
-
         elif key == 'bash':
             op, a, b = values
             prev = self.run_commands(a, prev_result, run=run)
@@ -488,7 +482,6 @@ class BaseShell(Cmd):
             line = 'math ' + ' '.join(quote_all(args,
                                                 ignore=list('*$<>') + ['>=', '<=']))
             return self.pipe_cmd_py(line, '')
-
 
         elif key == 'define-inline-function':
             f, args, body = values
