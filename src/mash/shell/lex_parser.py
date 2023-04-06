@@ -1,7 +1,7 @@
 from logging import getLogger
 import ply.lex as lex
 import ply.yacc as yacc
-from mash.shell.model import BashPipe, BinaryExpression, Else, ElseIf, ElseIfThen, If, IfThen, IfThenElse, Indent, Lines, LogicExpression, Map, Method, Pipe, Quoted, Shell, Terms, Then, Variable, Word
+from mash.shell.model import BashPipe, BinaryExpression, Else, ElseIf, ElseIfThen, If, IfThen, IfThenElse, Indent, Lines, LogicExpression, Map, Math, Method, Pipe, Quoted, Shell, Terms, Then, Variable, Word
 from mash.shell.parsing import indent_width
 from mash.shell.errors import ShellSyntaxError
 
@@ -417,7 +417,7 @@ def parse(text, init=True):
 
     def p_math(p):
         'expression : MATH expression'
-        p[0] = ('math', p[2])
+        p[0] = Math(p[2])
 
     def p_basic_expression(p):
         """basic_expression : join

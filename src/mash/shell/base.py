@@ -460,17 +460,6 @@ class BaseShell(Cmd):
         elif key == 'assign':
             return self.run_handle_assign(values, prev_result, run)
 
-        elif key == 'math':
-            _key, values = ast
-            args = self.run_commands(values, prev_result)
-
-            if not run:
-                return ['math'] + args
-
-            line = 'math ' + ' '.join(quote_all(args,
-                                                ignore=list('*$<>') + ['>=', '<=']))
-            return self.pipe_cmd_py(line, '')
-
         elif key == 'define-inline-function':
             f, args, body = values
             if args:
@@ -500,7 +489,6 @@ class BaseShell(Cmd):
             line = values[0]
             result = self.run_commands(line, run=run)
             return ('return', result)
-
 
         else:
             raise NotImplementedError()

@@ -2,7 +2,7 @@ from pytest import raises
 
 from mash.shell.errors import ShellSyntaxError
 from mash.shell.lex_parser import parse
-from mash.shell.model import BashPipe, BinaryExpression, ElseIf, ElseIfThen, If, IfThen, IfThenElse, Indent, Lines, Map, Method, Pipe, Term, Terms, Word
+from mash.shell.model import BashPipe, BinaryExpression, ElseIf, ElseIfThen, If, IfThen, IfThenElse, Indent, Lines, Map, Math, Method, Pipe, Term, Terms, Word
 
 
 def parse_line(text: str):
@@ -486,14 +486,14 @@ print outer
 
 
 def test_parse_math():
-    key, results = parse_line('math 1 + 1')
-    assert key == 'math'
-    assert isinstance(results, Terms)
-    assert results.values == ['1', '+', '1']
+    result = parse_line('math 1 + 1')
+    assert isinstance(result, Math)
+    assert isinstance(result.data, Terms)
+    assert result.data.values == ['1', '+', '1']
 
-    key, results = parse_line('math 1 == 1')
-    assert key == 'math'
-    assert isinstance(results, BinaryExpression)
-    assert results.op == '=='
-    assert results.lhs == '1'
-    assert results.rhs == '1'
+    result = parse_line('math 1 == 1')
+    assert isinstance(result, Math)
+    assert isinstance(result.data, BinaryExpression)
+    assert result.data.op == '=='
+    assert result.data.lhs == '1'
+    assert result.data.rhs == '1'

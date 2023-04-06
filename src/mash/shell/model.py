@@ -56,6 +56,18 @@ class Indent(Node):
         return f'{type(self).__name__}( {repr(self.data)} )'
 
 
+class Math(Node):
+    def run(self, prev_result='', shell=None, lazy=False):
+        args = shell.run_commands(self.data, prev_result)
+
+        if lazy:
+            return ['math'] + args
+
+        line = 'math ' + ' '.join(quote_all(args,
+                                            ignore=list('*$<>') + ['>=', '<=']))
+        return shell.pipe_cmd_py(line, '')
+
+
 class Shell(Node):
     def run(self, prev_result='', shell=None, lazy=False):
         terms = shell.run_commands(self.data)
@@ -71,6 +83,59 @@ class Shell(Node):
         if not lazy:
             return shell.pipe_cmd_sh(line, prev_result, delimiter=None)
         return ' '.join(line)
+
+
+################################################################################
+# Terms
+################################################################################
+
+
+class Term(Node):
+    def __eq__(self, other):
+        """Literal comparison
+        """
+        return self.data == other
+
+
+class Word(Term):
+    def __init__(self, value, string_type=''):
+        self.data = value
+        self.type = string_type
+
+
+class Method(Term):
+    def run(self, prev_result='', shell=None, lazy=False):
+        if not lazy:
+            if shell.is_function(self.data):
+                return shell.pipe_cmd_py(self.data, prev_result)
+
+            return shell._default_method(str(self.data))
+
+        return super().run(prev_result, shell, lazy)
+
+
+class Variable(Term):
+    def run(self, prev_result='', shell=None, lazy=False):
+        if not lazy:
+            k = self.data[1:]
+            return shell.env[k]
+
+        return super().run(prev_result, shell, lazy)
+
+
+class Quoted(Term):
+    def run(self, prev_result='', shell=None, lazy=False):
+        delimiter = ' '
+        items = self.data.split(delimiter)
+        items = list(expand_variables(items, shell.env,
+                                      shell.completenames_options,
+                                      shell.ignore_invalid_syntax,
+                                      escape=True))
+        return delimiter.join(items)
+
+################################################################################
+# Infix Operator Expressions
+################################################################################
 
 
 class Infix(Node):
@@ -206,56 +271,6 @@ class LogicExpression(Infix):
                 return a and b
 
         return ' '.join(quote_all((a, self.op, b), ignore=list('*<>')))
-
-
-################################################################################
-# Terms
-################################################################################
-
-
-class Term(Node):
-    def __eq__(self, other):
-        """Literal comparison
-        """
-        return self.data == other
-
-
-class Word(Term):
-    def __init__(self, value, string_type=''):
-        self.data = value
-        self.type = string_type
-
-
-class Method(Term):
-    def run(self, prev_result='', shell=None, lazy=False):
-        if not lazy:
-            if shell.is_function(self.data):
-                return shell.pipe_cmd_py(self.data, prev_result)
-
-            return shell._default_method(str(self.data))
-
-        return super().run(prev_result, shell, lazy)
-
-
-class Variable(Term):
-    def run(self, prev_result='', shell=None, lazy=False):
-        if not lazy:
-            k = self.data[1:]
-            return shell.env[k]
-
-        return super().run(prev_result, shell, lazy)
-
-
-class Quoted(Term):
-    def run(self, prev_result='', shell=None, lazy=False):
-        delimiter = ' '
-        items = self.data.split(delimiter)
-        items = list(expand_variables(items, shell.env,
-                                      shell.completenames_options,
-                                      shell.ignore_invalid_syntax,
-                                      escape=True))
-        return delimiter.join(items)
-
 
 ################################################################################
 # Conditions
