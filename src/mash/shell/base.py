@@ -501,20 +501,6 @@ class BaseShell(Cmd):
             result = self.run_commands(line, run=run)
             return ('return', result)
 
-        elif key == '!':
-            terms = self.run_commands(values[0])
-            if isinstance(terms, str) or isinstance(terms, Term):
-                line = str(terms)
-            else:
-                line = ' '.join(terms)
-
-            if line == '' and prev_result == '':
-                print('No arguments received for `!`')
-                return FALSE
-
-            if run:
-                return self.pipe_cmd_sh(line, prev_result, delimiter=None)
-            return ' '.join(line)
 
         else:
             raise NotImplementedError()

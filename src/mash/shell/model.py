@@ -15,6 +15,10 @@ LAST_RESULTS_INDEX = '_last_results_index'
 
 
 class Node(UserString):
+    def __init__(self, data=''):
+        # store value transparently
+        self.data = data
+
     def run(self, prev_result='', shell=None, lazy=False):
         if lazy:
             return self.data
@@ -50,6 +54,23 @@ class Indent(Node):
 
     def __repr__(self):
         return f'{type(self).__name__}( {repr(self.data)} )'
+
+
+class Shell(Node):
+    def run(self, prev_result='', shell=None, lazy=False):
+        terms = shell.run_commands(self.data)
+        if isinstance(terms, str) or isinstance(terms, Term):
+            line = str(terms)
+        else:
+            line = ' '.join(terms)
+
+        if line == '' and prev_result == '':
+            print('No arguments received for `!`')
+            return FALSE
+
+        if not lazy:
+            return shell.pipe_cmd_sh(line, prev_result, delimiter=None)
+        return ' '.join(line)
 
 
 class Infix(Node):
@@ -242,7 +263,7 @@ class Quoted(Term):
 
 
 class Condition(Node):
-    def __init__(self, condition, then=None, otherwise=None):
+    def __init__(self, condition=None, then=None, otherwise=None):
         self.condition = condition
         self.then = then
         self.otherwise = otherwise

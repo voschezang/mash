@@ -1,7 +1,7 @@
 from logging import getLogger
 import ply.lex as lex
 import ply.yacc as yacc
-from mash.shell.model import BashPipe, BinaryExpression, Else, ElseIf, ElseIfThen, If, IfThen, IfThenElse, Indent, Lines, LogicExpression, Map, Method, Pipe, Quoted, Terms, Then, Variable, Word
+from mash.shell.model import BashPipe, BinaryExpression, Else, ElseIf, ElseIfThen, If, IfThen, IfThenElse, Indent, Lines, LogicExpression, Map, Method, Pipe, Quoted, Shell, Terms, Then, Variable, Word
 from mash.shell.parsing import indent_width
 from mash.shell.errors import ShellSyntaxError
 
@@ -339,7 +339,7 @@ def parse(text, init=True):
 
     def p_if_then(p):
         'conditional : IF conjunction THEN'
-        p[0] = IfThen(p[2], None)
+        p[0] = IfThen(p[2])
 
     def p_if_then_inline_final(p):
         'conditional : IF conjunction THEN return_statement'
@@ -362,7 +362,7 @@ def parse(text, init=True):
         if len(p) == 6:
             p[0] = ElseIfThen(p[3], p[5])
         else:
-            p[0] = ElseIfThen(p[3], None)
+            p[0] = ElseIfThen(p[3])
 
     def p_else_if(p):
         'conditional : ELSE IF conjunction'
@@ -373,7 +373,7 @@ def parse(text, init=True):
                        | ELSE
         """
         if len(p) == 2:
-            p[0] = Else(None)
+            p[0] = Else()
         else:
             p[0] = Else(p[2])
 
@@ -409,11 +409,11 @@ def parse(text, init=True):
 
     def p_shell(p):
         'expression : SHELL expression'
-        p[0] = ('!', p[2])
+        p[0] = Shell(p[2])
 
     def p_shell_empty(p):
         'expression : SHELL'
-        p[0] = ('!', '')
+        p[0] = Shell()
 
     def p_math(p):
         'expression : MATH expression'
