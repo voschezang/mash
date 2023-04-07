@@ -299,11 +299,11 @@ def parse(text, init=True):
 
     def p_def_inline_function(p):
         'definition : METHOD LPAREN terms RPAREN DEFINE_FUNCTION inner_statement'
-        p[0] = InlineFunctionDefinition(p[1], p[6], p[3])
+        p[0] = InlineFunctionDefinition(p[1], p[3], body=p[6] )
 
     def p_def_inline_function_constant(p):
         'definition : METHOD LPAREN RPAREN DEFINE_FUNCTION inner_statement'
-        p[0] = InlineFunctionDefinition(p[1], p[5])
+        p[0] = InlineFunctionDefinition(p[1], body=p[5])
 
     def p_def_function(p):
         'definition : METHOD LPAREN terms RPAREN DEFINE_FUNCTION'

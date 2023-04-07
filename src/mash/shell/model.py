@@ -1,11 +1,13 @@
 from collections import UserString
+import logging
 from typing import Iterable, List
 from mash.shell import delimiters
 from mash.shell.delimiters import DEFINE_FUNCTION, FALSE, IF, INLINE_ELSE, INLINE_THEN, THEN, TRUE, to_bool
+from mash.shell.errors import ShellError
 from mash.shell.function import InlineFunction
 from mash.shell.if_statement import LINE_INDENT, Abort, State, handle_else_statement, handle_then_statement
 from mash.shell.parsing import expand_variables, indent_width
-from mash.util import quote_all
+from mash.util import has_method, quote_all
 
 LAST_RESULTS = '_last_results'
 LAST_RESULTS_INDEX = '_last_results_index'
@@ -459,37 +461,43 @@ class Lines(Nodes):
 
 
 class FunctionDefinition(Node):
-    def __init__(self, f, args=None):
+    def __init__(self, f, args=None, body=None):
         self.f = f
         self.args = [] if args is None else args
+        self.body = body
 
     def run(self, prev_result='', shell=None, lazy=False):
-        args = self.args
-        shell._define_function(self.f, args, not lazy)
-
-        if isinstance(args, Terms):
-            args = [str(arg) for arg in args]
-        else:
-            args = [str(args)]
+        args = self.define_function(shell, lazy)
 
         # TODO use line_indent=self.locals[RAW_LINE_INDENT]
         shell.locals.set(DEFINE_FUNCTION,
                          InlineFunction('', args, func_name=self.f))
         shell.prompt = '>>>    '
 
+    def define_function(self, shell, lazy: bool):
+        if lazy:
+            raise NotImplementedError()
 
-class InlineFunctionDefinition(Node):
-    def __init__(self, f, body, args=None):
-        self.f = f
-        self.body = body
-        self.args = [] if args is None else args
-
-    def run(self, prev_result='', shell=None, lazy=False):
         args = self.args
         if args:
             args = shell.run_commands(args)
 
-        shell._define_function(self.f, args, not lazy)
+        if has_method(shell, f'do_{self.f}'):
+            raise ShellError()
+        elif shell.is_function(self.f):
+            logging.debug(f'Re-define existing function: {self.f}')
+
+        if shell.auto_save:
+            logging.warning(
+                'Instances of InlineFunction are incompatible with serialization')
+            shell.auto_save = False
+
+        return args
+
+
+class InlineFunctionDefinition(FunctionDefinition):
+    def run(self, prev_result='', shell=None, lazy=False):
+        args = self.define_function(shell, lazy)
 
         # TODO use parsing.expand_variables_inline
         shell.env[self.f] = InlineFunction(self.body, args, func_name=self.f)

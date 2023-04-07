@@ -460,31 +460,6 @@ class BaseShell(Cmd):
         elif key == 'assign':
             return self.run_handle_assign(values, prev_result, run)
 
-        elif key == 'define-inline-function':
-            f, args, body = values
-            if args:
-                args = self.run_commands(args)
-
-            self._define_function(f, args, run)
-
-            # TODO use parsing.expand_variables_inline
-            self.env[f] = InlineFunction(body, args, func_name=f)
-
-        elif key == 'define-function':
-            f, args = values
-
-            self._define_function(f, args, run)
-
-            if isinstance(args, Terms):
-                args = [str(arg) for arg in args]
-            else:
-                args = [str(args)]
-
-            # TODO use line_indent=self.locals[RAW_LINE_INDENT]
-            self.locals.set(DEFINE_FUNCTION,
-                            InlineFunction('', args, func_name=f))
-            self.prompt = '>>>    '
-
         elif key == 'return':
             line = values[0]
             result = self.run_commands(line, run=run)
@@ -632,26 +607,6 @@ class BaseShell(Cmd):
             raise NotImplementedError(RIGHT_ASSIGNMENT)
 
         raise NotImplementedError()
-
-    def _define_function(self, f, args, run):
-        if not run:
-            raise NotImplementedError()
-
-        if has_method(self, f'do_{f}'):
-            raise ShellError()
-        elif self.is_function(f):
-            logging.debug(f'Re-define existing function: {f}')
-
-        if self.auto_save:
-            logging.warning(
-                'Instances of InlineFunction are incompatible with serialization')
-            self.auto_save = False
-
-        if isinstance(args, Terms):
-            args = [str(arg) for arg in args]
-        else:
-            args = [str(args)]
-        return args
 
     def postcmd(self, stop, _):
         """Display the shell_ready_signal to indicate termination to a parent process.
