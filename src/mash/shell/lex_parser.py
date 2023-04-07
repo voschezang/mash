@@ -307,13 +307,11 @@ def parse(text, init=True):
 
     def p_def_function(p):
         'definition : METHOD LPAREN terms RPAREN DEFINE_FUNCTION'
-        p[0] = ('define-function', p[1], p[3])
-        # p[0] = FunctionDefinition(p[1], p[3])
+        p[0] = FunctionDefinition(p[1], p[3])
 
     def p_def_function_constant(p):
         'definition : METHOD LPAREN RPAREN DEFINE_FUNCTION'
-        p[0] = ('define-function', p[1], p[3])
-        # p[0] = FunctionDefinition(p[1], p[3])
+        p[0] = FunctionDefinition(p[1])
 
     def p_scope(p):
         'scope : LPAREN inner_statement RPAREN'

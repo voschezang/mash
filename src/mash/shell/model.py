@@ -1,7 +1,7 @@
 from collections import UserString
 from typing import Iterable, List
 from mash.shell import delimiters
-from mash.shell.delimiters import FALSE, IF, INLINE_ELSE, INLINE_THEN, THEN, TRUE, to_bool
+from mash.shell.delimiters import DEFINE_FUNCTION, FALSE, IF, INLINE_ELSE, INLINE_THEN, THEN, TRUE, to_bool
 from mash.shell.function import InlineFunction
 from mash.shell.if_statement import LINE_INDENT, Abort, State, handle_else_statement, handle_then_statement
 from mash.shell.parsing import expand_variables, indent_width
@@ -461,18 +461,28 @@ class Lines(Nodes):
 class FunctionDefinition(Node):
     def __init__(self, f, args=None):
         self.f = f
-        self.args = args
+        self.args = [] if args is None else args
+
+    def run(self, prev_result='', shell=None, lazy=False):
+        args = self.args
+        shell._define_function(self.f, args, not lazy)
+
+        if isinstance(args, Terms):
+            args = [str(arg) for arg in args]
+        else:
+            args = [str(args)]
+
+        # TODO use line_indent=self.locals[RAW_LINE_INDENT]
+        shell.locals.set(DEFINE_FUNCTION,
+                         InlineFunction('', args, func_name=self.f))
+        shell.prompt = '>>>    '
 
 
 class InlineFunctionDefinition(Node):
     def __init__(self, f, body, args=None):
         self.f = f
         self.body = body
-
-        if args is None:
-            self.args = []
-        else:
-            self.args = args
+        self.args = [] if args is None else args
 
     def run(self, prev_result='', shell=None, lazy=False):
         args = self.args

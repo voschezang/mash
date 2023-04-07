@@ -2,7 +2,7 @@ from pytest import raises
 
 from mash.shell.errors import ShellSyntaxError
 from mash.shell.lex_parser import parse
-from mash.shell.model import BashPipe, BinaryExpression, ElseIf, ElseIfThen, If, IfThen, IfThenElse, Indent, InlineFunctionDefinition, Lines, Map, Math, Method, Pipe, Term, Terms, Word
+from mash.shell.model import BashPipe, BinaryExpression, ElseIf, ElseIfThen, FunctionDefinition, If, IfThen, IfThenElse, Indent, InlineFunctionDefinition, Lines, Map, Math, Method, Pipe, Term, Terms, Word
 
 
 def parse_line(text: str):
@@ -467,9 +467,9 @@ f (x):
 print outer 
     """
     results = parse(text).values
-    assert results[0][0] == 'define-function'
-    assert results[0][1] == 'f'
-    assert results[0][2] == 'x'
+    assert isinstance(results[0], FunctionDefinition)
+    assert results[0].f == 'f'
+    assert results[0].args == 'x'
     assert isinstance(results[1], Indent)
     assert isinstance(results[2], Indent)
     assert results[1].indent == (4, 0)
