@@ -2,7 +2,7 @@ from pytest import raises
 
 from mash.shell.errors import ShellSyntaxError
 from mash.shell.lex_parser import parse
-from mash.shell.model import BashPipe, BinaryExpression, ElseIf, ElseIfThen, If, IfThen, IfThenElse, Indent, Lines, Map, Math, Method, Pipe, Term, Terms, Word
+from mash.shell.model import BashPipe, BinaryExpression, ElseIf, ElseIfThen, If, IfThen, IfThenElse, Indent, InlineFunctionDefinition, Lines, Map, Math, Method, Pipe, Term, Terms, Word
 
 
 def parse_line(text: str):
@@ -439,23 +439,23 @@ def test_parse_inline_function():
 f (x y): x + y
     """
     result = parse_line(text)
-    assert result[0] == 'define-inline-function'
-    assert result[1] == 'f'
-    assert isinstance(result[2], Terms)
-    assert result[2].values == ['x', 'y']
-    assert isinstance(result[3], Terms)
-    assert result[3].values == ['x', '+', 'y']
+    assert isinstance(result, InlineFunctionDefinition)
+    assert result.f == 'f'
+    assert isinstance(result.args, Terms)
+    assert result.args.values == ['x', 'y']
+    assert isinstance(result.body, Terms)
+    assert result.body.values == ['x', '+', 'y']
 
 
 def test_parse_inline_function_with_pipe():
     text = 'f (x y): echo x |> echo'
     result = parse_line(text)
-    assert result[0] == 'define-inline-function'
-    assert result[1] == 'f'
-    assert result[2].values == ['x', 'y']
-    assert isinstance(result[3], Pipe)
-    assert result[3].lhs.values == ['echo', 'x']
-    assert result[3].rhs == 'echo'
+    assert isinstance(result, InlineFunctionDefinition)
+    assert result.f == 'f'
+    assert result.args.values == ['x', 'y']
+    assert isinstance(result.body, Pipe)
+    assert result.body.lhs.values == ['echo', 'x']
+    assert result.body.rhs == 'echo'
 
 
 def test_parse_function():

@@ -1,7 +1,7 @@
 from logging import getLogger
 import ply.lex as lex
 import ply.yacc as yacc
-from mash.shell.model import BashPipe, BinaryExpression, Else, ElseIf, ElseIfThen, If, IfThen, IfThenElse, Indent, Lines, LogicExpression, Map, Math, Method, Pipe, Quoted, Shell, Terms, Then, Variable, Word
+from mash.shell.model import BashPipe, BinaryExpression, Else, ElseIf, ElseIfThen, FunctionDefinition, If, IfThen, IfThenElse, Indent, InlineFunctionDefinition, Lines, LogicExpression, Map, Math, Method, Pipe, Quoted, Shell, Terms, Then, Variable, Word
 from mash.shell.parsing import indent_width
 from mash.shell.errors import ShellSyntaxError
 
@@ -299,19 +299,21 @@ def parse(text, init=True):
 
     def p_def_inline_function(p):
         'definition : METHOD LPAREN terms RPAREN DEFINE_FUNCTION inner_statement'
-        p[0] = ('define-inline-function', p[1], p[3], p[6])
+        p[0] = InlineFunctionDefinition(p[1], p[6], p[3])
 
     def p_def_inline_function_constant(p):
         'definition : METHOD LPAREN RPAREN DEFINE_FUNCTION inner_statement'
-        p[0] = ('define-inline-function', p[1], '', p[5])
+        p[0] = InlineFunctionDefinition(p[1], p[5])
 
     def p_def_function(p):
         'definition : METHOD LPAREN terms RPAREN DEFINE_FUNCTION'
         p[0] = ('define-function', p[1], p[3])
+        # p[0] = FunctionDefinition(p[1], p[3])
 
     def p_def_function_constant(p):
         'definition : METHOD LPAREN RPAREN DEFINE_FUNCTION'
         p[0] = ('define-function', p[1], p[3])
+        # p[0] = FunctionDefinition(p[1], p[3])
 
     def p_scope(p):
         'scope : LPAREN inner_statement RPAREN'

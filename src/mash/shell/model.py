@@ -2,6 +2,7 @@ from collections import UserString
 from typing import Iterable, List
 from mash.shell import delimiters
 from mash.shell.delimiters import FALSE, IF, INLINE_ELSE, INLINE_THEN, THEN, TRUE, to_bool
+from mash.shell.function import InlineFunction
 from mash.shell.if_statement import LINE_INDENT, Abort, State, handle_else_statement, handle_then_statement
 from mash.shell.parsing import expand_variables, indent_width
 from mash.util import quote_all
@@ -450,3 +451,35 @@ class Lines(Nodes):
         print_result = True
         return shell.run_handle_lines([self.values], prev_result,
                                       run=not lazy, print_result=print_result)
+
+
+################################################################################
+# Function Definitions
+################################################################################
+
+
+class FunctionDefinition(Node):
+    def __init__(self, f, args=None):
+        self.f = f
+        self.args = args
+
+
+class InlineFunctionDefinition(Node):
+    def __init__(self, f, body, args=None):
+        self.f = f
+        self.body = body
+
+        if args is None:
+            self.args = []
+        else:
+            self.args = args
+
+    def run(self, prev_result='', shell=None, lazy=False):
+        args = self.args
+        if args:
+            args = shell.run_commands(args)
+
+        shell._define_function(self.f, args, not lazy)
+
+        # TODO use parsing.expand_variables_inline
+        shell.env[self.f] = InlineFunction(self.body, args, func_name=self.f)
