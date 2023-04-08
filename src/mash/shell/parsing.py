@@ -8,27 +8,7 @@ from mash.shell.delimiters import FALSE, TRUE
 from mash.shell.errors import ShellError
 from mash.util import is_globbable, is_valid_method_name, match_words, quote, quote_all, removeprefix, glob
 
-
-def infer_infix_args(op: str, *args: str) -> Tuple[Tuple[str], Tuple[str]]:
-    if args[1] == op:
-        lhs, _, *rhs = args
-        lhs = (lhs,)
-    else:
-        i = args.index(op)
-        lhs = args[:i]
-        rhs = args[i+1:]
-    return lhs, rhs
-
-
-
-
-
-def unquote_delimiters(terms: List[str], delimiters: List[str]) -> List[str]:
-    for i, term in enumerate(terms):
-        if term.startswith('\\'):
-            suffix = removeprefix(term, '\\')
-            if suffix in delimiters:
-                terms[i] = suffix
+Bool = str
 
 
 def expand_variables(terms: List[str], env: dict,
@@ -92,14 +72,6 @@ def expand_variables(terms: List[str], env: dict,
             yield v
 
 
-def to_string(value: Any) -> str:
-    """Convert a variable to a string.
-    """
-    if isinstance(value, bool):
-        value = TRUE if value else FALSE
-    return str(value)
-
-
 def expand_variables_inline(line: str, env: dict,
                             completenames_options: List[str],
                             ignore_invalid_syntax: bool) -> str:
@@ -111,6 +83,20 @@ def expand_variables_inline(line: str, env: dict,
                                       ignore_invalid_syntax)
     line = ' '.join(expanded_terms)
     return line
+
+
+def to_string(value: Any) -> str:
+    """Convert a variable to a string.
+    """
+    if isinstance(value, bool):
+        value = TRUE if value else FALSE
+    return str(value)
+
+
+def to_bool(line: str) -> Bool:
+    if line != FALSE and line is not None:
+        return TRUE
+    return FALSE
 
 
 def filter_comments(terms: List[str]) -> List[str]:

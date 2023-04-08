@@ -15,13 +15,13 @@ from mash.filesystem.filesystem import FileSystem, cd
 from mash.filesystem.scope import Scope, show
 from mash.io_util import log, shell_ready_signal, print_shell_ready_signal, check_output
 from mash.shell import delimiters
-from mash.shell.delimiters import DEFINE_FUNCTION, FALSE, IF, LEFT_ASSIGNMENT, TRUE, to_bool
+from mash.shell.delimiters import DEFINE_FUNCTION, FALSE, IF, LEFT_ASSIGNMENT, TRUE
 from mash.shell.errors import ShellError, ShellPipeError, ShellSyntaxError
 from mash.shell.function import InlineFunction
 from mash.shell.if_statement import Abort,  handle_prev_then_else_statements
 from mash.shell.lex_parser import parse
 from mash.shell.model import LAST_RESULTS, LAST_RESULTS_INDEX, ElseCondition, Indent, Lines, Map, Node, ReturnValue, Term, Terms
-from mash.shell.parsing import filter_comments, infer_infix_args, quote_items
+from mash.shell.parsing import filter_comments, quote_items
 from mash.util import has_method, identity, is_valid_method_name, quote_all
 
 
@@ -537,34 +537,6 @@ class BaseShell(Cmd):
             return super().default(line)
 
         raise ShellSyntaxError(f'Unknown syntax: {line}')
-
-    ############################################################################
-    # Pipes
-    ############################################################################
-
-    def infix_command(self, *args: str):
-        """Treat `args` as an infix command.
-        Apply the respective infix method to args.
-        E.g.  `a = 1`
-        """
-
-        # greedy search for the first occurence of `op`
-        for op, method in self.infix_operators.items():
-            if op not in args:
-                continue
-
-            try:
-                lhs, rhs = infer_infix_args(op, *args)
-            except ValueError:
-                msg = f'Invalid syntax for infix operator {op}'
-                if self.ignore_invalid_syntax:
-                    log(msg)
-                    return
-                raise ShellSyntaxError(msg)
-
-            return method(lhs, *rhs)
-
-        raise ValueError()
 
     ############################################################################
     # Environment Variables

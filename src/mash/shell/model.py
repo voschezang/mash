@@ -6,11 +6,11 @@ import subprocess
 from typing import Iterable, List
 from mash.shell import delimiters
 from mash.io_util import log
-from mash.shell.delimiters import DEFINE_FUNCTION, FALSE, IF, INLINE_ELSE, INLINE_THEN, THEN, TRUE, to_bool
+from mash.shell.delimiters import DEFINE_FUNCTION, FALSE, IF, INLINE_ELSE, INLINE_THEN, THEN, TRUE
 from mash.shell.errors import ShellError, ShellSyntaxError
 from mash.shell.function import InlineFunction
 from mash.shell.if_statement import LINE_INDENT, Abort, State, close_prev_if_statement, close_prev_if_statements, handle_else_statement, handle_prev_then_else_statements, handle_then_statement
-from mash.shell.parsing import expand_variables, indent_width
+from mash.shell.parsing import expand_variables, indent_width, to_bool
 from mash.util import has_method, quote_all
 
 LAST_RESULTS = '_last_results'

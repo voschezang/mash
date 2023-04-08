@@ -1,7 +1,5 @@
 from enum import Enum
 
-Bool = str
-
 # language constants to a new file
 # TODO mv these to a new module
 FALSE = ''
@@ -48,9 +46,3 @@ INLINE_ELSE = 'inline-else'
 class KeyWords(Enum):
     AND = 'and'
     OR = 'or'
-
-
-def to_bool(line: str) -> Bool:
-    if line != FALSE and line is not None:
-        return TRUE
-    return FALSE
