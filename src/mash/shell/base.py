@@ -428,29 +428,10 @@ class BaseShell(Cmd):
             return self.run_commands(Term(ast), prev_result, run=run)
 
         if DEFINE_FUNCTION in self.locals:
-            # TODO change prompt to reflect this mode
 
-            # self._extend_inline_function_definition(line)
-            f = self.locals[DEFINE_FUNCTION]
-
-            if isinstance(ast, Indent):
-                # TODO compare indent width
-                width = ast.indent
-                if ast.data is None:
-                    return
-
-                if f.line_indent is None:
-                    f.line_indent = width
-
-                if width >= f.line_indent:
-                    self.locals[DEFINE_FUNCTION].inner.append(ast)
-                    return
-
-                self._finalize_define_function(f)
-
-            elif not isinstance(ast, Lines):
-                # TODO this will only be triggered after a non-Word command
-                self._finalize_define_function(f)
+            stop = self._handle_define_function(ast)
+            if stop:
+                return
 
         if not isinstance(ast, ElseCondition) and \
                 not isinstance(ast, Indent) and \
@@ -464,6 +445,31 @@ class BaseShell(Cmd):
             return ast.run(prev_result, shell=self, lazy=not run)
         else:
             raise NotImplementedError()
+
+    def _handle_define_function(self, ast: Node) -> bool:
+        # self._extend_inline_function_definition(line)
+        f = self.locals[DEFINE_FUNCTION]
+
+        if isinstance(ast, Indent):
+            # TODO compare indent width
+            width = ast.indent
+            if ast.data is None:
+                return True
+
+            if f.line_indent is None:
+                f.line_indent = width
+
+            if width >= f.line_indent:
+                self.locals[DEFINE_FUNCTION].inner.append(ast)
+                return True
+
+            self._finalize_define_function(f)
+
+        elif not isinstance(ast, Lines):
+            # TODO this will only be triggered after a non-Word command
+            self._finalize_define_function(f)
+
+        return False
 
     def _finalize_define_function(self, f):
         self.env[f.func_name] = f
