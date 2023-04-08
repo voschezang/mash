@@ -427,11 +427,9 @@ class BaseShell(Cmd):
         elif isinstance(ast, str):
             return self.run_commands(Term(ast), prev_result, run=run)
 
-        if DEFINE_FUNCTION in self.locals:
-
-            stop = self._handle_define_function(ast)
-            if stop:
-                return
+        done = self._handle_define_function(ast)
+        if done:
+            return
 
         if not isinstance(ast, ElseCondition) and \
                 not isinstance(ast, Indent) and \
@@ -447,6 +445,9 @@ class BaseShell(Cmd):
             raise NotImplementedError()
 
     def _handle_define_function(self, ast: Node) -> bool:
+        if DEFINE_FUNCTION not in self.locals:
+            return False
+
         # self._extend_inline_function_definition(line)
         f = self.locals[DEFINE_FUNCTION]
 
@@ -545,24 +546,6 @@ class BaseShell(Cmd):
 
         if prefix in delimiters.bash:
             return prefix
-
-    def parse_single_command(self, command_and_args: List[str]) -> Tuple[List[str], str, List[str]]:
-        # strip right-hand side delimiters
-        all_args = list(omit_prefixes(command_and_args, self.delimiters))
-        all_args = list(expand_variables(all_args, self.env,
-                        self.completenames_options, self.ignore_invalid_syntax))
-        _f, *args = all_args
-        line = ' '.join(all_args)
-
-        there_is_an_infix_operator = for_any(
-            self.infix_operators, contains, args)
-
-        infix_operator_args = all_args if there_is_an_infix_operator else []
-
-        # assume there is at most 1 delimiter
-        prefixes = list(split_prefixes(command_and_args, self.delimiters))
-
-        return prefixes, line, infix_operator_args
 
     def pipe_cmd_py(self, line: str, result: str):
         # append arguments
