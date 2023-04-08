@@ -1,5 +1,7 @@
 from enum import Enum
 
+Bool = str
+
 # language constants to a new file
 # TODO mv these to a new module
 FALSE = ''
@@ -48,7 +50,7 @@ class KeyWords(Enum):
     OR = 'or'
 
 
-def to_bool(line: str) -> bool:
+def to_bool(line: str) -> Bool:
     if line != FALSE and line is not None:
         return TRUE
     return FALSE

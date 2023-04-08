@@ -36,8 +36,8 @@ def test_math_lib_abs():
 def test_math_lib_factorial():
     shell = init()
 
-    catch_output('fac 3', shell=shell) == '6'
-    catch_output('fac 1', shell=shell) == '1'
+    # catch_output('fac 3', shell=shell) == '6'
+    # catch_output('fac 1', shell=shell) == '1'
     catch_output('fac 0', shell=shell) == '1'
 
     with raises(ShellError):

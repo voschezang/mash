@@ -16,13 +16,13 @@ from mash.filesystem.filesystem import FileSystem, cd
 from mash.filesystem.scope import Scope, show
 from mash.io_util import log, shell_ready_signal, print_shell_ready_signal, check_output
 from mash.shell import delimiters
-from mash.shell.delimiters import INLINE_ELSE, INLINE_THEN, DEFINE_FUNCTION, FALSE, IF, LEFT_ASSIGNMENT, TRUE, to_bool
+from mash.shell.delimiters import DEFINE_FUNCTION, FALSE, IF, LEFT_ASSIGNMENT, TRUE, to_bool
 from mash.shell.errors import ShellError, ShellPipeError, ShellSyntaxError
 from mash.shell.function import InlineFunction
-from mash.shell.if_statement import LINE_INDENT, Abort, close_prev_if_statement, close_prev_if_statements,  handle_prev_then_else_statements
+from mash.shell.if_statement import Abort,  handle_prev_then_else_statements
 from mash.shell.lex_parser import parse
-from mash.shell.model import LAST_RESULTS, LAST_RESULTS_INDEX, Else, ElseCondition, Indent, Lines, Map, Node, Term, Terms, Then
-from mash.shell.parsing import expand_variables, filter_comments, indent_width, infer_infix_args, quote_items
+from mash.shell.model import LAST_RESULTS, LAST_RESULTS_INDEX, ElseCondition, Indent, Lines, Map, Node, ReturnValue, Term, Terms
+from mash.shell.parsing import expand_variables, filter_comments, infer_infix_args, quote_items
 from mash.util import for_any, has_method, identity, is_valid_method_name, omit_prefixes, quote_all, split_prefixes
 
 
@@ -361,7 +361,7 @@ class BaseShell(Cmd):
         return ''
 
     def do_not(self, args: str) -> str:
-        return FALSE if to_bool(args) else TRUE
+        return FALSE if to_bool(args) == TRUE else TRUE
 
     ############################################################################
     # Overrides
@@ -421,17 +421,11 @@ class BaseShell(Cmd):
             raise ShellError(str(e))
 
     def run_commands(self, ast: Tuple, prev_result='', run=False):
-        print_result = True
         if isinstance(ast, Term):
             return ast.run(prev_result, shell=self, lazy=not run)
 
         elif isinstance(ast, str):
             return self.run_commands(Term(ast), prev_result, run=run)
-
-        if isinstance(ast, Node):
-            key, values = None, []
-        else:
-            key, *values = ast
 
         if DEFINE_FUNCTION in self.locals:
             # TODO change prompt to reflect this mode
@@ -475,37 +469,6 @@ class BaseShell(Cmd):
         self.env[f.func_name] = f
         self.locals.rm(DEFINE_FUNCTION)
         self.prompt = default_prompt
-
-    def run_handle_indent(self, args, prev_result, run):
-        width, inner = args
-        if inner is None:
-            return
-
-        if self.locals[IF]:
-            if not run:
-                raise NotImplementedError()
-
-            closed = self._last_if['branch'] in (INLINE_THEN, INLINE_ELSE)
-
-            if width < self._last_if['line_indent'] or (
-                    width == self._last_if['line_indent'] and
-                inner[0] not in ['then', 'else'] and
-                    not isinstance(inner[0], Then) and
-                    not isinstance(inner[0], Else)):
-
-                close_prev_if_statements(self, width)
-
-            if self.locals[IF] and width > self._last_if['line_indent']:
-                if closed:
-                    raise ShellSyntaxError(
-                        'Unexpected indent after if-else clause')
-                try:
-                    handle_prev_then_else_statements(self)
-                except Abort:
-                    return prev_result
-
-        self.locals.set(LINE_INDENT, width)
-        return self.run_commands(inner, prev_result, run=run)
 
     def postcmd(self, stop, _):
         """Display the shell_ready_signal to indicate termination to a parent process.
@@ -802,11 +765,12 @@ class BaseShell(Cmd):
             for ast in f.inner:
                 result = self.run_commands(ast, prev_result=result,
                                            run=True)
-                if isinstance(result, tuple) and result[0] == 'return':
-                    return result[1]
 
-            if isinstance(result, tuple) and result[0] == 'return':
-                return result[1]
+                if isinstance(result, ReturnValue):
+                    return result.data
+
+            if isinstance(result, ReturnValue):
+                return result.data
 
     def parse(self, results: str):
         return parse(results)

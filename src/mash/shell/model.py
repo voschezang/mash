@@ -1,11 +1,12 @@
 from collections import UserString
+from dataclasses import dataclass
 import logging
 from typing import Iterable, List
 from mash.shell import delimiters
 from mash.shell.delimiters import DEFINE_FUNCTION, FALSE, IF, INLINE_ELSE, INLINE_THEN, THEN, TRUE, to_bool
-from mash.shell.errors import ShellError
+from mash.shell.errors import ShellError, ShellSyntaxError
 from mash.shell.function import InlineFunction
-from mash.shell.if_statement import LINE_INDENT, Abort, State, close_prev_if_statement, close_prev_if_statements, handle_else_statement, handle_then_statement
+from mash.shell.if_statement import LINE_INDENT, Abort, State, close_prev_if_statement, close_prev_if_statements, handle_else_statement, handle_prev_then_else_statements, handle_then_statement
 from mash.shell.parsing import expand_variables, indent_width
 from mash.util import has_method, quote_all
 
@@ -15,6 +16,11 @@ LAST_RESULTS_INDEX = '_last_results_index'
 ################################################################################
 # Units
 ################################################################################
+
+
+@dataclass
+class ReturnValue:
+    data: str
 
 
 class Node(UserString):
@@ -52,8 +58,35 @@ class Indent(Node):
         self.indent = indent
 
     def run(self, prev_result='', shell=None, lazy=False):
-        return shell.run_handle_indent((self.indent, self.data),
-                                       prev_result, run=not lazy)
+        width = self.indent
+        inner = self.data
+        if inner is None:
+            return
+
+        if shell.locals[IF]:
+            if lazy:
+                raise NotImplementedError()
+
+            closed = shell._last_if['branch'] in (INLINE_THEN, INLINE_ELSE)
+
+            if width < shell._last_if['line_indent'] or (
+                    width == shell._last_if['line_indent'] and
+                    not isinstance(inner[0], Then) and
+                    not isinstance(inner[0], Else)):
+
+                close_prev_if_statements(shell, width)
+
+            if shell.locals[IF] and width > shell._last_if['line_indent']:
+                if closed:
+                    raise ShellSyntaxError(
+                        'Unexpected indent after if-else clause')
+                try:
+                    handle_prev_then_else_statements(shell)
+                except Abort:
+                    return prev_result
+
+        shell.locals.set(LINE_INDENT, width)
+        return shell.run_commands(inner, prev_result, run=not lazy)
 
     def __repr__(self):
         return f'{type(self).__name__}( {repr(self.data)} )'
@@ -74,7 +107,7 @@ class Math(Node):
 class Return(Node):
     def run(self, prev_result='', shell=None, lazy=False):
         result = shell.run_commands(self.data, run=not lazy)
-        return ('return', result)
+        return ReturnValue(result)
 
 
 class Shell(Node):
@@ -548,7 +581,7 @@ class Lines(Nodes):
 
             result = shell.run_commands(item, run=not lazy)
 
-            if isinstance(result, Return):
+            if isinstance(result, ReturnValue):
                 return result.data
 
             if isinstance(result, list):
