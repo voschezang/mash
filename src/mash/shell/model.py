@@ -5,7 +5,7 @@ from mash.shell import delimiters
 from mash.shell.delimiters import DEFINE_FUNCTION, FALSE, IF, INLINE_ELSE, INLINE_THEN, THEN, TRUE, to_bool
 from mash.shell.errors import ShellError
 from mash.shell.function import InlineFunction
-from mash.shell.if_statement import LINE_INDENT, Abort, State, handle_else_statement, handle_then_statement
+from mash.shell.if_statement import LINE_INDENT, Abort, State, close_prev_if_statement, close_prev_if_statements, handle_else_statement, handle_then_statement
 from mash.shell.parsing import expand_variables, indent_width
 from mash.util import has_method, quote_all
 
@@ -484,15 +484,81 @@ class Nodes(Node):
 
 class Terms(Nodes):
     def run(self, prev_result='', shell=None, lazy=False):
-        return shell.run_handle_terms([self.values], prev_result, run=not lazy)
+        items = self.values
+        if len(items) >= 2 and not lazy:
+            k, *args = items
+            if k == 'map':
+                args = Terms(list(args))
+                return Map.map(args, prev_result, shell)
+            elif k == 'foreach':
+                args = Terms(list(args))
+                return shell._do_foreach(args, prev_result)
+            elif k in ['reduce', 'foldr']:
+                return shell.foldr(args, prev_result)
+
+        # TODO expand vars in other branches as well
+        wildcard_value = ''
+        if '$' in items:
+            wildcard_value = prev_result
+            prev_result = ''
+
+        items = list(expand_variables(items, shell.env,
+                                      shell.completenames_options,
+                                      shell.ignore_invalid_syntax,
+                                      wildcard_value))
+
+        k = items[0]
+
+        if not lazy:
+            if k == 'echo':
+                args = items[1:]
+                if prev_result:
+                    args += [prev_result]
+                line = ' '.join(str(arg) for arg in args)
+                return line
+
+            if shell.is_function(k):
+                # TODO if self.is_inline_function(k): ...
+                # TODO standardize quote_all args
+                line = ' '.join(quote_all(items, ignore='*$?'))
+                return shell.pipe_cmd_py(line, prev_result)
+
+        if prev_result:
+            items += [prev_result]
+        if not lazy:
+            return ' '.join(str(v) for v in items)
+        return items
 
 
 class Lines(Nodes):
     def run(self, prev_result='', shell=None, lazy=False):
         shell.locals.set(LINE_INDENT, indent_width(''))
         print_result = True
-        return shell.run_handle_lines([self.values], prev_result,
-                                      run=not lazy, print_result=print_result)
+
+        for item in self.values:
+
+            width = indent_width('')
+            if shell.locals[IF] and not isinstance(item, Indent) and width > shell._last_if['line_indent']:
+                close_prev_if_statements(shell, width)
+
+            if shell.locals[IF] and not isinstance(item, Indent):
+                if not isinstance(item, Then) and \
+                        not isinstance(item, ElseCondition):
+                    close_prev_if_statement(shell)
+
+            result = shell.run_commands(item, run=not lazy)
+
+            if isinstance(result, Return):
+                return result.data
+
+            if isinstance(result, list):
+                # result = ' '.join(quote_all(result))
+                # result = ' '.join(str(s) for s in result)
+                result = str(result)
+
+            if print_result and result is not None:
+                if result or not shell.locals[IF]:
+                    print(result)
 
 
 ################################################################################

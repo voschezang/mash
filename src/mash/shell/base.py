@@ -61,6 +61,7 @@ class BaseShell(Cmd):
     # TODO save stdout in a tmp file
 
     def __init__(self, *args, env: Dict[str, Any] = None,
+                 use_model=True,
                  save_session_prehook=identity,
                  load_session_posthook=identity, **kwds):
         """
@@ -70,6 +71,7 @@ class BaseShell(Cmd):
                 Must be JSON serializable
         """
         super().__init__(*args, **kwds)
+        self.use_model = use_model
         self.save_session_prehook = save_session_prehook
         self.load_session_posthook = load_session_posthook
 
@@ -376,11 +378,17 @@ class BaseShell(Cmd):
         result = ''
         try:
             lines = self.onecmd_prehook(lines)
-            ast = parse(lines)
-            if ast is None:
-                raise ShellError('Invalid syntax: AST is empty')
 
-            result = self.run_commands_new_wrapper(ast, result, run=True)
+            if self.use_model:
+
+                ast = parse(lines)
+                if ast is None:
+                    raise ShellError('Invalid syntax: AST is empty')
+
+                self.run_commands_new_wrapper(ast, result, run=True)
+
+            else:
+                return super().onecmd(lines)
 
         except ShellSyntaxError as e:
             if self.ignore_invalid_syntax:
@@ -498,80 +506,6 @@ class BaseShell(Cmd):
 
         self.locals.set(LINE_INDENT, width)
         return self.run_commands(inner, prev_result, run=run)
-
-    def run_handle_terms(self, values, prev_result: str, run: bool):
-        items = values[0]
-        if len(items) >= 2 and run:
-            k, *args = items
-            if k == 'map':
-                args = Terms(list(args))
-                return Map.map(args, prev_result, self)
-            elif k == 'foreach':
-                args = Terms(list(args))
-                return self._do_foreach(args, prev_result)
-            elif k in ['reduce', 'foldr']:
-                return self.foldr(args, prev_result)
-
-        # TODO expand vars in other branches as well
-        wildcard_value = ''
-        if '$' in items:
-            wildcard_value = prev_result
-            prev_result = ''
-
-        items = list(expand_variables(items, self.env,
-                                      self.completenames_options,
-                                      self.ignore_invalid_syntax,
-                                      wildcard_value))
-
-        k = items[0]
-        if run:
-            if k == 'echo':
-                args = items[1:]
-                if prev_result:
-                    args += [prev_result]
-                line = ' '.join(str(arg) for arg in args)
-                return line
-
-            if self.is_function(k):
-                # TODO if self.is_inline_function(k): ...
-                # TODO standardize quote_all args
-                line = ' '.join(quote_all(items, ignore='*$?'))
-                return self.pipe_cmd_py(line, prev_result)
-
-        if prev_result:
-            items += [prev_result]
-        if run:
-            return ' '.join(str(v) for v in items)
-        return items
-
-    def run_handle_lines(self, values, prev_result: str, run: bool, print_result: bool):
-        items = values[0]
-        for item in items:
-
-            width = indent_width('')
-            if self.locals[IF] and not isinstance(item, Indent) and width > self._last_if['line_indent']:
-                close_prev_if_statements(self, width)
-
-            if self.locals[IF] and not isinstance(item, Indent):
-                if not isinstance(item, Then) and \
-                        not isinstance(item, ElseCondition):
-                    close_prev_if_statement(self)
-
-            result = self.run_commands(item, run=run)
-
-            # TODO if isinstance(result, tuple):
-            # return ('return', result)
-            if isinstance(result, tuple) and result[0] == 'return':
-                return result[1]
-
-            if isinstance(result, list):
-                # result = ' '.join(quote_all(result))
-                # result = ' '.join(str(s) for s in result)
-                result = str(result)
-
-            if print_result and result is not None:
-                if result or not self.locals[IF]:
-                    print(result)
 
     def postcmd(self, stop, _):
         """Display the shell_ready_signal to indicate termination to a parent process.
