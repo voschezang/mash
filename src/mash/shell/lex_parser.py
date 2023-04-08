@@ -1,7 +1,7 @@
 from logging import getLogger
 import ply.lex as lex
 import ply.yacc as yacc
-from mash.shell.model import BashPipe, BinaryExpression, Else, ElseIf, ElseIfThen, FunctionDefinition, If, IfThen, IfThenElse, Indent, InlineFunctionDefinition, Lines, LogicExpression, Map, Math, Method, Pipe, Quoted, Shell, Terms, Then, Variable, Word
+from mash.shell.model import Assign, BashPipe, BinaryExpression, Else, ElseIf, ElseIfThen, FunctionDefinition, If, IfThen, IfThenElse, Indent, InlineFunctionDefinition, Lines, LogicExpression, Map, Math, Method, Pipe, Quoted, Shell, Terms, Then, Variable, Word
 from mash.shell.parsing import indent_width
 from mash.shell.errors import ShellSyntaxError
 
@@ -291,15 +291,15 @@ def parse(text, init=True):
 
     def p_assign(p):
         'assignment : terms ASSIGN inner_statement'
-        p[0] = ('assign', p[2], p[1], p[3])
+        p[0] = Assign(p[1], p[3], p[2])
 
     def p_assign_right(p):
         'assignment : inner_statement ASSIGN_RIGHT terms'
-        p[0] = ('assign', p[2], p[1], p[3])
+        p[0] = Assign(p[3], p[1], p[2])
 
     def p_def_inline_function(p):
         'definition : METHOD LPAREN terms RPAREN DEFINE_FUNCTION inner_statement'
-        p[0] = InlineFunctionDefinition(p[1], p[3], body=p[6] )
+        p[0] = InlineFunctionDefinition(p[1], p[3], body=p[6])
 
     def p_def_inline_function_constant(p):
         'definition : METHOD LPAREN RPAREN DEFINE_FUNCTION inner_statement'

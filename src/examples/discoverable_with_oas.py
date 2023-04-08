@@ -23,8 +23,8 @@ if __name__ == '__main__':
 
     # for i in range(7):
     for i in range(7):
-        k = result.split('\n')[-1]
-        path.append(k)
+        key = result.split('\n')[-1]
+        path.append(key)
         result = obj.ll(*path)
 
     json = JSONFactory(Organization).build(obj['repository'])

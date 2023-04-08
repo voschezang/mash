@@ -2,7 +2,7 @@ from collections import UserString
 import logging
 from typing import Iterable, List
 from mash.shell import delimiters
-from mash.shell.delimiters import DEFINE_FUNCTION, FALSE, IF, INLINE_ELSE, INLINE_THEN, THEN, TRUE, to_bool
+from mash.shell.delimiters import DEFINE_FUNCTION, FALSE, IF, INLINE_ELSE, INLINE_THEN, LEFT_ASSIGNMENT, THEN, TRUE, to_bool
 from mash.shell.errors import ShellError
 from mash.shell.function import InlineFunction
 from mash.shell.if_statement import LINE_INDENT, Abort, State, handle_else_statement, handle_then_statement
@@ -172,6 +172,67 @@ class Infix(Node):
         return TRUE
 
 
+class Assign(Infix):
+    @property
+    def key(self):
+        return self.lhs
+
+    @property
+    def value(self):
+        return self.rhs
+
+    def run(self, prev_result='', shell=None, lazy=False):
+        k = shell.run_commands(self.key)
+
+        if self.op == '=':
+            v = shell.run_commands(self.value)
+            if not lazy:
+                shell.set_env_variables(k, v)
+                return TRUE
+            return k, self.op, v
+
+        values = shell.run_commands(self.value, run=not lazy)
+
+        if values is None:
+            values = ''
+
+        if values.strip() == '' and shell._last_results:
+            values = shell._last_results
+            shell.env[LAST_RESULTS] = []
+
+        if not lazy:
+            shell.set_env_variables(k, values)
+            return TRUE
+        return k, self.op, values
+
+
+class BinaryExpression(Infix):
+    def run(self, prev_result='', shell=None, lazy=False):
+        if prev_result not in (TRUE, FALSE):
+            raise NotImplementedError('prev_result was not empty')
+
+        op = self.op
+        a = shell.run_commands(self.lhs, run=not lazy)
+        b = shell.run_commands(self.rhs, run=not lazy)
+
+        if op in delimiters.comparators:
+            # TODO join a, b
+            if not lazy:
+                return shell.eval(['math', a, op, b])
+            return a, op, b
+
+        if op in '+-*/':
+            # math
+            if not lazy:
+                return shell.eval(['math', a, op, b])
+            return a, op, b
+
+        raise NotImplementedError()
+
+    def __repr__(self):
+        return f'{type(self).__name__}[{self.op}]( {repr(self.lhs)}, {repr(self.rhs)} )'
+
+
 class Pipe(Infix):
     def run(self, prev_result='', shell=None, lazy=False):
         prev = shell.run_commands(self.lhs, prev_result, run=not lazy)
@@ -232,33 +293,6 @@ class Map(Infix):
             return ''
 
         return delimiter.join(quote_all(results))
-
-
-class BinaryExpression(Infix):
-    def run(self, prev_result='', shell=None, lazy=False):
-        if prev_result not in (TRUE, FALSE):
-            raise NotImplementedError('prev_result was not empty')
-
-        op = self.op
-        a = shell.run_commands(self.lhs, run=not lazy)
-        b = shell.run_commands(self.rhs, run=not lazy)
-
-        if op in delimiters.comparators:
-            # TODO join a, b
-            if not lazy:
-                return shell.eval(['math', a, op, b])
-            return a, op, b
-
-        if op in '+-*/':
-            # math
-            if not lazy:
-                return shell.eval(['math', a, op, b])
-            return a, op, b
-
-        raise NotImplementedError()
-
-    def __repr__(self):
-        return f'{type(self).__name__}[{self.op}]( {repr(self.lhs)}, {repr(self.rhs)} )'
 
 
 class LogicExpression(Infix):

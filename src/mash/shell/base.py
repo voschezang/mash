@@ -457,9 +457,6 @@ class BaseShell(Cmd):
 
         if isinstance(ast, Node):
             return ast.run(prev_result, shell=self, lazy=not run)
-        elif key == 'assign':
-            return self.run_handle_assign(values, prev_result, run)
-
         elif key == 'return':
             line = values[0]
             result = self.run_commands(line, run=run)
@@ -577,36 +574,6 @@ class BaseShell(Cmd):
             if print_result and result is not None:
                 if result or not self.locals[IF]:
                     print(result)
-
-    def run_handle_assign(self, values, prev_result, run):
-        op, a, b = values
-        a = self.run_commands(a)
-        if op == '=':
-            b = self.run_commands(b)
-            if run:
-                self.set_env_variables(a, b)
-                return TRUE
-            return a, op, b
-
-        elif op == LEFT_ASSIGNMENT:
-            values = self.run_commands(b, run=run)
-
-            if values is None:
-                values = ''
-
-            if values.strip() == '' and self._last_results:
-                values = self._last_results
-                self.env[LAST_RESULTS] = []
-
-            if run:
-                self.set_env_variables(a, values)
-                return TRUE
-            return a, op, values
-
-        elif op == RIGHT_ASSIGNMENT:
-            raise NotImplementedError(RIGHT_ASSIGNMENT)
-
-        raise NotImplementedError()
 
     def postcmd(self, stop, _):
         """Display the shell_ready_signal to indicate termination to a parent process.

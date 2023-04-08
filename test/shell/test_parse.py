@@ -2,7 +2,7 @@ from pytest import raises
 
 from mash.shell.errors import ShellSyntaxError
 from mash.shell.lex_parser import parse
-from mash.shell.model import BashPipe, BinaryExpression, ElseIf, ElseIfThen, FunctionDefinition, If, IfThen, IfThenElse, Indent, InlineFunctionDefinition, Lines, Map, Math, Method, Pipe, Term, Terms, Word
+from mash.shell.model import Assign, BashPipe, BinaryExpression, ElseIf, ElseIfThen, FunctionDefinition, If, IfThen, IfThenElse, Indent, InlineFunctionDefinition, Lines, Map, Math, Method, Pipe, Term, Terms, Word
 
 
 def parse_line(text: str):
@@ -95,27 +95,26 @@ def test_parse_range():
 
 
 def test_parse_assign():
-    key, op, left, right = parse_line('a <- 10')
-    assert key == 'assign'
-    assert op == '<-'
-    assert left == 'a'
-    assert right == '10'
+    result = parse_line('a <- 10')
+    assert isinstance(result, Assign)
+    assert result.op == '<-'
+    assert result.key == 'a'
+    assert result.value == '10'
 
 
 def test_parse_infix():
-    key, op, left, right = parse_line('x = 2')
-    assert key == 'assign'
-    assert op == '='
-    assert left == 'x'
-    assert right == '2'
+    result = parse_line('x = 2')
+    assert isinstance(result, Assign)
+    assert result.op == '='
+    assert result.key == 'x'
+    assert result.value == '2'
 
-    key, op, left, right = parse_line('a b = 2')
-    assert key == 'assign'
-    assert op == '='
-
-    assert isinstance(left, Terms)
-    assert left.values == ['a', 'b']
-    assert right == '2'
+    result = parse_line('a b = 2')
+    assert isinstance(result, Assign)
+    assert result.op == '='
+    assert isinstance(result.key, Terms)
+    assert result.key.values == ['a', 'b']
+    assert result.value == '2'
 
 
 def test_parse_numbers():
@@ -123,22 +122,21 @@ def test_parse_numbers():
     text = 'x = ' + ' '.join(numbers)
     # text = '-1.'
     result = parse_line(text)
-    assert result[0] == 'assign'
-    assert result[2] == 'x'
-    assert result[3].values == numbers
+    assert isinstance(result, Assign)
+    assert result.key == 'x'
+    assert result.value.values == numbers
 
 
 def test_parse_quotes():
     result = parse_line('x = "a b c"')
-    key, op, left, right = result
-    assert key == 'assign'
-    assert op == '='
-    assert left == 'x'
-    assert right == 'a b c'
+    assert isinstance(result, Assign)
+    assert result.op == '='
+    assert result.key == 'x'
+    assert result.value == 'a b c'
 
     line = r'x = "y =\"\' 1"'
-    key, op, left, right = parse_line(line)
-    assert right == 'y =\\"\\\' 1'
+    result = parse_line(line)
+    assert result.value == 'y =\\"\\\' 1'
 
 
 def test_parse_quotes_multiline():
@@ -190,7 +188,7 @@ x = 2
 """
     results = parse(text)
     assert isinstance(results, Lines)
-    assert results.values[0][0] == 'assign'
+    assert isinstance(results.values[0], Assign)
 
 
 def test_parse_multiline_quoted():
@@ -315,11 +313,16 @@ outer = c
     assert results[1].indent == (4, 0)
     assert results[2].indent == (4, 0)
     assert results[3].indent == (8, 0)
-    assert results[3].data[0] == 'assign'
-    assert results[3].data[1:] == ('=', 'inner2', 'b')
 
-    assert results[4][0] == 'assign'
-    assert results[4][1:] == ('=', 'outer', 'c')
+    assert isinstance(results[3].data, Assign)
+    assert results[3].data.op == '='
+    assert results[3].data.key == 'inner2'
+    assert results[3].data.value == 'b'
+
+    assert isinstance(results[4], Assign)
+    assert results[4].op == '='
+    assert results[4].key == 'outer'
+    assert results[4].value == 'c'
 
 
 def test_parse_else_if():
@@ -332,11 +335,11 @@ def test_parse_else_if():
 
 def test_parse_if_with_assign():
     text = 'a <- if 20 then echo 10'
-    key, *result = parse_line(text)
-    assert key == 'assign'
-    assert result[0] == '<-'
-    assert result[1] == 'a'
-    assert isinstance(result[2], IfThen)
+    result = parse_line(text)
+    assert isinstance(result, Assign)
+    assert result.op == '<-'
+    assert result.key == 'a'
+    assert isinstance(result.value, IfThen)
 
 
 def test_parse_if_none():
@@ -391,11 +394,11 @@ def test_parse_pipe_multiple():
 
 def test_parse_pipe_assign():
     result = parse_line('a <- echo a |> echo b')
-    key, symbol, var, line = result
-    assert key == 'assign'
-    assert symbol == '<-'
-    assert var == 'a'
+    assert isinstance(result, Assign)
+    assert result.op == '<-'
+    assert result.key == 'a'
 
+    line = result.value
     assert isinstance(line, Pipe)
     assert line.lhs.values == ['echo', 'a']
     assert line.rhs.values == ['echo', 'b']
