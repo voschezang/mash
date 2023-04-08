@@ -1,11 +1,10 @@
 from asyncio import CancelledError
-from cmd import Cmd
+import cmd
 from collections import defaultdict
 from contextlib import contextmanager
 from dataclasses import asdict
 from itertools import repeat
 from json import dumps, loads
-from operator import contains
 from typing import Any, Callable, Dict, Iterable, List, Tuple, Union
 import logging
 import shlex
@@ -22,8 +21,8 @@ from mash.shell.function import InlineFunction
 from mash.shell.if_statement import Abort,  handle_prev_then_else_statements
 from mash.shell.lex_parser import parse
 from mash.shell.model import LAST_RESULTS, LAST_RESULTS_INDEX, ElseCondition, Indent, Lines, Map, Node, ReturnValue, Term, Terms
-from mash.shell.parsing import expand_variables, filter_comments, infer_infix_args, quote_items
-from mash.util import for_any, has_method, identity, is_valid_method_name, omit_prefixes, quote_all, split_prefixes
+from mash.shell.parsing import filter_comments, infer_infix_args, quote_items
+from mash.util import has_method, identity, is_valid_method_name, quote_all,
 
 
 confirmation_mode = False
@@ -35,11 +34,11 @@ INNER_SCOPE = 'inner_scope'
 RAW_LINE_INDENT = 'raw_line_indent'
 ENV = 'env'
 
-Command = Callable[[Cmd, str], str]
+Command = Callable[[cmd.Cmd, str], str]
 Types = Union[str, bool, int, float]
 
 
-class BaseShell(Cmd):
+class Cmd(cmd.Cmd):
     """Extend CMD with various capabilities.
     This class is restricted to functionality that requires Cmd methods to be overrride.
 
@@ -57,9 +56,65 @@ class BaseShell(Cmd):
         shell_ready_signal + '\n'
 
     prompt = default_prompt
+    completenames_options = []
 
-    # TODO save stdout in a tmp file
+    def onecmd(self, lines: str, print_result=True) -> bool:
+        """Parse and run `line`.
+        Returns 0 on success and None otherwise
+        """
+        if lines == 'EOF':
+            logging.debug('Aborting: received EOF')
+            exit()
 
+        try:
+            lines = self.onecmd_prehook(lines)
+            return self.onecmd_inner(lines)
+
+        except ShellSyntaxError as e:
+            if self.ignore_invalid_syntax:
+                log(e)
+            else:
+                raise
+
+        except CancelledError:
+            pass
+
+    def onecmd_inner(self, lines: str):
+        return super().onecmd(lines)
+
+    def onecmd_prehook(self, line):
+        """Similar to cmd.precmd but executed before cmd.onecmd
+        """
+        if confirmation_mode:
+            assert io_util.interactive
+            log('Command:', line)
+            if not io_util.confirm():
+                raise CancelledError()
+
+        return line
+
+    def pipe_cmd_py(self, line: str, result: str):
+        # append arguments
+        line = f'{line} {result}'
+
+        return super().onecmd(line)
+
+    def completenames(self, text, *ignored):
+        """Conditionally override Cmd.completenames
+        """
+        if self.completenames_options:
+            return [a for a in self.completenames_options if a.startswith(text)]
+
+        return super().completenames(text, *ignored)
+
+    def none(self, _: str) -> str:
+        """Do nothing. Similar to util.none.
+        This is a default value for self._do_char_method.
+        """
+        return ''
+
+
+class BaseShell(Cmd):
     def __init__(self, *args, env: Dict[str, Any] = None,
                  use_model=True,
                  save_session_prehook=identity,
@@ -193,23 +248,6 @@ class BaseShell(Cmd):
             return self._last_results.pop()
 
         raise RuntimeError('Cannot retrieve result')
-
-    def onecmd_prehook(self, line):
-        """Similar to cmd.precmd but executed before cmd.onecmd
-        """
-        if confirmation_mode:
-            assert io_util.interactive
-            log('Command:', line)
-            if not io_util.confirm():
-                raise CancelledError()
-
-        return line
-
-    def none(self, _: str) -> str:
-        """Do nothing. Similar to util.none.
-        This is a default value for self._do_char_method.
-        """
-        return ''
 
     def _save_result(self, value):
         logging.debug(f'_save_result [{self._last_results_index}]: {value}')
@@ -367,42 +405,16 @@ class BaseShell(Cmd):
     # Overrides
     ############################################################################
 
-    def onecmd(self, lines: str, print_result=True) -> bool:
-        """Parse and run `line`.
-        Returns 0 on success and None otherwise
-        """
-        if lines == 'EOF':
-            logging.debug('Aborting: received EOF')
-            exit()
+    def onecmd_inner(self, lines: str):
+        if not self.use_model:
+            return super().onecmd_inner(lines)
 
-        result = ''
+        ast = parse(lines)
+        if ast is None:
+            raise ShellError('Invalid syntax: AST is empty')
+
         try:
-            lines = self.onecmd_prehook(lines)
-
-            if self.use_model:
-
-                ast = parse(lines)
-                if ast is None:
-                    raise ShellError('Invalid syntax: AST is empty')
-
-                self.run_commands_new_wrapper(ast, result, run=True)
-
-            else:
-                return super().onecmd(lines)
-
-        except ShellSyntaxError as e:
-            if self.ignore_invalid_syntax:
-                log(e)
-            else:
-                raise
-
-        except CancelledError:
-            pass
-
-    def run_commands_new_wrapper(self, *args, **kwds):
-        try:
-            result = self.run_commands(*args, **kwds)
-            return result
+            return self.run_commands(ast, '', run=True)
 
         except ShellPipeError as e:
             if self.ignore_invalid_syntax:
@@ -490,26 +502,21 @@ class BaseShell(Cmd):
         print_shell_ready_signal()
         return stop
 
-    def completenames(self, text, *ignored):
-        """Conditionally override Cmd.completenames
-        """
-        if self.completenames_options:
-            return [a for a in self.completenames_options if a.startswith(text)]
-
-        return super().completenames(text, *ignored)
-
     def default(self, line: str):
-        head, *tail = line.split(' ')
-        if head in self.env and isinstance(self.env[head], InlineFunction):
-            f = self.env[head]
-            try:
-                result = self.call_inline_function(f, *tail)
-            except ShellError:
-                # reset local scope
-                self.reset_locals()
-                raise
+        # TODO move this
+        if 1:
+            head, *tail = line.split(' ')
+            # TODO move InlineFunction logic to shell.model
+            if head in self.env and isinstance(self.env[head], InlineFunction):
+                f = self.env[head]
+                try:
+                    result = self.call_inline_function(f, *tail)
+                except ShellError:
+                    # reset local scope
+                    self.reset_locals()
+                    raise
 
-            return result
+                return result
 
         if line in self._chars_allowed_for_char_method:
             return self._do_char_method(line)
@@ -522,36 +529,6 @@ class BaseShell(Cmd):
     ############################################################################
     # Pipes
     ############################################################################
-
-    def filter_result(self, command_and_args, result):
-        if ';' in command_and_args:
-
-            if result is not None and LEFT_ASSIGNMENT not in self.locals:
-                # print prev result & discard it
-                print(result)
-
-            result = ''
-
-        elif result is None:
-            raise ShellPipeError('Last return value was absent')
-
-        return result
-
-    def infer_shell_prefix(self, command_and_args):
-        # can raise IndexError
-
-        # assume there is at most 1 delimiter
-        prefixes = list(split_prefixes(command_and_args, self.delimiters))
-        prefix = prefixes[-1]
-
-        if prefix in delimiters.bash:
-            return prefix
-
-    def pipe_cmd_py(self, line: str, result: str):
-        # append arguments
-        line = f'{line} {result}'
-
-        return super().onecmd(line)
 
     def pipe_cmd_sh(self, line: str, prev_result: str, delimiter='|') -> str:
         """
