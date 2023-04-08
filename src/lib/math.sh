@@ -5,9 +5,11 @@ pi <- float 3.141592653589793
 
 # unary operators
 abs (x):
-    a <- if $x < 0 then math - $x
-    b <- if $x >= 0 then $x
-    return strip $a $b
+    if $x >= 0 then
+        return $x
+    else
+        return math - $x
+
 
 fac (n):
     if $n < 0 then fail

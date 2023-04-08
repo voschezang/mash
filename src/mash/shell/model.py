@@ -74,8 +74,8 @@ class Indent(Node):
 
             if width < shell._last_if['line_indent'] or (
                     width == shell._last_if['line_indent'] and
-                    not isinstance(inner[0], Then) and
-                    not isinstance(inner[0], Else)):
+                    not isinstance(inner, Then) and
+                    not isinstance(inner, Else)):
 
                 close_prev_if_statements(shell, width)
 
