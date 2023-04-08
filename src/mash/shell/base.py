@@ -22,7 +22,7 @@ from mash.shell.if_statement import Abort,  handle_prev_then_else_statements
 from mash.shell.lex_parser import parse
 from mash.shell.model import LAST_RESULTS, LAST_RESULTS_INDEX, ElseCondition, Indent, Lines, Map, Node, ReturnValue, Term, Terms
 from mash.shell.parsing import filter_comments, infer_infix_args, quote_items
-from mash.util import has_method, identity, is_valid_method_name, quote_all,
+from mash.util import has_method, identity, is_valid_method_name, quote_all
 
 
 confirmation_mode = False
@@ -40,14 +40,9 @@ Types = Union[str, bool, int, float]
 
 class Cmd(cmd.Cmd):
     """Extend CMD with various capabilities.
-    This class is restricted to functionality that requires Cmd methods to be overrride.
+    This class is restricted to functionality that requires Cmd methods to be overrriden.
 
     Features:
-    - Parsing of multi-line and multi-segment commands.
-        - Chain commands using pipes.
-        - Interop between Python and e.g. Bash using pipes.
-    - Parsing of single commands.
-        - Set/unset variables, retrieve variable values.
     - Confirmation mode to allow a user to accept or decline commands.
     - Error handling.
     """
@@ -113,8 +108,34 @@ class Cmd(cmd.Cmd):
         """
         return ''
 
+    ############################################################################
+    # Commands: do_*
+    ############################################################################
+
+    def do_shell(self, args):
+        """System call
+        """
+        logging.info(f'Cmd = !{args}')
+        return check_output(args)
+
+    def do_fail(self, msg: str):
+        raise ShellError(f'Fail: {msg}')
+
 
 class BaseShell(Cmd):
+    """Extend CMD with various capabilities.
+    This class is restricted to functionality that requires Cmd methods to be overrride.
+
+    Features:
+    - Parsing of multi-line and multi-segment commands.
+        - Chain commands using pipes.
+        - Interop between Python and e.g. Bash using pipes.
+    - Parsing of single commands.
+        - Set/unset variables, retrieve variable values.
+    - Confirmation mode to allow a user to accept or decline commands.
+    - Error handling.
+    """
+
     def __init__(self, *args, env: Dict[str, Any] = None,
                  use_model=True,
                  save_session_prehook=identity,
@@ -326,15 +347,6 @@ class BaseShell(Cmd):
 
         return ''
 
-    def do_shell(self, args):
-        """System call
-        """
-        logging.info(f'Cmd = !{args}')
-        return check_output(args)
-
-    def do_fail(self, msg: str):
-        raise ShellError(f'Fail: {msg}')
-
     def do_map(self, args=''):
         """Apply a function to every line.
         If `$` is present, then each line from stdin is inserted there.
@@ -530,32 +542,6 @@ class BaseShell(Cmd):
     # Pipes
     ############################################################################
 
-    def pipe_cmd_sh(self, line: str, prev_result: str, delimiter='|') -> str:
-        """
-        May raise subprocess.CalledProcessError
-        """
-        assert delimiter in delimiters.bash or delimiter is None
-
-        if delimiter == '>-':
-            delimiter = '>'
-
-        if delimiter is not None:
-            # pass last result to stdin
-            line = f'echo {shlex.quote(prev_result)} {delimiter} {line}'
-
-        logging.info(f'Cmd = {line}')
-
-        result = subprocess.run(line,
-                                capture_output=True,
-                                check=True,
-                                shell=True)
-
-        stdout = result.stdout.decode().rstrip('\n')
-        stderr = result.stderr.decode().rstrip('\n')
-
-        log(stderr)
-        return stdout
-
     def infix_command(self, *args: str):
         """Treat `args` as an infix command.
         Apply the respective infix method to args.
@@ -740,22 +726,6 @@ class BaseShell(Cmd):
 
     def parse(self, results: str):
         return parse(results)
-
-
-def is_function_definition(terms: List[str]) -> bool:
-    terms = [term for term in terms if term != '']
-
-    if len(terms) < 2:
-        return
-
-    if len(terms) == 2:
-        term = terms[-1]
-        first = term
-        last = term
-    else:
-        _f, first, *_, last = terms
-
-    return first.startswith('(') and last.endswith(')')
 
 
 def is_public(key: str) -> bool:

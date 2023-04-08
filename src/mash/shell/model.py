@@ -1,8 +1,11 @@
 from collections import UserString
 from dataclasses import dataclass
 import logging
+import shlex
+import subprocess
 from typing import Iterable, List
 from mash.shell import delimiters
+from mash.io_util import log
 from mash.shell.delimiters import DEFINE_FUNCTION, FALSE, IF, INLINE_ELSE, INLINE_THEN, THEN, TRUE, to_bool
 from mash.shell.errors import ShellError, ShellSyntaxError
 from mash.shell.function import InlineFunction
@@ -123,7 +126,7 @@ class Shell(Node):
             return FALSE
 
         if not lazy:
-            return shell.pipe_cmd_sh(line, prev_result, delimiter=None)
+            return run_shell_command(line, prev_result, delimiter=None)
         return ' '.join(line)
 
 
@@ -288,7 +291,7 @@ class BashPipe(Infix):
         if not isinstance(line, str) and not isinstance(line, Term):
             line = ' '.join(quote_all(line, ignore=['*']))
 
-        next = shell.pipe_cmd_sh(line, prev, delimiter=self.op)
+        next = run_shell_command(line, prev, delimiter=self.op)
         return next
 
 
@@ -640,3 +643,34 @@ class InlineFunctionDefinition(FunctionDefinition):
 
         # TODO use parsing.expand_variables_inline
         shell.env[self.f] = InlineFunction(self.body, args, func_name=self.f)
+
+################################################################################
+# Functions
+################################################################################
+
+
+def run_shell_command(line: str, prev_result: str, delimiter='|') -> str:
+    """
+    May raise subprocess.CalledProcessError
+    """
+    assert delimiter in delimiters.bash or delimiter is None
+
+    if delimiter == '>-':
+        delimiter = '>'
+
+    if delimiter is not None:
+        # pass last result to stdin
+        line = f'echo {shlex.quote(prev_result)} {delimiter} {line}'
+
+    logging.info(f'Cmd = {line}')
+
+    result = subprocess.run(line,
+                            capture_output=True,
+                            check=True,
+                            shell=True)
+
+    stdout = result.stdout.decode().rstrip('\n')
+    stderr = result.stderr.decode().rstrip('\n')
+
+    log(stderr)
+    return stdout
