@@ -457,11 +457,6 @@ class BaseShell(Cmd):
 
         if isinstance(ast, Node):
             return ast.run(prev_result, shell=self, lazy=not run)
-        elif key == 'return':
-            line = values[0]
-            result = self.run_commands(line, run=run)
-            return ('return', result)
-
         else:
             raise NotImplementedError()
 

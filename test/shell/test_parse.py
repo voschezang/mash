@@ -2,7 +2,11 @@ from pytest import raises
 
 from mash.shell.errors import ShellSyntaxError
 from mash.shell.lex_parser import parse
-from mash.shell.model import Assign, BashPipe, BinaryExpression, ElseIf, ElseIfThen, FunctionDefinition, If, IfThen, IfThenElse, Indent, InlineFunctionDefinition, Lines, Map, Math, Method, Pipe, Term, Terms, Word
+from mash.shell.model import (Assign, BashPipe, BinaryExpression, ElseIf,
+                              ElseIfThen, FunctionDefinition, If, IfThen,
+                              IfThenElse, Indent, InlineFunctionDefinition,
+                              Lines, Map, Math, Method, Pipe, Return, Term,
+                              Terms, Word)
 
 
 def parse_line(text: str):
@@ -480,9 +484,9 @@ print outer
 
     assert isinstance(results[1].data, IfThen)
     assert isinstance(results[1].data.condition, BinaryExpression)
-    assert results[1].data.then[0] == 'return'
-    assert results[1].data.then[1].data == '2'
-    assert results[2][0] == 'return'
+    assert isinstance(results[1].data.then, Return)
+    assert results[1].data.then.data == '2'
+    assert isinstance(results[2].data, Return)
     # non-indented code
     assert isinstance(results[3], Terms)
     assert results[3].values == ['print', 'outer']

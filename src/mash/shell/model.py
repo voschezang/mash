@@ -71,6 +71,12 @@ class Math(Node):
         return shell.pipe_cmd_py(line, '')
 
 
+class Return(Node):
+    def run(self, prev_result='', shell=None, lazy=False):
+        result = shell.run_commands(self.data, run=not lazy)
+        return ('return', result)
+
+
 class Shell(Node):
     def run(self, prev_result='', shell=None, lazy=False):
         terms = shell.run_commands(self.data)
