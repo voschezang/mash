@@ -16,12 +16,12 @@ from mash.filesystem.filesystem import FileSystem, cd
 from mash.filesystem.scope import Scope, show
 from mash.io_util import log, shell_ready_signal, print_shell_ready_signal, check_output
 from mash.shell import delimiters
-from mash.shell.delimiters import INLINE_ELSE, INLINE_THEN, DEFINE_FUNCTION, FALSE, IF, LEFT_ASSIGNMENT, RIGHT_ASSIGNMENT, THEN, TRUE, to_bool
+from mash.shell.delimiters import INLINE_ELSE, INLINE_THEN, DEFINE_FUNCTION, FALSE, IF, LEFT_ASSIGNMENT, TRUE, to_bool
 from mash.shell.errors import ShellError, ShellPipeError, ShellSyntaxError
 from mash.shell.function import InlineFunction
 from mash.shell.if_statement import LINE_INDENT, Abort, close_prev_if_statement, close_prev_if_statements,  handle_prev_then_else_statements
 from mash.shell.lex_parser import parse
-from mash.shell.model import LAST_RESULTS, LAST_RESULTS_INDEX, Else, ElseCondition, Indent, Lines, Map, Node, Term, Terms, Then, Word
+from mash.shell.model import LAST_RESULTS, LAST_RESULTS_INDEX, Else, ElseCondition, Indent, Lines, Map, Node, Term, Terms, Then
 from mash.shell.parsing import expand_variables, filter_comments, indent_width, infer_infix_args, quote_items
 from mash.util import for_any, has_method, identity, is_valid_method_name, omit_prefixes, quote_all, split_prefixes
 
@@ -76,7 +76,12 @@ class BaseShell(Cmd):
         # fill this list to customize autocomplete behaviour
         self.completenames_options: List[Command] = []
 
-        # defaults
+        self._init_defaults(env)
+
+        if self.auto_reload:
+            self.try_load_session()
+
+    def _init_defaults(self, env: Dict[str, Any]):
         self.ignore_invalid_syntax = True
 
         self.locals = FileSystem(scope())
@@ -99,8 +104,6 @@ class BaseShell(Cmd):
         self._default_method = identity
 
         self.set_infix_operators()
-        if self.auto_reload:
-            self.try_load_session()
 
     def init_current_scope(self):
         self.locals.set(IF, [])
