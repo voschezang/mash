@@ -8,8 +8,6 @@ from mash.shell.delimiters import FALSE, TRUE
 from mash.shell.errors import ShellError
 from mash.util import is_globbable, is_valid_method_name, match_words, quote, quote_all, removeprefix, glob
 
-Bool = str
-
 
 def expand_variables(terms: List[str], env: dict,
                      completenames_options: List[str],
@@ -93,10 +91,11 @@ def to_string(value: Any) -> str:
     return str(value)
 
 
-def to_bool(line: str) -> Bool:
-    if line != FALSE and line is not None:
-        return TRUE
-    return FALSE
+def to_bool(line: str) -> bool:
+    if isinstance(line, bool):
+        return line
+
+    return line != FALSE and line is not None
 
 
 def filter_comments(terms: List[str]) -> List[str]:

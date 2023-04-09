@@ -12,6 +12,7 @@ import traceback
 
 from mash import io_util
 from mash.io_util import ArgparseWrapper, bold, has_argument, has_output, log, log_once, read_file
+from mash.shell.model import Math
 from mash.util import has_method, is_valid_method_name, translate_items
 
 from mash.shell.function import ShellFunction as Function
@@ -154,11 +155,13 @@ class Shell(BaseShell):
         raise NotImplementedError()
 
     def do_math(self, args: str) -> str:
-        operators = ['-', '\\+', '\\*', '%', '==', '!=', '<', '>']
-        delimiters = ['\\(', '\\)']
-        regex = '(' + '|'.join(operators + delimiters) + ')'
-        terms = re.split(regex, args)
-        return self._eval_terms(terms)
+        result = Math.eval(args, self.env)
+
+        if isinstance(result, bool):
+            self._save_result(result)
+            return ''
+
+        return str(result)
 
     def do_range(self, args: str) -> str:
         """range(start, stop, [step])
@@ -166,23 +169,6 @@ class Shell(BaseShell):
         args = args.split(' ')
         args = (int(a) for a in args)
         return '\n'.join((str(i) for i in range(*args)))
-
-    def _eval_terms(self, terms=List[str]) -> str:
-        line = ''.join(translate_items(terms, self.env.asdict()))
-        log(line)
-
-        try:
-            result = eval(line)
-        except (NameError, SyntaxError, TypeError) as e:
-            raise ShellSyntaxError(f'eval failed: {line}') from e
-
-        # SMELL avoid side-effects on top of a return type
-        self._save_result(result)
-
-        if isinstance(result, bool):
-            result = TRUE if result else FALSE
-
-        return str(result)
 
     def last_method(self):
         """Find the method corresponding to the last command run in `shell`.

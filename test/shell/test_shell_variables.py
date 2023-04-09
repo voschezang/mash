@@ -97,15 +97,6 @@ def test_assign_variable():
     assert 'x' in shell.env
     assert shell.env['x'] == '1'
 
-    run_command('assign x y z', shell=shell)
-    assert 'x' in shell.env
-    assert 'y' in shell.env
-    assert shell.env['x'] == ''
-    assert shell.env['y'] == ''
-
-    with raises(ShellError):
-        run_command('x <- assign y', shell=shell)
-
     # veriy that assignment can be done after errors
     run_command('x <- echo 2', shell=shell)
 
@@ -151,8 +142,7 @@ def test_assign_multicommand():
 
     result = catch_output('y <- echo 20 |> echo 1 ; print 30',
                           shell=shell).split('\n')
-    assert result[0] == TRUE
-    assert result[1] == '30'
+    assert result[0] == '30'
     assert shell.env['y'] == '1 20'
 
 
@@ -176,7 +166,7 @@ def test_assign_eval_multiple():
 
 def test_set_variable_infix_eval_with_pipes():
     shell = Shell()
-    assert catch_output('x <- print a |> print b', shell=shell) == TRUE
+    assert catch_output('x <- print a |> print b', shell=shell) == ''
     assert shell.env['x'] == 'b a'
 
 
@@ -186,26 +176,25 @@ def test_do_export():
     shell.ignore_invalid_syntax = False
 
     v = '123'
-    for cmd in [f'export {k} {v}',
-                f'export {k} "{v}"']:
+    for cmd in [f'{k} = {v}',
+                f'{k} = "{v}"']:
 
         run_command(cmd, shell)
         assert k in shell.env
         assert shell.env[k] == v
 
     v = '1 2'
-    for cmd in [f'export {k} {v}',
-                f'export {k} "{v}"']:
-        run_command(f'export {k} "1 2"', shell)
-        assert shell.env[k] == f"'{v}'"
+    for cmd in [f'{k} = {v}',
+                f'{k} = "{v}"']:
+        run_command(f'{k} = "1 2"', shell)
+        assert shell.env[k] == v
 
     v = '| ; 2'
-    run_command(f'export {k} "{v}"', shell)
-    assert shell.env[k] == f"'{v}'"
+    run_command(f'{k} = "{v}"', shell)
+    assert shell.env[k] == v
 
-    run_command('export k', shell)
-    assert 'k' in shell.env
-    assert shell.env['k'] == ''
+    with raises(ShellError):
+        run_command('k =', shell)
 
 
 def test_do_unset():
@@ -214,18 +203,6 @@ def test_do_unset():
     shell.env['k'] = '1'
     run_command('unset k', shell)
     assert 'k' not in shell.env
-
-
-def test_do_export_after_pipe():
-    shell = Shell()
-
-    v = 'abc'
-    # run_command(f'print {v} |> export k', shell)
-    # assert shell.env['k'] == v
-
-    v = 'def'
-    run_command(f'! echo {v} |> export k', shell)
-    assert shell.env['k'] == v
 
 
 def test_variable_expansion():

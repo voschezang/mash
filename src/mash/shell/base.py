@@ -21,7 +21,7 @@ from mash.shell.function import InlineFunction
 from mash.shell.if_statement import Abort,  handle_prev_then_else_statements
 from mash.shell.lex_parser import parse
 from mash.shell.model import LAST_RESULTS, LAST_RESULTS_INDEX, ElseCondition, Indent, Lines, Map, Node, ReturnValue, Term, Terms
-from mash.shell.parsing import filter_comments, quote_items
+from mash.shell.parsing import filter_comments, quote_items, to_bool
 from mash.util import has_method, identity, is_valid_method_name, quote_all
 
 
@@ -53,7 +53,7 @@ class Cmd(cmd.Cmd):
     prompt = default_prompt
     completenames_options = []
 
-    def onecmd(self, lines: str, print_result=True) -> bool:
+    def onecmd(self, lines: str) -> bool:
         """Parse and run `line`.
         Returns 0 on success and None otherwise
         """
@@ -244,7 +244,7 @@ class BaseShell(Cmd):
 
         k = '_eval_output'
         line = ' '.join(args)
-        line = f'{line} |> export {k}'
+        line = f'{line} -> {k}'
 
         with enter_new_scope(self):
 
@@ -263,7 +263,7 @@ class BaseShell(Cmd):
 
     def _retrieve_eval_result(self, k):
         if k in self.env:
-            return str(self.env[k])
+            return self.env[k]
 
         elif self._last_results:
             return self._last_results.pop()
@@ -292,48 +292,6 @@ class BaseShell(Cmd):
     ############################################################################
     # Commands: do_*
     ############################################################################
-
-    def do_assign(self, args: str):
-        """Assign the result of an expression to an environment variable.
-        ```sh
-        assign a |> print 10
-        # results in a = 10
-        ```
-        """
-        keys = args.split(' ')
-
-        for k in keys:
-            if not is_valid_method_name(k):
-                raise ShellError(f'Invalid variable name format: {k}')
-
-        if LEFT_ASSIGNMENT in self.locals:
-            assignee = self.locals[LEFT_ASSIGNMENT]
-
-            # cancel previous assignments
-            self.locals.rm(LEFT_ASSIGNMENT)
-
-            raise ShellError(
-                f'Assignments cannot be used inside other assignments: {assignee}')
-
-        self.locals.set(LEFT_ASSIGNMENT, keys)
-        self.set_env_variables(keys, '')
-
-        # return value must be empty to prevent side-effects in the next command
-        return ''
-
-    def do_export(self, args: str):
-        """Set an environment variable.
-        `export(k, *values)`
-        """
-        if not args:
-            return ''
-
-        k, *values = args.split(' ')
-
-        if len(values) == 0:
-            values = ['']
-
-        self.set_env_variable(k, *values)
 
     def do_unset(self, args: str):
         """Unset keys
@@ -382,7 +340,7 @@ class BaseShell(Cmd):
             command = Terms([k, acc] + args)
             acc = self.run_commands(command, item, run=True)
 
-            if acc.strip() == '' and self._last_results:
+            if str(acc).strip() == '' and self._last_results:
                 acc = self._last_results[-1]
                 self.env[LAST_RESULTS] = []
 
@@ -392,11 +350,6 @@ class BaseShell(Cmd):
         """Convert a space-separated string to a newline-separates string.
         """
         return '\n'.join(args.split(' '))
-
-    def do_strip(self, args: str) -> str:
-        """Convert a space-separated string to a newline-separates string.
-        """
-        return args.strip()
 
     def do_int(self, args: str) -> str:
         self._save_result(int(args))
@@ -411,7 +364,7 @@ class BaseShell(Cmd):
         return ''
 
     def do_not(self, args: str) -> str:
-        return FALSE if to_bool(args) == TRUE else TRUE
+        return FALSE if to_bool(args) else TRUE
 
     ############################################################################
     # Overrides
@@ -426,7 +379,7 @@ class BaseShell(Cmd):
             raise ShellError('Invalid syntax: AST is empty')
 
         try:
-            return self.run_commands(ast, '', run=True)
+            self.run_commands(ast, '', run=True)
 
         except ShellPipeError as e:
             if self.ignore_invalid_syntax:

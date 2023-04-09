@@ -1,6 +1,7 @@
 from collections import UserString
 from dataclasses import dataclass
 import logging
+import re
 import shlex
 import subprocess
 from typing import Iterable, List
@@ -10,8 +11,8 @@ from mash.shell.delimiters import DEFINE_FUNCTION, FALSE, IF, INLINE_ELSE, INLIN
 from mash.shell.errors import ShellError, ShellSyntaxError
 from mash.shell.function import InlineFunction
 from mash.shell.if_statement import LINE_INDENT, Abort, State, close_prev_if_statement, close_prev_if_statements, handle_else_statement, handle_prev_then_else_statements, handle_then_statement
-from mash.shell.parsing import expand_variables, indent_width, to_bool
-from mash.util import has_method, quote_all
+from mash.shell.parsing import expand_variables, indent_width, to_bool, to_string
+from mash.util import has_method, quote_all, translate_items
 
 LAST_RESULTS = '_last_results'
 LAST_RESULTS_INDEX = '_last_results_index'
@@ -102,9 +103,30 @@ class Math(Node):
         if lazy:
             return ['math'] + args
 
-        line = 'math ' + ' '.join(quote_all(args,
-                                            ignore=list('*$<>') + ['>=', '<=']))
-        return shell.pipe_cmd_py(line, '')
+        line = ' '.join(quote_all(args,
+                                  ignore=list('*$<>') + ['>=', '<=']))
+        # return shell.eval_math(line)
+        return self.eval(line, shell.env)
+
+    @staticmethod
+    def eval(args: str, env: dict):
+        operators = ['-', '\\+', '\\*', '%', '==', '!=', '<', '>']
+        delimiters = ['\\(', '\\)']
+        regex = '(' + '|'.join(operators + delimiters) + ')'
+        terms = re.split(regex, args)
+        return Math.eval_terms(terms, env)
+
+    @staticmethod
+    def eval_terms(terms: List[str], env) -> str:
+        line = ''.join(translate_items(terms, env.asdict()))
+        log(line)
+
+        try:
+            result = eval(line)
+        except (NameError, SyntaxError, TypeError) as e:
+            raise ShellSyntaxError(f'eval failed: {line}') from e
+
+        return result
 
 
 class Return(Node):
@@ -211,7 +233,7 @@ class Infix(Node):
 
     @property
     def data(self):
-        return TRUE
+        return f'`{self.op}`'
 
 
 class Assign(Infix):
@@ -230,7 +252,7 @@ class Assign(Infix):
             v = shell.run_commands(self.value)
             if not lazy:
                 shell.set_env_variables(k, v)
-                return TRUE
+                return
             return k, self.op, v
 
         values = shell.run_commands(self.value, run=not lazy)
@@ -238,13 +260,13 @@ class Assign(Infix):
         if values is None:
             values = ''
 
-        if values.strip() == '' and shell._last_results:
+        if str(values).strip() == '' and shell._last_results:
             values = shell._last_results
             shell.env[LAST_RESULTS] = []
 
         if not lazy:
             shell.set_env_variables(k, values)
-            return TRUE
+            return
         return k, self.op, values
 
 
@@ -330,7 +352,7 @@ class Map(Infix):
             results.append(shell.run_commands(command, item, run=True))
 
         shell.env[LAST_RESULTS_INDEX] = 0
-        agg = delimiter.join(results)
+        agg = delimiter.join(str(r) for r in results)
         if agg.strip() == '':
             return ''
 
@@ -381,7 +403,7 @@ class IfThen(Condition):
             raise NotImplementedError()
 
         value = shell.run_commands(self.condition, run=not lazy)
-        value = to_bool(value) == TRUE
+        value = to_bool(value)
 
         if value and self.then:
             # include prev_result for inline if-then statement
@@ -421,7 +443,7 @@ class Then(Condition):
 class IfThenElse(Condition):
     def run(self, prev_result='', shell=None, lazy=False):
         value = shell.run_commands(self.condition, run=not lazy)
-        value = to_bool(value) == TRUE
+        value = to_bool(value)
         line = self.then if value else self.otherwise
 
         # include prev_result for inline if-then-else statement
@@ -441,7 +463,7 @@ class ElseIfThen(ElseCondition):
             # verify & update state
             handle_else_statement(shell)
             value = shell.run_commands(self.condition, run=not lazy)
-            value = to_bool(value) == TRUE
+            value = to_bool(value)
         except Abort:
             value = False
 
@@ -464,7 +486,7 @@ class ElseIf(ElseCondition):
             # verify & update state
             handle_else_statement(shell)
             value = shell.run_commands(self.condition, run=not lazy)
-            value = to_bool(value) == TRUE
+            value = to_bool(value)
         except Abort:
             value = False
 
@@ -569,7 +591,6 @@ class Terms(Nodes):
 class Lines(Nodes):
     def run(self, prev_result='', shell=None, lazy=False):
         shell.locals.set(LINE_INDENT, indent_width(''))
-        print_result = True
 
         for item in self.values:
 
@@ -592,10 +613,13 @@ class Lines(Nodes):
                 # result = ' '.join(str(s) for s in result)
                 result = str(result)
 
-            if print_result and result is not None:
+            if result is not None:
                 if result or not shell.locals[IF]:
-                    print(result)
+                    print(to_string(result))
 
+    @property
+    def data(self):
+        return ', '.join(str(v) for v in self.values)
 
 ################################################################################
 # Function Definitions
@@ -635,6 +659,10 @@ class FunctionDefinition(Node):
             shell.auto_save = False
 
         return args
+
+    @property
+    def data(self):
+        return f'{self.f}( {self.args} )'
 
 
 class InlineFunctionDefinition(FunctionDefinition):

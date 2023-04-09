@@ -445,6 +445,7 @@ def parse(text, init=True):
 
     def p_logic_negation(p):
         'logic_expression : NOT terms'
+        # TODO
         p[0] = ('not', p[2])
 
     def p_logic(p):
