@@ -71,12 +71,18 @@ class ShellWithFileSystem:
                        }, cls)
 
     def pwd(self):
+        """Print the path to the current working directory
+        """
         return ' '.join(self.repository.full_path)
 
     def get(self, *path: str):
+        """Return the value of the file associated with `path`.
+        """
         return self.repository.get(path)
 
     def set(self, *args: str):
+        """Assign a value to the file k.
+        """
         k, *values = args
 
         if len(values) == 1:
