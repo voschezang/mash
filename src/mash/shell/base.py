@@ -181,8 +181,6 @@ class BaseShell(Cmd):
         self._chars_allowed_for_char_method: List[str] = []
         self._default_method = identity
 
-        self.set_infix_operators()
-
     def init_current_scope(self):
         self.locals.set(IF, [])
         self.locals.set(ENV, {})
@@ -207,12 +205,6 @@ class BaseShell(Cmd):
     @property
     def _last_results_index(self):
         return self.env[LAST_RESULTS_INDEX]
-
-    def set_infix_operators(self):
-        # use this for infix operators, e.g. `a = 1`
-        self.infix_operators = {'=': self.handle_set_env_variable}
-        # the sign to indicate that a variable should be expanded
-        self.variable_prefix = '$'
 
     def set_do_char_method(self, method: Command, chars: List[str]):
         """Use `method` to interpret commands that start any item in `chars`.
@@ -540,10 +532,6 @@ class BaseShell(Cmd):
         else:
             raise ShellError(
                 f'Cannot assign values to all keys: {" ".join(keys)}')
-
-    def handle_set_env_variable(self, lhs: Tuple[str], *rhs: str) -> str:
-        self.set_env_variables(lhs, ' '.join(rhs))
-        return ''
 
     ############################################################################
     # Persistency: Save/load sessions to disk
