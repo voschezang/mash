@@ -14,7 +14,7 @@ from mash.shell.delimiters import DEFINE_FUNCTION, FALSE, IF, INLINE_ELSE, INLIN
 from mash.shell.errors import ShellError, ShellSyntaxError
 from mash.shell.function import InlineFunction
 from mash.shell.if_statement import LINE_INDENT, Abort, State, close_prev_if_statement, close_prev_if_statements, handle_else_statement, handle_prev_then_else_statements, handle_then_statement
-from mash.shell.parsing import expand_variables, indent_width, to_bool, to_string
+from mash.shell.parsing import expand_variables, indent_width, quote_items, to_bool, to_string
 from mash.util import has_method, quote_all, translate_items
 
 LAST_RESULTS = '_last_results'
@@ -113,8 +113,7 @@ class Math(Node):
 
         line = ' '.join(quote_all(args,
                                   ignore=list('*$<>') + ['>=', '<=']))
-        # return shell.eval_math(line)
-        return self.eval(line, shell.env)
+        return Math.eval(line, shell.env)
 
     @staticmethod
     def eval(args: str, env: dict):
@@ -334,16 +333,17 @@ class BinaryExpression(Infix):
         a = shell.run_commands(self.lhs, run=not lazy)
         b = shell.run_commands(self.rhs, run=not lazy)
 
+        line = ' '.join(quote_items([a, op, b]))
+
         if op in delimiters.comparators:
-            # TODO join a, b
             if not lazy:
-                return shell.eval(['math', a, op, b])
+                return Math.eval(line, shell.env)
             return a, op, b
 
         if op in '+-*/':
             # math
             if not lazy:
-                return shell.eval(['math', a, op, b])
+                return Math.eval(line, shell.env)
             return a, op, b
 
         raise NotImplementedError()

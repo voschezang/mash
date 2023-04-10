@@ -17,7 +17,7 @@ from mash.shell.errors import ShellError, ShellPipeError, ShellSyntaxError
 from mash.shell.function import InlineFunction
 from mash.shell.if_statement import Abort,  handle_prev_then_else_statements
 from mash.shell.lex_parser import parse
-from mash.shell.model import LAST_RESULTS, LAST_RESULTS_INDEX, ElseCondition, Indent, Lines, Map, Node, Term, Terms, call_inline_function, enter_new_scope, scope
+from mash.shell.model import LAST_RESULTS, LAST_RESULTS_INDEX, ElseCondition, Indent, Lines, Map, Node, Term, Terms, enter_new_scope, scope
 from mash.shell.parsing import filter_comments, quote_items, to_bool
 from mash.util import has_method, identity, is_valid_method_name, quote_all
 
@@ -215,48 +215,6 @@ class BaseShell(Cmd):
 
     def run_special_method(self, k: str, *args):
         return self._char_methods[k](*args)
-
-    def eval(self, args: List[str], quote=True) -> Types:
-        """Evaluate / run `args` and return the result.
-        """
-        if quote:
-            args = list(quote_items(args))
-
-        args = list(filter_comments(args))
-
-        if not args:
-            return ''
-
-        if not self.is_function(args[0]):
-            args = ['echo'] + args
-
-        k = '_eval_output'
-        line = ' '.join(args)
-        line = f'{line} -> {k}'
-
-        with enter_new_scope(self):
-
-            self.onecmd(line)
-
-            # verify result
-            if k not in self.env and not self._last_results:
-                raise ShellError('eval() failed')
-
-            result = self._retrieve_eval_result(k)
-
-            if k in self.env:
-                del self.env[k]
-
-        return result
-
-    def _retrieve_eval_result(self, k):
-        if k in self.env:
-            return self.env[k]
-
-        elif self._last_results:
-            return self._last_results.pop()
-
-        raise RuntimeError('Cannot retrieve result')
 
     def _save_result(self, value):
         logging.debug(f'_save_result [{self._last_results_index}]: {value}')
