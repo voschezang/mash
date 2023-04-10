@@ -163,6 +163,46 @@ class Term(Node):
         """
         return self.data == other
 
+    def run(self, prev_result='', shell=None, lazy=False):
+        return Term.run_terms([self.data], prev_result, shell, lazy)
+
+    @staticmethod
+    def run_terms(items, prev_result='', shell=None, lazy=False):
+        # TODO expand vars in other branches as well
+        wildcard_value = ''
+        if '$' in items:
+            wildcard_value = prev_result
+            prev_result = ''
+
+        items = list(expand_variables(items, shell.env,
+                                      shell.completenames_options,
+                                      shell.ignore_invalid_syntax,
+                                      wildcard_value))
+
+        k, *args = items
+        if prev_result:
+            args += [prev_result]
+
+        if not lazy:
+            if k == 'echo':
+                line = ' '.join(str(arg) for arg in args)
+                return line
+
+            if shell.is_special_method(k):
+                return shell.run_special_method(k, *args)
+
+            if shell.is_function(k):
+                # TODO if self.is_inline_function(k): ...
+                # TODO standardize quote_all args
+                line = ' '.join(quote_all(items, ignore='*$?'))
+                return shell.pipe_cmd_py(line, prev_result)
+
+        if prev_result:
+            items += [prev_result]
+        if not lazy:
+            return ' '.join(str(v) for v in items)
+        return items
+
 
 class Word(Term):
     def __init__(self, value, string_type=''):
@@ -543,6 +583,7 @@ class Nodes(Node):
 class Terms(Nodes):
     def run(self, prev_result='', shell=None, lazy=False):
         items = self.values
+
         if len(items) >= 2 and not lazy:
             k, *args = items
             if k == 'map':
@@ -554,38 +595,7 @@ class Terms(Nodes):
             elif k in ['reduce', 'foldr']:
                 return shell.foldr(args, prev_result)
 
-        # TODO expand vars in other branches as well
-        wildcard_value = ''
-        if '$' in items:
-            wildcard_value = prev_result
-            prev_result = ''
-
-        items = list(expand_variables(items, shell.env,
-                                      shell.completenames_options,
-                                      shell.ignore_invalid_syntax,
-                                      wildcard_value))
-
-        k = items[0]
-
-        if not lazy:
-            if k == 'echo':
-                args = items[1:]
-                if prev_result:
-                    args += [prev_result]
-                line = ' '.join(str(arg) for arg in args)
-                return line
-
-            if shell.is_function(k):
-                # TODO if self.is_inline_function(k): ...
-                # TODO standardize quote_all args
-                line = ' '.join(quote_all(items, ignore='*$?'))
-                return shell.pipe_cmd_py(line, prev_result)
-
-        if prev_result:
-            items += [prev_result]
-        if not lazy:
-            return ' '.join(str(v) for v in items)
-        return items
+        return Term.run_terms(items, prev_result, shell, lazy)
 
 
 class Lines(Nodes):

@@ -215,14 +215,15 @@ def test_shell_numbers():
 
 def test_set_do_char_method():
     shell = Shell()
-    op = '~'
+    op = '~>'
 
     # invalid syntax
     # with raises(ShellError):
     run_command(op, shell, strict=True)
+    shell.set_special_method(op, print)
 
-    shell.set_do_char_method(print, [op])
-    assert catch_output(op, shell=shell, strict=True) == op
+    assert catch_output(op, shell=shell, strict=True) == ''
+    assert catch_output(f'{op} a', shell=shell, strict=True) == 'a'
 
     # verify that clashes are resolved
     for op in [delimiters.bash[0], delimiters.RIGHT_ASSIGNMENT]:
@@ -230,7 +231,7 @@ def test_set_do_char_method():
             assert catch_output(op, shell=shell, strict=True) == ''
 
         with raises(ShellError):
-            shell.set_do_char_method(print, [op])
+            shell.set_special_method(op, print)
 
 
 def test_set_do_foldr():

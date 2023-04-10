@@ -31,7 +31,11 @@ class ShellWithFileSystem:
                          load_session_posthook=self.repository.load,
                          completekey='tab'
                          )
-        self.shell.set_do_char_method(self.repository.cd, OPTIONS)
+
+        for option in OPTIONS:
+            func = partial_simple(self.repository.cd, option)
+            self.shell.set_special_method(option, func)
+
         self.shell._default_method = self.default_method
 
     def _set_shell_functions(self, cls):

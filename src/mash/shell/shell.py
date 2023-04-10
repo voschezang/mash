@@ -350,7 +350,8 @@ def run_command(command='', shell: Shell = None, strict=None):
 
 def run_interactively(shell):
     io_util.interactive = True
-    shell.auto_save = True
+    # TODO
+    # shell.auto_save = True
     i = 0
     while True:
         i += 1

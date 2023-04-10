@@ -15,7 +15,7 @@ from mash.filesystem.filesystem import FileSystem, cd
 from mash.filesystem.scope import Scope, show
 from mash.io_util import log, shell_ready_signal, print_shell_ready_signal, check_output
 from mash.shell import delimiters
-from mash.shell.delimiters import DEFINE_FUNCTION, FALSE, IF, LEFT_ASSIGNMENT, TRUE
+from mash.shell.delimiters import DEFINE_FUNCTION, FALSE, IF, TRUE
 from mash.shell.errors import ShellError, ShellPipeError, ShellSyntaxError
 from mash.shell.function import InlineFunction
 from mash.shell.if_statement import Abort,  handle_prev_then_else_statements
@@ -104,7 +104,6 @@ class Cmd(cmd.Cmd):
 
     def none(self, _: str) -> str:
         """Do nothing. Similar to util.none.
-        This is a default value for self._do_char_method.
         """
         return ''
 
@@ -177,8 +176,7 @@ class BaseShell(Cmd):
         self.auto_reload = False
 
         # internals
-        self._do_char_method = self.none
-        self._chars_allowed_for_char_method: List[str] = []
+        self._char_methods = {}
         self._default_method = identity
 
     def init_current_scope(self):
@@ -206,19 +204,14 @@ class BaseShell(Cmd):
     def _last_results_index(self):
         return self.env[LAST_RESULTS_INDEX]
 
-    def set_do_char_method(self, method: Command, chars: List[str]):
-        """Use `method` to interpret commands that start any item in `chars`.
-        This allow special chars to be used as commands.
-        E.g. transform `do_$` into `do_f $`
+    def set_special_method(self, char: str, method: Command):
+        if char in delimiters.all or char in '!?':
+            raise ShellError(f'Char {char} is already in use.')
 
-        Naming conflicts with existing `delimiters` are resolved.
-        """
-        for char in chars:
-            if char in delimiters.all:
-                raise ShellError(f'Char {char} is already in use.')
+        self._char_methods[char] = method
 
-        self._do_char_method = method
-        self._chars_allowed_for_char_method = chars
+    def run_special_method(self, k: str, *args):
+        return self._char_methods[k](*args)
 
     def eval(self, args: List[str], quote=True) -> Types:
         """Evaluate / run `args` and return the result.
@@ -272,14 +265,23 @@ class BaseShell(Cmd):
 
         self._last_results[self._last_results_index] = value
 
-    def is_function(self, func_name: str) -> bool:
-        return has_method(self, f'do_{func_name}') \
-            or self.is_inline_function(func_name) \
-            or func_name in self._chars_allowed_for_char_method \
-            or func_name == '?'
+    def is_special_method(self, char: str) -> bool:
+        """Check whether `char` is a special characters method. 
+        """
+        return char in self._char_methods
 
-    def is_inline_function(self, func_name: str) -> bool:
-        return func_name in self.env and isinstance(self.env[func_name], InlineFunction)
+    def is_function(self, k: str) -> bool:
+        """Check whether `k` is an existing function. 
+        """
+        return has_method(self, f'do_{k}') \
+            or self.is_special_method(k) \
+            or self.is_inline_function(k) \
+            or k in '!?'
+
+    def is_inline_function(self, k: str) -> bool:
+        """Check whether `k` is an existing inline (user-defined) function. 
+        """
+        return k in self.env and isinstance(self.env[k], InlineFunction)
 
     ############################################################################
     # Commands: do_*
@@ -475,9 +477,6 @@ class BaseShell(Cmd):
 
                 return result
 
-        if line in self._chars_allowed_for_char_method:
-            return self._do_char_method(line)
-
         if self.ignore_invalid_syntax:
             return super().default(line)
 
@@ -553,8 +552,9 @@ class BaseShell(Cmd):
             except TypeError:
                 logging.debug('Cannot serialize self.env')
                 try:
-                    json = dumps(env, skip_keys=True)
-                except TypeError:
+                    json = dumps(env)
+                except TypeError as e:
+                    logging.debug(e)
                     json = dumps(asdict(env))
 
             f.write(json)
