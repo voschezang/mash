@@ -1,17 +1,14 @@
 from asyncio import CancelledError
 import cmd
-from collections import defaultdict
-from contextlib import contextmanager
 from dataclasses import asdict
 from itertools import repeat
 from json import dumps, loads
 from typing import Any, Callable, Dict, Iterable, List, Tuple, Union
 import logging
-import shlex
 import subprocess
 
 from mash import io_util
-from mash.filesystem.filesystem import FileSystem, cd
+from mash.filesystem.filesystem import FileSystem
 from mash.filesystem.scope import Scope, show
 from mash.io_util import log, shell_ready_signal, print_shell_ready_signal, check_output
 from mash.shell import delimiters
@@ -20,7 +17,7 @@ from mash.shell.errors import ShellError, ShellPipeError, ShellSyntaxError
 from mash.shell.function import InlineFunction
 from mash.shell.if_statement import Abort,  handle_prev_then_else_statements
 from mash.shell.lex_parser import parse
-from mash.shell.model import LAST_RESULTS, LAST_RESULTS_INDEX, ElseCondition, Indent, Lines, Map, Node, ReturnValue, Term, Terms
+from mash.shell.model import LAST_RESULTS, LAST_RESULTS_INDEX, ElseCondition, Indent, Lines, Map, Node, Term, Terms, call_inline_function, enter_new_scope, scope
 from mash.shell.parsing import filter_comments, quote_items, to_bool
 from mash.util import has_method, identity, is_valid_method_name, quote_all
 
@@ -30,7 +27,6 @@ default_session_filename = '.shell_session.json'
 default_prompt = '$ '
 
 COMMENT = '#'
-INNER_SCOPE = 'inner_scope'
 RAW_LINE_INDENT = 'raw_line_indent'
 ENV = 'env'
 
@@ -101,6 +97,13 @@ class Cmd(cmd.Cmd):
             return [a for a in self.completenames_options if a.startswith(text)]
 
         return super().completenames(text, *ignored)
+
+    def default(self, line: str):
+        # TODO move this
+        if self.ignore_invalid_syntax:
+            return super().default(line)
+
+        raise ShellSyntaxError(f'Unknown syntax: {line}')
 
     def none(self, _: str) -> str:
         """Do nothing. Similar to util.none.
@@ -461,27 +464,6 @@ class BaseShell(Cmd):
         print_shell_ready_signal()
         return stop
 
-    def default(self, line: str):
-        # TODO move this
-        if 1:
-            head, *tail = line.split(' ')
-            # TODO move InlineFunction logic to shell.model
-            if head in self.env and isinstance(self.env[head], InlineFunction):
-                f = self.env[head]
-                try:
-                    result = self.call_inline_function(f, *tail)
-                except ShellError:
-                    # reset local scope
-                    self.reset_locals()
-                    raise
-
-                return result
-
-        if self.ignore_invalid_syntax:
-            return super().default(line)
-
-        raise ShellSyntaxError(f'Unknown syntax: {line}')
-
     ############################################################################
     # Environment Variables
     ############################################################################
@@ -597,46 +579,6 @@ class BaseShell(Cmd):
     # Inline & Multiline Functions
     ############################################################################
 
-    def call_inline_function(self, f: InlineFunction, *args: str):
-        translations = {}
-
-        if len(args) != len(f.args):
-            msg = f'Invalid number of arguments: {len(f.args)} arguments expected.'
-            if self.ignore_invalid_syntax:
-                log(msg)
-                return FALSE
-            else:
-                raise ShellError(msg)
-
-        # translate variables in inline functions
-        for i, k in enumerate(f.args):
-            # quote item to preserve `\n`
-            translations[k] = shlex.quote(args[i])
-
-        with enter_new_scope(self):
-
-            for i, k in enumerate(f.args):
-                # quote item to preserve `\n`
-                # self.env[k] = shlex.quote(args[i])
-                self.env[k] = args[i]
-
-            if f.inner == []:
-                return self.run_commands(f.command, run=True)
-
-            # TODO rm impossible state
-            assert f.command == ''
-
-            result = ''
-            for ast in f.inner:
-                result = self.run_commands(ast, prev_result=result,
-                                           run=True)
-
-                if isinstance(result, ReturnValue):
-                    return result.data
-
-            if isinstance(result, ReturnValue):
-                return result.data
-
     def parse(self, results: str):
         return parse(results)
 
@@ -655,21 +597,3 @@ def filter_private_keys(env: dict) -> dict:
         if is_private(k):
             del env[k]
     return env
-
-
-def scope() -> dict:
-    return defaultdict(dict)
-
-
-@contextmanager
-def enter_new_scope(cls: BaseShell, scope_name=INNER_SCOPE):
-    """Create a new scope, then change directory into that scope.
-    Finally exit the new scope.
-    """
-    cls.locals.set(scope_name, scope())
-    try:
-        with cd(cls.locals, scope_name):
-            cls.init_current_scope()
-            yield
-    finally:
-        pass

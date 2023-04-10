@@ -1,10 +1,13 @@
-from collections import UserString
+from cmd import Cmd
+from collections import UserString, defaultdict
+from contextlib import contextmanager
 from dataclasses import dataclass
 import logging
 import re
 import shlex
 import subprocess
 from typing import Iterable, List
+from mash.filesystem.filesystem import cd
 from mash.shell import delimiters
 from mash.io_util import log
 from mash.shell.delimiters import DEFINE_FUNCTION, FALSE, IF, INLINE_ELSE, INLINE_THEN, THEN, TRUE
@@ -16,6 +19,8 @@ from mash.util import has_method, quote_all, translate_items
 
 LAST_RESULTS = '_last_results'
 LAST_RESULTS_INDEX = '_last_results_index'
+
+INNER_SCOPE = 'inner_scope'
 
 ################################################################################
 # Units
@@ -35,6 +40,9 @@ class Node(UserString):
     def run(self, prev_result='', shell=None, lazy=False):
         if lazy:
             return self.data
+
+        if shell.is_inline_function(self.data):
+            return call_inline_function(shell, self.data, [])
 
         if shell.is_function(self.data):
             return shell.pipe_cmd_py(self.data, prev_result)
@@ -191,6 +199,9 @@ class Term(Node):
             if shell.is_special_method(k):
                 return shell.run_special_method(k, *args)
 
+            if shell.is_inline_function(k):
+                return call_inline_function(shell, k, args)
+
             if shell.is_function(k):
                 # TODO if self.is_inline_function(k): ...
                 # TODO standardize quote_all args
@@ -213,6 +224,10 @@ class Word(Term):
 class Method(Term):
     def run(self, prev_result='', shell=None, lazy=False):
         if not lazy:
+            if shell.is_inline_function(self.data):
+                args = [prev_result] if prev_result else []
+                return call_inline_function(shell, self.data, args)
+
             if shell.is_function(self.data):
                 return shell.pipe_cmd_py(self.data, prev_result)
 
@@ -712,3 +727,65 @@ def run_shell_command(line: str, prev_result: str, delimiter='|') -> str:
 
     log(stderr)
     return stdout
+
+
+def call_inline_function(shell, k: str, args: list):
+    f = shell.env[k]
+    args = [str(arg) for arg in args]
+
+    translations = {}
+
+    if len(args) != len(f.args):
+        msg = f'Invalid number of arguments: {len(f.args)} arguments expected.'
+        if shell.ignore_invalid_syntax:
+            log(msg)
+            return FALSE
+        else:
+            raise ShellError(msg)
+
+    # translate variables in inline functions
+    for i, k in enumerate(f.args):
+        # quote item to preserve `\n`
+        translations[k] = shlex.quote(args[i])
+
+    with enter_new_scope(shell):
+
+        for i, k in enumerate(f.args):
+            # quote item to preserve `\n`
+            # self.env[k] = shlex.quote(args[i])
+            shell.env[k] = args[i]
+
+        if f.inner == []:
+            return shell.run_commands(f.command, run=True)
+
+        # TODO rm impossible state
+        assert f.command == ''
+
+        result = ''
+        for ast in f.inner:
+            result = shell.run_commands(ast, prev_result=result,
+                                        run=True)
+
+            if isinstance(result, ReturnValue):
+                return result.data
+
+        if isinstance(result, ReturnValue):
+            return result.data
+
+
+@contextmanager
+def enter_new_scope(cls: Cmd, scope_name=INNER_SCOPE):
+    """Create a new scope, then change directory into that scope.
+    Finally exit the new scope.
+    """
+    cls.locals.set(scope_name, scope())
+    try:
+        with cd(cls.locals, scope_name):
+            cls.init_current_scope()
+            yield
+    finally:
+        pass
+
+
+def scope() -> dict:
+    return defaultdict(dict)
