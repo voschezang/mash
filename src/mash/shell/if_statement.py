@@ -4,6 +4,7 @@ from mash.shell.delimiters import ELSE, IF, INLINE_THEN, THEN
 from mash.shell.errors import ShellError
 
 LINE_INDENT = 'line_indent'
+RAW_LINE_INDENT = 'raw_line_indent'
 
 
 class Abort(RuntimeError):

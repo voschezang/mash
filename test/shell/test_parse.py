@@ -71,6 +71,12 @@ def test_parse_word():
     assert result.values[0].type == 'symbol'
     assert result.values[0] == '+'
 
+    line = '~>'
+    result = parse(line)
+    assert isinstance(result.values[0], Word)
+    assert result.values[0].type == 'symbol'
+    assert result.values[0] == line
+
     line = '?'
     result = parse(line)
     assert result.values[0].type == 'wildcard'

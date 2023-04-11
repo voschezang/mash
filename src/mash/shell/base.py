@@ -1,45 +1,33 @@
-from asyncio import CancelledError
-from cmd import Cmd
 from collections import defaultdict
-from contextlib import contextmanager
 from dataclasses import asdict
-from itertools import repeat
 from json import dumps, loads
-from operator import contains
-from typing import Any, Callable, Dict, Iterable, List, Tuple, Union
+from typing import Any, Callable, Dict, List
 import logging
-import shlex
-import subprocess
 
-from mash import io_util
-from mash.filesystem.filesystem import FileSystem, cd
+from mash.shell.cmd2 import Cmd2
+from mash.filesystem.filesystem import FileSystem
 from mash.filesystem.scope import Scope, show
-from mash.io_util import log, shell_ready_signal, print_shell_ready_signal, check_output
+from mash.io_util import log, print_shell_ready_signal
 from mash.shell import delimiters
-from mash.shell.delimiters import DEFINE_FUNCTION, FALSE, IF, LEFT_ASSIGNMENT, TRUE, to_bool
-from mash.shell.errors import ShellError, ShellPipeError, ShellSyntaxError
-from mash.shell.function import InlineFunction
-from mash.shell.if_statement import Abort,  handle_prev_then_else_statements
-from mash.shell.lex_parser import parse
-from mash.shell.model import LAST_RESULTS, LAST_RESULTS_INDEX, ElseCondition, Indent, Lines, Map, Node, ReturnValue, Term, Terms
-from mash.shell.parsing import expand_variables, filter_comments, infer_infix_args, quote_items
-from mash.util import for_any, has_method, identity, is_valid_method_name, omit_prefixes, quote_all, split_prefixes
+from mash.shell.delimiters import FALSE, IF, TRUE
+from mash.shell.errors import ShellError
+from mash.shell.function import LAST_RESULTS, LAST_RESULTS_INDEX, InlineFunction, scope
+from mash.shell.function import ShellFunction as Function
+from mash.shell.parsing import to_bool
+from mash.util import has_method, identity
 
 
-confirmation_mode = False
 default_session_filename = '.shell_session.json'
-default_prompt = '$ '
+default_function_group_key = '_'
 
-COMMENT = '#'
-INNER_SCOPE = 'inner_scope'
-RAW_LINE_INDENT = 'raw_line_indent'
 ENV = 'env'
+CHAR = 'char'
 
-Command = Callable[[Cmd, str], str]
-Types = Union[str, bool, int, float]
+Command = Callable[[Cmd2, str], str]
+FunctionGroup = Dict[str, Dict[str, Function]]
 
 
-class BaseShell(Cmd):
+class BaseShell(Cmd2):
     """Extend CMD with various capabilities.
     This class is restricted to functionality that requires Cmd methods to be overrride.
 
@@ -52,13 +40,6 @@ class BaseShell(Cmd):
     - Confirmation mode to allow a user to accept or decline commands.
     - Error handling.
     """
-
-    intro = 'Press ctrl-d to exit, ctrl-c to cancel, ? for help, ! for shell interop.\n' + \
-        shell_ready_signal + '\n'
-
-    prompt = default_prompt
-
-    # TODO save stdout in a tmp file
 
     def __init__(self, *args, env: Dict[str, Any] = None,
                  use_model=True,
@@ -100,12 +81,10 @@ class BaseShell(Cmd):
         self.auto_save = False
         self.auto_reload = False
 
-        # internals
-        self._do_char_method = self.none
-        self._chars_allowed_for_char_method: List[str] = []
-        self._default_method = identity
+        self.function_groups: FunctionGroup = defaultdict(dict)
 
-        self.set_infix_operators()
+        # internals
+        self._default_method = identity
 
     def init_current_scope(self):
         self.locals.set(IF, [])
@@ -132,85 +111,6 @@ class BaseShell(Cmd):
     def _last_results_index(self):
         return self.env[LAST_RESULTS_INDEX]
 
-    def set_infix_operators(self):
-        # use this for infix operators, e.g. `a = 1`
-        self.infix_operators = {'=': self.handle_set_env_variable}
-        # the sign to indicate that a variable should be expanded
-        self.variable_prefix = '$'
-
-    def set_do_char_method(self, method: Command, chars: List[str]):
-        """Use `method` to interpret commands that start any item in `chars`.
-        This allow special chars to be used as commands.
-        E.g. transform `do_$` into `do_f $`
-
-        Naming conflicts with existing `delimiters` are resolved.
-        """
-        for char in chars:
-            if char in delimiters.all:
-                raise ShellError(f'Char {char} is already in use.')
-
-        self._do_char_method = method
-        self._chars_allowed_for_char_method = chars
-
-    def eval(self, args: List[str], quote=True) -> Types:
-        """Evaluate / run `args` and return the result.
-        """
-        if quote:
-            args = list(quote_items(args))
-
-        args = list(filter_comments(args))
-
-        if not args:
-            return ''
-
-        if not self.is_function(args[0]):
-            args = ['echo'] + args
-
-        k = '_eval_output'
-        line = ' '.join(args)
-        line = f'{line} |> export {k}'
-
-        with enter_new_scope(self):
-
-            self.onecmd(line)
-
-            # verify result
-            if k not in self.env and not self._last_results:
-                raise ShellError('eval() failed')
-
-            result = self._retrieve_eval_result(k)
-
-            if k in self.env:
-                del self.env[k]
-
-        return result
-
-    def _retrieve_eval_result(self, k):
-        if k in self.env:
-            return str(self.env[k])
-
-        elif self._last_results:
-            return self._last_results.pop()
-
-        raise RuntimeError('Cannot retrieve result')
-
-    def onecmd_prehook(self, line):
-        """Similar to cmd.precmd but executed before cmd.onecmd
-        """
-        if confirmation_mode:
-            assert io_util.interactive
-            log('Command:', line)
-            if not io_util.confirm():
-                raise CancelledError()
-
-        return line
-
-    def none(self, _: str) -> str:
-        """Do nothing. Similar to util.none.
-        This is a default value for self._do_char_method.
-        """
-        return ''
-
     def _save_result(self, value):
         logging.debug(f'_save_result [{self._last_results_index}]: {value}')
 
@@ -221,60 +121,35 @@ class BaseShell(Cmd):
 
         self._last_results[self._last_results_index] = value
 
-    def is_function(self, func_name: str) -> bool:
-        return has_method(self, f'do_{func_name}') \
-            or self.is_inline_function(func_name) \
-            or func_name in self._chars_allowed_for_char_method \
-            or func_name == '?'
+    def is_hidden_function(self, k: str) -> bool:
+        """Check whether `k` is an existing function.
+        """
+        return any(k in keys for keys in self.function_groups.values())
 
-    def is_inline_function(self, func_name: str) -> bool:
-        return func_name in self.env and isinstance(self.env[func_name], InlineFunction)
+    def is_special_function(self, k: str) -> bool:
+        """Check whether `char` is a special characters method
+        """
+        return k in self.function_groups[CHAR]
+
+    def is_function(self, k: str) -> bool:
+        """Check whether `k` is an existing function. 
+        """
+        return has_method(self, f'do_{k}') \
+            or self.is_hidden_function(k) \
+            or self.is_inline_function(k) \
+            or k in '!?'
+
+    def is_inline_function(self, k: str) -> bool:
+        """Check whether `k` is an existing inline (user-defined) function. 
+        """
+        return k in self.env and isinstance(self.env[k], InlineFunction)
+
+    def run_commands(self, ast: str, prev_result='', run=False):
+        raise NotImplementedError()
 
     ############################################################################
     # Commands: do_*
     ############################################################################
-
-    def do_assign(self, args: str):
-        """Assign the result of an expression to an environment variable.
-        ```sh
-        assign a |> print 10
-        # results in a = 10
-        ```
-        """
-        keys = args.split(' ')
-
-        for k in keys:
-            if not is_valid_method_name(k):
-                raise ShellError(f'Invalid variable name format: {k}')
-
-        if LEFT_ASSIGNMENT in self.locals:
-            assignee = self.locals[LEFT_ASSIGNMENT]
-
-            # cancel previous assignments
-            self.locals.rm(LEFT_ASSIGNMENT)
-
-            raise ShellError(
-                f'Assignments cannot be used inside other assignments: {assignee}')
-
-        self.locals.set(LEFT_ASSIGNMENT, keys)
-        self.set_env_variables(keys, '')
-
-        # return value must be empty to prevent side-effects in the next command
-        return ''
-
-    def do_export(self, args: str):
-        """Set an environment variable.
-        `export(k, *values)`
-        """
-        if not args:
-            return ''
-
-        k, *values = args.split(' ')
-
-        if len(values) == 0:
-            values = ['']
-
-        self.set_env_variable(k, *values)
 
     def do_unset(self, args: str):
         """Unset keys
@@ -287,66 +162,6 @@ class BaseShell(Cmd):
                 logging.warning('Invalid key')
 
         return ''
-
-    def do_shell(self, args):
-        """System call
-        """
-        logging.info(f'Cmd = !{args}')
-        return check_output(args)
-
-    def do_fail(self, msg: str):
-        raise ShellError(f'Fail: {msg}')
-
-    def do_map(self, args=''):
-        """Apply a function to every line.
-        If `$` is present, then each line from stdin is inserted there.
-        Otherwise each line is appended.
-
-        Usage
-        -----
-        ```sh
-        println a b |> map echo
-        println a b |> map echo prefix $ suffix
-        ```
-        """
-        log('Expected arguments')
-        return ''
-
-    def _do_foreach(self, ast: tuple, prev_results: str) -> Iterable:
-        """Apply a function to every term or word.
-
-        Usage
-        ```sh
-        echo a b |> foreach echo
-        echo a b |> foreach echo prefix $ suffix
-        ```
-        """
-        prev_results = '\n'.join(prev_results.split(' '))
-        return Map.map(ast, prev_results, self, delimiter=' ')
-
-    def foldr(self, commands: List[Term], prev_results: str, delimiter='\n'):
-        items = parse(prev_results).values
-        k, acc, *args = commands
-
-        for item in items:
-            command = Terms([k, acc] + args)
-            acc = self.run_commands(command, item, run=True)
-
-            if acc.strip() == '' and self._last_results:
-                acc = self._last_results[-1]
-                self.env[LAST_RESULTS] = []
-
-        return acc
-
-    def do_flatten(self, args: str) -> str:
-        """Convert a space-separated string to a newline-separates string.
-        """
-        return '\n'.join(args.split(' '))
-
-    def do_strip(self, args: str) -> str:
-        """Convert a space-separated string to a newline-separates string.
-        """
-        return args.strip()
 
     def do_int(self, args: str) -> str:
         self._save_result(int(args))
@@ -361,121 +176,115 @@ class BaseShell(Cmd):
         return ''
 
     def do_not(self, args: str) -> str:
-        return FALSE if to_bool(args) == TRUE else TRUE
+        # TODO mv to shell.model
+        return FALSE if to_bool(args) else TRUE
+
+    def do_env(self, keys: str):
+        """Retrieve environment variables.
+        Return all variables if no key is given.
+        """
+        if not keys:
+            return filter_private_keys(self.env.asdict())
+
+        try:
+            return {k: self.env[k] for k in keys.split()}
+        except KeyError:
+            log('Invalid key')
+
+    def do_save(self, _):
+        """Save the current session.
+        """
+        self.save_session()
+
+    def do_reload(self, _):
+        """Reload the current session.
+        """
+        self.try_load_session()
+
+    def do_undo(self, _):
+        """Undo the previous command
+        """
+        if not self.lastcmd:
+            return
+
+        f = self.lastcmd.split()[0]
+
+        method = f'undo_{f}'
+        if has_method(self, f'undo_{f}'):
+            return getattr(self, method)()
+
+        raise NotImplementedError()
+
+    def last_method(self):
+        """Find the method corresponding to the last command run in `shell`.
+        It has the form: do_{cmd}
+
+        Return a the last method if it exists and None otherwise.
+        """
+        # TODO integrate this into Shell and store the last succesful cmd
+
+        if not self.lastcmd:
+            return
+
+        cmd = self.lastcmd.split()[0]
+        return BaseShell.get_method(cmd)
+
+    @staticmethod
+    def get_method(method_suffix: str):
+        method_name = f'do_{method_suffix}'
+        if not has_method(BaseShell, method_name):
+            return
+
+        method = getattr(BaseShell, method_name)
+
+        if isinstance(method, Function):
+            return method.func
+
+        return method
+
+    def add_special_function(self, char: str, method: Command):
+        # TODO merge this with self.add_functions
+        if char in delimiters.all or char in '!?':
+            raise ShellError(f'Char {char} is already in use.')
+
+        self.add_functions({char: method}, CHAR)
+
+    def run_special_function(self, k: str, args):
+        return self.function_groups[CHAR][k](*args)
+
+    def run_hidden_function(self, k: str, args):
+        for group in self.function_groups.values():
+            if k in group:
+                return group[k](*args)
+
+        raise ShellError(f'Unknown function: {k}')
+
+    def add_functions(self, functions: Dict[str, Function], group_key=None):
+        """Add functions to this instance at runtime.
+        Use a key to select a group of functions
+        """
+        if group_key is None:
+            group_key = default_function_group_key
+
+        for key, func in functions.items():
+            if hasattr(self, f'do_{key}'):
+                logging.debug('Warning: overriding self.do_{key}')
+
+            self.function_groups[group_key][key] = func
+
+    def remove_functions(self, group_key=None):
+        """Remove functions to this instance at runtime.
+        Use a key to select a group of functions
+        """
+        if group_key is None:
+            group_key = default_function_group_key
+
+        if group_key in self.function_groups:
+            del self.function_groups[group_key]
 
     ############################################################################
     # Overrides
     ############################################################################
-
-    def onecmd(self, lines: str, print_result=True) -> bool:
-        """Parse and run `line`.
-        Returns 0 on success and None otherwise
-        """
-        if lines == 'EOF':
-            logging.debug('Aborting: received EOF')
-            exit()
-
-        result = ''
-        try:
-            lines = self.onecmd_prehook(lines)
-
-            if self.use_model:
-
-                ast = parse(lines)
-                if ast is None:
-                    raise ShellError('Invalid syntax: AST is empty')
-
-                self.run_commands_new_wrapper(ast, result, run=True)
-
-            else:
-                return super().onecmd(lines)
-
-        except ShellSyntaxError as e:
-            if self.ignore_invalid_syntax:
-                log(e)
-            else:
-                raise
-
-        except CancelledError:
-            pass
-
-    def run_commands_new_wrapper(self, *args, **kwds):
-        try:
-            result = self.run_commands(*args, **kwds)
-            return result
-
-        except ShellPipeError as e:
-            if self.ignore_invalid_syntax:
-                log(e)
-                return
-
-            raise ShellError(e)
-
-        except subprocess.CalledProcessError as e:
-            returncode, stderr = e.args
-            log(f'Shell exited with {returncode}: {stderr}')
-
-            if self.ignore_invalid_syntax:
-                return
-
-            raise ShellError(str(e))
-
-    def run_commands(self, ast: Tuple, prev_result='', run=False):
-        if isinstance(ast, Term):
-            return ast.run(prev_result, shell=self, lazy=not run)
-
-        elif isinstance(ast, str):
-            return self.run_commands(Term(ast), prev_result, run=run)
-
-        done = self._handle_define_function(ast)
-        if done:
-            return
-
-        if not isinstance(ast, ElseCondition) and \
-                not isinstance(ast, Indent) and \
-                not isinstance(ast, Lines):
-            try:
-                handle_prev_then_else_statements(self)
-            except Abort:
-                return prev_result
-
-        if isinstance(ast, Node):
-            return ast.run(prev_result, shell=self, lazy=not run)
-        else:
-            raise NotImplementedError()
-
-    def _handle_define_function(self, ast: Node) -> bool:
-        if DEFINE_FUNCTION not in self.locals:
-            return False
-
-        # self._extend_inline_function_definition(line)
-        f = self.locals[DEFINE_FUNCTION]
-
-        if isinstance(ast, Indent):
-            # TODO compare indent width
-            width = ast.indent
-            if ast.data is None:
-                return True
-
-            if f.line_indent is None:
-                f.line_indent = width
-
-            if width >= f.line_indent:
-                self.locals[DEFINE_FUNCTION].inner.append(ast)
-                return True
-
-            self._finalize_define_function(f)
-
-        elif not isinstance(ast, Lines):
-            # TODO this will only be triggered after a non-Word command
-            self._finalize_define_function(f)
-
-        return False
-
-    def _finalize_define_function(self, f):
-        self.env[f.func_name] = f
-        self.locals.rm(DEFINE_FUNCTION)
-        self.prompt = default_prompt
 
     def postcmd(self, stop, _):
         """Display the shell_ready_signal to indicate termination to a parent process.
@@ -489,173 +298,6 @@ class BaseShell(Cmd):
 
         print_shell_ready_signal()
         return stop
-
-    def completenames(self, text, *ignored):
-        """Conditionally override Cmd.completenames
-        """
-        if self.completenames_options:
-            return [a for a in self.completenames_options if a.startswith(text)]
-
-        return super().completenames(text, *ignored)
-
-    def default(self, line: str):
-        head, *tail = line.split(' ')
-        if head in self.env and isinstance(self.env[head], InlineFunction):
-            f = self.env[head]
-            try:
-                result = self.call_inline_function(f, *tail)
-            except ShellError:
-                # reset local scope
-                self.reset_locals()
-                raise
-
-            return result
-
-        if line in self._chars_allowed_for_char_method:
-            return self._do_char_method(line)
-
-        if self.ignore_invalid_syntax:
-            return super().default(line)
-
-        raise ShellSyntaxError(f'Unknown syntax: {line}')
-
-    ############################################################################
-    # Pipes
-    ############################################################################
-
-    def filter_result(self, command_and_args, result):
-        if ';' in command_and_args:
-
-            if result is not None and LEFT_ASSIGNMENT not in self.locals:
-                # print prev result & discard it
-                print(result)
-
-            result = ''
-
-        elif result is None:
-            raise ShellPipeError('Last return value was absent')
-
-        return result
-
-    def infer_shell_prefix(self, command_and_args):
-        # can raise IndexError
-
-        # assume there is at most 1 delimiter
-        prefixes = list(split_prefixes(command_and_args, self.delimiters))
-        prefix = prefixes[-1]
-
-        if prefix in delimiters.bash:
-            return prefix
-
-    def pipe_cmd_py(self, line: str, result: str):
-        # append arguments
-        line = f'{line} {result}'
-
-        return super().onecmd(line)
-
-    def pipe_cmd_sh(self, line: str, prev_result: str, delimiter='|') -> str:
-        """
-        May raise subprocess.CalledProcessError
-        """
-        assert delimiter in delimiters.bash or delimiter is None
-
-        if delimiter == '>-':
-            delimiter = '>'
-
-        if delimiter is not None:
-            # pass last result to stdin
-            line = f'echo {shlex.quote(prev_result)} {delimiter} {line}'
-
-        logging.info(f'Cmd = {line}')
-
-        result = subprocess.run(line,
-                                capture_output=True,
-                                check=True,
-                                shell=True)
-
-        stdout = result.stdout.decode().rstrip('\n')
-        stderr = result.stderr.decode().rstrip('\n')
-
-        log(stderr)
-        return stdout
-
-    def infix_command(self, *args: str):
-        """Treat `args` as an infix command.
-        Apply the respective infix method to args.
-        E.g.  `a = 1`
-        """
-
-        # greedy search for the first occurence of `op`
-        for op, method in self.infix_operators.items():
-            if op not in args:
-                continue
-
-            try:
-                lhs, rhs = infer_infix_args(op, *args)
-            except ValueError:
-                msg = f'Invalid syntax for infix operator {op}'
-                if self.ignore_invalid_syntax:
-                    log(msg)
-                    return
-                raise ShellSyntaxError(msg)
-
-            return method(lhs, *rhs)
-
-        raise ValueError()
-
-    ############################################################################
-    # Environment Variables
-    ############################################################################
-
-    def set_env_variable(self, k: str, *values: str):
-        """Set the variable `k` to `values`
-        """
-        if not is_valid_method_name(k):
-            raise ShellError(f'Invalid variable name format: {k}')
-
-        log(f'set {k}')
-        self.env[k] = ' '.join(values)
-        return k
-
-    def set_env_variables(self, keys: Union[str, List[str]], result: str):
-        """Set the variables `keys` to the values in result.
-        """
-        if result is None:
-            raise ShellError(f'Missing return value in assignment: {keys}')
-
-        if isinstance(keys, str) or isinstance(keys, Term):
-            keys = keys.split(' ')
-
-        try:
-            if len(result) == len(keys):
-                self.env.update(items=zip(keys, result))
-                return
-        except TypeError:
-            pass
-
-        if len(keys) == 1:
-            if isinstance(result, list):
-                result = ' '.join(quote_all(result))
-            self.env[keys[0]] = result
-        elif isinstance(result, str) or isinstance(result, Term):
-            lines = result.split('\n')
-            terms = result.split(' ')
-            if len(lines) == len(keys):
-                self.env.update(items=zip(keys, lines))
-
-            elif len(terms) == len(keys):
-                self.env.update(items=zip(keys, terms))
-
-            elif result == '':
-                self.env.update(items=zip(keys, repeat('')))
-
-        else:
-            raise ShellError(
-                f'Cannot assign values to all keys: {" ".join(keys)}')
-
-    def handle_set_env_variable(self, lhs: Tuple[str], *rhs: str) -> str:
-        self.set_env_variables(lhs, ' '.join(rhs))
-        return ''
 
     ############################################################################
     # Persistency: Save/load sessions to disk
@@ -677,8 +319,9 @@ class BaseShell(Cmd):
             except TypeError:
                 logging.debug('Cannot serialize self.env')
                 try:
-                    json = dumps(env, skip_keys=True)
-                except TypeError:
+                    json = dumps(env)
+                except TypeError as e:
+                    logging.debug(e)
                     json = dumps(asdict(env))
 
             f.write(json)
@@ -717,69 +360,6 @@ class BaseShell(Cmd):
 
         self.load_session_posthook()
 
-    ############################################################################
-    # Inline & Multiline Functions
-    ############################################################################
-
-    def call_inline_function(self, f: InlineFunction, *args: str):
-        translations = {}
-
-        if len(args) != len(f.args):
-            msg = f'Invalid number of arguments: {len(f.args)} arguments expected.'
-            if self.ignore_invalid_syntax:
-                log(msg)
-                return FALSE
-            else:
-                raise ShellError(msg)
-
-        # translate variables in inline functions
-        for i, k in enumerate(f.args):
-            # quote item to preserve `\n`
-            translations[k] = shlex.quote(args[i])
-
-        with enter_new_scope(self):
-
-            for i, k in enumerate(f.args):
-                # quote item to preserve `\n`
-                # self.env[k] = shlex.quote(args[i])
-                self.env[k] = args[i]
-
-            if f.inner == []:
-                return self.run_commands(f.command, run=True)
-
-            # TODO rm impossible state
-            assert f.command == ''
-
-            result = ''
-            for ast in f.inner:
-                result = self.run_commands(ast, prev_result=result,
-                                           run=True)
-
-                if isinstance(result, ReturnValue):
-                    return result.data
-
-            if isinstance(result, ReturnValue):
-                return result.data
-
-    def parse(self, results: str):
-        return parse(results)
-
-
-def is_function_definition(terms: List[str]) -> bool:
-    terms = [term for term in terms if term != '']
-
-    if len(terms) < 2:
-        return
-
-    if len(terms) == 2:
-        term = terms[-1]
-        first = term
-        last = term
-    else:
-        _f, first, *_, last = terms
-
-    return first.startswith('(') and last.endswith(')')
-
 
 def is_public(key: str) -> bool:
     return not is_private(key)
@@ -795,21 +375,3 @@ def filter_private_keys(env: dict) -> dict:
         if is_private(k):
             del env[k]
     return env
-
-
-def scope() -> dict:
-    return defaultdict(dict)
-
-
-@contextmanager
-def enter_new_scope(cls: BaseShell, scope_name=INNER_SCOPE):
-    """Create a new scope, then change directory into that scope.
-    Finally exit the new scope.
-    """
-    cls.locals.set(scope_name, scope())
-    try:
-        with cd(cls.locals, scope_name):
-            cls.init_current_scope()
-            yield
-    finally:
-        pass

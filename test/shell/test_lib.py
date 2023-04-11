@@ -3,7 +3,8 @@ from pytest import raises
 
 from mash import io_util
 from mash.shell import ShellError
-from mash.shell.shell import Shell, run_command, run_commands_from_file
+from mash.shell.shell import Shell
+from src.mash.shell.cmd2 import run_command, run_commands_from_file
 
 
 # Beware of the trailing space
@@ -54,7 +55,7 @@ def test_math_lib_binary_operators():
 
     run_command('x <- mul 2 2', shell=shell)
     assert 'x' in shell.env
-    assert shell.env['x'] == '4'
+    assert shell.env['x'] == 4
 
 
 def test_math_lib_reduction_sum():
@@ -64,7 +65,7 @@ def test_math_lib_reduction_sum():
     catch_output('range 4 |> sum', shell=shell) == '6'
 
     run_command('x <- range 4 |> sum', shell=shell)
-    assert shell.env['x'] == '6'
+    assert shell.env['x'] == 6
 
 
 def test_math_lib_reduction_product():

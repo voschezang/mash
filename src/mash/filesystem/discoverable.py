@@ -96,6 +96,8 @@ class Discoverable(FileSystem):
             self.initial_values[initial_values_key] = initial_value
 
     def show(self, *path: str):
+        """Show contents
+        """
         # TODO keys in path are not autocompleted
         if path == ((),):
             path = self.full_path[1:]

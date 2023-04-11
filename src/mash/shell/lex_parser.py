@@ -40,6 +40,7 @@ tokens = (
     'WILDCARD',
     'WILDCARD_RANGE',
     'NUMBER',  # 0123456789
+    'LONG_SYMBOL',
     'SYMBOL',
 )
 reserved = {
@@ -147,6 +148,10 @@ def init_lex():
         # match *. or .* or *.*
         return t
 
+    def t_LONG_SYMBOL(t):
+        r'\+\+|::|=>|~>|\|->'
+        return t
+
     def t_MAP(t):
         r'>>='
         return t
@@ -176,7 +181,7 @@ def init_lex():
         return t
 
     def t_WORD(t):
-        r'[\w\d\-%&\~]+'
+        r'[\w\d\-%&\~/]+'
         return t
 
     def t_NUMBER(t):
@@ -188,7 +193,7 @@ def init_lex():
         return t
 
     def t_SYMBOL(t):
-        r'[\~\+\*\-%&.?]+'
+        r'[\~\+\*\-%&.]+'
         return t
 
     def t_error(t):
@@ -445,6 +450,7 @@ def parse(text, init=True):
 
     def p_logic_negation(p):
         'logic_expression : NOT terms'
+        # TODO
         p[0] = ('not', p[2])
 
     def p_logic(p):
@@ -502,7 +508,9 @@ def parse(text, init=True):
         p[0] = Variable(p[1])
 
     def p_value_symbol(p):
-        'value : SYMBOL'
+        """value : SYMBOL
+                 | LONG_SYMBOL
+        """
         p[0] = Word(p[1], 'symbol')
 
     def p_value_literal_string(p):
@@ -548,5 +556,5 @@ if __name__ == '__main__':
     if 1 = 3 then 2 else 3
     """
 
-    result = parse(data)
-    print('out', result)
+    prev_result = parse(data)
+    print('out', prev_result)

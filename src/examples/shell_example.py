@@ -46,7 +46,6 @@ functions = {
     'example': example,
     'inspect': inspect,
     'ls': Function(sh_to_py('ls'), args={'-latr': 'flags', '[file]': ''}),
-    'cat': Function(sh_to_py('cat'), args={'file': ''}),
     'vi': Function(sh_to_py('vi'), args={'[file]': ''})}
 
 if __name__ == '__main__':

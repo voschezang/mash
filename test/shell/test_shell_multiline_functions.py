@@ -1,6 +1,7 @@
 from mash import io_util
 from mash.shell.delimiters import TRUE
-from mash.shell.shell import Shell, run_command
+from mash.shell.shell import Shell
+from src.mash.shell.cmd2 import run_command
 from mash.util import use_recursion_limit
 
 
@@ -65,7 +66,7 @@ f (x):
     run_command(cmd, shell=shell)
 
     assert catch_output('f 10', shell=shell) == '10 20 3'
-    assert catch_output('z <- f 10', shell=shell) == TRUE
+    assert catch_output('z <- f 10', shell=shell) == ''
     assert 'z' in shell.env
     assert shell.env['z'] == '10 20 3'
 
@@ -125,10 +126,13 @@ def test_multiline_function_recursion():
     cmd = """
 f (x):
     y <- math $x - 1
-    a <- if $y > 0 then f $y
-    b <- if $y < 0 then -10 
-    c <- if $y == 0 then -20
-    return strip $a $b $c
+
+    if $y > 0 then
+        return f $y
+    if $y < 0 then
+        return -10
+    if $y == 0 then
+        return -20
     """
     run_command(cmd, shell=shell)
 
@@ -149,7 +153,8 @@ f (x):
 
     return 30
     """
+
     run_command(cmd, shell=shell)
-    # assert catch_output('f 1', shell=shell) == '10'
-    # assert catch_output(f'f 2', shell=shell) == '20'
+    assert catch_output('f 1', shell=shell) == '10'
+    assert catch_output(f'f 2', shell=shell) == '20'
     assert catch_output(f'f 3', shell=shell) == '30'

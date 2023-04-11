@@ -1,23 +1,24 @@
 from argparse import ArgumentParser
 from cmd import Cmd
-from collections import defaultdict
 from copy import deepcopy
-from pathlib import Path
-import re
-from typing import Callable, Dict, List, Tuple
+import subprocess
+from typing import Callable, Dict, Iterable, List, Tuple
 import logging
 import os
 import sys
-import traceback
 
 from mash import io_util
-from mash.io_util import ArgparseWrapper, bold, has_argument, has_output, log, log_once, read_file
-from mash.util import has_method, is_valid_method_name, translate_items
-
-from mash.shell.function import ShellFunction as Function
-import mash.shell.function as func
-from mash.shell.base import FALSE, TRUE, BaseShell, filter_private_keys
+from mash.io_util import ArgparseWrapper, bold, has_argument, has_output, log, log_once
+from mash.shell.model import LAST_RESULTS, ElseCondition, Indent, Lines, Map, Math, Node, Term, Terms
+from mash.shell.base import BaseShell
+from mash.shell.cmd2 import default_prompt, run
+from mash.shell.delimiters import DEFINE_FUNCTION
+from mash.shell.errors import ShellError, ShellPipeError, ShellSyntaxError
 from mash.shell.errors import ShellSyntaxError
+from mash.shell.function import ShellFunction as Function
+from mash.shell.if_statement import Abort, handle_prev_then_else_statements
+from mash.shell.lex_parser import parse
+from mash.util import has_method, is_valid_method_name
 
 description = 'If no positional arguments are given then an interactive subshell is started.'
 epilog = f"""
@@ -32,24 +33,19 @@ E.g.
     ./shell.py 'print abc; print def \n print ghi'
 
 {bold('Variables')}
-Assignment constants or evaluate expressiosn:
+Assign constants or evaluate expressiosn:
 ```
 a = 100
 b <- print $a
 echo $a $b
 ```
 
-Store expression results:
-```
-echo 100 -> a
-echo $a
-```
-
 {bold('Interopability')}
 Interopability with Bash can be done with pipes:
     `|>` for Python.
     `|`  for Bash
-    `>`  for Bash (write to file)
+    `>-`  for Bash (write to file)
+    `>>`  for Bash (append to file)
 
 1. To stdin and stdout
 E.g.
@@ -67,170 +63,153 @@ E.g.
 class Shell(BaseShell):
     """Extend BaseShell(Cmd) with helper functions.
     """
-    default_function_group_key = '_'
 
-    def __init__(self, *args, **kwds):
-        super().__init__(*args, **kwds)
-        self.functions: Dict[str, List[str, Function]] = defaultdict(list)
+    def onecmd_inner(self, lines: str):
+        if not self.use_model:
+            return super().onecmd_inner(lines)
 
-    def do_exit(self, args):
-        """exit [code]
-
-        Wrapper for sys.exit(code) with default code: 0
-        """
-        if not args:
-            args = 0
-
-        exit(int(args))
-
-    def do_cat(self, filename):
-        """Concatenate and print files
-        """
-        return ''.join((Path(f).read_text() for f in filename.split()))
-
-    def do_print(self, args):
-        """Mimic Python's print function.
-        """
-        logging.info(f'Cmd: print {args}')
-        return args
-
-    def do_println(self, args):
-        """Print each arg on a new line.
-        """
-        logging.info(f'Cmd: println {args}')
-        return self.do_flatten(args)
-
-    def do_echo(self, args):
-        """Mimic Bash's print function.
-        """
-        logging.info(f'Cmd: echo {args}')
-        return args
-
-    def do_env(self, keys: str):
-        """Retrieve environment variables.
-        Return all variables if no key is given.
-        """
-        if not keys:
-            return filter_private_keys(self.env.asdict())
+        ast = parse(lines)
+        if ast is None:
+            raise ShellError('Invalid syntax: AST is empty')
 
         try:
-            return {k: self.env[k] for k in keys.split()}
-        except KeyError:
-            log('Invalid key')
+            self.run_commands(ast, '', run=True)
 
-    def do_E(self, args):
-        """Show the last exception
-        """
-        traceback.print_exception(
-            type(func.last_exception), func.last_exception, func.last_traceback)
+        except ShellPipeError as e:
+            if self.ignore_invalid_syntax:
+                log(e)
+                return
 
-    def do_save(self, _):
-        """Save the current session.
-        """
-        self.save_session()
+            raise ShellError(e)
 
-    def do_source(self, args: str):
-        files = args.split(' ')
-        for f in files:
-            run_command(read_file(f), self, strict=True)
+        except subprocess.CalledProcessError as e:
+            returncode, stderr = e.args
+            log(f'Shell exited with {returncode}: {stderr}')
 
-    def do_reload(self, _):
-        """Reload the current session.
-        """
-        self.try_load_session()
+            if self.ignore_invalid_syntax:
+                return
 
-    def do_undo(self, _):
-        """Undo the previous command
-        """
-        if not self.lastcmd:
+            raise ShellError(str(e))
+
+    def run_commands(self, ast: Node, prev_result='', run=False):
+        if isinstance(ast, Term):
+            return ast.run(prev_result, shell=self, lazy=not run)
+
+        elif isinstance(ast, str):
+            return self.run_commands(Term(ast), prev_result, run=run)
+
+        done = self._handle_define_function(ast)
+        if done:
             return
 
-        f = self.lastcmd.split()[0]
+        if not isinstance(ast, ElseCondition) and \
+                not isinstance(ast, Indent) and \
+                not isinstance(ast, Lines):
+            try:
+                handle_prev_then_else_statements(self)
+            except Abort:
+                return prev_result
 
-        method = f'undo_{f}'
-        if has_method(self, f'undo_{f}'):
-            return getattr(self, method)()
+        if isinstance(ast, Node):
+            return ast.run(prev_result, shell=self, lazy=not run)
+        else:
+            raise NotImplementedError()
 
-        raise NotImplementedError()
+    def _handle_define_function(self, ast: Node) -> bool:
+        if DEFINE_FUNCTION not in self.locals:
+            return False
+
+        # self._extend_inline_function_definition(line)
+        f = self.locals[DEFINE_FUNCTION]
+
+        if isinstance(ast, Indent):
+            # TODO compare indent width
+            width = ast.indent
+            if ast.data is None:
+                return True
+
+            if f.line_indent is None:
+                f.line_indent = width
+
+            if width >= f.line_indent:
+                self.locals[DEFINE_FUNCTION].inner.append(ast)
+                return True
+
+            self._finalize_define_function(f)
+
+        elif not isinstance(ast, Lines):
+            # TODO this will only be triggered after a non-Word command
+            self._finalize_define_function(f)
+
+        return False
+
+    def _finalize_define_function(self, f):
+        self.env[f.func_name] = f
+        self.locals.rm(DEFINE_FUNCTION)
+        self.prompt = default_prompt
+
+    def parse(self, results: str):
+        # TODO mv this function
+        # SMELL avoid circular import: base => model => lex_parser => model
+        return parse(results)
+
+    ############################################################################
+    # Commands: do_*
+    ############################################################################
+
+    def do_map(self, args=''):
+        """Apply a function to every line.
+        If `$` is present, then each line from stdin is inserted there.
+        Otherwise each line is appended.
+
+        Usage
+        -----
+        ```sh
+        println a b |> map echo
+        println a b |> map echo prefix $ suffix
+        ```
+        """
+        log('Expected arguments')
+        return ''
+
+    def _do_foreach(self, ast: tuple, prev_results: str) -> Iterable:
+        """Apply a function to every term or word.
+
+        Usage
+        ```sh
+        echo a b |> foreach echo
+        echo a b |> foreach echo prefix $ suffix
+        ```
+        """
+        prev_results = '\n'.join(prev_results.split(' '))
+        return Map.map(ast, prev_results, self, delimiter=' ')
+
+    def foldr(self, commands: List[Term], prev_results: str, delimiter='\n'):
+        items = parse(prev_results).values
+        k, acc, *args = commands
+
+        for item in items:
+            command = Terms([k, acc] + args)
+            acc = self.run_commands(command, item, run=True)
+
+            if str(acc).strip() == '' and self._last_results:
+                acc = self._last_results[-1]
+                self.env[LAST_RESULTS] = []
+
+        return acc
 
     def do_math(self, args: str) -> str:
-        operators = ['-', '\\+', '\\*', '%', '==', '!=', '<', '>']
-        delimiters = ['\\(', '\\)']
-        regex = '(' + '|'.join(operators + delimiters) + ')'
-        terms = re.split(regex, args)
-        return self._eval_terms(terms)
-
-    def do_range(self, args: str) -> str:
-        """range(start, stop, [step])
-        """
-        args = args.split(' ')
-        args = (int(a) for a in args)
-        return '\n'.join((str(i) for i in range(*args)))
-
-    def _eval_terms(self, terms=List[str]) -> str:
-        line = ''.join(translate_items(terms, self.env.asdict()))
-        log(line)
-
-        try:
-            result = eval(line)
-        except (NameError, SyntaxError, TypeError) as e:
-            raise ShellSyntaxError(f'eval failed: {line}') from e
-
-        # SMELL avoid side-effects on top of a return type
-        self._save_result(result)
+        result = Math.eval(args, self.env)
 
         if isinstance(result, bool):
-            result = TRUE if result else FALSE
+            self._save_result(result)
+            return ''
 
         return str(result)
 
-    def last_method(self):
-        """Find the method corresponding to the last command run in `shell`.
-        It has the form: do_{cmd}
-
-        Return a the last method if it exists and None otherwise.
-        """
-        # TODO integrate this into Shell and store the last succesful cmd
-
-        if not self.lastcmd:
-            return
-
-        cmd = self.lastcmd.split()[0]
-        return Shell.get_method(cmd)
-
-    @staticmethod
-    def get_method(method_suffix: str):
-        method_name = f'do_{method_suffix}'
-        if not has_method(Shell, method_name):
-            return
-
-        method = getattr(Shell, method_name)
-
-        if isinstance(method, Function):
-            return method.func
-
-        return method
-
-    def add_functions(self, functions: Dict[str, Function], group_key=None):
-        """Add commands to this instance of CMD.
-        These will be hidden from the help view, unlike shell.set_functions.
-        Use a key to select a group of functions
-        """
-        if group_key is None:
-            group_key = Shell.default_function_group_key
-
-        for key, func in functions.items():
-            set_functions({key: func}, self)
-            self.functions[group_key].append(key)
-
-    def remove_functions(self, group_key=None):
-        if group_key is None:
-            group_key = Shell.default_function_group_key
-
-        for key in self.functions[group_key]:
-            delattr(self, f'do_{key}')
-
-        del self.functions[group_key]
+################################################################################
+# Helpers
+################################################################################
 
 
 def all_commands(shell: Shell):
@@ -268,6 +247,28 @@ def sh_to_py(cmd: str):
 
     func.__name__ = cmd
     return func
+
+
+def run_command(command='', shell: Shell = None, strict=None):
+    """Run a newline-separated string of commands.
+
+    Parameters
+    ----------
+        strict : bool
+            Raise exceptions when encountering invalid syntax.
+    """
+    if shell is None:
+        shell = Shell()
+
+    if strict is not None:
+        shell.ignore_invalid_syntax = not strict
+
+    # TODO avoid splitines
+    # shell.onecmd(command)
+
+    for line in command.splitlines():
+        if line:
+            shell.onecmd(line)
 
 
 def add_cli_args(parser: ArgumentParser):
@@ -322,57 +323,6 @@ def read_stdin():
         print()
         logging.debug(e)
         exit(130)
-
-
-def run(shell, commands, filename, repl=True):
-    if commands or filename is not None:
-        # compile mode
-        if filename is not None:
-            run_commands_from_file(filename, shell)
-
-        if commands:
-            run_command(commands, shell, strict=True)
-
-    elif repl:
-        run_interactively(shell)
-
-
-def run_commands_from_file(filename: str, shell: Shell):
-    command = read_file(filename)
-    run_command(command, shell, strict=True)
-
-
-def run_command(command='', shell: Shell = None, strict=None):
-    """Run a single command in using `shell`.
-
-    Parameters
-    ----------
-        strict : bool
-            Raise exceptions when encountering invalid syntax.
-    """
-    if shell is None:
-        shell = Shell()
-
-    if strict is not None:
-        shell.ignore_invalid_syntax = not strict
-
-    # TODO skip splitlines
-    for line in command.splitlines():
-        if line:
-            shell.onecmd(line)
-
-
-def run_interactively(shell):
-    io_util.interactive = True
-    shell.auto_save = True
-    i = 0
-    while True:
-        i += 1
-        try:
-            shell.cmdloop()
-        except KeyboardInterrupt:
-            print('\nKeyboardInterrupt')
-            shell.intro = ''
 
 
 def build(functions: Dict[str, Function] = None, completions: Dict[str, Callable] = None, instantiate=True) -> Shell:

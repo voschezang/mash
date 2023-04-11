@@ -57,11 +57,11 @@ def test_onecmd_syntax_quotes():
     shell = Shell()
     shell.ignore_invalid_syntax = False
 
-    assert catch_output('a = 1', shell=shell) == delimiters.TRUE
+    assert catch_output('a = 1', shell=shell) == ''
 
     # TODO quoting terms can shadow other terms
     # with raises(ShellError):
-    assert catch_output('a = 1 "="', shell=shell) == delimiters.TRUE
+    assert catch_output('a = 1 "="', shell=shell) == ''
 
 
 def test_onecmd_syntax_escape():
@@ -215,14 +215,15 @@ def test_shell_numbers():
 
 def test_set_do_char_method():
     shell = Shell()
-    op = '~'
+    op = '~>'
 
     # invalid syntax
     # with raises(ShellError):
     run_command(op, shell, strict=True)
+    shell.add_special_function(op, print)
 
-    shell.set_do_char_method(print, [op])
-    assert catch_output(op, shell=shell, strict=True) == op
+    assert catch_output(op, shell=shell, strict=True) == ''
+    assert catch_output(f'{op} a', shell=shell, strict=True) == 'a'
 
     # verify that clashes are resolved
     for op in [delimiters.bash[0], delimiters.RIGHT_ASSIGNMENT]:
@@ -230,7 +231,7 @@ def test_set_do_char_method():
             assert catch_output(op, shell=shell, strict=True) == ''
 
         with raises(ShellError):
-            shell.set_do_char_method(print, [op])
+            shell.add_special_function(op, print)
 
 
 def test_set_do_foldr():
@@ -323,7 +324,7 @@ def test_save_and_load_session():
     shell = Shell()
     assert k not in shell.env
 
-    shell.set_env_variable(k, str(v))
+    shell.env[k] = str(v)
     shell.save_session(filename)
 
     shell = Shell()
