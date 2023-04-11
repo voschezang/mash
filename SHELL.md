@@ -11,9 +11,11 @@ mash/ # implementation written in Python
   filesystem/ # CRUD operations for directories and REST resources
   object_parser/ # parse JSON objects
   shell/
-    Cmd2 # An extension of cmd.Cmd
-    Shell
     ShellWithFileSystem
+    Shell
+    Cmd2 # An extension of cmd.Cmd
+    lex_parser # BNF-based grammer
+    model # AST-based logic
 cli.py # A CLI that combines Shell with quo.Prompt
 ```
 
