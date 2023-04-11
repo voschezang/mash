@@ -38,11 +38,13 @@ The main datastructure is `mash.filesystem`. It's inferface is inspired by unix 
 #### Simplified
 
 ```python
+import cmd
+
 class ShellWithFileSystem:
 	shell: Shell
-  repository: FileSystem # a directory or REST resource
+	repository: FileSystem # a directory or REST resource
 
-class Shell(Cmd)
+class Shell(Cmd):
 	env: FileSystem # variable scopes
 ```
 
