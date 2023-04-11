@@ -181,7 +181,7 @@ def init_lex():
         return t
 
     def t_WORD(t):
-        r'[\w\d\-%&\~]+'
+        r'[\w\d\-%&\~/]+'
         return t
 
     def t_NUMBER(t):

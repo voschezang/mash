@@ -135,15 +135,13 @@ class Cmd2(cmd.Cmd):
     # Commands: do_* - File I/O
     ############################################################################
 
-    def do_cat(self, filenames):
+    def do_cat(self, filenames: str):
         """Concatenate and print files
         """
-        return ''.join((Path(f).read_text() for f in filenames.split() if Path(f).exists()))
+        return ''.join(cat_file(f) for f in filenames.split())
 
-    def do_source(self, args: str):
-        files = args.split(' ')
-        for f in files:
-            run_command(read_file(f), self, strict=True)
+    def do_source(self, filenames: str):
+        run_command(self.do_cat(filenames), self)
 
     ############################################################################
     # Commands: do_* - String Operations
@@ -220,3 +218,10 @@ def run(shell, commands, filename, repl=True):
 
     elif repl:
         run_interactively(shell)
+
+
+def cat_file(filename: str) -> str:
+    try:
+        return Path(filename).read_text()
+    except (FileNotFoundError, IsADirectoryError) as e:
+        raise ShellError from e

@@ -1,5 +1,7 @@
 from typing import Dict
 
+from mash.util import removeprefix
+
 
 def infer_default_and_non_default_args(func):
     try:
@@ -22,7 +24,14 @@ def infer_args(func) -> list:
 def infer_synopsis(func, variables=[]) -> str:
     if not variables:
         variables = infer_args(func)
-    return ' '.join([func.__name__] + variables)
+
+        # rm arg: self
+        if variables and variables[0] == 'self':
+            variables = variables[1:]
+
+    # rm prefix: do_
+    func_name = removeprefix(func.__name__, 'do_')
+    return ' '.join([func_name] + variables)
 
 
 def infer_signature(func) -> dict:

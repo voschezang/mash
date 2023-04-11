@@ -44,7 +44,8 @@ echo $a $b
 Interopability with Bash can be done with pipes:
     `|>` for Python.
     `|`  for Bash
-    `>`  for Bash (write to file)
+    `>-`  for Bash (write to file)
+    `>>`  for Bash (append to file)
 
 1. To stdin and stdout
 E.g.
