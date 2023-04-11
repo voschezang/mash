@@ -556,5 +556,5 @@ if __name__ == '__main__':
     if 1 = 3 then 2 else 3
     """
 
-    result = parse(data)
-    print('out', result)
+    prev_result = parse(data)
+    print('out', prev_result)

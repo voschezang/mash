@@ -1,11 +1,12 @@
 from functools import partial
+from logging import debug
 
 from mash.filesystem.filesystem import FileSystem, OPTIONS, Option
 from mash.filesystem.discoverable import Discoverable
 from mash.filesystem.view import Path
 from mash.shell.shell import build, set_completions, set_functions
 from mash.shell.function import ShellFunction as Function
-from mash.util import find_fuzzy_matches, has_method, partial_simple
+from mash.util import find_fuzzy_matches, hamming, has_method, is_digit, partial_simple
 
 cd_aliasses = 'cd_aliasses'
 path_delimiter = '/'
@@ -34,7 +35,7 @@ class ShellWithFileSystem:
 
         for option in OPTIONS:
             func = partial_simple(self.repository.cd, option)
-            self.shell.set_special_method(option, func)
+            self.shell.add_special_function(option, func)
 
         self.shell._default_method = self.default_method
 
@@ -175,6 +176,14 @@ class ShellWithFileSystem:
     def default_method(self, dirname: str):
         candidates = self.complete_cd(dirname, None, None, None)
         if candidates:
-            self.repository.cd(candidates[0])
+            error = hamming(dirname, candidates[0])
+            if error < 0.9:
+                self.repository.cd(candidates[0])
+                return
+
+        if is_digit(dirname):
+            self.repository.cd(dirname)
             return
+
+        debug('No matching directory found')
         return dirname

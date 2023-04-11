@@ -2,7 +2,7 @@ from copy import deepcopy
 from pytest import raises
 
 from examples.filesystem import repository
-from src.mash.shell.shell import run_command
+from src.mash.shell.cmd2 import run_command
 from src.mash.shell import ShellWithFileSystem, ShellError
 from src.mash import io_util
 
@@ -146,6 +146,7 @@ def test_set_cd_aliasses():
     # this should fail silently
     run_command(child, obj.shell)
     assert child not in shell.prompt
+    assert parent not in shell.prompt
 
     run_command(parent, obj.shell)
     assert parent in shell.prompt
@@ -178,9 +179,7 @@ def test_crud_env_set():
     k = 'a'
     v = '10'
 
-    obj.shell.set_env_variable(k, v)
-
-    assert obj.shell.env[k] == v
+    obj.shell.env[k] = v
 
     line = f'env {k}'
     assert v in catch_output(line, shell=obj.shell, strict=True)

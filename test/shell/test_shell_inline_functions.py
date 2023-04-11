@@ -2,7 +2,8 @@ from pytest import raises
 
 from mash import io_util
 from mash.shell import ShellError
-from mash.shell.shell import Shell, run_command
+from mash.shell.shell import Shell
+from src.mash.shell.cmd2 import run_command
 
 
 def catch_output(line='', func=run_command, **kwds) -> str:

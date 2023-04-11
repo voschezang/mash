@@ -220,7 +220,7 @@ def test_set_do_char_method():
     # invalid syntax
     # with raises(ShellError):
     run_command(op, shell, strict=True)
-    shell.set_special_method(op, print)
+    shell.add_special_function(op, print)
 
     assert catch_output(op, shell=shell, strict=True) == ''
     assert catch_output(f'{op} a', shell=shell, strict=True) == 'a'
@@ -231,7 +231,7 @@ def test_set_do_char_method():
             assert catch_output(op, shell=shell, strict=True) == ''
 
         with raises(ShellError):
-            shell.set_special_method(op, print)
+            shell.add_special_function(op, print)
 
 
 def test_set_do_foldr():
@@ -324,7 +324,7 @@ def test_save_and_load_session():
     shell = Shell()
     assert k not in shell.env
 
-    shell.set_env_variable(k, str(v))
+    shell.env[k] = str(v)
     shell.save_session(filename)
 
     shell = Shell()

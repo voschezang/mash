@@ -1,24 +1,23 @@
-from cmd import Cmd
-from collections import UserString, defaultdict
+from collections import UserString
 from contextlib import contextmanager
 from dataclasses import dataclass
+from itertools import repeat
 import logging
 import re
 import shlex
 import subprocess
-from typing import Iterable, List
+from typing import Iterable, List, Union
 from mash.filesystem.filesystem import cd
 from mash.shell import delimiters
 from mash.io_util import log
+from mash.shell.base import BaseShell
 from mash.shell.delimiters import DEFINE_FUNCTION, FALSE, IF, INLINE_ELSE, INLINE_THEN, THEN, TRUE
 from mash.shell.errors import ShellError, ShellSyntaxError
-from mash.shell.function import InlineFunction
+from mash.shell.function import LAST_RESULTS, LAST_RESULTS_INDEX, InlineFunction, scope
 from mash.shell.if_statement import LINE_INDENT, Abort, State, close_prev_if_statement, close_prev_if_statements, handle_else_statement, handle_prev_then_else_statements, handle_then_statement
 from mash.shell.parsing import expand_variables, indent_width, quote_items, to_bool, to_string
 from mash.util import has_method, quote_all, translate_items
 
-LAST_RESULTS = '_last_results'
-LAST_RESULTS_INDEX = '_last_results_index'
 
 INNER_SCOPE = 'inner_scope'
 
@@ -37,15 +36,18 @@ class Node(UserString):
         # store value transparently
         self.data = data
 
-    def run(self, prev_result='', shell=None, lazy=False):
+    def run(self, prev_result='', shell: BaseShell = None, lazy=False):
         if lazy:
             return self.data
 
-        if shell.is_inline_function(self.data):
-            return call_inline_function(shell, self.data, [])
+        args = [prev_result] if prev_result else []
+        try:
+            return run_function(self.data, args, shell)
+        except Abort:
+            pass
 
         if shell.is_function(self.data):
-            return shell.pipe_cmd_py(self.data, prev_result)
+            return shell.onecmd_raw(self.data, prev_result)
 
         return str(self.data)
 
@@ -69,7 +71,7 @@ class Indent(Node):
         self.data = value
         self.indent = indent
 
-    def run(self, prev_result='', shell=None, lazy=False):
+    def run(self, prev_result='', shell: BaseShell = None, lazy=False):
         width = self.indent
         inner = self.data
         if inner is None:
@@ -105,7 +107,7 @@ class Indent(Node):
 
 
 class Math(Node):
-    def run(self, prev_result='', shell=None, lazy=False):
+    def run(self, prev_result='', shell: BaseShell = None, lazy=False):
         args = shell.run_commands(self.data, prev_result)
 
         if lazy:
@@ -137,13 +139,13 @@ class Math(Node):
 
 
 class Return(Node):
-    def run(self, prev_result='', shell=None, lazy=False):
+    def run(self, prev_result='', shell: BaseShell = None, lazy=False):
         result = shell.run_commands(self.data, run=not lazy)
         return ReturnValue(result)
 
 
 class Shell(Node):
-    def run(self, prev_result='', shell=None, lazy=False):
+    def run(self, prev_result='', shell: BaseShell = None, lazy=False):
         terms = shell.run_commands(self.data)
         if isinstance(terms, str) or isinstance(terms, Term):
             line = str(terms)
@@ -170,7 +172,7 @@ class Term(Node):
         """
         return self.data == other
 
-    def run(self, prev_result='', shell=None, lazy=False):
+    def run(self, prev_result='', shell: BaseShell = None, lazy=False):
         return Term.run_terms([self.data], prev_result, shell, lazy)
 
     @staticmethod
@@ -195,23 +197,24 @@ class Term(Node):
                 line = ' '.join(str(arg) for arg in args)
                 return line
 
-            if shell.is_special_method(k):
-                return shell.run_special_method(k, *args)
-
-            if shell.is_inline_function(k):
-                return call_inline_function(shell, k, args)
+            try:
+                return run_function(k, args, shell)
+            except Abort:
+                pass
 
             if shell.is_function(k):
                 # TODO if self.is_inline_function(k): ...
                 # TODO standardize quote_all args
                 line = ' '.join(quote_all(items, ignore='*$?'))
-                return shell.pipe_cmd_py(line, prev_result)
+                return shell.onecmd_raw(line, prev_result)
 
         if prev_result:
             items += [prev_result]
-        if not lazy:
-            return ' '.join(str(v) for v in items)
-        return items
+        if lazy:
+            return items
+
+        line = ' '.join(str(v) for v in items)
+        return shell._default_method(line)
 
 
 class Word(Term):
@@ -221,14 +224,17 @@ class Word(Term):
 
 
 class Method(Term):
-    def run(self, prev_result='', shell=None, lazy=False):
+    def run(self, prev_result='', shell: BaseShell = None, lazy=False):
         if not lazy:
-            if shell.is_inline_function(self.data):
-                args = [prev_result] if prev_result else []
-                return call_inline_function(shell, self.data, args)
+            args = [prev_result] if prev_result else []
+
+            try:
+                return run_function(self.data, args, shell)
+            except Abort:
+                pass
 
             if shell.is_function(self.data):
-                return shell.pipe_cmd_py(self.data, prev_result)
+                return shell.onecmd_raw(self.data, prev_result)
 
             return shell._default_method(str(self.data))
 
@@ -236,7 +242,7 @@ class Method(Term):
 
 
 class Variable(Term):
-    def run(self, prev_result='', shell=None, lazy=False):
+    def run(self, prev_result='', shell: BaseShell = None, lazy=False):
         if not lazy:
             k = self.data[1:]
             return shell.env[k]
@@ -245,7 +251,7 @@ class Variable(Term):
 
 
 class Quoted(Term):
-    def run(self, prev_result='', shell=None, lazy=False):
+    def run(self, prev_result='', shell: BaseShell = None, lazy=False):
         delimiter = ' '
         items = self.data.split(delimiter)
         items = list(expand_variables(items, shell.env,
@@ -299,13 +305,13 @@ class Assign(Infix):
     def value(self):
         return self.rhs
 
-    def run(self, prev_result='', shell=None, lazy=False):
+    def run(self, prev_result='', shell: BaseShell = None, lazy=False):
         k = shell.run_commands(self.key)
 
         if self.op == '=':
             v = shell.run_commands(self.value)
             if not lazy:
-                shell.set_env_variables(k, v)
+                set_env_variables(shell, k, v)
                 return
             return k, self.op, v
 
@@ -319,13 +325,13 @@ class Assign(Infix):
             shell.env[LAST_RESULTS] = []
 
         if not lazy:
-            shell.set_env_variables(k, values)
+            set_env_variables(shell, k, values)
             return
         return k, self.op, values
 
 
 class BinaryExpression(Infix):
-    def run(self, prev_result='', shell=None, lazy=False):
+    def run(self, prev_result='', shell: BaseShell = None, lazy=False):
         if prev_result not in (TRUE, FALSE):
             raise NotImplementedError('prev_result was not empty')
 
@@ -353,14 +359,14 @@ class BinaryExpression(Infix):
 
 
 class Pipe(Infix):
-    def run(self, prev_result='', shell=None, lazy=False):
+    def run(self, prev_result='', shell: BaseShell = None, lazy=False):
         prev = shell.run_commands(self.lhs, prev_result, run=not lazy)
         next = shell.run_commands(self.rhs, prev, run=not lazy)
         return next
 
 
 class BashPipe(Infix):
-    def run(self, prev_result='', shell=None, lazy=False):
+    def run(self, prev_result='', shell: BaseShell = None, lazy=False):
         prev = shell.run_commands(self.lhs, prev_result, run=not lazy)
         line = shell.run_commands(self.rhs, run=False)
 
@@ -373,7 +379,7 @@ class BashPipe(Infix):
 
 
 class Map(Infix):
-    def run(self, prev_result='', shell=None, lazy=False):
+    def run(self, prev_result='', shell: BaseShell = None, lazy=False):
         lhs, rhs = self.lhs, self.rhs
         prev = shell.run_commands(lhs, prev_result, run=not lazy)
 
@@ -415,7 +421,7 @@ class Map(Infix):
 
 
 class LogicExpression(Infix):
-    def run(self, prev_result='', shell=None, lazy=False):
+    def run(self, prev_result='', shell: BaseShell = None, lazy=False):
         a = shell.run_commands(self.lhs, run=not lazy)
         b = shell.run_commands(self.rhs, run=not lazy)
         if not lazy:
@@ -444,7 +450,7 @@ class Condition(Node):
 class If(Condition):
     # A multiline if-statement
 
-    def run(self, prev_result='', shell=None, lazy=False):
+    def run(self, prev_result='', shell: BaseShell = None, lazy=False):
         if lazy:
             raise NotImplementedError()
 
@@ -453,7 +459,7 @@ class If(Condition):
 
 
 class IfThen(Condition):
-    def run(self, prev_result='', shell=None, lazy=False):
+    def run(self, prev_result='', shell: BaseShell = None, lazy=False):
         if lazy:
             raise NotImplementedError()
 
@@ -473,7 +479,7 @@ class IfThen(Condition):
 
 
 class Then(Condition):
-    def run(self, prev_result='', shell=None, lazy=False):
+    def run(self, prev_result='', shell: BaseShell = None, lazy=False):
         if lazy:
             raise NotImplementedError()
 
@@ -496,7 +502,7 @@ class Then(Condition):
 
 
 class IfThenElse(Condition):
-    def run(self, prev_result='', shell=None, lazy=False):
+    def run(self, prev_result='', shell: BaseShell = None, lazy=False):
         value = shell.run_commands(self.condition, run=not lazy)
         value = to_bool(value)
         line = self.then if value else self.otherwise
@@ -510,7 +516,7 @@ class ElseCondition(Condition):
 
 
 class ElseIfThen(ElseCondition):
-    def run(self, prev_result='', shell=None, lazy=False):
+    def run(self, prev_result='', shell: BaseShell = None, lazy=False):
         if lazy:
             raise NotImplementedError()
 
@@ -533,7 +539,7 @@ class ElseIfThen(ElseCondition):
 
 
 class ElseIf(ElseCondition):
-    def run(self, prev_result='', shell=None, lazy=False):
+    def run(self, prev_result='', shell: BaseShell = None, lazy=False):
         if lazy:
             raise NotImplementedError()
 
@@ -553,7 +559,7 @@ class ElseIf(ElseCondition):
 
 
 class Else(ElseCondition):
-    def run(self, prev_result='', shell=None, lazy=False):
+    def run(self, prev_result='', shell: BaseShell = None, lazy=False):
         if lazy:
             raise NotImplementedError()
 
@@ -596,7 +602,7 @@ class Nodes(Node):
 
 
 class Terms(Nodes):
-    def run(self, prev_result='', shell=None, lazy=False):
+    def run(self, prev_result='', shell: BaseShell = None, lazy=False):
         items = self.values
 
         if len(items) >= 2 and not lazy:
@@ -614,7 +620,7 @@ class Terms(Nodes):
 
 
 class Lines(Nodes):
-    def run(self, prev_result='', shell=None, lazy=False):
+    def run(self, prev_result='', shell: BaseShell = None, lazy=False):
         shell.locals.set(LINE_INDENT, indent_width(''))
 
         for item in self.values:
@@ -657,7 +663,7 @@ class FunctionDefinition(Node):
         self.args = [] if args is None else args
         self.body = body
 
-    def run(self, prev_result='', shell=None, lazy=False):
+    def run(self, prev_result='', shell: BaseShell = None, lazy=False):
         args = self.define_function(shell, lazy)
 
         # TODO use line_indent=self.locals[RAW_LINE_INDENT]
@@ -691,7 +697,7 @@ class FunctionDefinition(Node):
 
 
 class InlineFunctionDefinition(FunctionDefinition):
-    def run(self, prev_result='', shell=None, lazy=False):
+    def run(self, prev_result='', shell: BaseShell = None, lazy=False):
         args = self.define_function(shell, lazy)
 
         # TODO use parsing.expand_variables_inline
@@ -727,6 +733,20 @@ def run_shell_command(line: str, prev_result: str, delimiter='|') -> str:
 
     log(stderr)
     return stdout
+
+
+def run_function(k, args: List[str], shell=None):
+    # TODO encapsulate these branches in the domain classes
+    if shell.is_special_function(k):
+        return shell.run_special_function(k, args)
+
+    if shell.is_inline_function(k):
+        return call_inline_function(shell, k, args)
+
+    if shell.is_hidden_function(k):
+        return shell.run_hidden_function(k, args)
+
+    raise Abort()
 
 
 def call_inline_function(shell, k: str, args: list):
@@ -773,8 +793,45 @@ def call_inline_function(shell, k: str, args: list):
             return result.data
 
 
+def set_env_variables(shell, keys: Union[str, List[str]], result: str):
+    """Set the variables `keys` to the values in result.
+    """
+    if result is None:
+        raise ShellError(f'Missing return value in assignment: {keys}')
+
+    if isinstance(keys, str) or isinstance(keys, Term):
+        keys = keys.split(' ')
+
+    try:
+        if len(result) == len(keys):
+            shell.env.update(items=zip(keys, result))
+            return
+    except TypeError:
+        pass
+
+    if len(keys) == 1:
+        if isinstance(result, list):
+            result = ' '.join(quote_all(result))
+        shell.env[keys[0]] = result
+    elif isinstance(result, str) or isinstance(result, Term):
+        lines = result.split('\n')
+        terms = result.split(' ')
+        if len(lines) == len(keys):
+            shell.env.update(items=zip(keys, lines))
+
+        elif len(terms) == len(keys):
+            shell.env.update(items=zip(keys, terms))
+
+        elif result == '':
+            shell.env.update(items=zip(keys, repeat('')))
+
+    else:
+        raise ShellError(
+            f'Cannot assign values to all keys: {" ".join(keys)}')
+
+
 @contextmanager
-def enter_new_scope(cls: Cmd, scope_name=INNER_SCOPE):
+def enter_new_scope(cls: BaseShell, scope_name=INNER_SCOPE):
     """Create a new scope, then change directory into that scope.
     Finally exit the new scope.
     """
@@ -785,7 +842,3 @@ def enter_new_scope(cls: Cmd, scope_name=INNER_SCOPE):
             yield
     finally:
         pass
-
-
-def scope() -> dict:
-    return defaultdict(dict)
