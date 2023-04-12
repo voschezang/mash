@@ -29,7 +29,7 @@ The main datastructure is `mash.filesystem`. It's inferface is inspired by unix 
 
 - Implement local/global variable scopes in `Shell`.
 - Let a user browse REST-like resources (directories) with CRUD operations:
-    - Discovery: `cd, ls, get, tree, show`.
+	- Discovery: `cd, ls, get, tree, show`.
     - Mutations: `new, set, mv, cp`.
 
 
@@ -44,8 +44,31 @@ class ShellWithFileSystem:
 	shell: Shell
 	repository: FileSystem # a directory or REST resource
 
-class Shell(Cmd):
+class Shell(Cmd2):
+    """Extend Cmd with various capabilities.
+    This class is restricted to functionality that requires Cmd methods to be overrriden.
+
+    Features:
+    - An environment with local and global variable scopes.
+    - Save/load sessions.
+    - Decotion with functions, both at runtime and compile time.
+    """
 	env: FileSystem # variable scopes
+
+class Cmd2(cmd.Cmd):
+    """Extend cmd.Cmd with various capabilities.
+    This class is restricted to functionality that requires Cmd methods to be overrriden.
+
+    Features:
+    - Confirmation mode to allow a user to accept or decline commands.
+    - Error handling.
+    - I/O methods: cat, source, print, println, exit
+    - String methods: echo, flatten
+    """
+	def cmdloop();
+	def onecmd();
+	def default();
+
 ```
 
 
