@@ -28,17 +28,13 @@ FunctionGroup = Dict[str, Dict[str, Function]]
 
 
 class BaseShell(Cmd2):
-    """Extend CMD with various capabilities.
-    This class is restricted to functionality that requires Cmd methods to be overrride.
+    """Extend Cmd with various capabilities.
+    This class is restricted to functionality that requires Cmd methods to be overrriden.
 
     Features:
-    - Parsing of multi-line and multi-segment commands.
-        - Chain commands using pipes.
-        - Interop between Python and e.g. Bash using pipes.
-    - Parsing of single commands.
-        - Set/unset variables, retrieve variable values.
-    - Confirmation mode to allow a user to accept or decline commands.
-    - Error handling.
+    - An environment with local and global variable scopes.
+    - Save/load sessions.
+    - Decotion with functions, both at runtime and compile time.
     """
 
     def __init__(self, *args, env: Dict[str, Any] = None,

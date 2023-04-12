@@ -61,9 +61,6 @@ E.g.
 
 
 class Shell(BaseShell):
-    """Extend BaseShell(Cmd) with helper functions.
-    """
-
     def onecmd_inner(self, lines: str):
         if not self.use_model:
             return super().onecmd_inner(lines)
