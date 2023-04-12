@@ -41,10 +41,16 @@ The main datastructure is `mash.filesystem`. It's inferface is inspired by unix 
 import cmd
 
 class ShellWithFileSystem:
-	shell: Shell
-	repository: FileSystem # a directory or REST resource
+    shell: Shell
+    repository: FileSystem # a directory or REST resource
 
 class Shell(Cmd2):
+    """Shell.
+    Support multiline statements, pipes, conditions, variables and inline function definitions.
+    Use a BNF-based grammer in `lex_parser.py` to construct an AST.
+    """
+
+class BaseShell(Cmd2):
     """Extend Cmd with various capabilities.
     This class is restricted to functionality that requires Cmd methods to be overrriden.
 
@@ -53,7 +59,12 @@ class Shell(Cmd2):
     - Save/load sessions.
     - Decotion with functions, both at runtime and compile time.
     """
-	env: FileSystem # variable scopes
+    env: FileSystem # variable scopes
+
+    save_session();
+    load_session();
+    add_functions();
+    remove_functions();
 
 class Cmd2(cmd.Cmd):
     """Extend cmd.Cmd with various capabilities.
@@ -65,12 +76,11 @@ class Cmd2(cmd.Cmd):
     - I/O methods: cat, source, print, println, exit
     - String methods: echo, flatten
     """
-	def cmdloop();
-	def onecmd();
-	def default();
 
+    def cmdloop();
+    def onecmd();
+    def default();
 ```
-
 
 
 ## Filesystem
