@@ -45,7 +45,15 @@ See [`src/examples`](src/examples) for advances usage examples.
 - Implementation: [SHELL.md](https://github.com/voschezang/mash/blob/main/SHELL.md)
 - Language: [REFERENCE.md](https://github.com/voschezang/mash/blob/main/SHELL_REFERENCE.md).
 
+**Table of Contents**
 
+- [Usage](#Usage)
+    - [CLI](#CLI)
+    - [Filesystem (CRUD Operations)](#Filesystem%20(CRUD%20Operations))
+    - [Usage Examples](#Usage%20Examples)
+- [Library & Tools](#Library%20&%20Tools)
+    - [Parallelization Utilities](#Parallelization%20Utilities)
+    - [Object Parser](#Object%20Parser)
 
 # Usage
 
