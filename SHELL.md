@@ -61,10 +61,10 @@ class BaseShell(Cmd2):
     """
     env: FileSystem # variable scopes
 
-    save_session();
-    load_session();
-    add_functions();
-    remove_functions();
+    def save_session();
+    def load_session();
+    def add_functions();
+    def remove_functions();
 
 class Cmd2(cmd.Cmd):
     """Extend cmd.Cmd with various capabilities.
