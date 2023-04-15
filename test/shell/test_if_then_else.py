@@ -248,10 +248,8 @@ if {c} then print 4
     assert catch_output(line(t, t, f)) == '1'
     assert catch_output(line(f, f, f)) == '3'
 
-    # TODO
-    if 0:
-        assert catch_output(line(t, f, t)) == '1\n4'
-        assert catch_output(line(t, t, t)) == '1\n4'
+    assert catch_output(line(t, f, t)) == '1\n4'
+    assert catch_output(line(t, t, t)) == '1\n4'
     assert catch_output(line(f, t, t)) == '2\n4'
     assert catch_output(line(f, f, t)) == '3\n4'
 

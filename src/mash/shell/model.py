@@ -626,13 +626,13 @@ class Lines(Nodes):
             shell.locals.set(LINE_INDENT, indent_width(''))
 
             width = indent_width('')
-            if shell.locals[IF] and not isinstance(item, Indent) and width > shell._last_if['line_indent']:
+            if shell.locals[IF] and not isinstance(item, Indent) and width < shell._last_if['line_indent']:
                 close_prev_if_statements(shell, width)
 
             if shell.locals[IF] and not isinstance(item, Indent):
                 if not isinstance(item, Then) and \
                         not isinstance(item, ElseCondition):
-                    close_prev_if_statement(shell)
+                    shell.locals.set(IF, [])
 
             result = shell.run_commands(item, run=not lazy)
 
