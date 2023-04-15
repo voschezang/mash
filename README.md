@@ -25,6 +25,7 @@ Features:
 - A parallelization framework for load testing: `parallel.py`.
 
 Links
+- [Mash language reference](SHELL_REFERENCE.md)
 - [PyPI](https://pypi.org/project/mash-shell)
 - [github](https://github.com/voschezang/mash)
 

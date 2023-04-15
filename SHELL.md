@@ -15,7 +15,7 @@ The main datastructure is `mash.filesystem`. It's inferface is inspired by unix 
 
 ### Modules
 
-In [src.mash](src.mash).
+In [src.mash](https://github.com/voschezang/mash/tree/main/src/mash).
 
 ```sh
 examples/ # examples written in Python
