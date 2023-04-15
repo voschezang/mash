@@ -24,13 +24,15 @@ src
 ├── lib # mash shell scripts
 │   └── math.sh # elementary mathematical functions
 │
-└── mash # implementation written in Python 
+└── mash
     ├── filesystem # CRUD operations for directories and REST resources
     │   ├── filesystem.py
     │   └── view.py
+    │
     ├── object_parser # parse JSON objects
     │   ├── factory.py
     │   ├── oas.py
+    │
     ├── shell
     │   ├── __init__.py
     │   ├── ast # The Abstract Syntax Tree (AST) and related logic
@@ -40,6 +42,7 @@ src
     │   ├── cmd2.py # An extension of cmd.Cmd
     │   ├── shell.py # Extend Cmd2 with the language model
     │   └── with_filesystem.py
+    │
     ├── subshell.py
     └── cli.py # A CLI that combines Shell with quo.Prompt
 ```
