@@ -2,7 +2,7 @@ from logging import getLogger
 import ply.lex as lex
 import ply.yacc as yacc
 from mash.shell.ast import Assign, BashPipe, BinaryExpression, Else, ElseIf, ElseIfThen, FunctionDefinition, If, IfThen, IfThenElse, Indent, InlineFunctionDefinition, Lines, LogicExpression, Map, Math, Method, Pipe, Quoted, Return, Shell, Terms, Then, Variable, Word
-from mash.shell.parsing import indent_width
+from mash.shell.grammer.parsing import indent_width
 from mash.shell.errors import ShellSyntaxError
 
 lexer = None

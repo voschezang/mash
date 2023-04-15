@@ -1,7 +1,7 @@
 from pytest import raises
 
 from mash.shell.errors import ShellSyntaxError
-from mash.shell.lex_parser import parse
+from mash.shell.grammer.lex_yacc import parse
 from mash.shell.ast import (Assign, BashPipe, BinaryExpression, ElseIf,
                             ElseIfThen, FunctionDefinition, If, IfThen,
                             IfThenElse, Indent, InlineFunctionDefinition,

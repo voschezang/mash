@@ -1,5 +1,5 @@
 from mash import io_util
-from mash.shell.delimiters import TRUE
+from mash.shell.grammer.delimiters import TRUE
 from mash.shell.shell import Shell
 from src.mash.shell.cmd2 import run_command
 from mash.util import use_recursion_limit

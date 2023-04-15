@@ -1,13 +1,13 @@
 from typing import Iterable
-from mash.shell import delimiters
-from mash.shell.functions import set_env_variables
-from mash.shell.ast.term import Term
+
 from mash.shell.ast.node import Math, Node, run_shell_command
 from mash.shell.ast.nodes import Terms
+from mash.shell.ast.term import Term
 from mash.shell.base import BaseShell
-from mash.shell.delimiters import FALSE, TRUE
 from mash.shell.function import LAST_RESULTS, LAST_RESULTS_INDEX
-from mash.shell.parsing import quote_items, to_bool
+from mash.shell.grammer.delimiters import comparators, FALSE, TRUE
+from mash.shell.grammer.parsing import quote_items, to_bool
+from mash.shell.helpers import set_env_variables
 from mash.util import quote_all
 
 
@@ -92,7 +92,7 @@ class BinaryExpression(Infix):
 
         line = ' '.join(quote_items([a, op, b]))
 
-        if op in delimiters.comparators:
+        if op in comparators:
             if not lazy:
                 return Math.eval(line, shell.env)
             return a, op, b

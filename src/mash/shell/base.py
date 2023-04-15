@@ -8,12 +8,12 @@ from mash.shell.cmd2 import Cmd2
 from mash.filesystem.filesystem import FileSystem
 from mash.filesystem.scope import Scope, show
 from mash.io_util import log, print_shell_ready_signal
-from mash.shell import delimiters
-from mash.shell.delimiters import FALSE, IF, TRUE
+from mash.shell.grammer import delimiters
+from mash.shell.grammer.delimiters import FALSE, IF, TRUE
 from mash.shell.errors import ShellError
 from mash.shell.function import LAST_RESULTS, LAST_RESULTS_INDEX, InlineFunction, scope
 from mash.shell.function import ShellFunction as Function
-from mash.shell.parsing import to_bool
+from mash.shell.grammer.parsing import to_bool
 from mash.util import has_method, identity
 
 

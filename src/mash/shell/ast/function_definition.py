@@ -1,5 +1,5 @@
 import logging
-from mash.shell.delimiters import DEFINE_FUNCTION
+from mash.shell.grammer.delimiters import DEFINE_FUNCTION
 from mash.shell.ast.node import Node
 from mash.shell.base import BaseShell
 from mash.shell.errors import ShellError
