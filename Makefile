@@ -46,3 +46,6 @@ docs-show:
 
 pydocs:
 	cd src && pydoc -b
+
+tree:
+	tree src -L 4 --gitignore -I '_*|*.out'

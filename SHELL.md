@@ -13,25 +13,35 @@ The main datastructure is `mash.filesystem`. It's inferface is inspired by unix 
 	- Discovery: `cd, ls, get, tree, show`.
     - Mutations: `new, set, mv, cp`.
 
-### Modules
+### Module Tree
 
-In [src.mash](https://github.com/voschezang/mash/tree/main/src/mash).
+In [src](https://github.com/voschezang/mash/tree/main/src).
 
 ```sh
-examples/ # examples written in Python
-lib/ # shell scripts
-    math.sh # elementary mathematical functions
-mash/ # implementation written in Python 
-  filesystem/ # CRUD operations for directories and REST resources
-  object_parser/ # parse JSON objects
-  shell/
-    ast/ # The Abstract Syntax Tree (AST) and related logic
-    grammer/ # parse raw text based on BNF grammer and build the AST
-    internals/
-    ShellWithFileSystem
-    Shell # Extend Cmd2 with the language model
-    Cmd2 # An extension of cmd.Cmd
-cli.py # A CLI that combines Shell with quo.Prompt
+src
+├── examples # examples written in Python
+│
+├── lib # mash shell scripts
+│   └── math.sh # elementary mathematical functions
+│
+└── mash # implementation written in Python 
+    ├── filesystem # CRUD operations for directories and REST resources
+    │   ├── filesystem.py
+    │   └── view.py
+    ├── object_parser # parse JSON objects
+    │   ├── factory.py
+    │   ├── oas.py
+    ├── shell
+    │   ├── __init__.py
+    │   ├── ast # The Abstract Syntax Tree (AST) and related logic
+    │   │   └── # Node, Word, Lines
+    │   ├── grammer # Parse raw text based on BNF grammer and build the AST
+    │   ├── internals
+    │   ├── cmd2.py # An extension of cmd.Cmd
+    │   ├── shell.py # Extend Cmd2 with the language model
+    │   └── with_filesystem.py
+    ├── subshell.py
+    └── cli.py # A CLI that combines Shell with quo.Prompt
 ```
 
 ## Classes
