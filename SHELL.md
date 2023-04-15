@@ -1,25 +1,6 @@
 # Implementation
 
-Modules
-
-```sh
-# in src
-examples/ # examples written in Python
-lib/ # shell scripts
-    math.sh # elementary mathematical functions
-mash/ # implementation written in Python 
-  filesystem/ # CRUD operations for directories and REST resources
-  object_parser/ # parse JSON objects
-  shell/
-    ShellWithFileSystem
-    Shell
-    Cmd2 # An extension of cmd.Cmd
-    lex_parser # BNF-based grammer
-    model # AST-based logic
-cli.py # A CLI that combines Shell with quo.Prompt
-```
-
-## Shell
+## Overview
 
 The `Shell` class is based on `cmd.Cmd`. It extends it with a custom grammer, user-definable variables, functions, pipes and more.
 
@@ -32,10 +13,45 @@ The main datastructure is `mash.filesystem`. It's inferface is inspired by unix 
 	- Discovery: `cd, ls, get, tree, show`.
     - Mutations: `new, set, mv, cp`.
 
+### Modules
 
-### Class Hierarchy
+In [src.mash](src.mash).
 
-#### Simplified
+```sh
+examples/ # examples written in Python
+lib/ # shell scripts
+    math.sh # elementary mathematical functions
+mash/ # implementation written in Python 
+  filesystem/ # CRUD operations for directories and REST resources
+  object_parser/ # parse JSON objects
+  shell/
+    ast/ # The Abstract Syntax Tree (AST) and related logic
+    grammer/ # parse raw text based on BNF grammer and build the AST
+    ShellWithFileSystem
+    Shell # Extend Cmd2 with the language model
+    Cmd2 # An extension of cmd.Cmd
+cli.py # A CLI that combines Shell with quo.Prompt
+```
+
+## Classes
+
+#### Language Model
+
+The language model is based on an intermediate representation: an [Abstract Syntax Tree (AST)](https://en.wikipedia.org/wiki/Abstract_syntax_tree).
+
+- Raw text is parsed using a model defined in a [context-free grammar](https://en.wikipedia.org/wiki/Backus%E2%80%93Naur_form).
+- This is used to build the tree.
+- Each *node* in the AST is a class with it's own behaviour.
+
+```python
+class Node(str); # incl. Word, Variable, QuotedString
+class Nodes(str);
+class Lines(str);
+```
+
+#### Shell
+
+In pseudocode:
 
 ```python
 import cmd
@@ -83,7 +99,7 @@ class Cmd2(cmd.Cmd):
 ```
 
 
-## Filesystem
+#### Filesystem
 
 A directory-like interface for dictionaries and lists.
 
