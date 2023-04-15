@@ -19,19 +19,19 @@ In [src](https://github.com/voschezang/mash/tree/main/src).
 
 ```sh
 src
-├── examples # examples written in Python
+├── examples # Examples written in Python
 │
-├── lib # mash shell scripts
-│   └── math.sh # elementary mathematical functions
+├── lib # Mash shell scripts
+│   └── math.sh # Elementary mathematical functions
 │
 └── mash
     ├── filesystem # CRUD operations for directories and REST resources
     │   ├── filesystem.py
-    │   └── view.py
+    │   └── view.py # A tree of dict's. Tree traversal is exposed through the methods `up` and `down`.
     │
-    ├── object_parser # parse JSON objects
+    ├── object_parser # Parse JSON objects
     │   ├── factory.py
-    │   ├── oas.py
+    │   └── oas.py
     │
     ├── shell
     │   ├── __init__.py

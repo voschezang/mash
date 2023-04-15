@@ -1,7 +1,4 @@
 #!/usr/bin/python3
-"""A filesystem-like interface for static and dynamic data.
-This can be used to e.g. browse REST APIs.
-"""
 from contextlib import contextmanager
 from enum import Enum
 from pickle import dumps, loads
@@ -38,6 +35,10 @@ OPTIONS = [o.value for o in Option]
 
 
 class FileSystem:
+    """A filesystem-like interface for static and dynamic data.
+    This can be used to e.g. browse REST APIs.
+    """
+
     def __init__(self,
                  root: dict = None,
                  home: Path = None,

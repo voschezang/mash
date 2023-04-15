@@ -199,6 +199,21 @@ department_750, department_14
 
 # Library & Tools
 
+Repository structure
+
+```sh
+src
+├── examples
+├── lib # mash shell scripts
+└── mash
+    ├── filesystem # Directory-based datastructures: FileSystem, View
+    ├── object_parser # Parse JSON objects
+    └── shell # Shell, ShellWithFileSystem
+test
+```
+
+
+
 ## Setup
 
 Using a `Makefile` for convenience.

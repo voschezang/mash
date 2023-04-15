@@ -48,4 +48,5 @@ pydocs:
 	cd src && pydoc -b
 
 tree:
-	tree src -L 4 --gitignore -I '_*|*.out'
+	tree src -L 2 -d
+	tree src/mash -L 2 --gitignore -I '_*|*.out'
