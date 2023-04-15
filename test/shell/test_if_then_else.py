@@ -245,16 +245,15 @@ if {c} then print 4
     t = TRUE
     f = '""'
     assert catch_output(line(t, f, f)) == '1'
-    if 0:
-        # TODO implement
-        assert catch_output(line('1', '1', ' ')) == '1'
-        assert catch_output(line(' ', '1', ' ')) == '2'
-        assert catch_output(line(' ', ' ', ' ')) == '3'
+    assert catch_output(line(t, t, f)) == '1'
+    assert catch_output(line(f, f, f)) == '3'
 
-        assert catch_output(line('1', ' ', '1')).strip() == '1\n4'
-        assert catch_output(line('1', '1', '1')).strip() == '1\n4'
-        assert catch_output(line(' ', '1', '1')).strip() == '2\n4'
-        assert catch_output(line(' ', ' ', '1')).strip() == '3\n4'
+    # TODO
+    if 0:
+        assert catch_output(line(t, f, t)) == '1\n4'
+        assert catch_output(line(t, t, t)) == '1\n4'
+    assert catch_output(line(f, t, t)) == '2\n4'
+    assert catch_output(line(f, f, t)) == '3\n4'
 
 
 def test_shell_if_else_multiline_nested():

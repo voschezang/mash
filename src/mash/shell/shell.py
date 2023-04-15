@@ -261,11 +261,7 @@ def run_command(command='', shell: Shell = None, strict=None):
         shell.ignore_invalid_syntax = not strict
 
     # TODO avoid splitines
-    # shell.onecmd(command)
-
-    for line in command.splitlines():
-        if line:
-            shell.onecmd(line)
+    shell.onecmd(command)
 
 
 def add_cli_args(parser: ArgumentParser):

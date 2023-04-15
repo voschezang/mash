@@ -37,8 +37,8 @@ LEFT_ASSIGNMENT = Python.LEFT_ASSIGNMENT.value
 IF = Python.IF.value
 THEN = Python.THEN.value
 ELSE = Python.ELSE.value
-# AND = Python.AND.value
-# OR = Python.OR.value
+ELSE_IF_THEN = 'else-if-then'
+
 INLINE_THEN = 'inline-then'
 INLINE_ELSE = 'inline-else'
 

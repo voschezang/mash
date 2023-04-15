@@ -486,7 +486,7 @@ class Then(Condition):
         result = None
         try:
             # verify & update state
-            handle_then_statement(self)
+            handle_then_statement(shell)
             if self.then:
                 result = shell.run_commands(self.then, run=not lazy)
         except Abort:
@@ -621,9 +621,9 @@ class Terms(Nodes):
 
 class Lines(Nodes):
     def run(self, prev_result='', shell: BaseShell = None, lazy=False):
-        shell.locals.set(LINE_INDENT, indent_width(''))
 
         for item in self.values:
+            shell.locals.set(LINE_INDENT, indent_width(''))
 
             width = indent_width('')
             if shell.locals[IF] and not isinstance(item, Indent) and width > shell._last_if['line_indent']:

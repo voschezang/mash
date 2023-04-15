@@ -358,7 +358,7 @@ def parse(text, init=True):
         if len(p) == 2:
             p[0] = Then()
         else:
-            p[0] = Then(p[2])
+            p[0] = Then(then=p[2])
 
     def p_else_if_then(p):
         """conditional : ELSE IF conjunction THEN final_statement
@@ -380,7 +380,7 @@ def parse(text, init=True):
         if len(p) == 2:
             p[0] = Else()
         else:
-            p[0] = Else(p[2])
+            p[0] = Else(otherwise=p[2])
 
     def p_conditional(p):
         """conditional : conjunction
