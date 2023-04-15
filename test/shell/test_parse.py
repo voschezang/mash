@@ -2,11 +2,11 @@ from pytest import raises
 
 from mash.shell.errors import ShellSyntaxError
 from mash.shell.lex_parser import parse
-from mash.shell.model import (Assign, BashPipe, BinaryExpression, ElseIf,
-                              ElseIfThen, FunctionDefinition, If, IfThen,
-                              IfThenElse, Indent, InlineFunctionDefinition,
-                              Lines, Map, Math, Method, Pipe, Return, Term,
-                              Terms, Word)
+from mash.shell.ast import (Assign, BashPipe, BinaryExpression, ElseIf,
+                            ElseIfThen, FunctionDefinition, If, IfThen,
+                            IfThenElse, Indent, InlineFunctionDefinition,
+                            Lines, Map, Math, Method, Pipe, Return, Term,
+                            Terms, Word)
 
 
 def parse_line(text: str):

@@ -1,13 +1,9 @@
 from mash.shell.if_statement import Abort
-from mash.shell.model.functions import run_function
-from mash.shell.model.node import Node
+from mash.shell.functions import run_function
+from mash.shell.ast.node import Node
 from mash.shell.base import BaseShell
 from mash.shell.parsing import expand_variables
 from mash.util import quote_all
-
-################################################################################
-# Terms
-################################################################################
 
 
 class Term(Node):

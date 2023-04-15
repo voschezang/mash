@@ -10,7 +10,7 @@ import sys
 from mash import io_util
 from mash.io_util import ArgparseWrapper, bold, has_argument, has_output, log, log_once
 from mash.shell.function import LAST_RESULTS
-from mash.shell.model import ElseCondition, Indent, Lines, Map, Math, Node, Term, Terms
+from mash.shell.ast import ElseCondition, Indent, Lines, Map, Math, Node, Term, Terms
 from mash.shell.base import BaseShell
 from mash.shell.cmd2 import default_prompt, run
 from mash.shell.delimiters import DEFINE_FUNCTION

@@ -1,6 +1,6 @@
 import logging
 from mash.shell.delimiters import DEFINE_FUNCTION
-from mash.shell.model.node import Node
+from mash.shell.ast.node import Node
 from mash.shell.base import BaseShell
 from mash.shell.errors import ShellError
 from mash.shell.function import InlineFunction

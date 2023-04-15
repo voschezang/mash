@@ -1,4 +1,4 @@
-from mash.shell.model.node import Node
+from mash.shell.ast.node import Node
 from mash.shell.base import BaseShell
 from mash.shell.delimiters import FALSE, IF, INLINE_ELSE, INLINE_THEN, THEN, TRUE
 from mash.shell.if_statement import Abort, State, handle_else_statement, handle_then_statement
