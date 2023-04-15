@@ -8,7 +8,7 @@ from typing import List, Union
 from mash.filesystem.filesystem import cd
 from mash.io_util import log
 from mash.shell.base import BaseShell
-from mash.shell.model.delimiters import bash, FALSE
+from mash.shell.delimiters import bash, FALSE
 from mash.shell.errors import ShellError
 from mash.shell.function import scope
 from mash.shell.if_statement import Abort
@@ -130,18 +130,24 @@ def set_env_variables(shell, keys: Union[str, List[str]], result: str):
         if isinstance(result, list):
             result = ' '.join(quote_all(result))
         shell.env[keys[0]] = result
-    elif isinstance(result, str) or isinstance(result, Term):
+        return
+    elif result == '':
+        shell.env.update(items=zip(keys, repeat('')))
+        return
+
+    terms = []
+    if isinstance(result, str):
         lines = result.split('\n')
         terms = result.split(' ')
-        if len(lines) == len(keys):
-            shell.env.update(items=zip(keys, lines))
+    elif isinstance(result, list):
+        lines = result
+    else:
+        lines = result.values
 
-        elif len(terms) == len(keys):
-            shell.env.update(items=zip(keys, terms))
-
-        elif result == '':
-            shell.env.update(items=zip(keys, repeat('')))
-
+    if len(lines) == len(keys):
+        shell.env.update(items=zip(keys, lines))
+    elif len(terms) == len(keys):
+        shell.env.update(items=zip(keys, terms))
     else:
         raise ShellError(
             f'Cannot assign values to all keys: {" ".join(keys)}')

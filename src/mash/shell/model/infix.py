@@ -1,11 +1,11 @@
 from typing import Iterable
-from mash.shell.model import delimiters
+from mash.shell import delimiters
 from mash.shell.model.functions import set_env_variables
 from mash.shell.model.term import Term
 from mash.shell.model.node import Math, Node, run_shell_command
 from mash.shell.model.nodes import Terms
 from mash.shell.base import BaseShell
-from mash.shell.model.delimiters import FALSE, TRUE
+from mash.shell.delimiters import FALSE, TRUE
 from mash.shell.function import LAST_RESULTS, LAST_RESULTS_INDEX
 from mash.shell.parsing import quote_items, to_bool
 from mash.util import quote_all

@@ -3,7 +3,7 @@ from pytest import raises
 from time import perf_counter
 
 from mash import io_util
-from mash.shell.model import delimiters
+from mash.shell import delimiters
 from mash.shell.errors import ShellError, ShellSyntaxError
 from mash.shell.shell import Shell, run_command
 

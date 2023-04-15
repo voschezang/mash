@@ -3,8 +3,8 @@ from typing import Any, Iterable, List, Tuple
 import shlex
 
 from mash.io_util import log
-from mash.shell.model import delimiters
-from mash.shell.model.delimiters import FALSE, TRUE
+from mash.shell import delimiters
+from mash.shell.delimiters import FALSE, TRUE
 from mash.shell.errors import ShellError
 from mash.util import is_globbable, is_valid_method_name, match_words, quote, quote_all, removeprefix, glob
 

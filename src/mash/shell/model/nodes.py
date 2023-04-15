@@ -4,7 +4,7 @@ Nodes that contain multiple nodes.
 
 from typing import List
 from mash.shell.model.conditions import ElseCondition, Then
-from mash.shell.model.delimiters import IF
+from mash.shell.delimiters import IF
 from mash.shell.model.functions import ReturnValue
 from mash.shell.model.node import Indent, Node
 from mash.shell.model.term import Term

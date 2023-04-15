@@ -3,7 +3,7 @@ import re
 from typing import List
 from mash.io_util import log
 from mash.shell.base import BaseShell
-from mash.shell.model.delimiters import FALSE, IF, INLINE_ELSE, INLINE_THEN
+from mash.shell.delimiters import FALSE, IF, INLINE_ELSE, INLINE_THEN
 from mash.shell.errors import ShellSyntaxError
 from mash.shell.if_statement import LINE_INDENT, Abort, close_prev_if_statements, handle_prev_then_else_statements
 from mash.shell.model.functions import ReturnValue, run_function, run_shell_command
