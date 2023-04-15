@@ -153,7 +153,12 @@ def init_lex():
         return t
 
     def t_MAP(t):
-        r'>>='
+        r'>>=|\|>\smap'
+        """Syntax for "map":
+            `f x >>= g`
+        or
+            `f x |> map g`
+        """
         return t
 
     def t_PIPE(t):
@@ -544,6 +549,9 @@ def parse(text, init=True):
 
     log = getLogger()
     parser = yacc.yacc(debug=log)
+    if not isinstance(text, str):
+        text
+        raise
 
     # add a newline to allow empty strings to be matched
     return parser.parse('\n' + text)

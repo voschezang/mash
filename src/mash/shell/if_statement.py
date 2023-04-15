@@ -1,6 +1,4 @@
-from operator import contains
-from typing import Tuple
-from mash.shell.delimiters import ELSE, IF, INLINE_THEN, THEN
+from mash.shell.model.delimiters import ELSE, IF, THEN
 from mash.shell.errors import ShellError
 
 LINE_INDENT = 'line_indent'
@@ -44,11 +42,13 @@ def handle_then_statement(self, transparent=False):
 
 
 def handle_else_statement(self, transparent=False):
-    if self._last_if['value'] is None:
-        raise Abort()
+    if not self.locals[IF]:
+        raise ShellError(f'Else clasue requires an {IF}-statement')
     elif self._last_if['branch'] is None:
         raise ShellError(
             f'If-then-else clause requires a {THEN} statement (3)')
+    elif self._last_if['value'] is None:
+        raise Abort()
 
     if not transparent:
         if not self.locals[IF]:

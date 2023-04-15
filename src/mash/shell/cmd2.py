@@ -182,7 +182,6 @@ def run_command(command: str, shell: Cmd2, strict=None):
     if strict is not None:
         shell.ignore_invalid_syntax = not strict
 
-    # TODO skip splitlines
     for line in command.splitlines():
         if line:
             shell.onecmd(line)

@@ -2,7 +2,7 @@ from pytest import raises
 
 from mash import io_util
 from mash.shell import ShellError
-from mash.shell.delimiters import TRUE
+from mash.shell.model.delimiters import TRUE
 from mash.shell.errors import ShellSyntaxError
 from mash.shell.shell import Shell, run_command
 

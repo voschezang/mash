@@ -3,7 +3,7 @@ from pytest import raises
 from time import perf_counter
 
 from mash import io_util
-from mash.shell import delimiters
+from mash.shell.model import delimiters
 from mash.shell.errors import ShellError, ShellSyntaxError
 from mash.shell.shell import Shell, run_command
 
@@ -261,6 +261,9 @@ def test_set_do_flatten():
 
 def test_set_do_map():
     shell = Shell()
+    line = 'echo a b |> flatten >>= echo'
+    assert catch_output(line, shell=shell, strict=True) == 'a\nb'
+
     line = 'echo a b |> flatten |> map echo'
     assert catch_output(line, shell=shell, strict=True) == 'a\nb'
 

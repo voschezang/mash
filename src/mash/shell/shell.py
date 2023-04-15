@@ -9,10 +9,11 @@ import sys
 
 from mash import io_util
 from mash.io_util import ArgparseWrapper, bold, has_argument, has_output, log, log_once
-from mash.shell.model import LAST_RESULTS, ElseCondition, Indent, Lines, Map, Math, Node, Term, Terms
+from mash.shell.function import LAST_RESULTS
+from mash.shell.model import ElseCondition, Indent, Lines, Map, Math, Node, Term, Terms
 from mash.shell.base import BaseShell
 from mash.shell.cmd2 import default_prompt, run
-from mash.shell.delimiters import DEFINE_FUNCTION
+from mash.shell.model.delimiters import DEFINE_FUNCTION
 from mash.shell.errors import ShellError, ShellPipeError, ShellSyntaxError
 from mash.shell.errors import ShellSyntaxError
 from mash.shell.function import ShellFunction as Function
@@ -154,20 +155,30 @@ class Shell(BaseShell):
     # Commands: do_*
     ############################################################################
 
-    def do_map(self, args=''):
-        """Apply a function to every line.
+    def do_map(self, line=''):
+        """Apply a function to each item.
+        It can be used as prefix or infix operator.
+
+        Usage (prefix)
+        --------------
+            `map f x y z` 
+
+        Usage (infix)
+        -------------
+            `f x |> map g`
+            `f x |> map g $ a b`
+            `f x >>= g`
+
         If `$` is present, then each line from stdin is inserted there.
         Otherwise each line is appended.
-
-        Usage
-        -----
-        ```sh
-        println a b |> map echo
-        println a b |> map echo prefix $ suffix
-        ```
         """
-        log('Expected arguments')
-        return ''
+        items = line.split(' ')
+        if len(items) < 2:
+            raise ShellError('Expected multiple arguments')
+
+        f, *args = items
+        for arg in args:
+            self.onecmd(f'{f} {arg}')
 
     def _do_foreach(self, ast: tuple, prev_results: str) -> Iterable:
         """Apply a function to every term or word.
@@ -260,7 +271,6 @@ def run_command(command='', shell: Shell = None, strict=None):
     if strict is not None:
         shell.ignore_invalid_syntax = not strict
 
-    # TODO avoid splitines
     shell.onecmd(command)
 
 
