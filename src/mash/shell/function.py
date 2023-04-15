@@ -16,7 +16,6 @@ exception_hint = '(run `E` for details)'
 last_exception: Exception = None
 last_traceback: TracebackType = None
 
-
 LAST_RESULTS = '_last_results'
 LAST_RESULTS_INDEX = '_last_results_index'
 

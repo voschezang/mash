@@ -7,7 +7,7 @@ from mash.shell.base import BaseShell
 from mash.shell.function import LAST_RESULTS, LAST_RESULTS_INDEX
 from mash.shell.grammer.delimiters import comparators, FALSE, TRUE
 from mash.shell.grammer.parsing import quote_items, to_bool
-from mash.shell.helpers import set_env_variables
+from mash.shell.internals.helpers import set_env_variables
 from mash.util import quote_all
 
 

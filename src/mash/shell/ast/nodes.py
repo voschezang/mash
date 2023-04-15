@@ -5,11 +5,11 @@ Nodes that contain multiple nodes.
 from typing import List
 from mash.shell.ast.conditions import ElseCondition, Then
 from mash.shell.grammer.delimiters import IF
-from mash.shell.helpers import ReturnValue
+from mash.shell.internals.helpers import ReturnValue
 from mash.shell.ast.node import Indent, Node
 from mash.shell.ast.term import Term
 from mash.shell.base import BaseShell
-from mash.shell.if_statement import LINE_INDENT, close_prev_if_statements
+from mash.shell.internals.if_statement import LINE_INDENT, close_prev_if_statements
 from mash.shell.grammer.parsing import indent_width, to_string
 
 

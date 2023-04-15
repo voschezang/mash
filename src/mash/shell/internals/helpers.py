@@ -11,7 +11,7 @@ from mash.shell.base import BaseShell
 from mash.shell.grammer.delimiters import bash, FALSE
 from mash.shell.errors import ShellError
 from mash.shell.function import scope
-from mash.shell.if_statement import Abort
+from mash.shell.internals.if_statement import Abort
 from mash.util import quote_all
 
 INNER_SCOPE = 'inner_scope'

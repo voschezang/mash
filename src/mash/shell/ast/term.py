@@ -1,5 +1,5 @@
-from mash.shell.if_statement import Abort
-from mash.shell.helpers import run_function
+from mash.shell.internals.if_statement import Abort
+from mash.shell.internals.helpers import run_function
 from mash.shell.ast.node import Node
 from mash.shell.base import BaseShell
 from mash.shell.grammer.parsing import expand_variables

@@ -27,6 +27,7 @@ mash/ # implementation written in Python
   shell/
     ast/ # The Abstract Syntax Tree (AST) and related logic
     grammer/ # parse raw text based on BNF grammer and build the AST
+    internals/
     ShellWithFileSystem
     Shell # Extend Cmd2 with the language model
     Cmd2 # An extension of cmd.Cmd

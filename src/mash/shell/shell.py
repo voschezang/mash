@@ -17,7 +17,7 @@ from mash.shell.grammer.delimiters import DEFINE_FUNCTION
 from mash.shell.errors import ShellError, ShellPipeError, ShellSyntaxError
 from mash.shell.errors import ShellSyntaxError
 from mash.shell.function import ShellFunction as Function
-from mash.shell.if_statement import Abort, handle_prev_then_else_statements
+from mash.shell.internals.if_statement import Abort, handle_prev_then_else_statements
 from mash.shell.grammer.lex_yacc import parse
 from mash.util import has_method, is_valid_method_name
 
