@@ -90,7 +90,7 @@ class BaseShell(Cmd2):
     def delimiters(self):
         """Return the most recent values of the delimiters.
         """
-        items = delimiters.python + delimiters.bash
+        items = delimiters.all.copy()
         items.remove('=')
         items.remove('#')
         return items

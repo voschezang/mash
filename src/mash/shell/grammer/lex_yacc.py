@@ -80,14 +80,6 @@ def init_lex():
         r'\)'
         return t
 
-    # def t_LBRACE(t):
-    #     r'\{'
-    #     return t
-
-    # def t_RBRACE(t):
-    #     r'\}'
-    #     return t
-
     def t_BREAK(t):
         r'[\n\r]|((\;)+[\ \t]*)'
         # semicolon_with_whitespace = r'((\;)+[ \t]*)'

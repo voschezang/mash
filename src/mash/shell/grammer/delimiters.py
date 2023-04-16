@@ -42,7 +42,3 @@ ELSE_IF_THEN = 'else-if-then'
 INLINE_THEN = 'inline-then'
 INLINE_ELSE = 'inline-else'
 
-
-class KeyWords(Enum):
-    AND = 'and'
-    OR = 'or'
