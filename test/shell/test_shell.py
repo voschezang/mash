@@ -261,6 +261,7 @@ def test_set_do_flatten():
 
 def test_set_do_map():
     shell = Shell()
+
     line = 'echo a b |> flatten >>= echo'
     assert catch_output(line, shell=shell, strict=True) == 'a\nb'
 
@@ -268,10 +269,13 @@ def test_set_do_map():
     assert catch_output(line, shell=shell, strict=True) == 'a\nb'
 
     line = 'echo a b |> flatten |> map echo p $ q'
-    assert catch_output(line, shell=shell, strict=True) == "'p a q'\n'p b q'"
+    assert catch_output(line, shell=shell, strict=True) == "p a q\np b q"
 
     line = 'range 3 |> map echo $'
     assert catch_output(line, shell=shell, strict=True) == '0\n1\n2'
+
+    line = 'echo "a," >>= echo'
+    assert catch_output(line, shell=shell, strict=True) == 'a,'
 
 
 def test_set_do_pipe_map():

@@ -43,6 +43,7 @@ class ShellWithFileSystem:
         # convert methods to functions
         cd = partial_simple(self.repository.cd)
         ls = partial_simple(self.repository.ll, delimiter=', ')
+        ls = partial_simple(self.repository.ll, delimiter=None)
         ll = partial_simple(self.repository.ll)
         get = partial_simple(self.get)
         set = partial_simple(self.set)

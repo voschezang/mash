@@ -75,6 +75,11 @@ class Lines(Nodes):
             if isinstance(result, list):
                 # result = ' '.join(quote_all(result))
                 # result = ' '.join(str(s) for s in result)
+                if result:
+                    if isinstance(result[0], list):
+                        result = [' '.join(str(k) for k in r) for r in result]
+                    result = '\n'.join(str(r) for r in result)
+
                 result = str(result)
 
             if result is not None:

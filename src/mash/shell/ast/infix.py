@@ -137,7 +137,7 @@ class Map(Infix):
         if isinstance(rhs, str) or isinstance(rhs, Term):
             rhs = Terms([rhs])
 
-        return self.map(rhs, str(prev), shell)
+        return self.map(rhs, prev, shell, delimiter=None)
 
     @staticmethod
     def map(command, values: str, shell, delimiter='\n') -> Iterable:
@@ -155,7 +155,10 @@ class Map(Infix):
         # monadic bind
         # https://en.wikipedia.org/wiki/Monad_(functional_programming)
 
-        items = shell.parse(values).values
+        if isinstance(values, list):
+            items = values
+        else:
+            items = shell.parse(values).values
 
         results = []
         for i, item in enumerate(items):
@@ -164,6 +167,10 @@ class Map(Infix):
             results.append(shell.run_commands(command, item, run=True))
 
         shell.env[LAST_RESULTS_INDEX] = 0
+
+        if not delimiter:
+            return results
+
         agg = delimiter.join(str(r) for r in results)
         if agg.strip() == '':
             return ''

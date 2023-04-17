@@ -174,10 +174,13 @@ class FileSystem:
             else:
                 keys = names
 
-        try:
-            return delimiter.join(keys)
-        except TypeError:
-            return delimiter.join((str(k) for k in keys))
+        if delimiter:
+            try:
+                return delimiter.join(keys)
+            except TypeError:
+                return delimiter.join((str(k) for k in keys))
+
+        return keys
 
     def get(self, path: Path, relative=True):
         """Return the value of the file associated with `path`.

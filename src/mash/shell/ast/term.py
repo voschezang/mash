@@ -34,8 +34,8 @@ class Term(Node):
 
         if not lazy:
             if k == 'echo':
-                line = ' '.join(str(arg) for arg in args)
-                return line
+                # line = ' '.join(str(arg) for arg in args)
+                return [str(arg) for arg in args]
 
             try:
                 return run_function(k, args, shell)
@@ -66,7 +66,10 @@ class Word(Term):
 class Method(Term):
     def run(self, prev_result='', shell: BaseShell = None, lazy=False):
         if not lazy:
-            args = [prev_result] if prev_result else []
+            if isinstance(prev_result, list):
+                args = prev_result
+            else:
+                args = [prev_result] if prev_result else []
 
             try:
                 return run_function(self.data, args, shell)
@@ -74,6 +77,9 @@ class Method(Term):
                 pass
 
             if shell.is_function(self.data):
+                if isinstance(prev_result, list):
+                    prev_result = ' '.join(prev_result)
+
                 return shell.onecmd_raw(self.data, prev_result)
 
             return shell._default_method(str(self.data))
