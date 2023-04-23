@@ -13,6 +13,10 @@ Path = List[Union[List[str], str]]
 NAME = 'name'
 
 
+class ViewError(ValueError):
+    pass
+
+
 @dataclass
 class View:
     """A tree of dict's. Tree traversal is exposed through the methods `up` and `down`.
@@ -74,7 +78,7 @@ class View:
         *sources, dst = references
 
         if not sources:
-            raise ValueError(
+            raise ViewError(
                 f'At least two arguments are required, but got {references}')
         elif len(sources) == 1:
             src = sources[0]
@@ -138,7 +142,7 @@ class View:
             return k, self.tree[k]
 
         except (KeyError, ValueError):
-            raise ValueError(self._file_not_found(k))
+            raise ViewError(self._file_not_found(k))
 
     def _get_from_list(self, k):
         # convert key to an index
@@ -147,7 +151,7 @@ class View:
         try:
             return i, self.tree[i]
         except (IndexError, KeyError):
-            raise ValueError(self._file_not_found(k))
+            raise ViewError(self._file_not_found(k))
 
     def _file_not_found(self, k):
         preview_items = (crop(str(s), 10) for s in take(self.ls(), 5))
@@ -158,8 +162,8 @@ class View:
 def verify_directory(value, name: str):
     error = f'{name} is not a directory'
     if isinstance(value, str) or is_Dict_or_List(value):
-        raise ValueError(error)
+        raise ViewError(error)
     try:
         'some_key' in value
     except TypeError:
-        raise ValueError(error)
+        raise ViewError(error)

@@ -3,7 +3,8 @@ from logging import debug
 
 from mash.filesystem.filesystem import FileSystem, OPTIONS, Option
 from mash.filesystem.discoverable import Discoverable
-from mash.filesystem.view import Path
+from mash.filesystem.view import Path, ViewError
+from mash.io_util import log
 from mash.shell.shell import build, set_completions, set_functions
 from mash.shell.function import ShellFunction as Function
 from mash.util import find_fuzzy_matches, hamming, has_method, is_digit, partial_simple
@@ -72,6 +73,16 @@ class ShellWithFileSystem:
                        'show': show,
                        'reset': reset,
                        }, cls)
+
+    def cd(self, *path: str):
+        """Change directory and finally reset the current directory.
+        Stay in the current directory by default.
+        """
+        try:
+            return self.repository.cd(path)
+        except ViewError as e:
+            log(e)
+        return
 
     def pwd(self):
         """Print the path to the current working directory
