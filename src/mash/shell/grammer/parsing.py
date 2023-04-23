@@ -134,3 +134,10 @@ def inline_indent_with(*indent_per_type) -> float:
 
     values = ''.join(f'{k:080}' for k in indent_per_type)
     return str('.' + ''.join(values))
+
+
+def quote_return_value(value: str, delimiter='\n') -> str:
+    ignore = list('*!?@<>+')
+    if delimiter in ignore:
+        ignore.remove(delimiter)
+    return quote_all(value, ignore)

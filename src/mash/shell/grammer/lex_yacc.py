@@ -194,7 +194,6 @@ def init_lex():
         return t
 
     def t_error(t):
-        print(f'Illegal character: `{t.value[0]}`')
         t.lexer.skip(1)
         raise ShellSyntaxError(f'Illegal character: `{t.value[0]}`')
 

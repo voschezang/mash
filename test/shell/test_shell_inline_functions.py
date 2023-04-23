@@ -96,4 +96,4 @@ def test_inline_function_with_map():
     line = 'f (n) : range $n >>= echo - $ -'
     run_command(line, shell=shell)
     line = 'f 3'
-    assert catch_output('f 3', shell=shell) == "'- 0 -'\n'- 1 -'\n'- 2 -'"
+    assert catch_output('f 3', shell=shell) == "- 0 -\n- 1 -\n- 2 -"

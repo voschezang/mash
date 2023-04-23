@@ -44,10 +44,7 @@ class Terms(Nodes):
         if len(items) >= 2 and not lazy:
             k, *args = items
             # TODO add "prefix" class, instead of this hack for infix operators
-            if k == 'foreach':
-                args = Terms(list(args))
-                return shell._do_foreach(args, prev_result)
-            elif k in ['reduce', 'foldr']:
+            if k in ['reduce', 'foldr']:
                 return shell.foldr(args, prev_result)
 
         return Term.run_terms(items, prev_result, shell, lazy)

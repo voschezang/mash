@@ -76,6 +76,7 @@ def test_multi_commands():
 
 def test_pipe():
     assert catch_output('print 100 |> print 2') == '2 100'
+    assert catch_output('echo "a@b" |> echo') == 'a@b'
 
 
 def test_pipe_unix():
@@ -268,10 +269,22 @@ def test_set_do_map():
     assert catch_output(line, shell=shell, strict=True) == 'a\nb'
 
     line = 'echo a b |> flatten |> map echo p $ q'
-    assert catch_output(line, shell=shell, strict=True) == "'p a q'\n'p b q'"
+    # assert catch_output(line, shell=shell, strict=True) == "'p a q'\n'p b q'"
+    assert catch_output(line, shell=shell, strict=True) == "p a q\np b q"
 
     line = 'range 3 |> map echo $'
     assert catch_output(line, shell=shell, strict=True) == '0\n1\n2'
+
+
+def test_map_raw_string():
+    assert catch_output('echo "a@b" >>= echo') == 'a@b'
+
+    result = """0 a@b
+1 a@b"""
+    assert catch_output('range 2 >>= echo $ "a@b" >>= echo') == result
+
+    line = 'echo "a," >>= echo'
+    assert catch_output(line, strict=True) == 'a,'
 
 
 def test_set_do_pipe_map():
@@ -281,16 +294,7 @@ def test_set_do_pipe_map():
     assert catch_output(line, shell=shell, strict=True) == 'a\nb'
 
     line = 'echo a b |> flatten >>= echo p $ q'
-    assert catch_output(line, shell=shell, strict=True) == "'p a q'\n'p b q'"
-
-
-def test_set_do_foreach():
-    shell = Shell()
-    line = 'echo a b |> foreach echo'
-    assert catch_output(line, shell=shell, strict=True) == 'a b'
-
-    line = 'echo 1 2 |> foreach echo 0'
-    assert catch_output(line, shell=shell, strict=True) == "'0 1' '0 2'"
+    assert catch_output(line, shell=shell, strict=True) == "p a q\np b q"
 
 
 def test_set_map_reduce():

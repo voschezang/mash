@@ -2,11 +2,12 @@ from typing import Iterable
 
 from mash.shell.ast.node import Math, Node, run_shell_command
 from mash.shell.ast.nodes import Terms
-from mash.shell.ast.term import Term
+from mash.shell.ast.term import Quoted, Term
 from mash.shell.base import BaseShell
+from mash.shell.errors import ShellSyntaxError
 from mash.shell.function import LAST_RESULTS, LAST_RESULTS_INDEX
 from mash.shell.grammer.delimiters import comparators, FALSE, TRUE
-from mash.shell.grammer.parsing import quote_items, to_bool
+from mash.shell.grammer.parsing import quote_items, quote_return_value, to_bool
 from mash.shell.internals.helpers import set_env_variables
 from mash.util import quote_all
 
@@ -155,7 +156,10 @@ class Map(Infix):
         # monadic bind
         # https://en.wikipedia.org/wiki/Monad_(functional_programming)
 
-        items = shell.parse(values).values
+        try:
+            items = shell.parse(values).values
+        except ShellSyntaxError:
+            items = [Quoted(values)]
 
         results = []
         for i, item in enumerate(items):
@@ -164,11 +168,11 @@ class Map(Infix):
             results.append(shell.run_commands(command, item, run=True))
 
         shell.env[LAST_RESULTS_INDEX] = 0
-        agg = delimiter.join(str(r) for r in results)
-        if agg.strip() == '':
+        out = delimiter.join(str(r) for r in results)
+        if out.strip() == '':
             return ''
 
-        return delimiter.join(quote_all(results))
+        return out
 
 
 class LogicExpression(Infix):

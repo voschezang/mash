@@ -180,18 +180,6 @@ class Shell(BaseShell):
         for arg in args:
             self.onecmd(f'{f} {arg}')
 
-    def _do_foreach(self, ast: tuple, prev_results: str) -> Iterable:
-        """Apply a function to every term or word.
-
-        Usage
-        ```sh
-        echo a b |> foreach echo
-        echo a b |> foreach echo prefix $ suffix
-        ```
-        """
-        prev_results = '\n'.join(prev_results.split(' '))
-        return Map.map(ast, prev_results, self, delimiter=' ')
-
     def foldr(self, commands: List[Term], prev_results: str, delimiter='\n'):
         items = parse(prev_results).values
         k, acc, *args = commands
