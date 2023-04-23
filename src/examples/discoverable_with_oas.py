@@ -11,7 +11,8 @@ from mash.shell import ShellWithFileSystem
 
 from examples.discoverable import Organization
 
-if __name__ == '__main__':
+
+def main() -> str:
     shell = ShellWithFileSystem(data={'repository': Organization},
                                 get_value_method=observe)
     obj = shell.repository
@@ -21,15 +22,19 @@ if __name__ == '__main__':
     path = []
     result = 'departments'
 
-    # for i in range(7):
-    for i in range(7):
+    for i in range(6):
         key = result.split('\n')[-1]
         path.append(key)
         result = obj.ll(*path)
 
-    json = JSONFactory(Organization).build(obj['repository'])
+    json = JSONFactory(Organization).build(obj)
     oas = OAS()
     oas.extend(json)
     oas['servers'] = [{'url': 'http://localhost:5000/v1'}]
     oas['paths']['/organizations'] = path_create('Organization')
+    return oas
+
+
+if __name__ == '__main__':
+    oas = main()
     print(dumps(oas))

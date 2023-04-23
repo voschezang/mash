@@ -86,8 +86,8 @@ See `examples/filesystem.py` and `examples/discoverable.py`.
 
 | Example             | Description                                                  |
 | ------------------- | ------------------------------------------------------------ |
-| `ls [PATH]`         | List the items in a directory. Use the current working directory by default. Alias: `list` |
-| `cd`, `use [PATH]`  | Change the current working directory. Alias: `use`           |
+| `list [PATH]`       | List the items in a directory. Use the current working directory by default. Alias: `l` |
+| `cd [PATH]`         | Change the current working directory. Alias: `use`           |
 | `get NAME`          | Retrieve a file.                                             |
 | `set NAME VALUE`    | Modify a file.                                               |
 | `new NAME [NAME..]` | Create new directories.                                      |

@@ -10,7 +10,7 @@ The main datastructure is `mash.filesystem`. It's inferface is inspired by unix 
 
 - Implement local/global variable scopes in `Shell`.
 - Let a user browse REST-like resources (directories) with CRUD operations:
-	- Discovery: `cd, ls, get, tree, show`.
+	- Discovery: `cd, list, get, tree, show`.
     - Mutations: `new, set, mv, cp`.
 
 ### Module Tree

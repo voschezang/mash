@@ -50,3 +50,6 @@ pydocs:
 tree:
 	tree src -L 2 -d
 	tree src/mash -L 2 --gitignore -I '_*|*.out'
+
+ast:
+	egrep -rh '^class \w+(\(\w+\))?\:' src/mash/shell/ast

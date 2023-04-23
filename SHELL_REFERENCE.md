@@ -21,36 +21,31 @@ For examples, see [src.lib.math.sh](https://github.com/voschezang/mash/blob/main
 
 ### Conditions and Branches
 
-| Example                                                   | Description                                      |
-| --------------------------------------------------------- | ------------------------------------------------ |
-| `if 1 > 0 then print greater`                             | Run a command conditionally.                     |
-| `x <- if 1 > 0 then 10`                                   | Set `x` to either a value or to an empty string. |
-| `if 1 then print A else print B`                          | If-then-else statement                           |
-| `if .. then if .. then print A else print B else print C` | Nested if-then-else statement                    |
+| Example                                                   | Description                     |
+| --------------------------------------------------------- | ------------------------------- |
+| `if 1 > 0 then print greater`                             | Run a command conditionally.    |
+| `x <- if 1 > 0 then 10 else 20`                           | Conditional variable assignment |
+| `if .. then if .. then print A else print B else print C` | Nested if-then-else statement   |
 
 Multiline if-then-else statement
 
 ```python
 if 10 < 1 then
-	print 1
+	if 5 < 1 then
+    print a
+else if 1 < 1
+  print b
 else
-	print 2
-```
-
-Assignment
-
-```bash
-x <- if today then yes else no
+	print c
 ```
 
 ### Maps and Loops
 
-| Example                                    | Description                                                  |
-| ------------------------------------------ | ------------------------------------------------------------ |
-| `print 1 2 `&vert;`> foreach print`         | Run a command for each term of the output of the previous expression. |
-| `println 1 2 `&vert;`> map print`            | Run a command for each line of the previous output.          |
+| Example                                      | Description                                                  |
+| -------------------------------------------- | ------------------------------------------------------------ |
+| `println 1 2 `&vert;`> map print`            | Run a command for each line of the output of the previous expression. |
 | `println 1 2 `&vert;`> map print pre $ post` | Insert each line of the previous output into a new expression. |
-| `println 1 2 >>= print`                    | `>>=` is an alias for &vert;`> map`                          |
+| `println 1 2 >>= print`                      | `>>=` is an alias for &vert;`> map`                          |
 
 ### Shell Interop
 
@@ -182,15 +177,6 @@ x + y == 1 for any x in X, y in Y
 Inf loop: `f x = f x |> repeat x` 
 
 - TODO: Decide on whether states should be mutable or immutable.
-
-
-
-**Skip `then` keyword in if-then statements**
-
-```python
-if 1:
-  print 1
-```
 
 
 

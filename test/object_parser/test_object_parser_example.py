@@ -7,6 +7,7 @@ from mash.object_parser.errors import SpecError
 from mash.object_parser.factory import JSONFactory
 from mash.object_parser.spec import init_recursively
 from examples.object_parser import A, B, Department, DepartmentData, Organization, OrganizationData, SuperUser, Team, TeamType, User, example_data
+from examples import discoverable_with_oas
 
 json = example_data
 
@@ -153,3 +154,13 @@ def test_dataclass():
     a = {'a': 'nan', 'b': 2, 'c': 'yes', 'd': d}
     with pytest.raises(SpecError):
         a = init_recursively(A, a)
+
+
+def test_object_parser_discoverable():
+    oas = discoverable_with_oas.main()
+    assert 'paths' in oas
+    assert '/organizations' in oas['paths']
+
+    assert 'components' in oas
+    assert 'schemas' in oas['components']
+    assert 'Organization' in oas['components']['schemas']

@@ -19,18 +19,18 @@ def test_crud_ls():
     obj = init()
     shell = obj.shell
 
-    assert catch_output('ls', shell=shell) == 'worlds'
-    assert catch_output('ls worlds', shell=shell) == 'earth'
-    assert catch_output('ll worlds', shell=shell) == 'earth'
+    assert catch_output('list', shell=shell) == 'worlds'
+    assert catch_output('list worlds', shell=shell) == 'earth'
+    assert catch_output('l worlds', shell=shell) == 'earth'
 
     # autocomplete prefix
-    assert catch_output('ll wo', shell=shell) == 'earth'
+    assert catch_output('l wo', shell=shell) == 'earth'
 
     # fuzzy match prefix
-    assert catch_output('ll wow', shell=shell) == 'earth'
+    assert catch_output('l wow', shell=shell) == 'earth'
 
     # non-existing resource name
-    assert catch_output('ls abc', shell=shell) == ''
+    assert catch_output('l abc', shell=shell) == ''
 
 
 def test_crud_get():
@@ -61,14 +61,14 @@ def test_crud_new():
     shell = obj.shell
 
     run_command('new a', shell=shell)
-    assert catch_output('ls a', shell=shell) == ''
+    assert catch_output('l a', shell=shell) == ''
 
     run_command('cd a', shell=shell)
     run_command('new b c', shell=shell)
     assert catch_output('pwd', shell=shell) == '/ a'
 
-    assert catch_output('ls b', shell=shell) == ''
-    assert catch_output('ls c', shell=shell) == ''
+    assert catch_output('list b', shell=shell) == ''
+    assert catch_output('list c', shell=shell) == ''
 
 
 def test_crud_expansion():
@@ -107,7 +107,7 @@ def test_crud_ls_after_cd():
     assert result == 'earth'
 
     # use do_ls()
-    result = catch_output('ls', shell=obj.shell)
+    result = catch_output('list', shell=obj.shell)
     assert result == 'earth'
 
 
@@ -232,18 +232,18 @@ def test_shell_globbing():
     o = init(home=['worlds', 'earth'])
     shell = o.shell
 
-    assert catch_output('ls an?mal?', shell=shell) == 'terrestrial, aquatic'
-    assert catch_output('ls a*', shell=shell) == 'terrestrial, aquatic'
-    assert catch_output('ls [!n]*', shell=shell) == 'terrestrial, aquatic'
+    assert catch_output('list an?mal?', shell=shell) == 'terrestrial\naquatic'
+    assert catch_output('list a*', shell=shell) == 'terrestrial\naquatic'
+    assert catch_output('list [!n]*', shell=shell) == 'terrestrial\naquatic'
 
 
 def test_shell_invalid_globbing():
     o = init(home=['worlds', 'earth'])
     shell = o.shell
 
-    assert catch_output('ls [ter]', shell=shell) == ''
+    assert catch_output('list [ter]', shell=shell) == ''
 
     run_command('cd animals', shell=shell)
 
     with raises(ShellError):
-        run_command('ls [ter]', shell=shell, strict=True)
+        run_command('list [ter]', shell=shell, strict=True)

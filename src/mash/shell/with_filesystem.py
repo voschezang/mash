@@ -42,7 +42,6 @@ class ShellWithFileSystem:
     def _set_shell_functions(self, cls):
         # convert methods to functions
         cd = partial_simple(self.repository.cd)
-        ls = partial_simple(self.repository.ll, delimiter=', ')
         ll = partial_simple(self.repository.ll)
         get = partial_simple(self.get)
         set = partial_simple(self.set)
@@ -59,9 +58,8 @@ class ShellWithFileSystem:
 
         set_functions({'cd': cd,
                        'use': cd,
-                       'list': ls,
-                       'ls': ls,
-                       'll': ll,
+                       'l': ll,
+                       'list': ll,
                        'get': get,
                        'set': set,
                        'new': new,
