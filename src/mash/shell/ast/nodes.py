@@ -30,7 +30,10 @@ class Nodes(Node):
         self._values += nodes.values
 
     def __eq__(self, other):
-        return self.values == other.values and type(self) == type(other)
+        try:
+            return self.values == other.values and type(self) == type(other)
+        except AttributeError:
+            return False
 
     @property
     def data(self) -> str:

@@ -4,7 +4,7 @@ from mash.shell.ast.node import Math, Node, run_shell_command
 from mash.shell.ast.nodes import Terms
 from mash.shell.ast.term import Quoted, Term
 from mash.shell.base import BaseShell
-from mash.shell.errors import ShellSyntaxError
+from mash.shell.errors import ShellError, ShellSyntaxError
 from mash.shell.function import LAST_RESULTS, LAST_RESULTS_INDEX
 from mash.shell.grammer.delimiters import comparators, FALSE, TRUE
 from mash.shell.grammer.parsing import quote_items, quote_return_value, to_bool
@@ -85,7 +85,7 @@ class Assign(Infix):
 class BinaryExpression(Infix):
     def run(self, prev_result='', shell: BaseShell = None, lazy=False):
         if prev_result not in (TRUE, FALSE):
-            raise NotImplementedError('prev_result was not empty')
+            raise ShellError('Not implemented: prev_result was not empty')
 
         op = self.op
         a = shell.run_commands(self.lhs, run=not lazy)
