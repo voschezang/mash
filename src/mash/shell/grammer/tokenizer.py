@@ -41,7 +41,7 @@ tokens = (
 tokens += tuple(keywords.values())
 
 
-def init():
+def main():
     """
     Token regexes are defined with the prefix `t_`.
     From ply docs:
@@ -183,3 +183,15 @@ def init():
         raise ShellSyntaxError(f'Illegal character: `{t.value[0]}`')
 
     return lex.lex()
+
+
+def tokenize(data: str):
+    tokenizer = main()
+    tokenizer.input(data)
+
+    while True:
+        token = tokenizer.token()
+        if not token:
+            break
+
+        yield token

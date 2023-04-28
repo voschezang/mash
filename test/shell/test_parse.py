@@ -15,8 +15,11 @@ def parse_line(text: str):
 
 
 def test_lexer():
-    lexer = tokenizer.init()
+    lexer = tokenizer.main()
     assert lexer is not None
+
+    result = tokenizer.tokenize('a:b')
+    assert result
 
 
 def test_parse_cmd():

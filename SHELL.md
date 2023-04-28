@@ -53,7 +53,7 @@ src
 
 The language model is based on an intermediate representation: an [Abstract Syntax Tree (AST)](https://en.wikipedia.org/wiki/Abstract_syntax_tree).
 
-- Raw text is parsed using a model defined in a [context-free grammar](https://en.wikipedia.org/wiki/Backus%E2%80%93Naur_form).
+- Raw text is tokenized and parsed using a model defined in a [context-free grammar](https://en.wikipedia.org/wiki/Backus%E2%80%93Naur_form).
 - This is used to build the tree.
 - Each *node* in the AST is a class with it's own behaviour.
 

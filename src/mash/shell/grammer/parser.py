@@ -1,31 +1,17 @@
 from logging import getLogger
 import ply.yacc as yacc
 from mash.shell.ast import Assign, BashPipe, BinaryExpression, Else, ElseIf, ElseIfThen, FunctionDefinition, If, IfThen, IfThenElse, Indent, InlineFunctionDefinition, Lines, LogicExpression, Map, Math, Method, Pipe, Quoted, Return, Shell, Terms, Then, Variable, Word
-from mash.shell.grammer import tokenizer
+from mash.shell.grammer.tokenizer import main, tokens
 from mash.shell.grammer.parse_functions import indent_width
 from mash.shell.errors import ShellSyntaxError
 
-lexer = None
-
-
-def tokenize(data: str):
-    lexer = tokenizer.init()
-    lexer.input(data)
-
-    while True:
-        token = lexer.token()
-        if not token:
-            break
-
-        yield token
+tokenizer = None
 
 
 def parse(text, init=True):
     # TODO use Node/Tree classes rather than tuples
     # e.g. classes with a .run() method (extends Runnable<>)
 
-    # define builtin variables: tokens, precedence
-    tokens = tokenizer.tokens
     precedence = (
         ('left', 'BREAK'),
         ('left', 'INDENT'),
@@ -38,6 +24,7 @@ def parse(text, init=True):
         ('left', 'AND'),
         ('left', 'NOT')
     )
+    _ply_constants = precedence, tokens
 
     def p_lines_empty(p):
         """lines : BREAK
@@ -343,10 +330,10 @@ def parse(text, init=True):
         raise ShellSyntaxError(f'Syntax error: {p}')
 
     if init:
-        global lexer
-        lexer = tokenizer.init()
+        global tokenizer
+        tokenizer = main()
     else:
-        lexer.clone()
+        tokenizer.clone()
 
     log = getLogger()
     parser = yacc.yacc(debug=log)
