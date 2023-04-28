@@ -3,7 +3,7 @@ from pytest import raises
 from time import perf_counter
 
 from mash import io_util
-from mash.shell.grammer import delimiters
+from mash.shell.grammer import literals
 from mash.shell.errors import ShellError, ShellSyntaxError
 from mash.shell.shell import Shell, run_command
 
@@ -227,7 +227,7 @@ def test_set_do_char_method():
     assert catch_output(f'{op} a', shell=shell, strict=True) == 'a'
 
     # verify that clashes are resolved
-    for op in [delimiters.bash[0], '->']:
+    for op in [literals.bash[0], '->']:
         with raises(ShellError):
             assert catch_output(op, shell=shell, strict=True) == ''
 

@@ -6,10 +6,10 @@ from mash.shell.ast.term import Quoted, Term
 from mash.shell.base import BaseShell
 from mash.shell.errors import ShellError, ShellSyntaxError
 from mash.shell.function import LAST_RESULTS, LAST_RESULTS_INDEX
-from mash.shell.grammer.delimiters import FALSE, TRUE
+from mash.shell.grammer import literals
+from mash.shell.grammer.literals import FALSE, TRUE
 
-from mash.shell.grammer import tokenizer
-from mash.shell.grammer.parse_functions import quote_items, quote_return_value, to_bool
+from mash.shell.grammer.parse_functions import quote_items, to_bool
 from mash.shell.internals.helpers import set_env_variables
 from mash.util import quote_all
 
@@ -95,7 +95,7 @@ class BinaryExpression(Infix):
 
         line = ' '.join(quote_items([a, op, b]))
 
-        if op in tokenizer.comparators:
+        if op in literals.comparators:
             if not lazy:
                 return Math.eval(line, shell.env)
             return a, op, b

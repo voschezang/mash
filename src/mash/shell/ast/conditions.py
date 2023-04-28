@@ -1,6 +1,6 @@
 from mash.shell.ast.node import Node
 from mash.shell.base import BaseShell
-from mash.shell.grammer.delimiters import FALSE, IF, INLINE_ELSE, INLINE_THEN, THEN, TRUE
+from mash.shell.grammer.literals import FALSE, IF, INLINE_ELSE, INLINE_THEN, THEN, TRUE
 from mash.shell.internals.if_statement import Abort, State, handle_else_statement, handle_then_statement
 from mash.shell.grammer.parse_functions import to_bool
 

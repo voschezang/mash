@@ -8,8 +8,8 @@ from mash.shell.cmd2 import Cmd2
 from mash.filesystem.filesystem import FileSystem
 from mash.filesystem.scope import Scope, show
 from mash.io_util import log, print_shell_ready_signal
-from mash.shell.grammer import delimiters
-from mash.shell.grammer.delimiters import FALSE, IF, TRUE
+from mash.shell.grammer import literals
+from mash.shell.grammer.literals import FALSE, IF, TRUE
 from mash.shell.errors import ShellError
 from mash.shell.function import LAST_RESULTS, LAST_RESULTS_INDEX, InlineFunction, scope
 from mash.shell.function import ShellFunction as Function
@@ -231,7 +231,7 @@ class BaseShell(Cmd2):
 
     def add_special_function(self, char: str, method: Command):
         # TODO merge this with self.add_functions
-        if char in delimiters.all or char in '!?':
+        if char in literals.all or char in '!?':
             raise ShellError(f'Char {char} is already in use.')
 
         self.add_functions({char: method}, CHAR)

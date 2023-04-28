@@ -1,4 +1,4 @@
-from mash.shell.grammer.delimiters import ELSE, IF, THEN
+from mash.shell.grammer.literals import ELSE, IF, THEN
 from mash.shell.errors import ShellError
 
 LINE_INDENT = 'line_indent'

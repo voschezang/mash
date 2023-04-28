@@ -8,7 +8,7 @@ from typing import List, Union
 from mash.filesystem.filesystem import cd
 from mash.io_util import log
 from mash.shell.base import BaseShell
-from mash.shell.grammer.delimiters import bash, FALSE
+from mash.shell.grammer.literals import bash, FALSE
 from mash.shell.errors import ShellError
 from mash.shell.function import scope
 from mash.shell.internals.if_statement import Abort

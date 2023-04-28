@@ -1,5 +1,6 @@
 import ply.lex as lex
 from mash.shell.errors import ShellSyntaxError
+from mash.shell.grammer.literals import keywords
 
 tokens = (
     'BASH',  # | >>
@@ -37,36 +38,7 @@ tokens = (
     'LONG_SYMBOL',
     'SYMBOL',
 )
-reserved_tokens = {
-    'if': 'IF',
-    'then': 'THEN',
-    'else': 'ELSE',
-    'return': 'RETURN',
-    'not': 'NOT',
-    'and': 'AND',
-    'or': 'OR',
-    'math': 'MATH',
-}
-tokens += tuple(reserved_tokens.values())
-
-
-delimiters = [':', ';']
-
-comparators = ['==', '!=', '>', '<', '>=', '<=']
-
-operators = {'<-': 'left_assignment',
-             '->': 'right_assignment',
-             '=': 'literal_assignment',
-             '|>': 'pipe',
-             '>>=': 'map',
-             }
-
-token_values = {v: k for k, v in reserved_tokens.items()}
-# token_values = {}
-# for k, v in reserved_tokens.items():
-#     token_values[v] = v
-# for k, v in operators.items():
-#     token_values[v] = v
+tokens += tuple(keywords.values())
 
 
 def init():
@@ -108,7 +80,7 @@ def init():
 
     def t_DOUBLE_QUOTED_STRING(t):
         r'"((\\\")|[^\""])*"'
-        t.type = reserved_tokens.get(t.value, 'DOUBLE_QUOTED_STRING')
+        t.type = keywords.get(t.value, 'DOUBLE_QUOTED_STRING')
 
         # omit quotes
         t.value = t.value[1:-1]
@@ -117,7 +89,7 @@ def init():
 
     def t_SINGLE_QUOTED_STRING(t):
         r"'(?:\.|(\\\')|[^\''])*'"
-        t.type = reserved_tokens.get(t.value, 'SINGLE_QUOTED_STRING')
+        t.type = keywords.get(t.value, 'SINGLE_QUOTED_STRING')
 
         # omit quotes
         t.value = t.value[1:-1]
@@ -140,7 +112,7 @@ def init():
 
     def t_METHOD(t):
         r'\b[a-zA-Z_][a-zA-Z_0-9]*\b'
-        t.type = reserved_tokens.get(t.value, 'METHOD')
+        t.type = keywords.get(t.value, 'METHOD')
         return t
 
     def t_WORD_WITH_DOT(t):

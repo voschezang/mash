@@ -13,7 +13,7 @@ from mash.shell.function import LAST_RESULTS
 from mash.shell.ast import ElseCondition, Indent, Lines, Map, Math, Node, Term, Terms
 from mash.shell.base import BaseShell
 from mash.shell.cmd2 import default_prompt, run
-from mash.shell.grammer.delimiters import DEFINE_FUNCTION
+from mash.shell.grammer.literals import DEFINE_FUNCTION
 from mash.shell.errors import ShellError, ShellPipeError, ShellSyntaxError
 from mash.shell.errors import ShellSyntaxError
 from mash.shell.function import ShellFunction as Function
