@@ -2,7 +2,7 @@ from mash.shell.internals.if_statement import Abort
 from mash.shell.internals.helpers import run_function
 from mash.shell.ast.node import Node
 from mash.shell.base import BaseShell
-from mash.shell.grammer.parsing import expand_variables
+from mash.shell.grammer.parse_functions import expand_variables
 from mash.util import quote_all
 
 

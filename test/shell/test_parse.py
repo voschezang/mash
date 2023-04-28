@@ -1,7 +1,8 @@
 from pytest import raises
 
 from mash.shell.errors import ShellSyntaxError
-from mash.shell.grammer.lex_yacc import parse
+from mash.shell.grammer import tokenizer
+from mash.shell.grammer.parser import parse
 from mash.shell.ast import (Assign, BashPipe, BinaryExpression, ElseIf,
                             ElseIfThen, FunctionDefinition, If, IfThen,
                             IfThenElse, Indent, InlineFunctionDefinition,
@@ -11,6 +12,11 @@ from mash.shell.ast import (Assign, BashPipe, BinaryExpression, ElseIf,
 
 def parse_line(text: str):
     return parse(text).values[0]
+
+
+def test_lexer():
+    lexer = tokenizer.init()
+    assert lexer is not None
 
 
 def test_parse_cmd():

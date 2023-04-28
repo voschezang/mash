@@ -13,7 +13,7 @@ from mash.shell.grammer.delimiters import FALSE, IF, TRUE
 from mash.shell.errors import ShellError
 from mash.shell.function import LAST_RESULTS, LAST_RESULTS_INDEX, InlineFunction, scope
 from mash.shell.function import ShellFunction as Function
-from mash.shell.grammer.parsing import to_bool
+from mash.shell.grammer.parse_functions import to_bool
 from mash.util import has_method, identity
 
 
@@ -85,15 +85,6 @@ class BaseShell(Cmd2):
     def init_current_scope(self):
         self.locals.set(IF, [])
         self.locals.set(ENV, {})
-
-    @property
-    def delimiters(self):
-        """Return the most recent values of the delimiters.
-        """
-        items = delimiters.all.copy()
-        items.remove('=')
-        items.remove('#')
-        return items
 
     @property
     def _last_if(self):

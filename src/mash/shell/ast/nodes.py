@@ -10,7 +10,7 @@ from mash.shell.ast.node import Indent, Node
 from mash.shell.ast.term import Term
 from mash.shell.base import BaseShell
 from mash.shell.internals.if_statement import LINE_INDENT, close_prev_if_statements
-from mash.shell.grammer.parsing import indent_width, to_string
+from mash.shell.grammer.parse_functions import indent_width, to_string
 
 
 class Nodes(Node):

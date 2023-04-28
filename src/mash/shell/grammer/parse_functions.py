@@ -5,6 +5,7 @@ import shlex
 from mash.io_util import log
 from mash.shell.grammer import delimiters
 from mash.shell.grammer.delimiters import FALSE, TRUE
+from mash.shell.grammer import tokenizer
 from mash.shell.errors import ShellError
 from mash.util import is_globbable, is_valid_method_name, match_words, quote, quote_all, glob
 
@@ -111,7 +112,7 @@ def quote_items(items: List[str]) -> Iterable[str]:
     """
     for arg in items:
         arg = str(arg)
-        if arg in delimiters.python or arg in delimiters.comparators:
+        if arg in delimiters.python or arg in tokenizer.comparators:
             yield arg
         else:
             yield shlex.quote(arg)
