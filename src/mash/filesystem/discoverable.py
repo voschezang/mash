@@ -13,9 +13,9 @@ where
 ```py
 @dataclass
 class User:
-    # A REST resource of the endpoints `/users` and `/users/1`
-    x: int
-    y: float
+    # A REST resource of the endpoints `/users` and `/users/{id}`
+    email: string
+    role: string
 
     @staticmethod
     def get_value(path: Path):
