@@ -185,7 +185,7 @@ class ShellWithFileSystem:
     def default_method(self, dirname: str):
         candidates = self.complete_cd(dirname, None, None, None)
         if candidates:
-            error = hamming(dirname, candidates[0])
+            error = hamming(dirname, str(candidates[0]))
             if error < 0.9:
                 self.repository.cd(candidates[0])
                 return

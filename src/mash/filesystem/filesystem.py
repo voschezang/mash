@@ -45,6 +45,12 @@ class FileSystem:
                  get_hook: Callable[[Key, View], Key] = first,
                  post_cd_hook: Callable = none,
                  **dict_kwds):
+        """
+        Parameters
+        ----------
+        get_hook : function
+            Prehook for self.get(). The return value is passed to self.get().
+        """
 
         if root is None:
             self.root = dict(**dict_kwds)
@@ -182,9 +188,13 @@ class FileSystem:
     def get(self, path: Path, relative=True):
         """Return the value of the file associated with `path`.
         """
+        # traverse intermediate directories
         key, cwd = self._get_inner(path, relative)
+
+        # get the value associated with `key`
         key = self.get_hook(key, cwd)
         _, value = cwd.get(key)
+
         return value
 
     def set(self, k, value: Data, cwd: View = None):

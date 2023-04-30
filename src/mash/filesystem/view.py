@@ -8,7 +8,7 @@ from mash.util import crop, find_fuzzy_matches, find_prefix_matches, is_digit, t
 Key = Union[str, int]
 Data = Union[dict, list]
 Trace = List[Tuple[Key, Data]]
-Path = List[Union[List[str], str]]
+Path = Union[List[Key], Key]
 
 NAME = 'name'
 

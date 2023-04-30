@@ -74,6 +74,24 @@ def test_discoverable_cd():
     assert member['id'] == members[i]
 
 
+def test_discoverable_cd_after_ls():
+    k = 'repository'
+    d = init()
+
+    d.cd(k)
+    k = 'departments'
+    d.ls(['departments', 'd', 'teams', 't'])
+    # d.ls(k)
+    # d.cd(k)
+    # departments = d.ls()
+    # assert departments[0].startswith('department')
+
+    # d.cd(departments[0], 'teams')
+    d.cd('departments', 'd', 'teams', 't')
+    teams = d.ls()
+    # assert teams[0].startswith('t_')
+
+
 def test_discoverable_ls_double():
     d = init()
 
