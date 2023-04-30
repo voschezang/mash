@@ -41,14 +41,14 @@ from mash.filesystem.filesystem import FileSystem
 from mash.filesystem.view import Data, Path, Key, View
 
 
-Method = Union[Callable[[FileSystem, Key, Data, View], Data], str]
+ObserveMethod = Union[Callable[[FileSystem, Key, Data, View], Data], str]
 
 default_snapshot_filename = '.snapshot.pickle'
 
 
 class Discoverable(FileSystem):
     def __init__(self, *args,
-                 get_value_method: Method = None,
+                 get_value_method: ObserveMethod = None,
                  **kwds):
         self.get_value_method = get_value_method
         self.initial_values = {}
