@@ -52,14 +52,14 @@ class ShellWithFileSystem:
                        'get': partial_simple(self.get),
                        'set': partial_simple(self.set),
                        'new': partial_simple(self.new),
-                       'tree': partial_simple(self.tree),
+                       'tree': partial_simple(self.repository.tree),
                        'pwd': partial_simple(self.pwd),
                        'home': partial_simple(self.init_home),
-                       'cp': partial_simple(self.cp),
-                       'mv': partial_simple(self.mv),
-                       'rm': partial_simple(self.rm),
-                       'show': partial_simple(self.show),
-                       'reset': partial_simple(self.reset),
+                       'cp': partial_simple(self.repository.cp),
+                       'mv': partial_simple(self.repository.mv),
+                       'rm': partial_simple(self.repository.rm),
+                       'show': partial_simple(self.repository.show),
+                       'reset': partial_simple(self.repository.reset),
                        }, cls)
 
     def cd(self, *path: str):
