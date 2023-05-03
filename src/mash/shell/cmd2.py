@@ -44,8 +44,14 @@ class Cmd2(cmd.Cmd):
             return self.onecmd_inner(lines)
 
         except ShellSyntaxError as e:
-            if self.ignore_invalid_syntax:
-                log(e)
+            if self.ignore_invalid_syntax or io_util.interactive:
+                log(f'{type(e).__name__}:', e)
+            else:
+                raise
+
+        except (RuntimeError, TypeError) as e:
+            if io_util.interactive:
+                log(f'{type(e).__name__}:', e)
             else:
                 raise
 

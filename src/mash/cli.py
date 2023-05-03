@@ -7,6 +7,7 @@ from quo.prompt import Prompt
 from quo.text import Text
 
 from mash.shell.shell import Shell, all_commands, run_command, main as shell_main
+from mash import io_util
 from mash.shell.base import ShellError
 from mash.doc_inference import infer_synopsis
 
@@ -44,6 +45,7 @@ def setup(shell: Shell) -> Tuple[Prompt, Shell]:
 
 
 def run(session: Prompt, shell: Shell):
+    io_util.interactive = True
     print('Press ctrl-d to exit, ctrl-c to cancel, TAB for word completion, ? for help and ! for shell interop.')
     while True:
         step(session, shell)

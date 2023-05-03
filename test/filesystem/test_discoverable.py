@@ -81,15 +81,9 @@ def test_discoverable_cd_after_ls():
     d.cd(k)
     k = 'departments'
     d.ls(['departments', 'd', 'teams', 't'])
-    # d.ls(k)
-    # d.cd(k)
-    # departments = d.ls()
-    # assert departments[0].startswith('department')
-
-    # d.cd(departments[0], 'teams')
     d.cd('departments', 'd', 'teams', 't')
-    teams = d.ls()
-    # assert teams[0].startswith('t_')
+    team = d.ls()
+    assert team == ['members', 'name', 'first_member']
 
 
 def test_discoverable_ls_double():

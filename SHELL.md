@@ -120,8 +120,9 @@ A directory-like interface for dictionaries and lists.
 ```sh
 filesystem/
     filesystem.FileSystem # A file system simulation that provides an interface to data.
-    discoverable.py # A subclass that extends Directory with lazy data loading.
+    discoverable.py # A subclass that extends filesystem with lazy data loading.
     view.View # A datastructure that provides a view of internal data.
+    scope.Scope # Expose global and local variables in a directory tree.
 ```
 
 
@@ -137,10 +138,10 @@ from mash.shell.shell import main
 
 @dataclass
 class User:
-  	"""A REST resource of the endpoints `/users` and `/users/{id}`
-	  """
-    email: string
-    role: string
+    """A REST resource of the endpoints `/users` and `/users/{id}`
+    """
+    email: str
+    role: str
 
     @staticmethod
     def get_value(path: Path):
