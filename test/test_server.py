@@ -122,6 +122,42 @@ def test_route_verify_server():
     assert not result['success']
 
 
+def test_users_get():
+    client = init()
+    response = client.get(basepath + 'users')
+    assert response.status_code == 200
+    data = json.loads(response.data)
+    assert 0 in data
+
+
+def test_users_user_get():
+    client = init()
+    response = client.get(basepath + 'users/2')
+    assert response.status_code == 200
+
+    data = json.loads(response.data)
+    assert 'name' in data
+    assert 'email' in data
+    assert '2' in data['name']
+    assert data['email'].endswith('company.com')
+
+
+def test_users_post():
+    client = init()
+    user = {'name': 'test', 'email': 'a@test.com'}
+    response = client.post(basepath + 'users', json=user)
+    assert response.status_code == 200
+
+    id = json.loads(response.data)
+    assert id == 11
+
+    response = client.get(basepath + 'users/11')
+    assert response.status_code == 200
+    data = json.loads(response.data)
+    assert data['name'] == user['name']
+    assert data['email'] == user['email']
+
+
 def assert_response(response, expected_data=b'ok'):
     assert response.status_code == HTTPStatus.OK
     assert response.get_data() == expected_data
