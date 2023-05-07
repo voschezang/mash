@@ -49,7 +49,7 @@ class Cmd2(cmd.Cmd):
             else:
                 raise
 
-        except (RuntimeError, TypeError) as e:
+        except (RuntimeError, TypeError, ValueError) as e:
             if io_util.interactive:
                 log(f'{type(e).__name__}:', e)
             else:

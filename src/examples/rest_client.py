@@ -1,10 +1,8 @@
 #!/usr/bin/python3
 from dataclasses import dataclass
 from json import loads
-from random import randint
 from time import time
 from typing import Dict, List
-import pandas as pd
 
 if __name__ == '__main__':
     import _extend_path
@@ -13,7 +11,7 @@ from mash.filesystem.discoverable import observe
 from mash.filesystem.view import Path
 from mash.shell.shell import main
 from mash.shell import ShellWithFileSystem
-from mash.server import basepath, init as server_init, UPLOAD_FOLDER
+from mash.server import basepath, init as server_init
 
 
 def get_user(id):
@@ -73,5 +71,4 @@ def init():
 
 if __name__ == '__main__':
     shell, obj = init()
-
     main(shell=shell.shell)

@@ -16,4 +16,5 @@ quo==2022.8.2
 rich
 requests
 scipy
+tabulate
 termcolor

@@ -141,7 +141,7 @@ class Discoverable(FileSystem):
         if len(self.full_path) <= 1:
             return data
 
-        p = '/'.join(path)
+        p = '/'.join(str(item) for item in path)
         if p in self.initial_values:
             cls = self.initial_values[p]
             if has_method(cls, 'show'):

@@ -2,6 +2,8 @@ from logging import debug
 from typing import Any, Iterable, List, Tuple
 import shlex
 
+import pandas as pd
+
 from mash.io_util import log
 from mash.shell.grammer import literals
 from mash.shell.grammer.literals import FALSE, TRUE
@@ -88,6 +90,11 @@ def to_string(value: Any) -> str:
     """
     if isinstance(value, bool):
         value = TRUE if value else FALSE
+
+    elif isinstance(value, dict):
+        df = pd.Series(value, name='values').to_frame()
+        value = df.to_markdown()
+
     return str(value)
 
 
