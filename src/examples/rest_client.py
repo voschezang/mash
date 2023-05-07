@@ -1,6 +1,5 @@
 #!/usr/bin/python3
 from dataclasses import dataclass
-from functools import cache
 from json import loads
 from random import randint
 from time import time
