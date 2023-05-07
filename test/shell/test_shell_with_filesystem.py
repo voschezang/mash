@@ -2,12 +2,13 @@ from copy import deepcopy
 from pytest import raises
 
 from examples.filesystem import repository
+from examples.rest_client import init
 from src.mash.shell.cmd2 import run_command
 from src.mash.shell import ShellWithFileSystem, ShellError
 from src.mash import io_util
 
 
-def init(**kwds):
+def init_client(**kwds):
     return ShellWithFileSystem(data=deepcopy(repository), **kwds)
 
 
@@ -16,7 +17,7 @@ def catch_output(line='', func=run_command, **func_kwds) -> str:
 
 
 def test_crud_ls():
-    obj = init()
+    obj = init_client()
     shell = obj.shell
 
     assert catch_output('list', shell=shell) == 'worlds'
@@ -34,7 +35,7 @@ def test_crud_ls():
 
 
 def test_crud_get():
-    obj = init()
+    obj = init_client()
     shell = obj.shell
 
     s = "{'worlds': [{'name': 'earth', 'animals':"
@@ -46,7 +47,7 @@ def test_crud_get():
 
 
 def test_crud_set():
-    obj = init()
+    obj = init_client()
     shell = obj.shell
 
     run_command('set x 10', shell=shell)
@@ -57,7 +58,7 @@ def test_crud_set():
 
 
 def test_crud_new():
-    obj = init()
+    obj = init_client()
     shell = obj.shell
 
     run_command('new a', shell=shell)
@@ -72,13 +73,13 @@ def test_crud_new():
 
 
 def test_crud_expansion():
-    obj = init()
+    obj = init_client()
     shell = obj.shell
     assert catch_output('print *', shell=shell) == 'worlds'
 
 
 def test_crud_cd_dict():
-    obj = init()
+    obj = init_client()
     shell = obj.shell
 
     assert 'worlds' not in shell.prompt
@@ -99,7 +100,7 @@ def test_crud_cd_dict():
 
 
 def test_crud_ls_after_cd():
-    obj = init()
+    obj = init_client()
     obj.repository.cd('worlds')
 
     # use ll()
@@ -114,7 +115,7 @@ def test_crud_ls_after_cd():
 def test_crud_cd_list():
     # TODO this testcase fails when tests are run in parallel
 
-    obj = init()
+    obj = init_client()
     shell = obj.shell
 
     assert 'w' not in shell.prompt
@@ -134,7 +135,7 @@ def test_crud_cd_list():
 
 
 def test_set_cd_aliasses():
-    obj = init()
+    obj = init_client()
     shell = obj.shell
 
     parent = 'worlds'
@@ -166,7 +167,7 @@ def test_crud_env_get():
     k = 'root'
     v = 'abc'
 
-    obj = init()
+    obj = init_client()
     obj.shell.env[k] = v
 
     line = f'env {k}'
@@ -175,7 +176,7 @@ def test_crud_env_get():
 
 
 def test_crud_env_set():
-    obj = init()
+    obj = init_client()
     k = 'a'
     v = '10'
 
@@ -194,7 +195,7 @@ def test_crud_env_set():
 
 
 def test_crud_env_expand():
-    obj = init()
+    obj = init_client()
     k = 'root'
     v = '10'
 
@@ -207,7 +208,7 @@ def test_crud_env_expand():
 
 
 def test_cd_with_Options():
-    o = init()
+    o = init_client()
     o.repository.cd('worlds')
     assert o.repository.path == ['worlds']
 
@@ -219,7 +220,7 @@ def test_cd_with_Options():
 
 
 def test_shell_home():
-    o = init(home=['worlds', 'earth'])
+    o = init_client(home=['worlds', 'earth'])
 
     assert o.repository.path == []
     assert o.repository.ls('animals') == [0, 1]
@@ -229,7 +230,7 @@ def test_shell_home():
 
 
 def test_shell_globbing():
-    o = init(home=['worlds', 'earth'])
+    o = init_client(home=['worlds', 'earth'])
     shell = o.shell
 
     assert catch_output('list an?mal?', shell=shell) == 'terrestrial\naquatic'
@@ -238,7 +239,7 @@ def test_shell_globbing():
 
 
 def test_shell_invalid_globbing():
-    o = init(home=['worlds', 'earth'])
+    o = init_client(home=['worlds', 'earth'])
     shell = o.shell
 
     assert catch_output('list [ter]', shell=shell) == ''
@@ -247,3 +248,37 @@ def test_shell_invalid_globbing():
 
     with raises(ShellError):
         run_command('list [ter]', shell=shell, strict=True)
+
+
+def test_rest_client_users():
+    shell, obj = init()
+
+    fields = obj.ls()
+    assert fields == ['users']
+
+    users = obj.ls('users')
+    assert 1 in users
+    assert len(users) == 10
+
+
+def test_rest_client_user():
+    shell, obj = init()
+    user = obj.ls(['users', '1'])
+    assert 'id' in user
+    assert 'name' in user
+    assert 'email' in user
+
+    user = obj.get(['users', '1'])
+    assert user['id'] == 1
+    assert '1' in user['name']
+
+
+def test_rest_client_cd_user():
+    shell, obj = init()
+
+    obj.cd('users', '1')
+    user = obj.get([])
+
+    assert user['id'] == 1
+    assert '1' in user['name']
+    assert user['name'] in shell.shell.prompt

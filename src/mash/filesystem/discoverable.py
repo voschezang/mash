@@ -182,7 +182,7 @@ def observe(repository: FileSystem, k: Key, initial_value=None, cwd: View = None
         cls = data
 
     if isinstance(cls, type):
-        return discover_using_cls(cls, k, container_cls, repository.full_path)
+        return discover_using_cls(cls, k, container_cls, cwd.path)
 
     initial_values_key = '/'.join([str(v) for v in cwd.path + [k]])
 

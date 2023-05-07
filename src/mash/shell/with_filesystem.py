@@ -144,7 +144,7 @@ class ShellWithFileSystem:
         if not hasattr(self, 'repository'):
             return
 
-        semantic_path = self.repository.semantic_path
+        semantic_path = list(self.repository.semantic_path)
 
         if path_delimiter == Option.root.value:
             # avoid double '//' in path

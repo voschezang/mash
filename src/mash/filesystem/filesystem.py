@@ -248,15 +248,12 @@ class FileSystem:
         self.cd(Option.up.value)
 
     @property
-    def semantic_path(self) -> Path:
+    def semantic_path(self) -> Iterable[Key]:
         """Convert indices in path to semantic values.
         """
-        result = self.path
-        for i, path in enumerate(accumulate_list(self.path)):
+        for path in accumulate_list(self.full_path[1:]):
             *path, key = path
-            result[i] = self.infer_key_name(path, key, relative=False)
-
-        return result
+            yield self.infer_key_name(path, key, relative=False)
 
     def simulate_cd(self, path: Path, relative: bool) -> View:
         view = self.copy(post_cd_hook=none)

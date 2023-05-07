@@ -388,7 +388,7 @@ def list_prefix_matches(element: str, elements: List[str]):
             if other in prev_matches:
                 continue
 
-            if other.startswith(prefix):
+            if str(other).startswith(prefix):
                 prev_matches |= {other}
                 yield other
 
