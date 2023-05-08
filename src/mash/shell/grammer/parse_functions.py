@@ -8,7 +8,7 @@ from mash.io_util import log
 from mash.shell.grammer import literals
 from mash.shell.grammer.literals import FALSE, TRUE
 from mash.shell.errors import ShellError
-from mash.util import is_globbable, is_valid_method_name, match_words, quote, quote_all, glob
+from mash.util import crop, is_globbable, is_valid_method_name, match_words, quote, quote_all, glob
 
 
 def expand_variables(terms: List[str], env: dict,
@@ -111,16 +111,17 @@ def to_string(value: Any) -> str:
 
 
 def dict_to_string(d: dict) -> str:
-    return '{ ' + ','.join(d.keys()) + ' }'
+    keys = (str(k) for k in d.keys())
+    return '{ ' + ', '.join(keys) + ' }'
 
 
 def list_to_string(items: list) -> str:
     try:
-        items = [str(item[NAME]) for item in items]
+        items = [crop(item[NAME], 18) for item in items]
     except (TypeError, KeyError):
-        items = range(len(items))
+        items = [crop(item, 18) for item in items]
 
-    return '[ ' + ','.join(items) + ' ]'
+    return '[ ' + ', '.join(items) + ' ]'
 
 
 def to_bool(line: str) -> bool:

@@ -96,6 +96,7 @@ def infer_dependencies(known_deps: AdjacencyList, key: str):
 
 
 def crop(s: str, n=100, suffix='..') -> str:
+    s = str(s)
     margin = len(suffix)
     if len(s) <= n + margin:
         return s

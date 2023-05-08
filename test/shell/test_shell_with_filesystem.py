@@ -42,7 +42,7 @@ def test_crud_get():
     assert s in catch_output('get', shell=shell)
     s = '[ earth ]'
     assert s in catch_output('get worlds', shell=shell)
-    s = '| animals | [ terrestrial,aquatic ] |'
+    s = '| animals | [ terrestrial, aquatic ] |'
     assert s in catch_output('get worlds earth', shell=shell)
 
 
@@ -54,7 +54,7 @@ def test_crud_set():
     assert catch_output('get x', shell=shell) == '10'
 
     run_command('set x 1 2 3', shell=shell)
-    assert catch_output('get x', shell=shell) == "['1', '2', '3']"
+    assert catch_output('get x', shell=shell) == '[ 1, 2, 3 ]'
 
 
 def test_crud_new():
