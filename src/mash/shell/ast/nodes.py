@@ -73,11 +73,6 @@ class Lines(Nodes):
             if isinstance(result, ReturnValue):
                 return result.data
 
-            if isinstance(result, list):
-                # result = ' '.join(quote_all(result))
-                # result = ' '.join(str(s) for s in result)
-                result = str(result)
-
             if result is not None:
                 if result or not shell.locals[IF]:
                     print(to_string(result))

@@ -1,8 +1,8 @@
 from logging import debug
-from typing import Any, Iterable, List, Tuple
-import shlex
-
 import pandas as pd
+import shlex
+from typing import Any, Iterable, List, Tuple
+from mash.filesystem.view import NAME
 
 from mash.io_util import log
 from mash.shell.grammer import literals
@@ -91,11 +91,36 @@ def to_string(value: Any) -> str:
     if isinstance(value, bool):
         value = TRUE if value else FALSE
 
+    elif isinstance(value, list):
+        value = list_to_string(value)
+
     elif isinstance(value, dict):
-        df = pd.Series(value, name='values').to_frame()
+        result = {}
+        for k, v in value.items():
+            if isinstance(v, dict):
+                result[k] = dict_to_string(v)
+            elif isinstance(v, list):
+                result[k] = list_to_string(v)
+            else:
+                result[k] = str(v)
+
+        df = pd.Series(result, name='values').to_frame()
         value = df.to_markdown()
 
     return str(value)
+
+
+def dict_to_string(d: dict) -> str:
+    return '{ ' + ','.join(d.keys()) + ' }'
+
+
+def list_to_string(items: list) -> str:
+    try:
+        items = [str(item[NAME]) for item in items]
+    except (TypeError, KeyError):
+        items = range(len(items))
+
+    return '[ ' + ','.join(items) + ' ]'
 
 
 def to_bool(line: str) -> bool:

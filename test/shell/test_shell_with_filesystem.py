@@ -38,11 +38,11 @@ def test_crud_get():
     obj = init_client()
     shell = obj.shell
 
-    s = "{'worlds': [{'name': 'earth', 'animals':"
+    s = '| worlds | [ earth ]'
     assert s in catch_output('get', shell=shell)
-    s = "{'name': 'earth', 'animals': [{'name': 'terrestrial',"
+    s = '[ earth ]'
     assert s in catch_output('get worlds', shell=shell)
-    s = "{'name': 'earth', 'animals':"
+    s = '| animals | [ terrestrial,aquatic ] |'
     assert s in catch_output('get worlds earth', shell=shell)
 
 
@@ -172,7 +172,7 @@ def test_crud_env_get():
 
     line = f'env {k}'
     result = catch_output(line, shell=obj.shell, strict=True)
-    assert result == "{'root': 'abc'}"
+    assert '| root | abc      |' in result
 
 
 def test_crud_env_set():
