@@ -282,3 +282,27 @@ def test_rest_client_cd_user():
     assert user['id'] == 1
     assert '1' in user['name']
     assert user['name'] in shell.shell.prompt
+
+
+def test_rest_client_get_fields_1():
+    shell, obj = init()
+    shell = shell.shell
+
+    obj.cd('users')
+
+    emails = catch_output('flatten 1 4 >>= get $ email', shell=shell)
+    assert emails == 'name.1@company.com\nname.4@company.com'
+
+
+def test_rest_client_get_fields_2():
+    shell, obj = init()
+    shell = shell.shell
+
+    catch_output('get_email (user): get $user email', shell=shell)
+
+    obj.cd('users')
+    email = catch_output('get 2 email', shell=shell)
+    assert email == 'name.2@company.com'
+
+    emails = catch_output('map get_email 1 4', shell=shell)
+    assert emails == 'name.1@company.com\nname.4@company.com'

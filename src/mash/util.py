@@ -373,7 +373,7 @@ def find_prefix_matches(element: str, elements: MappingView[str]):
         yield match
 
     if i == -1:
-        preview = ', '.join(take(elements, 3))
+        preview = ', '.join((str(e) for e in take(elements, 3)))
         raise ValueError(
             f'{element} is not a prefix of any of the given items [{preview}, ..]')
 

@@ -381,6 +381,14 @@ def test_parse_map():
     assert result.lhs.values == ['range', '4']
     assert result.rhs == 'echo'
 
+    # block double map
+    if 0:
+        with raises(ShellSyntaxError):
+            parse_line('range 4 >>= map a')
+
+        with raises(ShellSyntaxError):
+            parse_line('map map 2')
+
 
 def test_parse_bash_pipe():
     result = parse_line('print a | echo')
