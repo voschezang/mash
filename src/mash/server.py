@@ -31,23 +31,11 @@ def init_db():
 
 
 def init_routes(app):
-    @app.route(basepath + "stable")
-    def stable():
-        return 'ok'
-
-    @app.route(basepath + "scrambled")
-    def scrambled():
-        time.sleep(np.random.lognormal(0, sigma=1))
-        return 'ok'
-
-    @app.route(basepath + "noisy")
-    def noisy():
-        eta = np.random.random()
-        if eta < 1/3.:
-            return 'ok'
-        if eta < 2/3.:
-            return '', HTTPStatus.SERVICE_UNAVAILABLE
-        return '', HTTPStatus.GATEWAY_TIMEOUT
+    @app.route(basepath)
+    def root():
+        data = ['document', 'users']
+        test = ['echo', 'sleep', 'stable', 'scrambled', 'noisy']
+        return data + test
 
     @app.route(basepath + "echo", methods=['GET', 'POST'])
     def echo():
@@ -64,7 +52,25 @@ def init_routes(app):
 
         return json
 
-    @app.route(basepath + "sleep")
+    @app.route(basepath + 'stable')
+    def stable():
+        return 'ok'
+
+    @app.route(basepath + 'scrambled')
+    def scrambled():
+        time.sleep(np.random.lognormal(0, sigma=1))
+        return 'ok'
+
+    @app.route(basepath + 'noisy')
+    def noisy():
+        eta = np.random.random()
+        if eta < 1/3.:
+            return 'ok'
+        if eta < 2/3.:
+            return '', HTTPStatus.SERVICE_UNAVAILABLE
+        return '', HTTPStatus.GATEWAY_TIMEOUT
+
+    @app.route(basepath + 'sleep')
     def sleep():
         if 'time' in request.args:
             t = request.args['time']
@@ -73,7 +79,7 @@ def init_routes(app):
 
         return '', HTTPStatus.BAD_REQUEST
 
-    @app.route(basepath + "document", methods=['POST'])
+    @app.route(basepath + 'document', methods=['POST'])
     def create_document():
         print(request.files)
         try:
@@ -86,7 +92,7 @@ def init_routes(app):
 
         return f'file {fn} was saved'
 
-    @app.route(basepath + "document", methods=['DELETE'])
+    @app.route(basepath + 'document', methods=['DELETE'])
     def clear_documents():
         for fn in os.listdir(UPLOAD_FOLDER):
             try:
@@ -97,7 +103,7 @@ def init_routes(app):
 
         return 'ok'
 
-    @app.route(basepath + "server/verify", methods=['POST'])
+    @app.route(basepath + 'server/verify', methods=['POST'])
     def verify_target_server():
         if 'URL' not in request.args:
             return '', HTTPStatus.BAD_REQUEST
@@ -111,7 +117,7 @@ def init_routes(app):
 
         return {'success': success, 'msg': msg}
 
-    @app.route(basepath + "users", methods=['GET', 'POST'])
+    @app.route(basepath + 'users', methods=['GET', 'POST'])
     def users():
         if request.method == 'GET':
             return [i for i in db['users'].keys()]
@@ -127,7 +133,7 @@ def init_routes(app):
 
         return '', HTTPStatus.BAD_REQUEST
 
-    @app.route(basepath + "users/<id>")
+    @app.route(basepath + 'users/<id>')
     def users_user(id):
         try:
             id = int(id)
