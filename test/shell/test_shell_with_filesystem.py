@@ -2,7 +2,8 @@ from copy import deepcopy
 from pytest import raises
 
 from examples.filesystem import repository
-from examples.rest_client import init
+from examples.rest_client_explicit import init as init_rest_client1
+from examples.rest_client_implicit import init as init_rest_client2
 from src.mash.shell.cmd2 import run_command
 from src.mash.shell import ShellWithFileSystem, ShellError
 from src.mash import io_util
@@ -251,30 +252,40 @@ def test_shell_invalid_globbing():
 
 
 def test_rest_client_users():
-    shell, obj = init()
+    for init in (init_rest_client1, init_rest_client2):
+        shell, obj = init()
 
-    fields = obj.ls()
-    assert fields == ['users']
+        fields = obj.ls()
+        assert 'users' in fields
 
-    users = obj.ls('users')
-    assert 1 in users
-    assert len(users) == 10
+        users = obj.ls('users')
+        assert 1 in users
+        assert len(users) == 10
 
 
-def test_rest_client_user():
-    shell, obj = init()
+def test_rest_client_user_exlicit():
+    shell, obj = init_rest_client1()
     user = obj.ls(['users', '1'])
     assert 'id' in user
-    assert 'name' in user
-    assert 'email' in user
 
     user = obj.get(['users', '1'])
     assert user['id'] == 1
     assert '1' in user['name']
 
 
-def test_rest_client_cd_user():
-    shell, obj = init()
+def test_rest_client_user_implicit():
+    shell, obj = init_rest_client2()
+
+    user = obj.ls(['users', '1'])
+    assert 'name' in user
+    assert 'email' in user
+
+    user = obj.get(['users', '1'])
+    assert '1' in user['name']
+
+
+def test_rest_client_cd_user_explicit():
+    shell, obj = init_rest_client1()
 
     obj.cd('users', '1')
     user = obj.get([])
@@ -284,25 +295,36 @@ def test_rest_client_cd_user():
     assert user['name'] in shell.shell.prompt
 
 
+def test_rest_client_cd_user_implicit():
+    shell, obj = init_rest_client2()
+
+    obj.cd('users', '1')
+    user = obj.get([])
+
+    assert user['name'] in shell.shell.prompt
+
+
 def test_rest_client_get_fields_1():
-    shell, obj = init()
-    shell = shell.shell
+    for init in (init_rest_client1, init_rest_client2):
+        shell, obj = init()
+        shell = shell.shell
 
-    obj.cd('users')
+        obj.cd('users')
 
-    emails = catch_output('flatten 1 4 >>= get $ email', shell=shell)
-    assert emails == 'name.1@company.com\nname.4@company.com'
+        emails = catch_output('flatten 1 4 >>= get $ email', shell=shell)
+        assert emails == 'name.1@company.com\nname.4@company.com'
 
 
 def test_rest_client_get_fields_2():
-    shell, obj = init()
-    shell = shell.shell
+    for init in (init_rest_client1, init_rest_client2):
+        shell, obj = init()
+        shell = shell.shell
 
-    catch_output('get_email (user): get $user email', shell=shell)
+        catch_output('get_email (user): get $user email', shell=shell)
 
-    obj.cd('users')
-    email = catch_output('get 2 email', shell=shell)
-    assert email == 'name.2@company.com'
+        obj.cd('users')
+        email = catch_output('get 2 email', shell=shell)
+        assert email == 'name.2@company.com'
 
-    emails = catch_output('map get_email 1 4', shell=shell)
-    assert emails == 'name.1@company.com\nname.4@company.com'
+        emails = catch_output('map get_email 1 4', shell=shell)
+        assert emails == 'name.1@company.com\nname.4@company.com'

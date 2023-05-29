@@ -1,4 +1,6 @@
 #!/usr/bin/python3
+"""Browse and query a REST API, based on an internal domain model.
+"""
 from dataclasses import dataclass
 from json import loads
 from time import time

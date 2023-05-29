@@ -2,9 +2,8 @@
 <a href="https://pypi.org/project/mash-shell" title="Python versions"><img src="https://img.shields.io/badge/python-3.8%20|%203.10%20|%203.11-blue"/></a>
 <a href="https://pypi.org/project/mash-shell" title="PyPI"><img src="https://img.shields.io/badge/pypi-v0.2.0-blue"/></a>
 
-
 **Docs**:
-[MAIN](https://github.com/voschezang/mash/blob/main/README.md) 
+[MAIN](https://github.com/voschezang/mash/blob/main/README.md)
 | [SHELL.md](https://github.com/voschezang/mash/blob/main/SHELL.md)
 | [REFERENCE.md](https://github.com/voschezang/mash/blob/main/SHELL_REFERENCE.md)
 
@@ -25,6 +24,7 @@ Features:
 - A parallelization framework for load testing: `parallel.py`.
 
 Links
+
 - [Mash language reference](SHELL_REFERENCE.md)
 - [PyPI](https://pypi.org/project/mash-shell)
 - [github](https://github.com/voschezang/mash)
@@ -32,7 +32,6 @@ Links
 ## Shell
 
 <img src="https://github.com/voschezang/mash/blob/main/img/shell_dropdown.png?raw=true" style="max-height: 180px;" alt="Example of a shell with a dropdown completion menu"></img>
-
 
 ```sh
 pip install mash-shell
@@ -48,13 +47,13 @@ See [`src/examples`](src/examples) for advances usage examples.
 
 **Table of Contents**
 
-- [Usage](#Usage)
-    - [CLI](#CLI)
-    - [Filesystem (CRUD Operations)](#Filesystem%20(CRUD%20Operations))
-    - [Usage Examples](#Usage%20Examples)
+- [Usage](#usage)
+  - [CLI](#cli)
+  - [Filesystem (CRUD Operations)](#Filesystem%20(CRUD%20Operations))
+  - [Usage Examples](#Usage%20Examples)
 - [Library & Tools](#Library%20&%20Tools)
-    - [Parallelization Utilities](#Parallelization%20Utilities)
-    - [Object Parser](#Object%20Parser)
+  - [Parallelization Utilities](#Parallelization%20Utilities)
+  - [Object Parser](#Object%20Parser)
 
 # Usage
 
@@ -195,8 +194,6 @@ $ python src/examples/discoverable.py 'ls'
 department_750, department_14
 ```
 
-
-
 # Library & Tools
 
 Repository structure
@@ -211,8 +208,6 @@ src
     └── shell # Shell, ShellWithFileSystem
 test
 ```
-
-
 
 ## Setup
 
