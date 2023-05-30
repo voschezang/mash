@@ -91,6 +91,8 @@ An environment is a key-value map.
 
 ### Functions
 
+#### Inline Functions
+
 | Example                                | Description                                              |
 | -------------------------------------- | -------------------------------------------------------- |
 | `f (x): $x`                            | Identity function. Echo the input.                       |
@@ -130,13 +132,13 @@ f 10
 | `println SOME TEXT` | Print the words `SOME` and `TEXT` on different lines. |
 | `math 1 + 10`       | Evaluate math expressions.                            |
 
-## Symbols
+## Symbol Reference
 
 **Variable assignment**
 `=` `->` `<-` `$`
 
 **Function definition**
-` ( ):`
+`function_name ( ):`
 
 **Globbing**
 
@@ -153,7 +155,13 @@ f 10
 
 ### Keywords
 
-`if` `then` `return`
+`if` `then` `else` `return`
+
+### Built-in Functions
+Logical operators: `and` `or` `not`
+Other operators: `map` `math`
+
+
 
 ## Proposals
 
@@ -164,7 +172,6 @@ Proposals for future changes.
 **Predicate logic**
 
 ```python
-a and b or c
 a and b => not c
 x > 1 for all x in X
 x + y == 1 for any x in X, y in Y

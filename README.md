@@ -85,15 +85,13 @@ See `examples/filesystem.py` and `examples/discoverable.py`.
 
 | Example             | Description                                                  |
 | ------------------- | ------------------------------------------------------------ |
-| `list [PATH]`       | List the items in a directory. Use the current working directory by default. Alias: `l` |
 | `cd [PATH]`         | Change the current working directory. Alias: `use`           |
+| `list [PATH]`       | List the items in a directory. Use the current working directory by default. Alias: `l` |
 | `get NAME`          | Retrieve a file.                                             |
 | `set NAME VALUE`    | Modify a file.                                               |
 | `new NAME [NAME..]` | Create new directories.                                      |
 | `show [NAME]`       | Display detailed information about a directory.              |
 | `cp`, `mv`, `rm`    | Modify files. I.e. copy, move, rename or remove files.       |
-| `home [PATH]`       | Set home directory.                                          |
-| `reset`             | Refresh cached values.                                       |
 
 ## Usage Examples
 
@@ -101,35 +99,42 @@ For real-world examples, see [lib](https://github.com/voschezang/mash/blob/main/
 
 ### Example 1
 
-See `src/shell_example.py`. It shows how to use a user-definnable mapping of custom functions.
+See `src/examples/shell_example.py`. It shows how to use a user-definnable mapping of custom functions.
 It uses the library `quo` to create a user-friendly subshell with autocompletion prompts.
 
 ```sh
-# py src/shell.py echo hello, echo world
-hello
-world
+# python3 src/examples/shell_example.py echo 'hello world'
+hello world
 ```
+
+### Example 2: REST Client
+
+Browse through a REST API as if it is mounted as a filesystem.
 
 ```sh
-# py src/shell_example.py
-Welcome.  Type help or ? to list commands.
+# python3 src/examples/rest_client_implicit.py
 
-$ ?
+$ cd users # browse some.api.com/v1/users
+$ get 2
+|       | values             |
+|:------|:-------------------|
+| email | name.2@company.com |
+| name  | name_2             |
 
-Documented commands (type help <topic>):
-========================================
-e  example  f  g  h  help  ls  shell
+$ flatten 1 2 >>= get users $ email
+name.1@company.com
+name.2@company.com
 
-$ help g
-g x [y]
-
- Parameters
- ----------
-  x: int
-  y
+$ cd -
+$ tree
+{ 'document': 'https://dummy-api.com/v1',
+  'users': { 0: {'email': 'name.0@company.com', 'name': 'name_0'},
+             1: {'email': 'name.1@company.com', 'name': 'name_1'},
+             2: {'email': 'name.2@company.com', 'name': 'name_2'},
+...
 ```
 
-### Example 2: Commands
+### Example 3: Commands
 
 Run commands from a file with `python src/shell -f FILE` or `python -m src.shell -f FILE`.
 
@@ -146,13 +151,13 @@ shell expr 2 + 2 -> z # store result in variable $z
 print "result:" $z # prints "result: 4
 ```
 
-### Example 3: File System Simulation
+### Example 4: File System Simulation
 
 Support both static and dynamic data.
 
 #### With Static Data
 
-See `examples/filesystem_example.py`. This simulates a REST resources with a directory hierarchy.
+See `src/examples/filesystem_example.py`. This simulates a REST resources with a directory hierarchy.
 In addition, it provides fuzzy name completion.
 
 ```sh
@@ -176,7 +181,7 @@ python
 cobra
 ```
 
-### With Dynamic Data
+#### With Dynamic Data
 
 See `examples/discoverable.py`.
 

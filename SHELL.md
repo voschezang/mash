@@ -1,5 +1,7 @@
 # Implementation
 
+[toc]
+
 ## Overview
 
 The `Shell` class is based on `cmd.Cmd`. It extends it with a custom grammer, user-definable variables, functions, pipes and more.
@@ -49,7 +51,7 @@ src
 
 ## Classes
 
-#### Language Model
+### Language Model
 
 The language model is based on an intermediate representation: an [Abstract Syntax Tree (AST)](https://en.wikipedia.org/wiki/Abstract_syntax_tree).
 
@@ -63,7 +65,7 @@ class Nodes(str);
 class Lines(str);
 ```
 
-#### Shell
+### Shell
 
 In pseudocode:
 
@@ -113,7 +115,7 @@ class Cmd2(cmd.Cmd):
 ```
 
 
-#### Filesystem
+### Filesystem
 
 A directory-like interface for dictionaries and lists.
 
@@ -127,7 +129,7 @@ filesystem/
 
 
 
-## Shell with File System
+## Shell with Filesystem
 
 Use the shell as a REST client. For example:
 

@@ -19,16 +19,16 @@ endpoint = 'https://dummy-api.com' + basepath[:-1]
 def retrieve_data(_fs, key, url, cwd, *_args):
     global endpoint
     if isinstance(url, str) and 'http' in url:
-        path = _infer_path(key, cwd)
+        path = _infer_path(str(key), cwd)
         url = _infer_url(url, path)
         return get(url, endpoint)
     return url
 
 
-def _infer_url(url, path):
+def _infer_url(url: str, path: str):
     url = quote_plus(url, safe='://.?&')
     if path:
-        url += '/' + '/'.join(path)
+        url += '/' + '/'.join(str(k) for k in path)
     else:
         url += '/'
     return url
@@ -71,13 +71,9 @@ def init():
 
 
 if __name__ == '__main__':
-    # obj = ShellWithFileSystem(data={'repository': endpoint},
-    #                           get_value_method=retrieve_data)
-    # obj.repository.ll('repo')
-    # obj.repository.init_home('repo')
     shell, obj = init()
 
-    user = obj.repository.get(['users', '2'])
+    user = obj.get(['users', '2'])
     print(user)
 
-    main(shell=obj.shell)
+    main(shell=shell.shell)
