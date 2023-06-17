@@ -162,6 +162,7 @@ class ShellWithFileSystem:
         """Filter the result of `ls` to match `text`.
         """
         candidates = self.repository.ls()
+        candidates = [str(c) for c in candidates]
         results = list(find_fuzzy_matches(text, candidates))
 
         if len(results) > 1:

@@ -13,15 +13,15 @@ from mash.shell.shell import main
 from mash.server import basepath
 
 
-endpoint = 'https://dummy-api.com' + basepath[:-1]
+http_resource = object()
 
 
 def retrieve_data(_fs, key, url, cwd, *_args):
-    global endpoint
-    if isinstance(url, str) and 'http' in url:
+    endpoint = 'https://dummy-api.com' + basepath[:-1]
+    if url is http_resource:
         path = _infer_path(str(key), cwd)
-        url = _infer_url(url, path)
-        return get(url, endpoint)
+        url = _infer_url(endpoint, path)
+        return get(url)
     return url
 
 
@@ -47,7 +47,9 @@ def _infer_path(key, cwd):
     return path
 
 
-def get(url, base_url):
+def get(url):
+    global http_resource
+
     # query a mock server
     data = init_client().get(urlparse(url).path)
 
@@ -57,12 +59,12 @@ def get(url, base_url):
         print(e)
 
     if isinstance(data, list):
-        return {k: base_url for k in data}
+        return {k: http_resource for k in data}
     return data
 
 
 def init():
-    shell = ShellWithFileSystem(data={'repository': endpoint},
+    shell = ShellWithFileSystem(data={'repository': http_resource},
                                 get_value_method=retrieve_data)
 
     obj = shell.repository

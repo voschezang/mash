@@ -1,4 +1,3 @@
-from examples.filesystem import repository
 from examples.rest_client_explicit import init as init_explicit_client
 from examples.rest_client_implicit import init as init_implicit_client
 from src.mash.shell.cmd2 import run_command
@@ -17,6 +16,11 @@ def test_rest_client_users():
         assert 'users' in fields
 
         users = obj.ls('users')
+        assert 1 in users
+        assert len(users) == 10
+
+        obj.cd('users')
+        users = obj.ls()
         assert 1 in users
         assert len(users) == 10
 
