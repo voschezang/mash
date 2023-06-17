@@ -32,6 +32,17 @@ def test_onecmd_output():
     run_command('aaaa a', strict=True)
 
 
+def test_onecmd_help():
+    helper = 'Documented commands (type help <topic>):\n=========='
+    assert helper in catch_output('?')
+
+    echo = "Mimic Bash's print function."
+    assert echo in catch_output('? echo')
+
+    error = '*** No help on abc123'
+    assert catch_output('? abc123') == error
+
+
 def test_onecmd_numbers():
     assert catch_output('123', strict=True) == '123'
 
