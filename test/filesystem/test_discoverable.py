@@ -117,19 +117,22 @@ def test_discoverable_show():
     d = init()
     d.cd('repo')
     data = d.show(())
-    assert data.values[0][0].startswith('Dep department_')
-    assert data['#teams'][0] == 2
+    item = next(iter(data.values()))
+    assert item['name'].startswith('Dep department_')
+    assert item['#teams'] == 2
 
     d.cd('dep')
     items = d.ls()
     data = d.show(items[0])
-    assert data.values[0][0].startswith('Team t')
-    assert data['#members'][0] == 2
+    item = next(iter(data.values()))
+    assert item['name'].startswith('Team t_')
+    assert item['#members'] == 2
 
     d.cd('d')
     data = d.show(())
-    assert data.values[0][0].startswith('Team t')
-    assert data['#members'][0] == 2
+    item = next(iter(data.values()))
+    assert item['name'].startswith('Team t')
+    assert item['#members'] == 2
 
 
 def test_discoverable_load_snapshot():
