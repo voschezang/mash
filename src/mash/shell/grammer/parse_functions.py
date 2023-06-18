@@ -96,6 +96,13 @@ def to_string(value: Any) -> str:
 
     elif isinstance(value, dict):
         result = {}
+        if isinstance(next(iter(value.values())), dict):
+            try:
+                table = pd.DataFrame(value)
+                return table.T.to_markdown()
+            except ValueError:
+                pass
+
         for k, v in value.items():
             if isinstance(v, dict):
                 result[k] = dict_to_string(v)

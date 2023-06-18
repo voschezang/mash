@@ -60,7 +60,6 @@ class Discoverable(FileSystem):
             f.write(dumps((self.root, self.initial_values, self.home)))
 
     def load(self, filename=default_snapshot_filename):
-        print('load', filename)
         with open(filename, 'rb') as f:
             root, self.initial_values, home = loads(f.read())
 

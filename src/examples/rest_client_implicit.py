@@ -7,6 +7,7 @@ if __name__ == '__main__':
 from json import JSONDecodeError, loads
 from urllib.parse import quote_plus, urlparse
 from examples.rest_client_explicit import init_client
+from mash.io_util import log
 
 from mash.shell import ShellWithFileSystem
 from mash.shell.shell import main
@@ -52,11 +53,14 @@ def get(url):
 
     # query a mock server
     data = init_client().get(urlparse(url).path)
+    if data.status_code != 200:
+        return f'{data._status} ({data.status_code})'
 
     try:
         data = loads(data.data)
     except JSONDecodeError as e:
-        print(e)
+        log('JSONDecodeError:', e, data.data)
+        return f'"{data.data.decode()}"'
 
     if isinstance(data, list):
         return {k: http_resource for k in data}

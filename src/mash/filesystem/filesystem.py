@@ -219,6 +219,9 @@ class FileSystem:
         self.cd('-')
         self.cd(*path)
 
+    def show(self, *path: str):
+        return self.get(path)
+
     def append(self, k, v):
         """Associate key k with value v and then change the working directory to k 
         """
