@@ -2,7 +2,6 @@
 from dataclasses import dataclass
 from random import randint
 from typing import Dict, List
-import pandas as pd
 
 if __name__ == '__main__':
     import _extend_path
@@ -59,7 +58,7 @@ class Department:
     def show(department: dict):
         data = {k: {'name': 'Team ' + k, '#members': len(v['members'].keys())}
                 for k, v in department['teams'].items()}
-        return pd.DataFrame(data).T
+        return data
 
 
 @dataclass
@@ -72,7 +71,7 @@ class Organization:
     def show(organization: dict):
         data = {k: {'name': 'Dep ' + k, '#teams': len(v['teams'].keys())}
                 for k, v in organization['departments'].items()}
-        return pd.DataFrame(data).T
+        return data
 
 
 if __name__ == '__main__':
