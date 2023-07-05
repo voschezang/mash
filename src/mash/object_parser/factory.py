@@ -188,7 +188,10 @@ class JSONFactory(Factory):
 
     def build_from_dict(self, fields: dict):
         if hasattr(self.cls, '__dataclass_fields__'):
-            return self.cls(**fields)
+            try:
+                return self.cls(**fields)
+            except TypeError as e:
+                pass
 
         if is_Dict(self.cls):
             return self.build_generic_Dict(fields)
@@ -199,7 +202,10 @@ class JSONFactory(Factory):
         if issubclass(self.cls, Spec):
             instance = super(Spec, self.cls).__new__(self.cls)
         else:
-            instance = self.cls()
+            try:
+                instance = self.cls()
+            except TypeError:
+                raise BuildError('Invalid input')
 
         if has_annotations(self.cls):
             # assume instance of Spec

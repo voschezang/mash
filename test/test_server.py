@@ -158,6 +158,13 @@ def test_users_post():
     assert data['email'] == user['email']
 
 
+def test_users_post_unhappy():
+    client = init()
+    user = {'name': 'test'}
+    response = client.post(basepath + 'users', json=user)
+    assert response.status_code == 400
+
+
 def assert_response(response, expected_data=b'ok'):
     assert response.status_code == HTTPStatus.OK
     assert response.get_data() == expected_data

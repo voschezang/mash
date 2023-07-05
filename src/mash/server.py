@@ -1,5 +1,6 @@
-from http.client import BAD_REQUEST
+from dataclasses import dataclass
 from json import loads
+from logging import debug
 from flask import Flask, request
 from http import HTTPStatus
 from werkzeug.utils import secure_filename
@@ -8,12 +9,20 @@ import os
 import time
 
 from mash import verify_server
+from mash.object_parser.errors import BuildError, BuildErrors, to_string
+from mash.object_parser.factory import JSONFactory
 
 UPLOAD_FOLDER = 'tmp/flask-app'
 
 # Note the trailing `/`
 basepath = '/v1/'
 db = None
+
+
+@dataclass
+class RawUser:
+    name: str
+    email: str
 
 
 def init():
@@ -125,10 +134,18 @@ def init_routes(app):
         if request.method == 'POST':
             data = loads(request.data)
 
-            if 'name' not in data or 'email' not in data:
-                return 'Missing fields', HTTPStatus.BAD_REQUEST
+            # WARNING: this exposes internal classes
+            try:
+                user = JSONFactory(RawUser).build(data)
+            except BuildError as e:
+                debug('POST /users\n' + e.args[0])
+                return f'Invalid input: {e.args[0]}', HTTPStatus.BAD_REQUEST
+            except BuildErrors as e:
+                errors = to_string(e)
+                debug('POST /users\n' + errors)
+                return f'Invalid input: {errors}', HTTPStatus.BAD_REQUEST
 
-            id = create_user(data['name'], data['email'])
+            id = create_user(user)
             return str(id)
 
         return '', HTTPStatus.BAD_REQUEST
@@ -150,11 +167,11 @@ def generate_user(i: int) -> dict:
     return {'name': f'name_{i}', 'email': f'name.{i}@company.com'}
 
 
-def create_user(name, email):
+def create_user(user: RawUser):
     # generate user id
     id = len(db['users']) + 1
     # create object
-    user = {'name': name, 'email': email}
+    user = {'name': user.name, 'email': user.email}
     # store object
     db['users'][id] = user
     return id

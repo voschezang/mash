@@ -13,6 +13,11 @@ class BuildError(SpecError):
 class BuildErrors(SpecError):
     pass
 
+
+def to_string(errors: BuildErrors) -> str:
+    return '\n'.join(error.args[0] for error in errors.args[0])
+
+
 class ErrorMessages:
     """A static class with can be subclassed
     """

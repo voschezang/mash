@@ -62,7 +62,10 @@ def test_Team_with_factory():
 
     # missing mandatory key
     with pytest.raises(SpecError):
-        team = JSONFactory(Team).build({'manager': manager})
+        JSONFactory(Team).build({'manager': manager})
+
+    with pytest.raises(SpecError):
+        JSONFactory(Team).build({})
 
 
 def test_Team_enum():
@@ -106,6 +109,9 @@ def test_DepartmentData():
         i = 0
         assert d.teams[i].manager == department['teams'][i]['manager']
         assert d.teams[i].members == department['teams'][i]['members']
+
+    with pytest.raises(SpecError):
+        JSONFactory(DepartmentData).build({})
 
 
 def test_OrganizationData():
