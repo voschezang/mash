@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from json import loads
+from json import JSONDecodeError, loads
 from logging import debug
 from flask import Flask, request
 from http import HTTPStatus
@@ -39,12 +39,18 @@ def init_db():
     db = {'users': {i: generate_user(i) for i in range(10)}}
 
 
+def url(path):
+    return f'http://127.0.0.1:5000{basepath}{path}'
+
+
 def init_routes(app):
     @app.route(basepath)
     def root():
         data = ['document', 'users']
         test = ['echo', 'sleep', 'stable', 'scrambled', 'noisy']
-        return data + test
+        # return data + test
+        print(0)
+        return {k: url(k) for k in data + test}
 
     @app.route(basepath + "echo", methods=['GET', 'POST'])
     def echo():
@@ -132,7 +138,11 @@ def init_routes(app):
             return [i for i in db['users'].keys()]
 
         if request.method == 'POST':
-            data = loads(request.data)
+            try:
+                print(request.data)
+                data = loads(request.data)
+            except JSONDecodeError:
+                return 'Payload decoding error', HTTPStatus.BAD_REQUEST
 
             # WARNING: this exposes internal classes
             try:

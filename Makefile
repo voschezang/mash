@@ -29,7 +29,7 @@ upload-test:
 
 upload:
 	make build
-	 python3 -m twine upload dist/* -u "${user}" -p "${pass}"
+	python3 -m twine upload dist/* -u "${user}" -p "${pass}"
 
 docs-init:
 	mkdir -p docs
@@ -53,3 +53,8 @@ tree:
 
 ast:
 	egrep -rh '^class \w+(\(\w+\))?\:' src/mash/shell/ast
+
+web:
+	open web/home.html
+	python3 src/examples/server.py
+
