@@ -4,9 +4,8 @@ import pytest
 
 # TODO avoid the need for relative imports
 from mash.object_parser.errors import SpecError
-from mash.object_parser.factory import JSONFactory
-from mash.object_parser.spec import init_recursively
-from examples.object_parser import A, B, Department, DepartmentData, Organization, OrganizationData, SuperUser, Team, TeamType, User, example_data
+from mash.object_parser.factory import JSONFactory, build
+from examples.object_parser import Department, Department, Organization, Organization, SuperUser, Team, TeamType, User, example_data
 from examples import discoverable_with_oas
 
 json = example_data
@@ -29,21 +28,16 @@ def test_SuperUser():
 def test_Team():
     manager = 'alice'
     data = {'manager': manager, 'members': [], 'stakeholders': {}}
-    team = Team(**data, active=False)
-    assert team.manager == manager
-    assert not team.active
-
-    team = Team(data)
+    team = build(Team, data)
     assert team.manager == manager
     assert team.active
 
     with pytest.raises(SpecError):
-        team = Team(**data, an_incorrect_key=[])
-        a = 1
+        team = build(Team, {'a': 1})
 
     # missing mandatory key
     with pytest.raises(SpecError):
-        team = Team(manager=manager)
+        team = build(Team, {'manger': 'a'})
 
 
 def test_Team_with_factory():
@@ -70,17 +64,21 @@ def test_Team_with_factory():
 
 def test_Team_enum():
     team_type = 'B'
-    team = Team(manager='a', members=[], team_type=team_type, stakeholders={})
+    data = {'manager': 'a', 'members': [],
+            'team_type': team_type, 'stakeholders': {}}
+
+    team = build(Team, data)
     assert team.team_type == TeamType.B
 
     with pytest.raises(SpecError):
-        Team(manager='a', members=[], team_type='none')
+        data['team_type'] = 'none'
+        build(Team, data)
 
 
 def test_Department():
     for department in json['departments']:
 
-        d = Department(department)
+        d = build(Department, department)
 
         assert d.manager == department['manager']
         i = 0
@@ -100,10 +98,10 @@ def test_Department_with_factory():
         assert d.teams[i].members == department['teams'][i]['members']
 
 
-def test_DepartmentData():
+def test_Department():
     for department in json['departments']:
 
-        d = JSONFactory(DepartmentData).build(department)
+        d = JSONFactory(Department).build(department)
 
         assert d.manager == department['manager']
         i = 0
@@ -111,16 +109,16 @@ def test_DepartmentData():
         assert d.teams[i].members == department['teams'][i]['members']
 
     with pytest.raises(SpecError):
-        JSONFactory(DepartmentData).build({})
+        JSONFactory(Department).build({})
 
 
-def test_OrganizationData():
-    org = JSONFactory(OrganizationData).build(json)
+def test_Organization():
+    org = JSONFactory(Organization).build(json)
     assert org.board == json['board']
 
 
 def test_Organization():
-    org = Organization(json)
+    org = build(Organization, json)
     assert org.board == json['board']
 
     # alt init method, using Factory
@@ -129,7 +127,7 @@ def test_Organization():
 
 
 def test_Organization_with_translated_key():
-    org = Organization(json)
+    org = build(Organization, json)
     boss = json['boss']
     assert org.ceo.lower() == boss.lower()
 
@@ -145,21 +143,6 @@ def test_Organization_with_uninitialized_values():
 
     org = JSONFactory(Organization).build(data)
     assert org.departments[0].teams[0].manager == 'donald'
-
-
-def test_dataclass():
-
-    b = {'c': False}
-    b = init_recursively(B, b)
-
-    d = {'x': 1, 'y': 10}
-
-    a = {'a': 1, 'b': 2, 'c': False, 'd': d}
-    a = init_recursively(A, a)
-
-    a = {'a': 'nan', 'b': 2, 'c': 'yes', 'd': d}
-    with pytest.raises(SpecError):
-        a = init_recursively(A, a)
 
 
 def test_object_parser_discoverable():

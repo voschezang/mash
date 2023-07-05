@@ -1,4 +1,5 @@
-from examples.object_parser import SuperUser, example_data, Organization, Capacity
+from examples.object_parser import Organization, SuperUser, example_data, Capacity
+from mash.object_parser.factory import build
 from mash.object_parser.oas import OAS
 
 json = example_data
@@ -21,7 +22,7 @@ properties = {'manager': {'type': 'string'},
 
 def test_oas_component():
     oas = OAS()
-    org = Organization(json)
+    org = build(Organization, json)
     team = org.departments[0].teams[0]
     oas.extend(team)
     components = oas.components
@@ -43,7 +44,8 @@ def test_oas_component():
 
 
 def test_oas_components():
-    org = Organization(json)
+    org = build(Organization, json)
+
     oas = OAS()
     department = org.departments[0]
     team = org.departments[0].teams[0]

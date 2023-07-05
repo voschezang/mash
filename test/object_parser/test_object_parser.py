@@ -4,10 +4,14 @@ import pytest
 import string
 
 from mash.object_parser.object_parser import parse_field_key, verify_key_format
-from mash.object_parser.spec import init, Spec
 from mash.object_parser.errors import SpecError
 from mash.object_parser.factory import Factory, JSONFactory
 from mash.util import is_alpha, is_enum
+
+
+class Dummy:
+    a: int
+    b: float
 
 
 def test_abstract_factory():
@@ -24,48 +28,33 @@ def test_factory():
     assert hasattr(f.build, '__call__')
 
 
-def test_Spec__new__():
-    obj = Spec.__new__(Spec)
-    assert obj
-
-    with pytest.raises(SpecError):
-        obj = Spec.__new__(Spec, x=1, y=2)
-
-
-def test_Spec__init__():
-    obj = Spec()
-    assert obj
-
-    with pytest.raises(SpecError):
-        obj = Spec(x=1, y=2)
-
-
 def test_Spec_parse_field_key():
     key = 'non_existing_key'
+
+    parse_field_key(Dummy, 'a')
+
     with pytest.raises(SpecError):
-        parse_field_key(Spec, key)
+        parse_field_key(Dummy, key)
 
 
 def test_verify_key_formats():
     invalid_keys = ['a b c', '-ab', '_']
+
+    verify_key_format(Dummy, 'a')
+
     for k in invalid_keys:
         with pytest.raises(SpecError):
-            Spec.verify_key_format(k)
-
-        with pytest.raises(SpecError):
-            verify_key_format(Spec, k)
+            verify_key_format(Dummy, k)
 
 
 def test_constructor():
     value = 2
     cls = int
     for cls in (bool, int, float, str):
-        assert init(cls, value) == cls(value)
         assert JSONFactory(cls).build(value) == cls(value)
 
     list_of_ints = List[int]
     values: list_of_ints = [2, 3, 4]
-    assert init(list_of_ints, values) == values
 
     assert JSONFactory(list_of_ints).build(values) == values
 

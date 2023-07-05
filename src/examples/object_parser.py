@@ -9,7 +9,6 @@ from typing import Dict, List
 
 from mash.object_parser.oas import OAS, path_create
 from mash.object_parser.factory import JSONFactory
-from mash.object_parser.spec import Spec
 from mash.object_parser.errors import SpecError
 
 
@@ -30,13 +29,6 @@ class A:
     b: B
     c: bool
     d: C
-
-
-class CustomSpec(Spec):
-    key_synonyms = {'ceo': ['boss']}
-
-    def parse_key(key):
-        return key.lower()
 
 
 User = str
@@ -86,54 +78,25 @@ class TeamType(Enum):
 
 
 @dataclass
-class TeamData:
+class Team:
     members: List[User]
     stakeholders: Dict[str, SuperUser]
     team_type: TeamType = 'A'
     active: bool = True
     capacity: Capacity = 1
     value: float = 1.
+    secret: str = ''
     manager: User = 'admin'
-
-
-class Team(CustomSpec):
-    """An example of a subclass of custom Spec type
-    """
-    manager: User = 'admin'
-    members: List[User]
-    stakeholders: Dict[str, SuperUser]
-    team_type: TeamType = 'A'
-    active: bool = True
-    capacity: Capacity = 1
-    value: float = 1.
-    secret: complex = 1j
 
 
 @dataclass
-class DepartmentData:
-    manager: User
-    teams: List[TeamData]
-
-
-class Department(CustomSpec):
+class Department:
     manager: User
     teams: List[Team]
 
 
 @dataclass
-class OrganizationData:
-    board: List[User]
-    ceo: SuperUser
-    departments: List[DepartmentData]
-
-    _key_synonyms = {'ceo': ['boss']}
-
-    def __post_init__(self):
-        if self.ceo in self.board:
-            raise SpecError('Incompatible values')
-
-
-class Organization(CustomSpec):
+class Organization:
     board: List[User]
     ceo: SuperUser
     departments: List[Department]
@@ -153,7 +116,7 @@ example_data = {
             'teams': [{
                 'manager': 'donald',
                 'members': ['ernie', 'felix'],
-                'stakeholders': {'goofy': 'goofy'},
+                'stakeholders': {'e27': 'goofy'},
                 'team_type': 'a',
                 'capacity': 2,
                 'value': 3.1
@@ -163,11 +126,7 @@ example_data = {
 
 
 if __name__ == '__main__':
-    if 0:
-        org = Organization(example_data)
-    else:
-        org = JSONFactory(Organization).build(example_data)
-        org = JSONFactory(OrganizationData).build(example_data)
+    org = JSONFactory(Organization).build(example_data)
 
     print(org)
     oas = OAS()

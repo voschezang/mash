@@ -3,7 +3,6 @@ See: [OAS](https://swagger.io/specification/)
 """
 from typing import _GenericAlias
 
-from mash.object_parser.spec import Spec
 from mash.util import is_enum
 
 
@@ -54,7 +53,7 @@ def path_create(item_type: str, verb='POST', ):
              'requestBody': {'content': {'application/json':
                                          {'schema': oas_ref(item_type)}},
                              'required': True},
-             'responses': {405: {'description': 'Invalid input'}}}}
+             'responses': {400: {'description': 'Invalid input'}}}}
 
 
 class OAS(dict):
@@ -100,11 +99,7 @@ class OAS(dict):
             v = getattr(obj, k)
             item_type = infer_oas_type(v)
 
-            if isinstance(v, Spec):
-                self.extend(v)
-                self.components[t][K.props][k] = oas_ref(item_type)
-
-            elif is_enum(type(v)):
+            if is_enum(type(v)):
                 # use strings rather than enum.value
                 item_type = infer_oas_type('')
                 values = [e.name for e in type(v)]
@@ -129,7 +124,7 @@ class OAS(dict):
 
     def add_array(self, parent_name: str, child_name: str, child):
         item_type = infer_oas_type(child)
-        if isinstance(child, Spec) or not has_known_type(child):
+        if not has_known_type(child):
             self.extend(child)
             item = oas_ref(item_type)
         else:
@@ -141,12 +136,12 @@ class OAS(dict):
         }
 
 
-def oas_component(obj: Spec, doc=''):
+def oas_component(obj, doc=''):
     if not doc and obj.__doc__:
         doc = obj.__doc__.strip()
 
     result = {K.doc: doc}
-    if isinstance(obj, Spec) or hasattr(obj, '__dataclass_fields__'):
+    if hasattr(obj, '__dataclass_fields__'):
         result['type'] = 'object'
         result[K.props] = {}
 

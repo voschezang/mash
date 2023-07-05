@@ -3,10 +3,15 @@ from enum import Enum
 from abc import ABC, abstractmethod
 import logging
 
-from mash.object_parser.object_parser import find_synonym, parse_field_keys, verify_key_format
+from mash.object_parser.object_parser import parse_field_keys, verify_key_format
 from mash.object_parser.errors import BuildError, BuildErrors, ErrorMessages, SpecError
-from mash.object_parser.spec import Spec
 from mash.util import has_annotations, has_method, infer_inner_cls, is_Dict_or_List, is_Dict, is_List, is_enum
+
+
+def build(cls: type, json: dict):
+    """Initialize `cls` with fields from `data`.
+    """
+    return JSONFactory(cls).build(json)
 
 
 class Factory(ABC):
@@ -50,13 +55,12 @@ class Factory(ABC):
 
         User-defineable methods
         -----------------------
-        See the class `Spec` for an example.
 
         Process values
         - `cls.parse_value()` can be used to pre-process input values before instantiating objects
         - `cls.__post_init__()` can be used to check an object after initialization
 
-        Processing of keys
+        Process keys
         - `cls.parse_key()` can be used to pre-process input keys.
         - `cls.verify_key_format()` defaults to verify_key_format
         - `cls._key_synonyms: dict` can be used to define alternative keys
@@ -70,14 +74,6 @@ class Factory(ABC):
 
         return instance
 
-    def parse_value(self, value) -> object:
-        """Use the optional method "parse_value" in `cls` to parse a value.
-        """
-        if has_method(self.cls, 'parse_value'):
-            return self.cls.parse_value(value)
-
-        return value
-
     @abstractmethod
     def build_instance(self, data) -> object:
         """Build an instance of `self.cls`, after parsing input data but before finializing.
@@ -86,9 +82,15 @@ class Factory(ABC):
 
     ############################################################################
     # Helpers
-    #
-    # These methods restrict how this class can be used.
     ############################################################################
+
+    def parse_value(self, value) -> object:
+        """Use the optional method "parse_value" in `cls` to parse a value.
+        """
+        if has_method(self.cls, 'parse_value'):
+            return self.cls.parse_value(value)
+
+        return value
 
     def verify_key_format(self, key: str):
         """Verify key format.
@@ -97,14 +99,10 @@ class Factory(ABC):
         """
         if has_method(self.cls, 'verify_key_format'):
             self.cls.verify_key_format(key)
+
         elif not is_Dict_or_List(self.cls):
             # ignore key for containers such as Dict
             verify_key_format(self.cls, key)
-
-    def find_synonym(self, key: str) -> str:
-        """Use the optional field "_key_synonyms" in `self.cls` to translate a key.
-        """
-        find_synonym(self.cls, key)
 
 
 class JSONFactory(Factory):
@@ -199,13 +197,10 @@ class JSONFactory(Factory):
         if is_List(self.cls):
             return list(fields.values())
 
-        if issubclass(self.cls, Spec):
-            instance = super(Spec, self.cls).__new__(self.cls)
-        else:
-            try:
-                instance = self.cls()
-            except TypeError:
-                raise BuildError('Invalid input')
+        try:
+            instance = self.cls()
+        except TypeError:
+            raise BuildError('Invalid input')
 
         if has_annotations(self.cls):
             # assume instance of Spec
@@ -252,9 +247,6 @@ class JSONFactory(Factory):
             raise BuildError(f'Invalid value for {self.cls}(Enum)')
 
     def build_object(self, data) -> object:
-        if has_method(self.cls, 'parse_value'):
-            data = self.cls.parse_value(data)
-
         try:
             return self.cls(data)
         except TypeError as e:

@@ -5,7 +5,6 @@
 - `factory.Factory` is a generic interface. 
 - `factory.JSONFactory` is a concrete implementation.
 - `errors.ErrorMessages` exposes a few custom strings.
-- `spec.Spec` is a legacy alternative to dataclasses that provides a simplified constructor.
 """
 
 from mash.object_parser.errors import BuildError, ErrorMessages, SpecError
