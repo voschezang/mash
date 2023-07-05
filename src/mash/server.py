@@ -48,9 +48,7 @@ def init_routes(app):
     def root():
         data = ['document', 'users']
         test = ['echo', 'sleep', 'stable', 'scrambled', 'noisy']
-        # return data + test
-        print(0)
-        return {k: url(k) for k in data + test}
+        return data + test
 
     @app.route(basepath + "echo", methods=['GET', 'POST'])
     def echo():
