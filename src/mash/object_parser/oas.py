@@ -46,7 +46,7 @@ template = {
 }
 
 
-def path_create(item_type: str, verb='POST', ):
+def path_create(item_type: str, verb='POST'):
     verb = verb.lower()
     return {verb:
             {'operationId': verb + item_type,

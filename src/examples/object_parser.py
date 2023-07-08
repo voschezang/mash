@@ -8,7 +8,7 @@ from json import dumps
 from typing import Dict, List
 
 from mash.object_parser.oas import OAS, path_create
-from mash.object_parser.factory import JSONFactory
+from mash.object_parser import build, OAS
 from mash.object_parser.errors import SpecError
 
 
@@ -126,7 +126,7 @@ example_data = {
 
 
 if __name__ == '__main__':
-    org = JSONFactory(Organization).build(example_data)
+    org = build(Organization, example_data)
 
     print(org)
     oas = OAS()

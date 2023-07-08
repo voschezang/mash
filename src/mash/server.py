@@ -1,6 +1,8 @@
 from dataclasses import dataclass
+from enum import Enum, auto
 from json import JSONDecodeError, loads
 from logging import debug
+from typing import List
 from flask import Flask, request
 from http import HTTPStatus
 from werkzeug.utils import secure_filename
@@ -9,8 +11,9 @@ import os
 import time
 
 from mash import verify_server
+from mash.css import Document
 from mash.object_parser.errors import BuildError, BuildErrors, to_string
-from mash.object_parser.factory import JSONFactory
+from mash.object_parser import build
 
 UPLOAD_FOLDER = 'tmp/flask-app'
 
@@ -92,8 +95,8 @@ def init_routes(app):
 
         return '', HTTPStatus.BAD_REQUEST
 
-    @app.route(basepath + 'document', methods=['POST'])
-    def create_document():
+    @app.route(basepath + 'documents', methods=['POST'])
+    def documents_create():
         print(request.files)
         try:
             file = request.files['file']
@@ -103,10 +106,10 @@ def init_routes(app):
         fn = secure_filename(file.filename)
         file.save(UPLOAD_FOLDER + '/' + fn)
 
-        return f'file {fn} was saved'
+        return f'file {fn} was saved', HTTPStatus.CREATED
 
-    @app.route(basepath + 'document', methods=['DELETE'])
-    def clear_documents():
+    @app.route(basepath + 'documents', methods=['DELETE'])
+    def documents_delete():
         for fn in os.listdir(UPLOAD_FOLDER):
             try:
                 os.remove(UPLOAD_FOLDER + '/' + fn)
@@ -115,6 +118,32 @@ def init_routes(app):
                 continue
 
         return 'ok'
+
+    @app.route(basepath + 'documents/<id>/style', methods=['PUT'])
+    def documents_style_update(id):
+        if id not in ['1', '2', '3']:
+            return f'Invalid document id', HTTPStatus.BAD_REQUEST
+
+        path = f'/documents/{id}/style'
+
+        try:
+            data = loads(request.data)
+        except JSONDecodeError as e:
+            debug(f'POST {path}: JSONDecodeError: {e}')
+            return 'Payload decoding error', HTTPStatus.BAD_REQUEST
+
+        # WARNING: this exposes internal classes
+        try:
+            obj = build(Document, data)
+        except BuildError as e:
+            debug(f'POST {path}\n' + e.args[0])
+            return f'Invalid input: {e.args[0]}', HTTPStatus.BAD_REQUEST
+        except BuildErrors as e:
+            errors = to_string(e)
+            debug(f'POST {path}\n' + errors)
+            return f'Invalid input: {errors}', HTTPStatus.BAD_REQUEST
+
+        return {'id': 1, 'data': str(obj)}
 
     @app.route(basepath + 'server/verify', methods=['POST'])
     def verify_target_server():
@@ -137,14 +166,13 @@ def init_routes(app):
 
         if request.method == 'POST':
             try:
-                print(request.data)
                 data = loads(request.data)
             except JSONDecodeError:
                 return 'Payload decoding error', HTTPStatus.BAD_REQUEST
 
             # WARNING: this exposes internal classes
             try:
-                user = JSONFactory(RawUser).build(data)
+                user = build(RawUser, data)
             except BuildError as e:
                 debug('POST /users\n' + e.args[0])
                 return f'Invalid input: {e.args[0]}', HTTPStatus.BAD_REQUEST
@@ -154,7 +182,7 @@ def init_routes(app):
                 return f'Invalid input: {errors}', HTTPStatus.BAD_REQUEST
 
             id = create_user(user)
-            return str(id)
+            return str(id), HTTPStatus.CREATED
 
         return '', HTTPStatus.BAD_REQUEST
 

@@ -22,7 +22,7 @@ def test_abstract_factory():
 def test_factory():
     cls = int
     errors = 'dummy'
-    f = JSONFactory(cls, errors)
+    f = JSONFactory(cls, errors=errors)
     assert f.cls == cls
     assert f.errors == errors
     assert hasattr(f.build, '__call__')

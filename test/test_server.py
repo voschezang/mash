@@ -89,8 +89,9 @@ def test_document_post():
     body = b'abc'
     expected_data = f'file {fn} was saved'
     file = (BytesIO(body), fn)
-    res = client.post(basepath + 'document', data={'file': file})
-    assert_response(res, expected_data.encode())
+    res = client.post(basepath + 'documents', data={'file': file})
+
+    assert_response_201(res, expected_data.encode())
     assert fn in os.listdir(UPLOAD_FOLDER)
 
 
@@ -100,9 +101,37 @@ def test_document_del():
     with open(fn, 'w') as f:
         f.write('abc,def')
 
-    res = client.delete(basepath + 'document')
+    res = client.delete(basepath + 'documents')
     assert_response(res)
     assert fn not in os.listdir(UPLOAD_FOLDER)
+
+
+def test_document_style_post():
+    client = init()
+    data = generate_style()
+    res = client.put(basepath + 'documents/1/style', json=data)
+    assert res.status_code == 200
+
+
+def test_document_style_post_invalid():
+    client = init()
+    data = generate_style()
+    data['header']['margin']['left'] = 'null'
+    res = client.put(basepath + 'documents/1/style', json=data)
+
+    assert res.status_code == 400
+
+    expected = b'footer.margin.left: could not convert string to float'
+    assert expected in res.get_data()
+
+
+def test_document_style_post_missing():
+    client = init()
+    data = generate_style()
+    del data['header']
+    res = client.put(basepath + 'documents/1/style', json=data)
+
+    assert res.status_code == 400
 
 
 def test_route_verify_server():
@@ -146,7 +175,7 @@ def test_users_post():
     client = init()
     user = {'name': 'test', 'email': 'a@test.com'}
     response = client.post(basepath + 'users', json=user)
-    assert response.status_code == 200
+    assert response.status_code == 201
 
     id = json.loads(response.data)
     assert id == 11
@@ -170,6 +199,11 @@ def assert_response(response, expected_data=b'ok'):
     assert response.get_data() == expected_data
 
 
+def assert_response_201(response, expected_data=b'ok'):
+    assert response.status_code == HTTPStatus.CREATED
+    assert response.get_data() == expected_data
+
+
 def verify_response(response,
                     expected_status=HTTPStatus.OK,
                     expected_data=None) -> bool:
@@ -186,6 +220,22 @@ def requests(url='', N=LARGE_N, client: FlaskClient = None, **kwds):
         client = init()
 
     yield from (client.get(url, **kwds) for _ in range(N))
+
+
+def generate_style():
+    element = {'border': {'style': 'dotted',
+                          'width': 1.5,
+                          'color': 'green',
+                          'rounded': 5
+                          },
+               'margin': {'bottom': 0,
+                          'left': 0,
+                          'right': 0,
+                          'top': 0
+                          }}
+    return {'header': element,
+            'body': [element, element],
+            'footer': element}
 
 
 def init():

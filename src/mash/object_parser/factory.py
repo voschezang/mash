@@ -1,4 +1,4 @@
-from typing import _GenericAlias
+from typing import _GenericAlias, List
 from enum import Enum
 from abc import ABC, abstractmethod
 import logging
@@ -18,7 +18,8 @@ class Factory(ABC):
     """An interface for instantiating objects from json-like data.
     """
 
-    def __init__(self, cls: type, errors=ErrorMessages):
+    def __init__(self, cls: type, parent_keys: List[str] = None, *,
+                 errors=ErrorMessages):
         """The `__annotations__` of `cls` are first used to verify input data.
 
         Arguments
@@ -39,8 +40,12 @@ class Factory(ABC):
             age: int = 0
         ```
         """
+        if parent_keys is None:
+            parent_keys = []
+
         self.cls = cls
         self.errors = errors
+        self.parent_keys = parent_keys
 
     def build(self, data={}):
         """Initialize `self.cls` with fields from `data`.
@@ -79,6 +84,18 @@ class Factory(ABC):
         """Build an instance of `self.cls`, after parsing input data but before finializing.
         """
         pass
+
+    @property
+    def parent_path(self, keys=[]) -> str:
+        return '.'.join(self.parent_keys + keys)
+
+    @property
+    def error_prefix(self, key=None) -> str:
+        if key is None:
+            k = self.parent_path
+        else:
+            k = self.parent_path([key])
+        return f'{k}: '
 
     ############################################################################
     # Helpers
@@ -164,25 +181,29 @@ class JSONFactory(Factory):
         return result
 
     def build_field(self, key, data):
+
         if key in data:
             self.verify_key_format(key)
+
+            if isinstance(data[key], type):
+                msg = f'Data must be instantiated. Types are not supported. Got {data[key]}'
+                raise BuildError(self.error_prefix + msg)
 
             if has_annotations(self.cls):
                 inner_cls = self.cls.__annotations__[key]
             else:
                 inner_cls = infer_inner_cls(self.cls)
 
-            factory = JSONFactory(inner_cls)
-            if isinstance(data[key], type):
-                raise BuildError(
-                    f'Data must be instantiated. Types are not supported. Got {data[key]}')
+            factory = JSONFactory(inner_cls,
+                                  parent_keys=self.parent_keys+[key])
 
             return factory.build(data[key])
 
         elif hasattr(self.cls, key):
             return getattr(self.cls, key)
 
-        raise BuildError(self.errors.missing_mandatory_key(self.cls, key))
+        msg = self.errors.missing_mandatory_key(self.cls, key)
+        raise BuildError(self.error_prefix + msg)
 
     def build_from_dict(self, fields: dict):
         if hasattr(self.cls, '__dataclass_fields__'):
@@ -214,7 +235,7 @@ class JSONFactory(Factory):
 
     def build_generic_Dict(self, fields):
         inner_cls = self.cls.__args__[1]
-        factory = JSONFactory(inner_cls)
+        factory = JSONFactory(inner_cls, self.parent_keys)
         result = {}
         for k, v in fields.items():
             try:
@@ -222,6 +243,7 @@ class JSONFactory(Factory):
             except BuildErrors as e:
                 logging.debug(
                     f'build_list: factory({inner_cls}).build({v}) failed: {e}')
+                raise
 
         return result
 
@@ -229,7 +251,7 @@ class JSONFactory(Factory):
         assert len(self.cls.__args__) == 1
 
         list_item = self.cls.__args__[0]
-        factory = JSONFactory(list_item)
+        factory = JSONFactory(list_item, self.parent_keys)
         for v in items:
             try:
                 yield factory.build(v)
@@ -250,4 +272,6 @@ class JSONFactory(Factory):
         try:
             return self.cls(data)
         except TypeError as e:
-            raise BuildError(e)
+            raise BuildError(self.error_prefix + str(e))
+        except ValueError as e:
+            raise BuildError(self.error_prefix + str(e))
