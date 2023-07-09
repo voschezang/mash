@@ -1,4 +1,4 @@
-# Syntax
+# Language Reference
 
 The syntax and grammar is a mix of Bash and Python. It relies on pipes to pass strings between commands. Statements are mainly separated by whitespace and semicolons.
 
@@ -17,7 +17,7 @@ For examples, see [src.lib.math.sh](https://github.com/voschezang/mash/blob/main
 | `print hi hello`          | Run the method `do_print()` with arguments `"hi"` and `"hello"`. |
 | `println 1 2 3`           | Print separated arguments on new lines.                      |
 | `print 1, print 2`        | Run multiple methods.                                        |
-| `print 1 `&vert;`> print` | Pipe the output of one expression to another expression.     |
+| `print 1`&vert;`> print` | Pipe the output of one expression to another expression.     |
 
 ### Conditions and Branches
 
@@ -31,20 +31,20 @@ Multiline if-then-else statement
 
 ```python
 if 10 < 1 then
-	if 5 < 1 then
+ if 5 < 1 then
     print a
 else if 1 < 1
   print b
 else
-	print c
+ print c
 ```
 
 ### Maps and Loops
 
 | Example                                      | Description                                                  |
 | -------------------------------------------- | ------------------------------------------------------------ |
-| `println 1 2 `&vert;`> map print`            | Run a command for each line of the output of the previous expression. |
-| `println 1 2 `&vert;`> map print pre $ post` | Insert each line of the previous output into a new expression. |
+| `println 1 2`&vert;`> map print`            | Run a command for each line of the output of the previous expression. |
+| `println 1 2`&vert;`> map print pre $ post` | Insert each line of the previous output into a new expression. |
 | `println 1 2 >>= print`                      | `>>=` is an alias for &vert;`> map`                          |
 
 ### Shell Interop
@@ -54,7 +54,7 @@ Commands can be chained, similar to *Bash*. The main output `stdout` is used.
 | Example                    | Description                                      |
 | -------------------------- | ------------------------------------------------ |
 | `!echo hello`              | Invoke a system shell and run `echo hello` there |
-| `print 1 `&vert;` echo`     | Pipe the output of                               |
+| `print 1`&vert;`echo`     | Pipe the output of                               |
 | `print 1 > somefilename`  | Write the output of an expression to a file      |
 | `print 1 >> somefilename` | Append the output of an expression to a file     |
 
@@ -80,7 +80,6 @@ An environment is a key-value map.
 | `save`   | Copy the current environment to a file. |
 | `reload` | Reload the default environment.         |
 
-
 ### Globbing
 
 | Example        | Description                                                |
@@ -100,7 +99,7 @@ An environment is a key-value map.
 | `add (a b): math $a + $b`              | Arithmetic.                                              |
 | `f (x): math $x + $a`                  | Combine positional arguments with environment variables. |
 | `powers (n): range $n >>= math $ ** 2` | A function that iterates over a loop.                    |
-| `f (n): range $n `&vert;`> reduce sum 0`| Aggregate a sequence using a reduction operator.        |
+| `f (n): range $n`&vert;`> reduce sum 0`| Aggregate a sequence using a reduction operator.        |
 
 #### Multiline Functions
 
@@ -158,16 +157,13 @@ f 10
 `if` `then` `else` `return`
 
 ### Built-in Functions
+
 Logical operators: `and` `or` `not`
 Other operators: `map` `math`
-
-
 
 ## Proposals
 
 Proposals for future changes.
-
-
 
 **Predicate logic**
 
@@ -177,15 +173,11 @@ x > 1 for all x in X
 x + y == 1 for any x in X, y in Y
 ```
 
-
-
 **Basic Functions**
 
-Inf loop: `f x = f x |> repeat x` 
+Inf loop: `f x = f x |> repeat x`
 
 - TODO: Decide on whether states should be mutable or immutable.
-
-
 
 **Unpack sequences**
 
@@ -208,11 +200,9 @@ end @xs x = x
 
 *TODO: Decide on whether to support lazy evaluation*
 
-
-
 **Math**
 
-Numbers: `int 1`, `float 1.0` 
+Numbers: `int 1`, `float 1.0`
 
 Shorthand notation:  `a = $100.0`, `b = $2e3`, `c = $2^2`
 
@@ -222,8 +212,6 @@ Using [Polish notation](https://en.wikipedia.org/wiki/Polish_notation):
 + x y # addition
 - x y # subtraction
 ```
-
-
 
 **Performance & Parallelization**
 
@@ -237,4 +225,3 @@ a *b = list_natural_numbers
 # pure functions can be executed in parallel, using a thread pool
 range 10 >>= math 10 * $ + 1 |> reduce sum
 ```
-

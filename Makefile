@@ -35,7 +35,10 @@ docs-init:
 	mkdir -p docs
 	cd docs && yes y | make sphinx-quickstart
 	cd docs && make html
-	cd docs && sphinx-apidoc -o source ../src
+
+make html:
+	cd docs && sphinx-apidoc -o source/modules ../src/mash
+	cd docs && make html
 
 docs-generate:
 	cd docs && make html
@@ -43,6 +46,9 @@ docs-generate:
 
 docs-show:
 	open docs/build/html/index.html
+
+docs-watch:
+	 find docs/source -name '*.rst' -type f | entr make html
 
 pydocs:
 	cd src && pydoc -b

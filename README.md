@@ -55,7 +55,7 @@ See [`src/examples`](src/examples) for advances usage examples.
   - [Parallelization Utilities](#Parallelization%20Utilities)
   - [Object Parser](#Object%20Parser)
 
-# Usage
+## Usage
 
 See [reference](SHELL_REFERENCE.md).
 
@@ -199,7 +199,7 @@ $ python src/examples/discoverable.py 'ls'
 department_750, department_14
 ```
 
-# Library & Tools
+## Library & Tools
 
 Repository structure
 

@@ -10,3 +10,5 @@ tmp*
 .shell_session.json
 *parser.out
 *parsetab.py
+docs/source/modules/*
+docs/build/*

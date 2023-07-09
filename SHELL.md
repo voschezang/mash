@@ -12,8 +12,8 @@ The main datastructure is `mash.filesystem`. It's inferface is inspired by unix 
 
 - Implement local/global variable scopes in `Shell`.
 - Let a user browse REST-like resources (directories) with CRUD operations:
-	- Discovery: `cd, list, get, tree, show`.
-    - Mutations: `new, set, mv, cp`.
+  - Discovery: `cd, list, get, tree, show`.
+  - Mutations: `new, set, mv, cp`.
 
 ### Module Tree
 
@@ -114,7 +114,6 @@ class Cmd2(cmd.Cmd):
     def default();
 ```
 
-
 ### Filesystem
 
 A directory-like interface for dictionaries and lists.
@@ -126,8 +125,6 @@ filesystem/
     view.View # A datastructure that provides a view of internal data.
     scope.Scope # Expose global and local variables in a directory tree.
 ```
-
-
 
 ## Shell with Filesystem
 
