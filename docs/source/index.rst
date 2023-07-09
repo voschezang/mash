@@ -1,9 +1,6 @@
 .. Mash documentation master file, created by
    sphinx-quickstart
 
-Readme File
-===========
-
 Usage
 -----
 

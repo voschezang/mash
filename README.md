@@ -6,6 +6,7 @@
 [MAIN](https://github.com/voschezang/mash/blob/main/README.md)
 | [SHELL.md](https://github.com/voschezang/mash/blob/main/SHELL.md)
 | [REFERENCE.md](https://github.com/voschezang/mash/blob/main/SHELL_REFERENCE.md)
+| [Library Docs](https://voschezang.github.io/mash-docs/)
 
 <img src="https://github.com/voschezang/mash/blob/main/img/dall-E/bosh-terminal-icon.png?raw=true" style="max-width: 5%" alt="A drawing of a terminal"></img>
 
@@ -28,6 +29,7 @@ Links
 - [Mash language reference](SHELL_REFERENCE.md)
 - [PyPI](https://pypi.org/project/mash-shell)
 - [github](https://github.com/voschezang/mash)
+- [docs](https://voschezang.github.io/mash-docs/)
 
 ## Shell
 
