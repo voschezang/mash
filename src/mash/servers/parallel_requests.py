@@ -6,8 +6,8 @@ import time
 import random
 
 from mash import util
-from mash.server import basepath
-from mash.parallel import asynchronous
+from mash.servers.server import basepath
+from mash.servers.parallel import asynchronous
 from mash.pipeline import Processor, PushPull, identity, constant, duplicate
 
 url = 'http://localhost:5000' + basepath

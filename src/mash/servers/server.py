@@ -10,8 +10,8 @@ import numpy as np
 import os
 import time
 
-from mash import verify_server
-from mash.css import Document
+from mash.servers import verify_server
+from mash.servers.css import Document
 from mash.object_parser.errors import BuildError, BuildErrors, to_string
 from mash.object_parser import build
 

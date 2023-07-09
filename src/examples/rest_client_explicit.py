@@ -13,7 +13,7 @@ from mash.filesystem.discoverable import observe
 from mash.filesystem.view import Path
 from mash.shell.shell import main
 from mash.shell import ShellWithFileSystem
-from mash.server import basepath, init as server_init
+from mash.servers.server import basepath, init as server_init
 
 
 def get_user(id):
