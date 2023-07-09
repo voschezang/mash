@@ -12,6 +12,19 @@ HIDE_PREFIX = '.'
 
 
 class Option(Enum):
+    """Filesystem traversal options.
+
+    .. code-block:: python
+
+        default = '~'
+        home = '~'
+        root = '/'
+        stay = '.'
+        switch = '-'
+        up = '..'
+        upup = '...'
+        upupup = '....'
+    """
     default = '~'
     home = '~'
     root = '/'

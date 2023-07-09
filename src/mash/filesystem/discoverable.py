@@ -1,35 +1,34 @@
 """Discoverable filesystems
-
 Extend `FileSystem` with support for dynamic data. E.g. data from a REST resource.
 
 Usage
 -----
-```py
-fs = Discoverable({'repository': User},
-                  get_value_method=observe)
-```
+.. code-block:: python
+
+    fs = Discoverable({'repository': User},
+                    get_value_method=observe)
 
 where
-```py
-@dataclass
-class User:
-    # A REST resource of the endpoints `/users` and `/users/{id}`
-    email: str
-    role: str
 
-    @staticmethod
-    def get_value(path: Path):
-        # Retrieve external data and instantiate this class.
+.. code-block:: python
 
-    @staticmethod
-    def get_all(path: Path):
-        # Return resource identifiers.
+    @dataclass
+    class User:
+        # A REST resource of the endpoints `/users` and `/users/{id}`
+        email: str
+        role: str
 
-    @staticmethod
-    def refresh() -> bool:
-        # Return True to indicate that a resource should be refreshed.
+        @staticmethod
+        def get_value(path: Path):
+            # Retrieve external data and instantiate this class.
 
-```
+        @staticmethod
+        def get_all(path: Path):
+            # Return resource identifiers.
+
+        @staticmethod
+        def refresh() -> bool:
+            # Return True to indicate that a resource should be refreshed.
 """
 from dataclasses import _MISSING_TYPE
 from pickle import dumps, loads

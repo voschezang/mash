@@ -1,8 +1,8 @@
 .. Mash documentation master file, created by
    sphinx-quickstart
 
-Usage
------
+Overview
+========
 
 .. sidebar::
 
@@ -24,16 +24,16 @@ Usage
 
 
 Library Reference
------------------
+=================
 
 .. toctree::
-   :caption: Library Reference:
+   :caption: Reference:
    :maxdepth: 1
 
    reference.rst
 
-Packages
-~~~~~~~~
+Internal Packages
+--------
 
 .. toctree::
    :maxdepth: 1
@@ -43,6 +43,72 @@ Packages
    object parser <modules/object_parser>
    shell <modules/shell>
 
+
+Main Classes (Summary)
+======================
+
+
+Filesystem
+----------
+
+* :py:meth:`mash.filesystem.FileSystem`
+* :py:meth:`mash.filesystem.Discoverable`
+* :py:meth:`mash.filesystem.Option`
+* :py:meth:`mash.filesystem.OPTIONS`
+* :py:meth:`mash.filesystem.view.View`
+
+Object Parser
+-------------
+
+* :py:meth:`mash.object_parser.build`
+    * :py:meth:`mash.object_parser.BuildError`
+    * :py:meth:`mash.object_parser.BuildErrors`
+    * :py:meth:`mash.object_parser.ErrorMessages`
+* :py:meth:`mash.object_parser.OAS`
+
+Shell
+-----
+
+* :py:meth:`mash.shell.ShellWithFileSystem`
+    * :py:meth:`mash.shell.Shell`
+        * :py:meth:`mash.shell.base.BaseShell`
+* :py:meth:`mash.shell.errors.ShellError`
+* :py:meth:`mash.shell.errors.ShellSyntaxError`
+
+
+Main Classes (Expanded)
+=======================
+
+.. autoclass:: mash.filesystem.FileSystem
+   :members:
+.. autoclass:: mash.filesystem.Discoverable
+   :members:
+.. autoclass:: mash.filesystem.view.View
+   :members:
+.. autoclass:: mash.filesystem.Option
+   :members:
+.. autodata:: mash.filesystem.OPTIONS
+
+.. autofunction:: mash.object_parser.build
+.. autoclass:: mash.object_parser.BuildError
+   :members:
+.. autoclass:: mash.object_parser.BuildErrors
+   :members:
+.. autoclass:: mash.object_parser.ErrorMessages
+   :members:
+.. autoclass:: mash.object_parser.OAS
+   :members:
+
+.. autoclass:: mash.shell.ShellWithFileSystem
+   :members:
+.. autoclass:: mash.shell.Shell
+   :members:
+.. autoclass:: mash.shell.base.BaseShell
+   :members:
+.. autoclass:: mash.shell.ShellError
+   :members:
+.. autoclass:: mash.shell.ShellSyntaxError
+   :members:
 
 Indices and tables
 ------------------
