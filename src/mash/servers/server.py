@@ -1,11 +1,10 @@
 from flask import Flask
 import os
 
-from mash.servers.css import Document
-from mash.object_parser.errors import BuildError, BuildErrors, to_string
-from mash.object_parser import build
-from mash.servers.config import basepath, UPLOAD_FOLDER, init_db
-from mash.servers.routes import init_routes
+from mash.servers.adapters.api.document_routes import document_routes
+from mash.servers.adapters.api.standard_routes import standard_routes
+from mash.servers.adapters.api.user_routes import user_routes
+from mash.servers.adapters.repository import UPLOAD_FOLDER, init_db
 
 
 def init():
@@ -15,6 +14,12 @@ def init():
     init_db()
     init_routes(app)
     return app
+
+
+def init_routes(app):
+    standard_routes(app)
+    document_routes(app)
+    user_routes(app)
 
 
 if __name__ == "__main__":

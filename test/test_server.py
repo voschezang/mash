@@ -4,7 +4,8 @@ import os
 from io import BytesIO
 from http import HTTPStatus
 
-from mash.servers.server import basepath, init as server_init, UPLOAD_FOLDER
+from mash.servers.server import init as server_init
+from mash.servers.adapters.repository import basepath, UPLOAD_FOLDER
 
 LARGE_N = 1000
 
@@ -156,12 +157,13 @@ def test_users_get():
     response = client.get(basepath + 'users')
     assert response.status_code == 200
     data = json.loads(response.data)
-    assert 0 in data
+    assert 1000 in data
+    assert 1009 in data
 
 
 def test_users_user_get():
     client = init()
-    response = client.get(basepath + 'users/2')
+    response = client.get(basepath + 'users/1002')
     assert response.status_code == 200
 
     data = json.loads(response.data)
@@ -178,9 +180,9 @@ def test_users_post():
     assert response.status_code == 201
 
     id = json.loads(response.data)
-    assert id == 11
+    assert id == 1010
 
-    response = client.get(basepath + 'users/11')
+    response = client.get(basepath + 'users/1010')
     assert response.status_code == 200
     data = json.loads(response.data)
     assert data['name'] == user['name']

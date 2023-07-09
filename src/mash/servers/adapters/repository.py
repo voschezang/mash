@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from mash.servers.model.user import RawUser
 
 
 UPLOAD_FOLDER = 'tmp/flask-app'
@@ -8,18 +8,15 @@ basepath = '/v1/'
 db = None
 
 
-@dataclass
-class RawUser:
-    name: str
-    email: str
-
-
 def init_db():
     global db
-    db = {'users': {i: generate_user(i) for i in range(10)}}
+    db = {'users': {}}
+    for i in range(10):
+        user = generate_user(i)
+        create_user(user)
 
 
-def get_db():
+def read():
     global db
     return db
 
@@ -28,13 +25,13 @@ def url(path):
     return f'http://127.0.0.1:5000{basepath}{path}'
 
 
-def generate_user(i: int) -> dict:
-    return {'name': f'name_{i}', 'email': f'name.{i}@company.com'}
+def generate_user(i: int) -> RawUser:
+    return RawUser(f'name_{i}', f'name.{i}@company.com')
 
 
 def create_user(user: RawUser):
     # generate user id
-    id = len(db['users']) + 1
+    id = len(db['users']) + 1000
     # create object
     user = {'name': user.name, 'email': user.email}
     # store object

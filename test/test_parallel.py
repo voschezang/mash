@@ -1,7 +1,7 @@
 import pytest
 
 from aiohttp import ClientSession
-from mash.servers.parallel import *
+from mash.servers_extra.parallel import *
 
 
 # class Test(pytest.testcase):
