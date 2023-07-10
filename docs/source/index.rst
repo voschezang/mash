@@ -21,6 +21,7 @@ Overview
 
    README <README.md>
    Implementation <SHELL.md>
+   Reference <SHELL_REFERENCE.md>
 
 
 Library Reference

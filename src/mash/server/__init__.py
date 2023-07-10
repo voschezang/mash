@@ -1,9 +1,9 @@
 """A dummy web server.
 
 API endpoints
-* /verify server
-* /users
-* /documents
+- /verify server
+- /users
+- /documents
 """
 from flask import Flask
 import os

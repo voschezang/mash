@@ -50,6 +50,10 @@ docs-show:
 docs-watch:
 	 find docs/source -name '*.rst' -type f | entr make html
 
+docs-clean:
+	rm -rf docs/source/modules
+	rm -rf docs/build
+
 pydocs:
 	cd src && pydoc -b
 

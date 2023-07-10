@@ -140,7 +140,10 @@ class BaseShell(Cmd2):
 
     def do_unset(self, args: str):
         """Unset keys
-        `unset [KEY [KEY..]]
+
+        .. code-block:: bash
+
+            unset [KEY [KEY..]]
         """
         for k in args.split(' '):
             if k in self.env:
