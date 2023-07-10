@@ -35,11 +35,12 @@ E.g.
 
 {bold('Variables')}
 Assign constants or evaluate expressiosn:
-```
-a = 100
-b <- print $a
-echo $a $b
-```
+
+.. code-block:: bash
+
+    a = 100
+    b <- print $a
+    echo $a $b
 
 {bold('Interopability')}
 Interopability with Bash can be done with pipes:

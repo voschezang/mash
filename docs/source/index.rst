@@ -33,7 +33,7 @@ Library Reference
    reference.rst
 
 Internal Packages
---------
+-----------------
 
 .. toctree::
    :maxdepth: 1
@@ -42,6 +42,7 @@ Internal Packages
    filesystem <modules/filesystem>
    object parser <modules/object_parser>
    shell <modules/shell>
+   server <modules/server>
 
 
 Main Classes (Summary)

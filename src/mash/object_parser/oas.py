@@ -73,16 +73,17 @@ class OAS(dict):
         """Generate OAS/Swagger components from a class
         See: [OAS](https://swagger.io/specification/)
         E.g.
-        ```yml
-        components:
-            schemas:
-                User:
-                    properties:
-                        id:
-                            type: integer
-                        name:
-                            type: string
-        ```
+
+        .. code-block:: yaml
+
+            components:
+                schemas:
+                    User:
+                        properties:
+                            id:
+                                type: integer
+                            name:
+                                type: string
         """
         t = type(obj).__name__
         if t not in self.components:

@@ -132,10 +132,11 @@ class FileSystem:
 
         Usage
         -----
-        ```sh
-        cp(a, b) # Let b point to the value referenced by a.
-        cp(*a, b) # let b contain the pointers *a.
-        ```
+
+        .. code-block:: python
+
+            cp(a, b) # Let b point to the value referenced by a.
+            cp(*a, b) # let b contain the pointers *a.
         """
         self.state.cp(*references)
 
@@ -144,10 +145,11 @@ class FileSystem:
 
         Usage
         -----
-        ```sh
-        mv(a, b) # rename the reference a to b.
-        mv(*a, b) # move references *a to b
-        ```
+
+        .. code-block:: python
+
+            mv(a, b) # rename the reference a to b.
+            mv(*a, b) # move references *a to b
         """
         # TODO rename copies as well. e.g. in self.prev
         self.state.mv(*references)

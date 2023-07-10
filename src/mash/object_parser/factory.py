@@ -34,11 +34,12 @@ class Factory(ABC):
         Examples
         --------
         E.g. cls can be a dataclass:
-        ```py
-        class User:
-            email: str
-            age: int = 0
-        ```
+
+        .. code-block:: python
+
+            class User:
+                email: str
+                age: int = 0
         """
         if parent_keys is None:
             parent_keys = []

@@ -150,10 +150,11 @@ class Map(Infix):
 
         Usage
         -----
-        ```sh
-        println a b |> map echo
-        println a b |> map echo prefix $ suffix
-        ```
+
+        .. code-block:: bash
+
+            println a b |> map echo
+            println a b |> map echo prefix $ suffix
         """
         # monadic bind
         # https://en.wikipedia.org/wiki/Monad_(functional_programming)

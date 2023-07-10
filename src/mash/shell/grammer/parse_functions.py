@@ -18,10 +18,11 @@ def expand_variables(terms: List[str], env: dict,
                      escape=False) -> Iterable[str]:
     """Replace variables with their values.
     E.g.
-    ```sh
-    a = 1
-    print $a # gets converted to `print 1`
-    ```
+
+    .. code-block:: bash
+
+        a = 1
+        print $a # gets converted to `print 1`
     """
     for v in terms:
         v = str(v)
