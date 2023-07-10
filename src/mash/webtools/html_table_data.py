@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from typing import Dict, List
 import mistletoe
 
-from mash.object_parser.factory import JSONFactory
+from mash.object_parser.factory import build
 
 
 HeadingKey = str
@@ -45,7 +45,7 @@ class HTMLTableData:
 
 
 def parse_json(json: dict):
-    return JSONFactory(HTMLTableData).build(json)
+    return build(HTMLTableData, json)
 
 
 example_yaml_data = """
@@ -67,34 +67,3 @@ rows:
               - Option D
               - Option E
 """
-
-# example_yaml_data = """
-# parameters:
-#     headings:
-#         first: _First_ Heading
-#         middle: _Middle_ Heading
-#         last: _Last_ Heading
-# rows:
-#     - row:
-#           first:
-#               - A value
-#               - Another
-#           middle:
-#               - Center
-#           last:
-#               - Option A
-#               - Option B
-#               - Option C
-#               - Option D
-#               - Option E
-#               - Option F
-#     - row:
-#           first:
-#               - A value
-#               - Another option
-#           middle:
-#               - Option X
-#           last:
-#               - Option Y
-#               - Option Z
-# """

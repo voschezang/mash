@@ -1,7 +1,7 @@
 import yaml
 
-from mash.html_table import example_yaml_data, generate
-from mash.html_table_data import parse_json
+from mash.servers_extra.html_table import example_yaml_data, generate
+from mash.servers_extra.html_table_data import parse_json
 
 expected_html = """
 <table>
