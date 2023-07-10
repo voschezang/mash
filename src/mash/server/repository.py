@@ -1,17 +1,17 @@
-
 UPLOAD_FOLDER = 'tmp/flask-app'
 
 db = None
 
 
-def init_db():
-    global db
-    db = {'users': {}}
+class Repository:
+    def __init__(self):
+        global db
+        db = {'users': {}}
 
-
-def read():
-    global db
-    return db
+    @staticmethod
+    def read():
+        global db
+        return db
 
 
 def create_user(name, email):

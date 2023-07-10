@@ -8,7 +8,7 @@ from json import JSONDecodeError, loads
 from urllib.parse import quote_plus, urlparse
 
 from mash.io_util import log
-from mash.servers.routes.default import basepath
+from mash.server.routes.default import basepath
 from mash.shell import ShellWithFileSystem
 from mash.shell.shell import main
 

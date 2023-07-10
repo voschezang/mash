@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from mash.servers.repository import create_user
+from mash.server.repository import create_user
 
 
 @dataclass

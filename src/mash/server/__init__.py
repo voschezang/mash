@@ -8,13 +8,13 @@ API endpoints
 from flask import Flask
 import os
 
-from mash.servers.routes import default, documents, users
-from mash.servers.repository import UPLOAD_FOLDER, init_db
-from mash.servers.domain.user import init_users
+from mash.server.routes import default, documents, users
+from mash.server.repository import UPLOAD_FOLDER, Repository
+from mash.server.domain.user import init_users
 
 
 def init():
-    init_db()
+    Repository()
     init_users()
 
     os.makedirs(UPLOAD_FOLDER, exist_ok=True)

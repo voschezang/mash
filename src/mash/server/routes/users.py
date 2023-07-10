@@ -6,16 +6,16 @@ from http import HTTPStatus
 
 from mash.object_parser.errors import BuildError, BuildErrors, to_string
 from mash.object_parser import build
-from mash.servers.domain.user import RawUser
-from mash.servers.repository import create_user, read
-from mash.servers.routes.default import basepath
+from mash.server.domain.user import RawUser
+from mash.server.repository import Repository, create_user
+from mash.server.routes.default import basepath
 
 
 def init(app):
     @app.route(basepath + 'users', methods=['GET', 'POST'])
     def users():
         if request.method == 'GET':
-            return [i for i in read()['users'].keys()]
+            return [i for i in Repository.read()['users'].keys()]
 
         if request.method == 'POST':
             try:
@@ -46,7 +46,7 @@ def init(app):
         except TypeError:
             return 'Invalid user id', HTTPStatus.BAD_REQUEST
 
-        users = read()['users']
+        users = Repository.read()['users']
         if id in users:
             return users[id]
 

@@ -4,9 +4,9 @@ import os
 from io import BytesIO
 from http import HTTPStatus
 
-from mash.servers.repository import UPLOAD_FOLDER
-from mash.servers.routes.default import basepath
-from mash.servers.server import init as server_init
+from mash.server.repository import UPLOAD_FOLDER
+from mash.server.routes.default import basepath
+from mash.server import init as init_server
 
 LARGE_N = 1000
 
@@ -242,7 +242,7 @@ def generate_style():
 
 
 def init():
-    app = server_init()
+    app = init_server()
     client = app.test_client()
     return client
 
