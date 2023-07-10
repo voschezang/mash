@@ -9,10 +9,10 @@ import os
 from mash.servers.model.css import Document
 from mash.object_parser.errors import BuildError, BuildErrors, to_string
 from mash.object_parser import build
-from mash.servers.adapters.repository import basepath, UPLOAD_FOLDER
+from mash.servers.repository import basepath, UPLOAD_FOLDER
 
 
-def document_routes(app):
+def init(app):
     @app.route(basepath + 'documents', methods=['POST'])
     def documents_create():
         print(request.files)
@@ -24,7 +24,7 @@ def document_routes(app):
         fn = secure_filename(file.filename)
         file.save(UPLOAD_FOLDER + '/' + fn)
 
-        return f'file {fn} was saved', HTTPStatus.CREATED
+        return f'file {fn} saved', HTTPStatus.CREATED
 
     @app.route(basepath + 'documents', methods=['DELETE'])
     def documents_delete():

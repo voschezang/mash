@@ -7,10 +7,10 @@ from http import HTTPStatus
 from mash.object_parser.errors import BuildError, BuildErrors, to_string
 from mash.object_parser import build
 from mash.servers.model.user import RawUser
-from mash.servers.adapters.repository import basepath, create_user, read
+from mash.servers.repository import basepath, create_user, read
 
 
-def user_routes(app):
+def init(app):
     @app.route(basepath + 'users', methods=['GET', 'POST'])
     def users():
         if request.method == 'GET':
@@ -33,7 +33,7 @@ def user_routes(app):
                 debug('POST /users\n' + errors)
                 return f'Invalid input: {errors}', HTTPStatus.BAD_REQUEST
 
-            id = create_user(user)
+            id = create_user(user.name, user.email)
             return str(id), HTTPStatus.CREATED
 
         return '', HTTPStatus.BAD_REQUEST

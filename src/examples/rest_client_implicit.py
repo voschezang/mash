@@ -11,7 +11,7 @@ from mash.io_util import log
 
 from mash.shell import ShellWithFileSystem
 from mash.shell.shell import main
-from mash.servers.adapters.repository import basepath
+from mash.servers.repository import basepath
 
 
 http_resource = object()

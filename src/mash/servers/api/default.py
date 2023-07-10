@@ -4,13 +4,13 @@ import numpy as np
 import time
 
 from mash.servers_extra import verify_server
-from mash.servers.adapters.repository import basepath
+from mash.servers.repository import basepath
 
 
-def standard_routes(app):
+def init(app):
     @app.route(basepath)
     def root():
-        data = ['document', 'users']
+        data = ['documents', 'users']
         test = ['echo', 'sleep', 'stable', 'scrambled', 'noisy']
         return data + test
 

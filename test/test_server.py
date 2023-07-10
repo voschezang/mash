@@ -5,7 +5,7 @@ from io import BytesIO
 from http import HTTPStatus
 
 from mash.servers.server import init as server_init
-from mash.servers.adapters.repository import basepath, UPLOAD_FOLDER
+from mash.servers.repository import basepath, UPLOAD_FOLDER
 
 LARGE_N = 1000
 

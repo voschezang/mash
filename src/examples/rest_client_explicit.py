@@ -14,7 +14,7 @@ from mash.filesystem.view import Path
 from mash.shell.shell import main
 from mash.shell import ShellWithFileSystem
 from mash.servers.server import init as server_init
-from mash.servers.adapters.repository import basepath
+from mash.servers.repository import basepath
 
 
 def get_user(id):
