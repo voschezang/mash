@@ -6,8 +6,9 @@ from http import HTTPStatus
 
 from mash.object_parser.errors import BuildError, BuildErrors, to_string
 from mash.object_parser import build
-from mash.servers.model.user import RawUser
-from mash.servers.repository import basepath, create_user, read
+from mash.servers.domain.user import RawUser
+from mash.servers.repository import create_user, read
+from mash.servers.routes.default import basepath
 
 
 def init(app):

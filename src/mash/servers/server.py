@@ -1,9 +1,16 @@
+"""A dummy web server.
+
+API endpoints
+* /verify server
+* /users
+* /documents
+"""
 from flask import Flask
 import os
 
-from mash.servers.api import default, documents, users
+from mash.servers.routes import default, documents, users
 from mash.servers.repository import UPLOAD_FOLDER, init_db
-from mash.servers.model.user import init_users
+from mash.servers.domain.user import init_users
 
 
 def init():

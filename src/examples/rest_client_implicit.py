@@ -6,13 +6,13 @@ if __name__ == '__main__':
 
 from json import JSONDecodeError, loads
 from urllib.parse import quote_plus, urlparse
-from examples.rest_client_explicit import init_client
-from mash.io_util import log
 
+from mash.io_util import log
+from mash.servers.routes.default import basepath
 from mash.shell import ShellWithFileSystem
 from mash.shell.shell import main
-from mash.servers.repository import basepath
 
+from examples.rest_client_explicit import init_client
 
 http_resource = object()
 

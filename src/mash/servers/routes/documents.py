@@ -6,10 +6,11 @@ from werkzeug.utils import secure_filename
 import os
 
 
-from mash.servers.model.css import Document
+from mash.servers.domain.css import Document
 from mash.object_parser.errors import BuildError, BuildErrors, to_string
 from mash.object_parser import build
-from mash.servers.repository import basepath, UPLOAD_FOLDER
+from mash.servers.repository import UPLOAD_FOLDER
+from mash.servers.routes.default import basepath
 
 
 def init(app):

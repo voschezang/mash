@@ -4,8 +4,9 @@ import os
 from io import BytesIO
 from http import HTTPStatus
 
+from mash.servers.repository import UPLOAD_FOLDER
+from mash.servers.routes.default import basepath
 from mash.servers.server import init as server_init
-from mash.servers.repository import basepath, UPLOAD_FOLDER
 
 LARGE_N = 1000
 
@@ -88,7 +89,7 @@ def test_document_post():
         pass
 
     body = b'abc'
-    expected_data = f'file {fn} was saved'
+    expected_data = f'file {fn} saved'
     file = (BytesIO(body), fn)
     res = client.post(basepath + 'documents', data={'file': file})
 

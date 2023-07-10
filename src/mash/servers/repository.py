@@ -1,8 +1,6 @@
 
 UPLOAD_FOLDER = 'tmp/flask-app'
 
-# Note the trailing `/`
-basepath = '/v1/'
 db = None
 
 
@@ -14,10 +12,6 @@ def init_db():
 def read():
     global db
     return db
-
-
-def url(path):
-    return f'http://127.0.0.1:5000{basepath}{path}'
 
 
 def create_user(name, email):

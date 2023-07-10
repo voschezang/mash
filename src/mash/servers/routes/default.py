@@ -3,8 +3,14 @@ from http import HTTPStatus
 import numpy as np
 import time
 
-from mash.servers_extra import verify_server
-from mash.servers.repository import basepath
+from mash.webtools import verify_server
+
+# Note the trailing `/`
+basepath = '/v1/'
+
+
+def url(path):
+    return f'http://127.0.0.1:5000{basepath}{path}'
 
 
 def init(app):
