@@ -13,18 +13,21 @@ Overview
     |
     `pypi <https://pypi.org/project/mash-shell/>`_
 
-    Usage:
-    `Mash Language Reference <https://github.com/voschezang/mash/blob/main/SHELL_REFERENCE.md>`_
+
+    | Mash language usage:
+
+    * `- Reference <https://github.com/voschezang/mash/blob/main/SHELL_REFERENCE.md>`_
+    * `- Example script <pages/lib.html>`_
 
 
 .. toctree::
    :caption: Usage:
    :maxdepth: 1
 
-   README <README.md>
-   Implementation <SHELL.md>
-   Reference <SHELL_REFERENCE.md>
-
+   README <pages/README.md>
+   Implementation <pages/SHELL.md>
+   Reference <pages/SHELL_REFERENCE.md>
+   Example Mash script <pages/lib.rst>
 
 Library Reference
 -----------------
@@ -33,7 +36,7 @@ Library Reference
    :caption: Reference:
    :maxdepth: 1
 
-   reference.rst
+   pages/reference.rst
 
 Internal Packages
 ~~~~~~~~~~~~~~~~~

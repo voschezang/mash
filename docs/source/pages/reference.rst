@@ -7,4 +7,4 @@ Library Reference
    :maxdepth: 8
    :caption: Contents:
 
-   modules/modules.rst
+   ../modules/modules.rst
