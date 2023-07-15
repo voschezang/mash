@@ -1,15 +1,20 @@
 """Parse tokens.
 Tokens are defined in shell.grammer.tokenizer
 
+Parsing rules;
+
 .. code-block:: yaml
 
-    lines: a BREAK-separated sequence of `line`
-    line: `statement` with optional INDENT
-    statement : assignment
-    conditional
-                    | definition
-                    | conjunction
-                    | return_statement
+    lines: a BREAK-separated sequence of line
+    line: statement with optional INDENT
+    statement: 
+        - assignment
+        - conditional
+        - conjunction
+        - definition
+        - return_statement
+    conjunction: a PIPE-separated sequence of expression
+    expression: a command
 
 """
 from logging import getLogger
@@ -79,8 +84,8 @@ def parse(text, init=True):
     def p_statement(p):
         """statement : assignment
                      | conditional
-                     | definition
                      | conjunction
+                     | definition
                      | return_statement
         """
         p[0] = p[1]

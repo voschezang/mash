@@ -51,6 +51,7 @@ Packages
    object parser <modules/object_parser>
    shell <modules/shell>
    server <modules/server>
+   webtools <modules/webtools>
 
 
 Main Classes (Summary)

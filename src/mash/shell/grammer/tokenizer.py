@@ -44,8 +44,9 @@ def main():
     """
     Token regexes are defined with the prefix `t_`.
     From ply docs:
-    - functions are matched in order of specification
-    - strings are sorted by regular expression length
+
+    * functions are matched in order of specification
+    * strings are sorted by regular expression length
     """
 
     t_DEFINE_FUNCTION = r':'
