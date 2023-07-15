@@ -5,7 +5,7 @@ import time
 import random
 
 from mash import util
-from mash.server import basepath
+from mash.server.routes.default import basepath
 from mash.webtools.parallel import asynchronous
 from mash.pipeline import Processor, PushPull, Strategy, identity, constant, duplicate
 
@@ -143,17 +143,3 @@ def compute(N=1, strategy=Strategy.push):
             assert result == 1, result
 
         return
-
-
-if __name__ == '__main__':
-    # test_compute_pipeline()
-
-    # run_compute_pipeline()
-
-    PushPull.n_processors = 2
-    for s in Strategy:
-        t1 = time.perf_counter()
-        compute(100, s)
-        t2 = time.perf_counter()
-
-        print(f'{s:<20} {t2 - t1:.2f} s')

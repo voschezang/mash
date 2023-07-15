@@ -1,0 +1,24 @@
+table {
+    width: 100vw;
+    border-collapse: collapse;
+}
+
+td {
+    background: #efefef;
+    border: 3px solid white;
+    border-radius: 5px;
+    padding: 0.4em;
+}
+
+td p {
+    margin: 0;
+}
+
+tbody:nth-child(even) td {
+    background: #dfdfdf;
+}
+
+tbody:hover td[rowspan],
+tr:hover td {
+    background: #cecece;
+}

@@ -16,8 +16,6 @@ def resolve(hostname: str):
     except socket.error:
         raise VerificationException(f'Failed to resolve hostname: {hostname}')
 
-    raise NotImplementedError()
-
 
 def connect(hostname, port=443, timeout=3):
     context = ssl.create_default_context()
@@ -143,9 +141,3 @@ def main(url: str):
     if port is None:
         return resolve_then_connect(hostname)
     return resolve_then_connect(hostname, port)
-
-
-if __name__ == '__main__':
-    hostname = 'www.python.org'
-    success, msg = main(hostname)
-    print(success, msg)

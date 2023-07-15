@@ -244,5 +244,7 @@ def main():
 
 
 if __name__ == '__main__':
+    # TODO add executable to mash.src.bin
+    raise NotImplementedError()
     main()
     print('done')

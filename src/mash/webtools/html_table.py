@@ -1,4 +1,3 @@
-from argparse import ArgumentParser
 from functools import partial
 from logging import info
 import os
@@ -8,9 +7,6 @@ from dominate.tags import table, tbody, th, tr, td, style
 from dominate.util import raw
 
 
-from mash import io_util
-from mash.io_util import has_argument
-from mash.io_util import ArgparseWrapper, has_argument
 from mash.webtools.html_table_data import HTMLTableData, example_yaml_data, parse_json
 
 
@@ -92,15 +88,6 @@ def render(css, max_height, headings, with_width):
     return doc
 
 
-def add_cli_args(parser: ArgumentParser):
-    css = f'{os.path.dirname(__file__)}/../css/table.css'
-    if not has_argument(parser, 'file'):
-        parser.add_argument('file', default='', nargs='?',
-                            help='Table data files in .yaml format')
-        parser.add_argument('--css', default=css,
-                            help='Style sheet in .css format')
-
-
 def main(filename: str, stylesheet: str = None, html=True, md=False):
     if stylesheet:
         css = open(stylesheet).read()
@@ -130,13 +117,3 @@ def main(filename: str, stylesheet: str = None, html=True, md=False):
         open(f'{filename}-table.md', 'w').write(str(body))
 
     return doc
-
-
-if __name__ == '__main__':
-    with ArgparseWrapper() as parser:
-        add_cli_args(parser)
-
-    doc = main(io_util.parse_args.file,
-               io_util.parse_args.css,
-               md=True)
-    # print(doc)
