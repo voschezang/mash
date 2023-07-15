@@ -4,6 +4,8 @@
 Overview
 ========
 
+.. file:///Users/mark/src/python/mash/docs/build/html/modules/filesystem.html
+
 .. sidebar::
 
     See also:
@@ -25,7 +27,7 @@ Overview
 
 
 Library Reference
-=================
+-----------------
 
 .. toctree::
    :caption: Reference:
@@ -34,7 +36,7 @@ Library Reference
    reference.rst
 
 Internal Packages
------------------
+~~~~~~~~~~~~~~~~~
 
 .. toctree::
    :maxdepth: 1
@@ -47,11 +49,11 @@ Internal Packages
 
 
 Main Classes (Summary)
-======================
+----------------------
 
 
 Filesystem
-----------
+~~~~~~~~~~
 
 * :py:meth:`mash.filesystem.FileSystem`
 * :py:meth:`mash.filesystem.Discoverable`
@@ -60,7 +62,7 @@ Filesystem
 * :py:meth:`mash.filesystem.view.View`
 
 Object Parser
--------------
+~~~~~~~~~~~~~
 
 * :py:meth:`mash.object_parser.build`
     * :py:meth:`mash.object_parser.BuildError`
@@ -69,7 +71,7 @@ Object Parser
 * :py:meth:`mash.object_parser.OAS`
 
 Shell
------
+~~~~~
 
 * :py:meth:`mash.shell.ShellWithFileSystem`
     * :py:meth:`mash.shell.Shell`
@@ -79,7 +81,7 @@ Shell
 
 
 Main Classes (Expanded)
-=======================
+-----------------------
 
 .. autoclass:: mash.filesystem.FileSystem
    :members:
