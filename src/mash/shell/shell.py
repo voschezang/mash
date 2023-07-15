@@ -162,13 +162,19 @@ class Shell(BaseShell):
 
         Usage (prefix)
         --------------
-            `map f x y z` 
+
+        .. code-block:: sh
+
+            map f x y z
 
         Usage (infix)
         -------------
-            `f x |> map g`
-            `f x |> map g $ a b`
-            `f x >>= g`
+
+        .. code-block:: sh
+
+            f x |> map g
+            f x |> map g $ a b
+            f x >>= g
 
         If `$` is present, then each line from stdin is inserted there.
         Otherwise each line is appended.

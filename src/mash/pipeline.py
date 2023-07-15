@@ -50,9 +50,11 @@ class Processor:
 
         Usage
         -----
-        ```py
-        new_func = Processor.from_function(func)
-        ```
+
+        .. code-block:: python
+
+            new_func = Processor.from_function(func)
+
         Note that new_func and func must have the same name in order to be compatible with `pickle`.
 
         Parameters

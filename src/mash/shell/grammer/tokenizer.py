@@ -132,9 +132,17 @@ def main():
     def t_MAP(t):
         r'>>=|\|>\smap'
         """Syntax for "map":
-            `f x >>= g`
+
+        .. code-block:: sh
+
+            f x >>= g
+
         or
+
+        .. code-block:: sh
+
             `f x |> map g`
+
         """
         return t
 

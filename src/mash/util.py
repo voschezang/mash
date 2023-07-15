@@ -397,12 +397,14 @@ def list_prefix_matches(element: str, elements: List[str]):
 def glob(value: str, options: List[str] = [], strict=False) -> Iterable[str]:
     """Filter items based on Unix shell-style wildcards
     E.g.
-    ```
-    w?ldcard
-    [a-e]*
-    ranges_{1..3}
-    options_{a,b,c}
-    ```
+
+    .. code-block:: sh
+
+        w?ldcard
+        [a-e]*
+        ranges_{1..3}
+        options_{a,b,c}
+
     """
     try:
         values = braceexpand(value)
