@@ -10,7 +10,6 @@ tokens = (
 
     'BREAK',  # \n ;
     'INDENT',
-    'SPACE',
     'DEFINE_FUNCTION',  # f ( ):
 
     'ASSIGN',  # =

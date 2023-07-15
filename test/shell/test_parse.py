@@ -247,7 +247,21 @@ def test_parse_indent_semicolon():
     assert result[0] == 'echo'
 
 
-def test_parse_if_else():
+def test_parse_if_then_else():
+    line = 'if 1 == 3 then 2 else'
+    result = parse_line(line)
+    assert isinstance(result, IfThenElse)
+    cond, true, false = result.condition, result.then, result.otherwise
+    assert true == '2'
+    assert false is None
+
+    assert isinstance(cond, BinaryExpression)
+    assert cond.op == '=='
+    assert cond.lhs == '1'
+    assert cond.rhs == '3'
+
+
+def test_parse_if_then_else_3():
     line = 'if 1 == 3 then 2 else 3'
     result = parse_line(line)
     assert isinstance(result, IfThenElse)

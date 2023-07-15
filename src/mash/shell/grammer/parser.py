@@ -125,15 +125,15 @@ def parse(text, init=True):
         _, _if, cond, _then, true, _else, false = p
         p[0] = IfThenElse(cond, true, false)
 
+    def p_if_then_else(p):
+        'conditional : IF conjunction THEN conjunction ELSE'
+        _, _if, cond, _then, true, _else = p
+        p[0] = IfThenElse(cond, true)
+
     def p_if_then_inline(p):
         'full_conditional : IF conjunction THEN conjunction'
         _, _if, cond, _then, true = p
         p[0] = IfThen(cond, true)
-
-    def p_if_then_else(p):
-        'conditional : IF conjunction THEN conjunction ELSE'
-        _, _if, cond, _then, true, _else = p
-        p[0] = ('if-then-else', cond, true, None)
 
     def p_if_then(p):
         'conditional : IF conjunction THEN'

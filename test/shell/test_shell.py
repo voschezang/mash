@@ -353,3 +353,8 @@ def test_save_and_load_session():
     assert shell.env[k] == str(v)
 
     Path(filename).unlink(True)
+
+
+def test_shell_scope():
+    with raises(NotImplementedError):
+        run_command('( 1 )')
