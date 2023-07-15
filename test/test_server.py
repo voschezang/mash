@@ -6,7 +6,7 @@ from http import HTTPStatus
 
 from mash.server.repository import UPLOAD_FOLDER
 from mash.server.routes.default import basepath
-from mash.server import init as init_server
+from mash.server.server import init as init_server
 
 LARGE_N = 1000
 
