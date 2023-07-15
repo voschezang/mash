@@ -41,6 +41,8 @@ Library Reference
 Internal Packages
 ~~~~~~~~~~~~~~~~~
 
+Packages
+
 .. toctree::
    :maxdepth: 1
    :caption: Packages:

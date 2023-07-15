@@ -1,6 +1,7 @@
 *.png
 *.pyc
 *.pickle
+*.swp
 *__pycache__
 *.egg-info
 .DS_Store
