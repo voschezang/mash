@@ -7,6 +7,7 @@ import dominate
 from dominate.tags import table, tbody, th, tr, td, style
 from dominate.util import raw
 
+
 from mash import io_util
 from mash.io_util import has_argument
 from mash.io_util import ArgparseWrapper, has_argument

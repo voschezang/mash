@@ -1,4 +1,3 @@
-from pipeline import Strategy
 from multiprocessing.sharedctypes import Value
 import aiohttp
 from aiohttp import ClientSession
@@ -6,9 +5,9 @@ import time
 import random
 
 from mash import util
-from mash.servers.server import basepath
+from mash.server import basepath
 from mash.webtools.parallel import asynchronous
-from mash.pipeline import Processor, PushPull, identity, constant, duplicate
+from mash.pipeline import Processor, PushPull, Strategy, identity, constant, duplicate
 
 url = 'http://localhost:5000' + basepath
 

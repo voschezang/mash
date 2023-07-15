@@ -1,3 +1,17 @@
+"""Parse tokens.
+Tokens are defined in shell.grammer.tokenizer
+
+.. code-block:: yaml
+
+    lines: a BREAK-separated sequence of `line`
+    line: `statement` with optional INDENT
+    statement : assignment
+    conditional
+                    | definition
+                    | conjunction
+                    | return_statement
+
+"""
 from logging import getLogger
 import ply.yacc as yacc
 from mash.shell.ast import Assign, BashPipe, BinaryExpression, Else, ElseIf, ElseIfThen, FunctionDefinition, If, IfThen, IfThenElse, Indent, InlineFunctionDefinition, Lines, LogicExpression, Map, Math, Method, Pipe, Quoted, Return, Shell, Terms, Then, Variable, Word
@@ -66,20 +80,14 @@ def parse(text, init=True):
         """statement : assignment
                      | conditional
                      | definition
-                     | inner_statement
+                     | conjunction
                      | return_statement
         """
         p[0] = p[1]
 
     def p_statement_return(p):
-        'return_statement : RETURN inner_statement'
+        'return_statement : RETURN conjunction'
         p[0] = Return(p[2])
-
-    def p_inner_statement(p):
-        """inner_statement : conjunction
-                           | full_conditional
-        """
-        p[0] = p[1]
 
     def p_final_statement(p):
         """final_statement : conjunction
@@ -88,19 +96,19 @@ def parse(text, init=True):
         p[0] = p[1]
 
     def p_assign(p):
-        'assignment : terms ASSIGN inner_statement'
+        'assignment : terms ASSIGN conjunction'
         p[0] = Assign(p[1], p[3], p[2])
 
     def p_assign_right(p):
-        'assignment : inner_statement ASSIGN_RIGHT terms'
+        'assignment : conjunction ASSIGN_RIGHT terms'
         p[0] = Assign(p[3], p[1], p[2])
 
     def p_def_inline_function(p):
-        'definition : METHOD LPAREN terms RPAREN DEFINE_FUNCTION inner_statement'
+        'definition : METHOD LPAREN terms RPAREN DEFINE_FUNCTION conjunction'
         p[0] = InlineFunctionDefinition(p[1], p[3], body=p[6])
 
     def p_def_inline_function_constant(p):
-        'definition : METHOD LPAREN RPAREN DEFINE_FUNCTION inner_statement'
+        'definition : METHOD LPAREN RPAREN DEFINE_FUNCTION conjunction'
         p[0] = InlineFunctionDefinition(p[1], body=p[5])
 
     def p_def_function(p):
@@ -112,7 +120,7 @@ def parse(text, init=True):
         p[0] = FunctionDefinition(p[1])
 
     def p_scope(p):
-        'scope : LPAREN inner_statement RPAREN'
+        'scope : LPAREN conjunction RPAREN'
         q = p[2]
         p[0] = ('scope', q)
 
@@ -175,13 +183,7 @@ def parse(text, init=True):
         else:
             p[0] = Else(otherwise=p[2])
 
-    def p_conditional(p):
-        """conditional : conjunction
-                       | full_conditional
-        """
-        p[0] = p[1]
-
-    def p_pipe_py(p):
+    def p_conjunction_of_expressions(p):
         'conjunction : expression PIPE conjunction'
         p[0] = Pipe(p[1], p[3], p[2])
 
