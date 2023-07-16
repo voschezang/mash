@@ -38,6 +38,14 @@ Library Reference
 
    pages/reference.rst
 
+Packages
+
+- `Shell <pages/SHELL.html>`_
+- `Server <modules/server.html#module-server.server>`_
+- `Webtools <modules/webtools.html#module-webtools>`_
+
+
+
 Internal Packages
 ~~~~~~~~~~~~~~~~~
 

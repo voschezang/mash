@@ -48,7 +48,7 @@ docs-show:
 	open docs/build/html/index.html
 
 docs-watch:
-	 find docs/source -name '*.rst' -type f | entr make html
+	 find docs/source -type f  -prune -o -name 'docs/source/modules/*.rst' | entr make htmml
 
 docs-clean:
 	rm -rf docs/source/modules
