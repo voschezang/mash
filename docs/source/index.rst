@@ -4,6 +4,7 @@
 Overview
 ========
 
+
 .. file:///Users/mark/src/python/mash/docs/build/html/modules/filesystem.html
 
 .. sidebar::
@@ -25,9 +26,10 @@ Overview
    :maxdepth: 1
 
    README <pages/README.md>
-   Implementation <pages/SHELL.md>
+   Implementation <pages/shell.md>
    Reference <pages/SHELL_REFERENCE.md>
    Example Mash script <pages/lib.rst>
+   Shell CLI <pages/shell_help.rst>
 
 Library Reference
 -----------------
@@ -40,7 +42,7 @@ Library Reference
 
 Packages
 
-- `Shell <pages/SHELL.html>`_
+- `Shell <pages/shell.html>`_
 - `Server <modules/server.html#module-server.server>`_
 - `Webtools <modules/webtools.html#module-webtools>`_
 

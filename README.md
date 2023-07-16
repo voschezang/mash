@@ -4,8 +4,8 @@
 
 **Docs**:
 [MAIN](https://github.com/voschezang/mash/blob/main/README.md)
-| [SHELL.md](https://github.com/voschezang/mash/blob/main/SHELL.md)
-| [REFERENCE.md](https://github.com/voschezang/mash/blob/main/SHELL_REFERENCE.md)
+| [Shell](https://voschezang.github.io/mash-docs/pages/shell.html)
+| [Reference](https://github.com/voschezang/mash/blob/main/SHELL_REFERENCE.md)
 | [Library Docs](https://voschezang.github.io/mash-docs/)
 
 <img src="https://github.com/voschezang/mash/blob/main/img/dall-E/bosh-terminal-icon.png?raw=true" style="max-width: 5%" alt="A drawing of a terminal"></img>
@@ -44,8 +44,9 @@ See [`src/examples`](src/examples) for advances usage examples.
 
 **Documentation**
 
-- Implementation: [SHELL.md](https://github.com/voschezang/mash/blob/main/SHELL.md)
-- Language: [REFERENCE.md](https://github.com/voschezang/mash/blob/main/SHELL_REFERENCE.md).
+
+| Implementation: [Shell](https://voschezang.github.io/mash-docs/pages/shell.html)
+- Language: [Reference](https://github.com/voschezang/mash/blob/main/SHELL_REFERENCE.md).
 
 **Table of Contents**
 

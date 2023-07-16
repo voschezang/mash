@@ -19,6 +19,7 @@ class Cmd2(cmd.Cmd):
     This class is restricted to functionality that requires Cmd methods to be overrriden.
 
     Features:
+
     - Confirmation mode to allow a user to accept or decline commands.
     - Error handling.
     - I/O methods: cat, source, print, println, exit

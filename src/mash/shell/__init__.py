@@ -1,3 +1,7 @@
+"""
+See `shell <../pages/SHELL.html>`_
+"""
+
 from mash.shell.errors import ShellError, ShellPipeError, ShellSyntaxError
 from mash.shell.shell import Shell
 from mash.shell.function import ShellFunction

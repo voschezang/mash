@@ -1,9 +1,23 @@
 """A dummy web server.
 
 API endpoints
-- /verify server
-- /users
-- /documents
+
+.. code-block:: yaml
+
+    - /verify server
+    - /users
+    - /documents
+
+The internal structure is decoupled.
+
+.. code-block:: yaml
+
+    - domain: Domain model
+        - user.py # A domain object
+    - routes: Exposed API methods
+        - users.py # User-related routing
+    - repository.py: Persistency layer
+
 """
 from flask import Flask
 import os
@@ -20,6 +34,9 @@ def init():
     os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
     app = Flask(__name__)
+
+    # TODO use https://flask-restful.readthedocs.io/en/latest/index.html
+
     app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
     init_routes(app)
 

@@ -23,8 +23,10 @@ from mash.util import has_method, is_valid_method_name
 
 description = 'If no positional arguments are given then an interactive subshell is started.'
 epilog = f"""
---------------------------------------------------------------------------------
+
 {bold('Default Commands')}
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 Run shell commands by prefixing them with `!`.
 E.g.
     ./shell.py !echo abc; echo def # Bash
@@ -34,15 +36,18 @@ E.g.
     ./shell.py 'print abc; print def \n print ghi'
 
 {bold('Variables')}
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 Assign constants or evaluate expressiosn:
-
-.. code-block:: bash
-
+```
     a = 100
     b <- print $a
     echo $a $b
+```
 
 {bold('Interopability')}
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 Interopability with Bash can be done with pipes:
     `|>` for Python.
     `|`  for Bash
@@ -51,14 +56,18 @@ Interopability with Bash can be done with pipes:
 
 1. To stdin and stdout
 E.g.
+```
     echo abc | ./shell.py print
     ./shell.py print abc | echo
+```
 
 2. Within the dsl
 E.g.
+```
     ./shell.py print abc # Python
     ./shell.py 'print abc | echo'
     ./shell.py 'print abc |> print'
+```
 """
 
 
@@ -290,7 +299,7 @@ def add_cli_args(parser: ArgumentParser):
 def set_cli_args():
     global confirmation_mode
 
-    with ArgparseWrapper(description=description) as parser:
+    with ArgparseWrapper(description=description, epilog=epilog) as parser:
         add_cli_args(parser)
 
     if io_util.parse_args.safe:

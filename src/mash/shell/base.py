@@ -32,6 +32,7 @@ class BaseShell(Cmd2):
     This class is restricted to functionality that requires Cmd methods to be overrriden.
 
     Features:
+
     - An environment with local and global variable scopes.
     - Save/load sessions.
     - Decotion with functions, both at runtime and compile time.

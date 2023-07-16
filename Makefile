@@ -33,6 +33,7 @@ upload:
 
 docs-init:
 	mkdir -p docs
+	python3 src/examples/shell_example.py -h > docs/source/modules/shell_help.txt
 	cd docs && yes y | make sphinx-quickstart
 	cd docs && make html
 
@@ -48,7 +49,7 @@ docs-show:
 	open docs/build/html/index.html
 
 docs-watch:
-	 find docs/source -type f  -prune -o -name 'docs/source/modules/*.rst' | entr make htmml
+	find docs/source -type f -name '*.rst' -o -name '*.md' -prune -o -name 'docs/source/modules/*.rst' | entr make html
 
 docs-clean:
 	rm -rf docs/source/modules
