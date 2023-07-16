@@ -1,3 +1,5 @@
+.PHONY: docs
+
 test:
 	# print difference as a warning
 	autopep8 -r --diff .
@@ -33,23 +35,20 @@ upload:
 
 docs-init:
 	mkdir -p docs
-	python3 src/examples/shell_example.py -h > docs/source/modules/shell_help.txt
 	cd docs && yes y | make sphinx-quickstart
-	cd docs && make html
+	make docs
 
-make html:
+docs:
 	cd docs && sphinx-apidoc -o source/modules ../src/mash
+	python3 src/examples/shell_example.py -h > docs/source/modules/shell_help.txt
 	cd docs && make html
-
-docs-generate:
-	cd docs && make html
-	make docs-show
 
 docs-show:
 	open docs/build/html/index.html
 
 docs-watch:
-	find docs/source -type f -name '*.rst' -o -name '*.md' -prune -o -name 'docs/source/modules/*.rst' | entr make html
+	make docs-show
+	find docs/source -type f -name '*.rst' -o -name '*.md' -prune -o -name 'docs/source/modules/*.rst' | entr make docs
 
 docs-clean:
 	rm -rf docs/source/modules
