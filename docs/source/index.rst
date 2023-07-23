@@ -43,9 +43,10 @@ Library Reference
 Packages
 
 - `Shell <pages/shell.html>`_
+- `Filesystem <modules/filesystem.html>`_
+- `Object parser <modules/object_parser.html#module-object_parser.factory>`_
 - `Server <modules/server.html#module-server.server>`_
 - `Webtools <modules/webtools.html#module-webtools>`_
-
 
 
 Internal Packages

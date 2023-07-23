@@ -34,9 +34,6 @@ def init():
     os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
     app = Flask(__name__)
-
-    # TODO use https://flask-restful.readthedocs.io/en/latest/index.html
-
     app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
     init_routes(app)
 

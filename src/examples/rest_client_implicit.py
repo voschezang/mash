@@ -5,7 +5,8 @@ if __name__ == '__main__':
     import _extend_path
 
 from json import JSONDecodeError, loads
-from urllib.parse import quote_plus, urlparse
+from urllib.parse import quote_plus, urljoin, urlparse
+from mash.filesystem.view import View
 
 from mash.io_util import log
 from mash.server.routes.default import basepath
@@ -18,24 +19,24 @@ http_resource = object()
 
 
 def retrieve_data(_fs, key, url, cwd, *_args):
-    endpoint = 'https://dummy-api.com' + basepath[:-1]
+    endpoint = 'https://dummy-api.com' + basepath
     if url is http_resource:
         path = _infer_path(str(key), cwd)
-        url = _infer_url(endpoint, path)
-        return get(url)
+        _url = _infer_url(endpoint, path)
+        return get(_url)
     return url
 
 
-def _infer_url(url: str, path: str):
+def _infer_url(url: str, path: str) -> str:
     url = quote_plus(url, safe='://.?&')
     if path:
-        url += '/' + '/'.join(str(k) for k in path)
-    else:
+        url = urljoin(url, '/'.join(str(k) for k in path))
+    elif not url.endswith('/'):
         url += '/'
     return url
 
 
-def _infer_path(key, cwd):
+def _infer_path(key: str, cwd: View) -> list:
     path = cwd.path
     if 'repository' in path:
         i = path.index('repository')
@@ -48,7 +49,7 @@ def _infer_path(key, cwd):
     return path
 
 
-def get(url):
+def get(url: str):
     global http_resource
 
     # query a mock server
@@ -67,7 +68,7 @@ def get(url):
     return data
 
 
-def init():
+def init() -> tuple:
     shell = ShellWithFileSystem(data={'repository': http_resource},
                                 get_value_method=retrieve_data)
 

@@ -3,7 +3,6 @@ from logging import debug
 from flask import request
 from http import HTTPStatus
 
-
 from mash.object_parser.errors import BuildError, BuildErrors, to_string
 from mash.object_parser import build
 from mash.server.domain.user import RawUser
