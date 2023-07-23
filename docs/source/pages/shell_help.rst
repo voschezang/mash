@@ -1,4 +1,4 @@
-.. _shell-h:
+.. _shell-help:
 
 Shell
 =====

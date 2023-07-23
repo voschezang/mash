@@ -1,6 +1,7 @@
 .. Mash documentation master file, created by
    sphinx-quickstart
 
+
 Overview
 ========
 
@@ -24,10 +25,15 @@ Overview
 
    README <pages/README.md>
    Implementation <pages/shell.md>
+   Shell CLI <pages/shell_help.rst>
+   Example code <modules/mash_examples.md>
+
+.. toctree::
+   :hidden:
+
    Reference <pages/SHELL_REFERENCE.md>
    Example Mash script <pages/lib.rst>
-   Shell CLI <pages/shell_help.rst>
-   Shell AST <pages/ast.rst>
+
 
 Library Reference
 -----------------
@@ -37,6 +43,8 @@ Library Reference
    :maxdepth: 1
 
    pages/reference.rst
+   Shell AST <pages/ast.rst>
+   Shell Classes <pages/shell_classes.rst>
 
 Packages
 

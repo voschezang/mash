@@ -1,5 +1,5 @@
 """
-See `shell <../pages/SHELL.html>`_
+See `shell <../pages/shell.html>`_
 """
 
 from mash.shell.errors import ShellError, ShellPipeError, ShellSyntaxError

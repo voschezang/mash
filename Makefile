@@ -1,5 +1,8 @@
 .PHONY: docs
 
+github = https://github.com/voschezang/mash/blob/main/
+out = docs/source/modules
+
 test:
 	# print difference as a warning
 	autopep8 -r --diff .
@@ -39,9 +42,11 @@ docs-init:
 	make docs
 
 docs:
-	cd docs && sphinx-apidoc -o source/modules ../src/mash
-	python3 src/examples/shell_example.py -h > docs/source/modules/shell_help.txt
+	make docs-generate
 	cd docs && make html
+docs-clean:
+	rm -rf docs/source/modules
+	rm -rf docs/build
 
 docs-show:
 	open docs/build/html/index.html
@@ -50,9 +55,15 @@ docs-watch:
 	make docs-show
 	find docs/source -type f -name '*.rst' -o -name '*.md' -prune -o -name 'docs/source/modules/*.rst' | entr make docs
 
-docs-clean:
-	rm -rf docs/source/modules
-	rm -rf docs/build
+docs-generate:
+	# generate modules from python source code
+	cd docs && sphinx-apidoc -o source/modules ../src/mash
+	# generate shell help
+	python3 src/examples/shell_example.py -h > ${out}/shell_help.txt
+	# generate examples
+	echo '# Examples\n' > ${out}/mash_examples.md
+	find src/examples/*.py -type f -regex 'src/examples/[a-z][a-z_]*.py' -exec echo '- [{}](${github}{})'  \; >> ${out}/mash_examples.md
+
 
 pydocs:
 	cd src && pydoc -b

@@ -24,6 +24,13 @@ class Cmd2(cmd.Cmd):
     - Error handling.
     - I/O methods: cat, source, print, println, exit
     - String methods: echo, flatten
+
+    Methods:
+
+    .. code-block:: yaml
+
+        cmdloop(): An interactive REPL.
+        onecmd(): Run commands ad-hoc.
     """
 
     intro = 'Press ctrl-d to exit, ctrl-c to cancel, ? for help, ! for shell interop.\n' + \

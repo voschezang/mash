@@ -77,6 +77,10 @@ class Shell(BaseShell):
 
     The language grammer is based on a BNF-based grammer, which is defined in 
     `shell.grammer.parser <https://voschezang.github.io/mash-docs/modules/shell.grammer.html#module-shell.grammer.parser>`_
+
+    The AST is implemented here:
+    `shell.ast <https://voschezang.github.io/mash-docs/pages/ast.html>`_
+
     The language implementation is defined in shell.ast.
     """
 

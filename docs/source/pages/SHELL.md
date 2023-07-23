@@ -2,31 +2,16 @@
 
 ## Overview
 
-The `Shell` class is based on `cmd.Cmd`. It extends it with a custom grammer, user-definable variables, functions, pipes and more.
-
-`Cmd2` extends [`cmd.Cmd`](https://docs.python.org/3.11/library/cmd.html) with a few basic methods. This can be used as an example as how to write a custom subclass for `Cmd` or `Shell`.
-
-```sh
-cmd.Cmd # Python's builtin framework for CLI tools
-└── Cmd2 # Add error handling and I/O methods
-    └── BaseShell # Support environment variables and sessions
-        └── Shell # Use a language model: shell.ast
-```
-
-The main datastructure is `mash.filesystem`. It's inferface is inspired by unix filesystems. It is used to:
+See [shell subclasses](https://voschezang.github.io/mash-docs/pages/shell_classes.html). The main datastructure of `Shell`  is `mash.filesystem`. It's inferface is inspired by unix filesystems. It is used to:
 
 - Implement local/global variable scopes in `Shell`.
 - Let a user browse REST-like resources (directories) with CRUD operations:
   - Discovery: `cd, list, get, tree, show`.
   - Mutations: `new, set, mv, cp`.
 
-The class discoverable
-
-
-
 ### Module Tree
 
-In [src](https://github.com/voschezang/mash/tree/main/src).
+For more details, see the overview of the [Shell classes](https://voschezang.github.io/mash-docs/pages/shell_classes.html) overview, the [AST classes](https://voschezang.github.io/mash-docs/pages/ast.html) and the full [source code](https://github.com/voschezang/mash/tree/main/src).
 
 ```sh
 src
@@ -49,10 +34,7 @@ src
     │   ├── ast # The Abstract Syntax Tree (AST) and related logic
     │   │   └── # Node, Word, Lines
     │   ├── grammer # Parse raw text based on BNF grammer and build the AST
-    │   ├── internals
-    │   ├── cmd2.py # An extension of cmd.Cmd
-    │   ├── shell.py # Extend Cmd2 with the language model
-    │   └── with_filesystem.py
+    │   └── ShellWithFileSystem, Shell, BaseShell, Cmd2
     │
     ├── subshell.py
     └── cli.py # A CLI that combines Shell with quo.Prompt
@@ -68,60 +50,15 @@ The language model is based on an intermediate representation: an [Abstract Synt
 - This is used to build the tree.
 - Each *node* in the AST is a class with it's own behaviour.
 
-```python
-class Node(str); # incl. Word, Variable, QuotedString
-class Nodes(str);
-class Lines(str);
+```sh
+Lines
+└── Nodes
+    └── Node
 ```
+
+See [`shell.ast`](https://voschezang.github.io/mash-docs/pages/ast.html).
 
 ### Shell
-
-In pseudocode:
-
-```python
-import cmd
-
-class ShellWithFileSystem:
-    shell: Shell
-    repository: FileSystem # a directory or REST resource
-
-class Shell(Cmd2):
-    """Shell.
-    Support multiline statements, pipes, conditions, variables and inline function definitions.
-    Use a BNF-based grammer in `parser.py` to construct an AST.
-    """
-
-class BaseShell(Cmd2):
-    """Extend Cmd with various capabilities.
-    This class is restricted to functionality that requires Cmd methods to be overrriden.
-
-    Features:
-    - An environment with local and global variable scopes.
-    - Save/load sessions.
-    - Decotion with functions, both at runtime and compile time.
-    """
-    env: FileSystem # variable scopes
-
-    def save_session();
-    def load_session();
-    def add_functions();
-    def remove_functions();
-
-class Cmd2(cmd.Cmd):
-    """Extend cmd.Cmd with various capabilities.
-    This class is restricted to functionality that requires Cmd methods to be overrriden.
-
-    Features:
-    - Confirmation mode to allow a user to accept or decline commands.
-    - Error handling.
-    - I/O methods: cat, source, print, println, exit
-    - String methods: echo, flatten
-    """
-
-    def cmdloop();
-    def onecmd();
-    def default();
-```
 
 ### Filesystem
 
