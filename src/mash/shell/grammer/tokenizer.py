@@ -133,13 +133,13 @@ def main():
         r'>>=|\|>\smap'
         """Syntax for "map":
 
-        .. code-block:: sh
+        .. code-block:: bash
 
             f x >>= g
 
         or
 
-        .. code-block:: sh
+        .. code-block:: bsh
 
             `f x |> map g`
 

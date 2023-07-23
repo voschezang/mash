@@ -34,7 +34,13 @@ class Cmd2(cmd.Cmd):
 
     def onecmd(self, lines: str) -> bool:
         """Parse and run `line`.
-        Returns 0 on success and None otherwise
+        Returns 0 on success and None otherwise.
+        May raises ShellSyntaxError.
+
+        Parameters
+        ----------
+        lines : str
+            The commands to run
         """
         if lines == 'EOF':
             logging.debug('Aborting: received EOF')
@@ -60,10 +66,17 @@ class Cmd2(cmd.Cmd):
             pass
 
     def onecmd_inner(self, lines: str):
+        """A wrapper for onecmd that can be overridden.
+
+        Parameters
+        ----------
+        lines : str
+            The command to run
+        """
         return super().onecmd(lines)
 
     def onecmd_prehook(self, line):
-        """Similar to cmd.precmd but executed before cmd.onecmd
+        """Similar to cmd.precmd but executed before cmd.onecmd.
         """
         if confirmation_mode:
             assert io_util.interactive

@@ -6,12 +6,23 @@ The `Shell` class is based on `cmd.Cmd`. It extends it with a custom grammer, us
 
 `Cmd2` extends [`cmd.Cmd`](https://docs.python.org/3.11/library/cmd.html) with a few basic methods. This can be used as an example as how to write a custom subclass for `Cmd` or `Shell`.
 
+```sh
+cmd.Cmd # Python's builtin framework for CLI tools
+└── Cmd2 # Add error handling and I/O methods
+    └── BaseShell # Support environment variables and sessions
+        └── Shell # Use a language model: shell.ast
+```
+
 The main datastructure is `mash.filesystem`. It's inferface is inspired by unix filesystems. It is used to:
 
 - Implement local/global variable scopes in `Shell`.
 - Let a user browse REST-like resources (directories) with CRUD operations:
   - Discovery: `cd, list, get, tree, show`.
   - Mutations: `new, set, mv, cp`.
+
+The class discoverable
+
+
 
 ### Module Tree
 
@@ -77,7 +88,7 @@ class ShellWithFileSystem:
 class Shell(Cmd2):
     """Shell.
     Support multiline statements, pipes, conditions, variables and inline function definitions.
-    Use a BNF-based grammer in `lex_parser.py` to construct an AST.
+    Use a BNF-based grammer in `parser.py` to construct an AST.
     """
 
 class BaseShell(Cmd2):

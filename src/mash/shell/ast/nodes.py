@@ -1,5 +1,48 @@
-"""Containers
-Nodes that contain multiple nodes.
+"""
+Nodes 
+-----
+
+A container class for `Node`'s.
+See `shell.grammer.parser <https://voschezang.github.io/mash-docs/modules/shell.grammer.html#module-shell.grammer.parser>`_
+
+.. code-block:: bash
+
+    # Tree
+    Lines
+    └── Nodes
+        └── Node
+
+Node
+----
+
+An "edge" of the AST.
+
+Subclasses of `Node`:
+        
+.. code-block:: bash
+
+    Node
+    ├── Condition
+    │   ├── ElseCondition
+    │   │   ├── Else
+    │   │   └── ElseIf
+    │   ├── If
+    │   ├── IfThen
+    │   ├── IfThenElse
+    │   └── Then
+    ├── Infix
+    │   ├── Assign
+    │   ├── BashPipe
+    │   ├── BinaryExpression
+    │   ├── LogicExpression
+    │   ├── Map
+    │   └── Pipe
+    └── Term
+        ├── Method
+        ├── Quoted
+        ├── Variable
+        └── Word        
+
 """
 
 from typing import List
@@ -15,6 +58,9 @@ from mash.shell.grammer.parse_functions import indent_width, to_string
 
 
 class Nodes(Node):
+    """A container class for `Node`'s.
+    """
+
     def __init__(self, values: List[Node]):
         self._values = values
 

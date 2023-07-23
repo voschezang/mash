@@ -8,6 +8,17 @@ from mash.util import has_method
 
 
 class FunctionDefinition(Node):
+    """A user-defined function.
+
+    .. code-block:: sh
+
+        f (x):
+            return $x
+
+        # e.g.
+        f 2 # yield 2
+    """
+
     def __init__(self, f, args=None, body=None):
         self.f = f
         self.args = [] if args is None else args
@@ -47,6 +58,16 @@ class FunctionDefinition(Node):
 
 
 class InlineFunctionDefinition(FunctionDefinition):
+    """A user-defined inline (oneline) function.
+
+    .. code-block:: sh
+
+        f (x): $x
+
+        # e.g.
+        f 2 # yield 2
+    """
+
     def run(self, prev_result='', shell: BaseShell = None, lazy=False):
         args = self.define_function(shell, lazy)
 

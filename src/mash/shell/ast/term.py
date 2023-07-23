@@ -1,3 +1,17 @@
+"""
+Term 
+----
+
+.. code-block:: bash
+
+    # Classes
+    Term
+    ├── Method # f()
+    ├── Quoted # "abc"
+    ├── Variable $x
+    └── Word
+"""
+
 from mash.shell.internals.if_statement import Abort
 from mash.shell.internals.helpers import run_function
 from mash.shell.ast.node import Node

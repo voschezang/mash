@@ -206,13 +206,6 @@ Numbers: `int 1`, `float 1.0`
 
 Shorthand notation:  `a = $100.0`, `b = $2e3`, `c = $2^2`
 
-Using [Polish notation](https://en.wikipedia.org/wiki/Polish_notation):
-
-```python
-+ x y # addition
-- x y # subtraction
-```
-
 **Performance & Parallelization**
 
 Benefit

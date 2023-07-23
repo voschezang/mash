@@ -11,14 +11,7 @@ from mash.util import quote_all, translate_items
 
 
 class Node(UserString):
-    """A node of an abstract syntax tree (AST).
-
-    Properties
-    ----------
-    data : Node or str
-        The core data
-    values : list
-        An iterable version of the core data
+    """A node (edge) of an abstract syntax tree (AST).
     """
 
     def __init__(self, data=''):

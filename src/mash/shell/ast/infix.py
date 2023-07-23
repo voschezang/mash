@@ -51,6 +51,17 @@ class Infix(Node):
 
 
 class Assign(Infix):
+    """Assign a value to a variable.
+
+    .. code-block:: sh
+
+        # static assignment
+        a = 10
+
+        # left- and right-hand evaluation
+        b <- range 10
+        range 10 -> c
+    """
     @property
     def key(self) -> Node:
         return self.lhs
@@ -113,6 +124,13 @@ class BinaryExpression(Infix):
 
 
 class Pipe(Infix):
+    """Pipe
+
+    .. code-block:: sh
+
+        range 10 |> flatten
+    """
+
     def run(self, prev_result='', shell: BaseShell = None, lazy=False):
         prev = shell.run_commands(self.lhs, prev_result, run=not lazy)
         next = shell.run_commands(self.rhs, prev, run=not lazy)
@@ -120,6 +138,13 @@ class Pipe(Infix):
 
 
 class BashPipe(Infix):
+    """Pipe
+
+    .. code-block:: sh
+
+        echo abcde | egrep -o 'a??'
+    """
+
     def run(self, prev_result='', shell: BaseShell = None, lazy=False):
         prev = shell.run_commands(self.lhs, prev_result, run=not lazy)
         line = shell.run_commands(self.rhs, run=False)
@@ -133,6 +158,13 @@ class BashPipe(Infix):
 
 
 class Map(Infix):
+    """Apply a function to each element of a sequence.
+
+    .. code-block:: sh
+
+        range 10 >>= echo The value is $ .
+    """
+
     def run(self, prev_result='', shell: BaseShell = None, lazy=False):
         prev = shell.run_commands(self.lhs, prev_result, run=not lazy)
 

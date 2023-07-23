@@ -4,7 +4,7 @@
 
 **Docs**:
 [MAIN](https://github.com/voschezang/mash/blob/main/README.md)
-| [Shell](https://voschezang.github.io/mash-docs/pages/shell.html)
+| [Shell](https://voschezang.github.io/mash-docs/pages/source/shell.html)
 | [Reference](https://github.com/voschezang/mash/blob/main/SHELL_REFERENCE.md)
 | [Library Docs](https://voschezang.github.io/mash-docs/)
 
@@ -44,8 +44,8 @@ See [`src/examples`](src/examples) for advances usage examples.
 
 **Documentation**
 
-
 | Implementation: [Shell](https://voschezang.github.io/mash-docs/pages/shell.html)
+
 - Language: [Reference](https://github.com/voschezang/mash/blob/main/SHELL_REFERENCE.md).
 
 **Table of Contents**

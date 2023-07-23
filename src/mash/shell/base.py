@@ -35,7 +35,7 @@ class BaseShell(Cmd2):
 
     - An environment with local and global variable scopes.
     - Save/load sessions.
-    - Decotion with functions, both at runtime and compile time.
+    - Decoration with functions, both at runtime and compile time.
     """
 
     def __init__(self, *args, env: Dict[str, Any] = None,
@@ -46,7 +46,13 @@ class BaseShell(Cmd2):
         Parameters
         ----------
             env : dict
-                Must be JSON serializable
+                Environment. Must be JSON serializable.
+            use_model : bool
+                Flag to indicate that a language model should be used.
+            save_session_prehook : callable
+                A function to be called before saving a session.
+            load_session_posthook : callable
+                A function to be called after loading a session.
         """
         super().__init__(*args, **kwds)
         self.use_model = use_model
@@ -110,14 +116,14 @@ class BaseShell(Cmd2):
         self._last_results[self._last_results_index] = value
 
     def is_hidden_function(self, k: str) -> bool:
-        """Check whether `k` is an existing function.
+        """Check whether `k` is an existing hidden function.
         """
         return any(k in keys for keys in self.function_groups.values())
 
-    def is_special_function(self, k: str) -> bool:
+    def is_special_function(self, char: str) -> bool:
         """Check whether `char` is a special characters method
         """
-        return k in self.function_groups[CHAR]
+        return char in self.function_groups[CHAR]
 
     def is_function(self, k: str) -> bool:
         """Check whether `k` is an existing function. 
@@ -244,6 +250,10 @@ class BaseShell(Cmd2):
         return self.function_groups[CHAR][k](*args)
 
     def run_hidden_function(self, k: str, args):
+        """Run a hidden function.
+        See base.is_hidden_function
+
+        """
         for group in self.function_groups.values():
             if k in group:
                 return group[k](*args)
@@ -252,7 +262,14 @@ class BaseShell(Cmd2):
 
     def add_functions(self, functions: Dict[str, Function], group_key=None):
         """Add functions to this instance at runtime.
-        Use a key to select a group of functions
+        Use a key to select a group of functions.
+
+        Parameters
+        ----------
+        functions : dict
+            A dictionary of functions to add.
+        group_key : str
+            A key to select a group of functions.
         """
         if group_key is None:
             group_key = default_function_group_key
@@ -295,6 +312,8 @@ class BaseShell(Cmd2):
     ############################################################################
 
     def save_session(self, session=default_session_filename):
+        """Save the current session to disk.
+        """
         self.save_session_prehook()
 
         if not self.env:
@@ -318,12 +337,30 @@ class BaseShell(Cmd2):
             f.write(json)
 
     def reset_locals(self):
+        """Reset enviornment variables and the current working directory.
+        """
         self.locals.cd()
 
     def try_load_session(self, session=default_session_filename):
+        """Try to load a session. Ignore errors.
+
+        Parameters
+        ----------
+        session : str
+            The session file to load. If not given, use the default session.
+        """
         self.load_session(session, strict=False)
 
-    def load_session(self, session: str = None, strict=True):
+    def load_session(self, session: str, strict=True):
+        """Load a session.
+
+        arameters
+        ----------
+        session : str
+            The session file to load. 
+        strict : bool
+            If True, raise an error if the session file is not found.
+        """
         try:
             with open(session) as f:
                 data = f.read()

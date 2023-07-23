@@ -4,9 +4,6 @@
 Overview
 ========
 
-
-.. file:///Users/mark/src/python/mash/docs/build/html/modules/filesystem.html
-
 .. sidebar::
 
     See also:
@@ -17,8 +14,8 @@ Overview
 
     | Mash language usage:
 
-    * `- Reference <https://github.com/voschezang/mash/blob/main/SHELL_REFERENCE.md>`_
-    * `- Example script <pages/lib.html>`_
+    * `• Reference <https://github.com/voschezang/mash/blob/main/SHELL_REFERENCE.md>`_
+    * `• Example script <pages/lib.html>`_
 
 
 .. toctree::
@@ -30,6 +27,7 @@ Overview
    Reference <pages/SHELL_REFERENCE.md>
    Example Mash script <pages/lib.rst>
    Shell CLI <pages/shell_help.rst>
+   Shell AST <pages/ast.rst>
 
 Library Reference
 -----------------

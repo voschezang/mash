@@ -1,3 +1,37 @@
+"""
+Conditions
+----------
+
+.. code-block:: sh
+
+    # Classes
+    Condition
+    ├── ElseCondition
+    │   ├── Else
+    │   └── ElseIf
+    ├── If
+    ├── IfThen
+    ├── IfThenElse
+    └── Then
+
+
+Example code:
+
+.. code-block:: sh
+
+    # An inline if-then clause
+    if $a > 10 then print high
+    if $a > 10 then print high else print low
+
+    # A multi-line if-then-else clause
+    a = 10
+    if $a > 10 then
+        print large
+    else if $a == 10
+        print medium
+    else
+        print small
+"""
 from mash.shell.ast.node import Node
 from mash.shell.base import BaseShell
 from mash.shell.grammer.literals import FALSE, IF, INLINE_ELSE, INLINE_THEN, THEN, TRUE

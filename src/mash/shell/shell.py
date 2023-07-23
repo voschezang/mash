@@ -72,7 +72,23 @@ E.g.
 
 
 class Shell(BaseShell):
+    """Extend `BaseShell` with a language model:
+    Support multiline statements, pipes, conditions, variables and inline function definitions.
+
+    The language grammer is based on a BNF-based grammer, which is defined in 
+    `shell.grammer.parser <https://voschezang.github.io/mash-docs/modules/shell.grammer.html#module-shell.grammer.parser>`_
+    The language implementation is defined in shell.ast.
+    """
+
     def onecmd_inner(self, lines: str):
+        """Override `BaseShell.onecmd_inner`.
+        Apply a language model iff `self.use_model` is True.
+
+        Parameters
+        ----------
+        lines : str
+            The input lines.
+        """
         if not self.use_model:
             return super().onecmd_inner(lines)
 
