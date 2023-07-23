@@ -31,8 +31,10 @@ Overview
 .. toctree::
    :hidden:
 
-   Reference <pages/SHELL_REFERENCE.md>
+   Mash Language Reference <pages/SHELL_REFERENCE.md>
    Example Mash script <pages/lib.rst>
+   Shell Classes <pages/shell_classes.rst>
+   Shell AST <pages/ast.rst>
 
 
 Library Reference
@@ -43,14 +45,13 @@ Library Reference
    :maxdepth: 1
 
    pages/reference.rst
-   Shell AST <pages/ast.rst>
-   Shell Classes <pages/shell_classes.rst>
 
 Packages
 
-- `Shell <pages/shell.html>`_
 - `Filesystem <modules/filesystem.html>`_
 - `Object parser <modules/object_parser.html#module-object_parser.factory>`_
+- `Shell <pages/shell_classes.html>`_
+- `Shell AST <pages/ast.html>`_
 - `Server <modules/server.html#module-server.server>`_
 - `Webtools <modules/webtools.html#module-webtools>`_
 
