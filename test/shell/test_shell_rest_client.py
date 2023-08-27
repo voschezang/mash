@@ -100,3 +100,18 @@ def test_rest_client_get_nested_fields():
         emails = catch_output('list users >>= get users $ email', shell=shell)
         assert 'name.0@company.com' in emails
         assert 'name.9@company.com' in emails
+
+
+def test_rest_client_foreach():
+    for init in (init_explicit_client, init_implicit_client):
+        shell, obj = init()
+        shell = shell.shell
+
+        users = catch_output('foreach users', shell=shell)
+        assert len(users.split('\n')) == 10
+        assert 'users 1000' in users
+        assert 'users 1009' in users
+
+        emails = catch_output('foreach users email', shell=shell)
+        assert 'name.0@company.com' in emails
+        assert 'name.9@company.com' in emails

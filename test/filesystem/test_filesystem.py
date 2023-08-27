@@ -79,6 +79,7 @@ def test_get_index():
     with raises(ValueError):
         d.get(['a', '3', 10])
 
+
 def test_getitem():
     d = init()
     assert d['a'] == d.get('a')
@@ -304,6 +305,14 @@ def test_cd_home():
     d.cd('/')
     assert d.path == ['/']
     assert d.full_path == ['/']
+
+
+def test_foreach():
+    d = init()
+    result = d.foreach(['a', '3'])
+    assert len(result) == 5
+    assert ['a', '3', 0] in result
+    assert ['a', '3', 4] in result
 
 
 def test_set_home():

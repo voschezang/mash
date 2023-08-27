@@ -11,7 +11,7 @@ from mash.filesystem.discoverable import Discoverable
 from mash.filesystem.view import Path, ViewError
 from mash.io_util import log
 from mash.shell.shell import build, set_completions, set_functions
-from mash.shell.function import ShellFunction as Function
+from mash.shell.function import LAST_RESULTS, ShellFunction as Function
 from mash.util import find_fuzzy_matches, hamming, has_method, is_digit, partial_simple
 
 cd_aliasses = 'cd_aliasses'
@@ -54,7 +54,7 @@ class ShellWithFileSystem:
                        'use': cd,
                        'l': ll,
                        'list': ll,
-                       #    'foreach': partial_simple(self.repository.foreach),
+                       'foreach': partial_simple(self.foreach),
                        'get': partial_simple(self.get),
                        'set': partial_simple(self.set),
                        'new': partial_simple(self.new),
@@ -101,6 +101,32 @@ class ShellWithFileSystem:
     def new(self, *keys: str):
         for k in keys:
             self.set(k, {})
+
+    def foreach(self, *keys: str, delimiter='\n'):
+        """List all objects in the dir associated with each possible path, recursively.
+
+        If the path refers to a directory, then return the path to each directory.
+        Otherwise return a list of files.
+
+        E.g. do a listing of `repository/users/{id}/email`.
+        """
+        paths = self.repository.foreach(keys)
+        directory = True
+        self.shell.env[LAST_RESULTS] = []
+        for path in paths:
+            try:
+                obj = self.get(*path)
+            except ViewError as e:
+                directory = False
+                debug(e)
+                continue
+
+            # TODO allow access of this data in `do_map`
+            self.shell.env[LAST_RESULTS].append(obj)
+
+        if directory:
+            return delimiter.join(' '.join(str(k) for k in path) for path in paths)
+        return delimiter.join(path[-1] for path in paths)
 
     def init_home(self, *path: Path):
         self.repository.init_home(path)

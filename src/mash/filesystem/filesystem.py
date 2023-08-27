@@ -5,7 +5,7 @@ from pickle import dumps, loads
 from pprint import pformat
 from typing import Callable, Iterable, List, Tuple, Union
 
-from mash.util import accumulate_list, first, has_method, is_Dict_or_List, none
+from mash.util import accumulate_list, concat, first, has_method, is_Dict_or_List, none
 from mash.filesystem.view import Data, NAME, Key, Path, View
 
 HIDE_PREFIX = '.'
@@ -233,6 +233,50 @@ class FileSystem:
         # reset self.state
         self.cd('-')
         self.cd(*path)
+
+    def foreach(self, path: Path) -> List[Path]:
+        """List all objects in the dir associated with each path, recursively.
+
+        Usage:
+
+        .. code-block:: bash
+
+            # GET repository/users/{id}/email
+            foreach repository users email >>= echo 'email:' $
+        """
+        trace = []
+
+        # Build a list of traces
+        # E.g.
+        # [ repository users 1 email,
+        #   repository users 2 email,
+        #   repository users 3 email
+        # ]
+        traces = [[]]
+        for key in path:
+            prev_traces = traces
+            traces = []
+            for trace in prev_traces:
+                traces = self._step_trace(trace, key)
+
+        results = []
+        for trace in traces:
+            keys = self.ls(trace)
+            for k in keys:
+                results.append(trace + [k])
+        return results
+
+    def _step_trace(self, trace: Path, key: Key) -> List[Path]:
+        keys = self.ls(trace)
+        if not keys:
+            # omit trace from results
+            return []
+
+        if key in keys:
+            return [trace + [key]]
+
+        # duplicate trace for each branch
+        return concat([self._step_trace(trace + [k], key) for k in keys])
 
     def show(self, *path: str):
         return self.get(path)

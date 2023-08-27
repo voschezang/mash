@@ -30,7 +30,7 @@ class FunctionDefinition(Node):
         # TODO use line_indent=shell.locals['line_indent'])
         shell.locals.set(DEFINE_FUNCTION,
                          InlineFunction('', args, func_name=self.f))
-        shell.prompt = '>>>'
+        shell.prompt = '|'
 
     def define_function(self, shell, lazy: bool):
         if lazy:
