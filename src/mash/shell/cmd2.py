@@ -9,6 +9,7 @@ import cmd
 from mash.io_util import log, read_file, shell_ready_signal, check_output
 from mash.shell.errors import ShellError, ShellSyntaxError
 import mash.shell.function as func
+from mash.util import has_method
 
 confirmation_mode = False
 default_prompt = '$ '
@@ -219,7 +220,7 @@ def run_commands_from_file(filename: str, shell: Cmd2):
     run_command(command, shell, strict=True)
 
 
-def run_interactively(shell):
+def run_interactively(shell: Cmd2):
     io_util.interactive = True
     # TODO
     # shell.auto_save = True
@@ -230,6 +231,10 @@ def run_interactively(shell):
             shell.cmdloop()
         except KeyboardInterrupt:
             print('\nKeyboardInterrupt')
+
+            if has_method(shell, 'keyboard_interrupt'):
+                shell.keyboard_interrupt()
+
             shell.intro = ''
 
 

@@ -8,6 +8,7 @@ import sys
 from mash.doc_inference import generate_docs
 from mash.io_util import log, log_once
 from mash import util
+from mash.shell.grammer.parse_functions import dataclass_to_string
 
 # this data is impacts by both the classes Function and Shell, hence it should be global
 exception_hint = '(run `E` for details)'
@@ -68,6 +69,10 @@ class InlineFunction:
     multiline: bool = False
     line_indent: str = None
     inner: List[str] = field(default_factory=list)
+
+    def __str__(self):
+        args = ', '.join(self.args)
+        return f'InlineFunction: {self.func_name} ({args})'
 
 
 def scope() -> dict:

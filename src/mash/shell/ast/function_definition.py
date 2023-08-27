@@ -27,10 +27,10 @@ class FunctionDefinition(Node):
     def run(self, prev_result='', shell: BaseShell = None, lazy=False):
         args = self.define_function(shell, lazy)
 
-        # TODO use line_indent=self.locals[RAW_LINE_INDENT]
+        # TODO use line_indent=shell.locals['line_indent'])
         shell.locals.set(DEFINE_FUNCTION,
                          InlineFunction('', args, func_name=self.f))
-        shell.prompt = '>>>    '
+        shell.prompt = '>>>'
 
     def define_function(self, shell, lazy: bool):
         if lazy:
@@ -52,7 +52,7 @@ class FunctionDefinition(Node):
 
         return args
 
-    @property
+    @ property
     def data(self) -> str:
         return f'{self.f}( {self.args} )'
 

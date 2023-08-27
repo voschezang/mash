@@ -103,6 +103,14 @@ def crop(s: str, n=100, suffix='..') -> str:
     return s[:n] + suffix
 
 
+def dataclass_to_string(data):
+    """Convert a dataclass to a string.
+    """
+    classname = data.__class__.__name__
+    lines = [f'  {k}: {crop(v, 20)}' for k, v in data.__dict__.items()]
+    return '\n'.join([classname] + lines)
+
+
 ################################################################################
 # Operations for lists and sequences
 ################################################################################

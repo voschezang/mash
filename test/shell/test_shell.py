@@ -75,6 +75,12 @@ def test_onecmd_syntax_quotes():
     assert catch_output('a = 1 "="', shell=shell) == ''
 
 
+def test_set_do_env():
+    shell = Shell()
+    # TODO this fails
+    assert catch_output('env', shell=shell) == ''
+
+
 def test_onecmd_syntax_escape():
     if 0:
         assert catch_output('echo \\| echo') == '| echo'
@@ -161,6 +167,29 @@ def test_add_functions():
     # with raises(ShellError):
     out = catch_output('id 10', shell=shell, strict=True)
     assert out == 'id 10'
+
+
+def test_shell_define_function_inline():
+    shell = Shell()
+    shell.ignore_invalid_syntax = False
+
+    run_command('flip (a b): $b $a', shell=shell)
+    assert catch_output('flip 1 2', shell=shell) == '2 1'
+
+
+def test_shell_define_function_multiline():
+    shell = Shell()
+    shell.ignore_invalid_syntax = False
+
+    run_command('flip (a b):', shell=shell)
+    run_command('  return $b $a', shell=shell)
+    assert catch_output('flip 1 2', shell=shell) == '2 1'
+    run_command('env', shell=shell)
+
+    # fail if the indent is omitted
+    run_command('flip (a b):', shell=shell)
+    with raises(ShellError):
+        run_command('return $b $a', shell=shell)
 
 
 def test_do_fail():

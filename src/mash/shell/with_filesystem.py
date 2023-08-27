@@ -54,6 +54,7 @@ class ShellWithFileSystem:
                        'use': cd,
                        'l': ll,
                        'list': ll,
+                       #    'foreach': partial_simple(self.repository.foreach),
                        'get': partial_simple(self.get),
                        'set': partial_simple(self.set),
                        'new': partial_simple(self.new),

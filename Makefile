@@ -44,6 +44,7 @@ docs-init:
 docs:
 	make docs-generate
 	cd docs && make html
+
 docs-clean:
 	rm -rf docs/source/modules
 	rm -rf docs/build

@@ -90,3 +90,13 @@ def test_rest_client_get_fields_2():
 
         emails = catch_output('map get_email 1001 1004', shell=shell)
         assert emails == 'name.1@company.com\nname.4@company.com'
+
+
+def test_rest_client_get_nested_fields():
+    for init in (init_explicit_client, init_implicit_client):
+        shell, obj = init()
+        shell = shell.shell
+
+        emails = catch_output('list users >>= get users $ email', shell=shell)
+        assert 'name.0@company.com' in emails
+        assert 'name.9@company.com' in emails

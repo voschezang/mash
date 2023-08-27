@@ -143,6 +143,11 @@ class Shell(BaseShell):
         else:
             raise NotImplementedError()
 
+    def keyboard_interrupt(self):
+        if DEFINE_FUNCTION in self.locals:
+            f = self.locals[DEFINE_FUNCTION]
+            self._finalize_define_function(f)
+
     def _handle_define_function(self, ast: Node) -> bool:
         if DEFINE_FUNCTION not in self.locals:
             return False

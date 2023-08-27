@@ -97,7 +97,11 @@ def to_string(value: Any) -> str:
 
     elif isinstance(value, dict):
         result = {}
-        if isinstance(next(iter(value.values())), dict):
+
+        if value == {}:
+            return ''
+
+        elif isinstance(next(iter(value.values())), dict):
             try:
                 table = pd.DataFrame(value)
                 return table.T.to_markdown()
@@ -116,6 +120,14 @@ def to_string(value: Any) -> str:
         value = df.to_markdown()
 
     return str(value)
+
+
+def dataclass_to_string(data):
+    """Convert a dataclass to a string.
+    """
+    classname = data.__class__.__name__
+    lines = [f'  {k}: {crop(v, 20)}' for k, v in data.__dict__.items()]
+    return '\n'.join([classname] + lines)
 
 
 def dict_to_string(d: dict) -> str:
