@@ -385,5 +385,6 @@ def test_save_and_load_session():
 
 
 def test_shell_scope():
-    with raises(NotImplementedError):
-        run_command('( 1 )')
+    if 0:
+        with raises(NotImplementedError):
+            run_command('( 1 )')

@@ -41,11 +41,12 @@ else
 
 ### Maps and Loops
 
-| Example                                      | Description                                                  |
-| -------------------------------------------- | ------------------------------------------------------------ |
+| Example                                     | Description                                                  |
+| ------------------------------------------- | ------------------------------------------------------------ |
 | `println 1 2`&vert;`> map print`            | Run a command for each line of the output of the previous expression. |
 | `println 1 2`&vert;`> map print pre $ post` | Insert each line of the previous output into a new expression. |
-| `println 1 2 >>= print`                      | `>>=` is an alias for &vert;`> map`                          |
+| `println 1 2 >>= print`                     | `>>=` is an alias for &vert;`> map`                          |
+| `foreach DIR >>= print`                     | Iterate over a directory.                                    |
 
 ### Shell Interop
 
@@ -159,7 +160,7 @@ f 10
 ### Built-in Functions
 
 Logical operators: `and` `or` `not`
-Other operators: `map` `math`
+Other operators: `map` `math` `foreach`
 
 ## Proposals
 

@@ -18,6 +18,7 @@ Parsing rules;
 
 """
 from logging import getLogger
+import logging
 import ply.yacc as yacc
 from mash.shell.ast import Assign, BashPipe, BinaryExpression, Else, ElseIf, ElseIfThen, FunctionDefinition, If, IfThen, IfThenElse, Indent, InlineFunctionDefinition, Lines, LogicExpression, Map, Math, Method, Pipe, Quoted, Return, Shell, Terms, Then, Variable, Word
 from mash.shell.grammer.tokenizer import main, tokens
@@ -257,9 +258,9 @@ def parse(text, init=True):
         'logic_expression : terms'
         p[0] = p[1]
 
-    def p_terms_pair(p):
-        'terms : term term'
-        p[0] = Terms([p[1], p[2]])
+    # def p_terms_pair(p):
+    #     'terms : term term'
+    #     p[0] = Terms([p[1], p[2]])
 
     def p_terms_head_tail(p):
         'terms : term terms'
@@ -267,7 +268,7 @@ def parse(text, init=True):
 
     def p_terms_singleton(p):
         'terms : term'
-        p[0] = p[1]
+        p[0] = Terms([p[1]])
 
     def p_term(p):
         """term : SPECIAL
@@ -341,23 +342,12 @@ def parse(text, init=True):
         tokenizer = main()
     else:
         tokenizer.clone()
-
+    
     log = getLogger()
     parser = yacc.yacc(debug=log)
     if not isinstance(text, str):
         text
         raise
 
-    # add a newline to allow empty strings to be matched
+    # insert a newline to allow empty strings to be matched
     return parser.parse('\n' + text)
-
-
-if __name__ == '__main__':
-    data = """
-
-    echo x
-    if 1 = 3 then 2 else 3
-    """
-
-    prev_result = parse(data)
-    print('out', prev_result)

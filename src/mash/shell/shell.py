@@ -332,7 +332,9 @@ def set_cli_args():
         io_util.interactive = True
 
 
-def has_input():
+def has_input() -> bool:
+    """Check whether `CMD` is not empty.
+    """
     # ensure argparse has been called
     with ArgparseWrapper(description=description):
         pass

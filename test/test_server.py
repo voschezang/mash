@@ -3,6 +3,7 @@ from flask.testing import FlaskClient
 import os
 from io import BytesIO
 from http import HTTPStatus
+from mash.server.domain.css import generate_style
 
 from mash.server.repository import UPLOAD_FOLDER
 from mash.server.routes.default import basepath
@@ -223,22 +224,6 @@ def requests(url='', N=LARGE_N, client: FlaskClient = None, **kwds):
         client = init()
 
     yield from (client.get(url, **kwds) for _ in range(N))
-
-
-def generate_style():
-    element = {'border': {'style': 'dotted',
-                          'width': 1.5,
-                          'color': 'green',
-                          'rounded': 5
-                          },
-               'margin': {'bottom': 0,
-                          'left': 0,
-                          'right': 0,
-                          'top': 0
-                          }}
-    return {'header': element,
-            'body': [element, element],
-            'footer': element}
 
 
 def init():

@@ -80,7 +80,7 @@ def init() -> tuple:
 if __name__ == '__main__':
     shell, obj = init()
 
-    user = obj.get(['users', '2'])
-    print(user)
+    # user = obj.get(['users', '2'])
+    # print(user)
 
     main(shell=shell.shell)

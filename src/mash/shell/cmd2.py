@@ -96,6 +96,11 @@ class Cmd2(cmd.Cmd):
 
     def onecmd_raw(self, line: str, prev_result: str):
         line = f'{line} {prev_result}'
+
+        # avoid passing empty strings to Cmd.onecmd
+        if line in ' ':
+            line = 'echo'
+
         return super().onecmd(line)
 
     def completenames(self, text, *ignored):

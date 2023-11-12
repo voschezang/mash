@@ -98,6 +98,11 @@ class Terms(Nodes):
                 return shell.foldr(args, prev_result)
 
         return Term.run_terms(items, prev_result, shell, lazy)
+        
+    def __eq__(self, other):
+        if isinstance(other, str):
+            return str(self) == other
+        return super(Terms, self) == other
 
 
 class Lines(Nodes):

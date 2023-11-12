@@ -6,7 +6,7 @@ from werkzeug.utils import secure_filename
 import os
 
 
-from mash.server.domain.css import Document
+from mash.server.domain.css import Document, generate_style
 from mash.object_parser.errors import BuildError, BuildErrors, to_string
 from mash.object_parser import build
 from mash.server.repository import UPLOAD_FOLDER
@@ -14,6 +14,10 @@ from mash.server.routes.default import basepath
 
 
 def init(app):
+    @app.route(basepath + 'documents')
+    def documents():
+        return list(range(10))
+
     @app.route(basepath + 'documents', methods=['POST'])
     def documents_create():
         print(request.files)
@@ -37,6 +41,12 @@ def init(app):
                 continue
 
         return 'ok'
+
+    @app.route(basepath + 'documents/<id>')
+    def documents_get(id):
+        data = generate_style
+        obj = build(Document, data)
+        return obj
 
     @app.route(basepath + 'documents/<id>/style', methods=['PUT'])
     def documents_style_update(id):

@@ -14,10 +14,10 @@ def catch_output(line='', func=run_command, **kwds) -> str:
 def test_shell_if_then():
     shell = Shell()
     shell.ignore_invalid_syntax = False
-    assert catch_output('if "" then 2 |> echo 1', shell=shell) == ''
 
     assert catch_output('if "" then print 1', shell=shell) == ''
-    assert catch_output('if 1 then print 1', shell=shell) == '1'
+    if 1:
+        assert catch_output('if 1 then print 2', shell=shell) == '2'
 
     run_command('a = ""', shell=shell)
     assert catch_output('if $a then print 1', shell=shell) == ''

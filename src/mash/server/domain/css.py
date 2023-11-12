@@ -44,3 +44,19 @@ class Document:
     header: Element
     body: List[Element]
     footer: Element
+
+
+def generate_style():
+    element = {'border': {'style': 'dotted',
+                          'width': 1.5,
+                          'color': 'green',
+                          'rounded': 5
+                          },
+               'margin': {'bottom': 0,
+                          'left': 0,
+                          'right': 0,
+                          'top': 0
+                          }}
+    return {'header': element,
+            'body': [element, element],
+            'footer': element}
