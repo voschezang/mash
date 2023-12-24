@@ -83,8 +83,8 @@ def parse(text, init=True):
 
     def p_statement(p):
         """statement : assignment
-                     | conditional
                      | conjunction
+                     | partial_conditional
                      | definition
                      | return_statement
         """
@@ -129,65 +129,6 @@ def parse(text, init=True):
         q = p[2]
         p[0] = ('scope', q)
 
-    def p_if(p):
-        'conditional : IF conjunction'
-        p[0] = If(p[2])
-
-    def p_full_conditional(p):
-        'full_conditional : IF conjunction THEN conjunction ELSE conjunction'
-        _, _if, cond, _then, true, _else, false = p
-        p[0] = IfThenElse(cond, true, false)
-
-    def p_if_then_else(p):
-        'conditional : IF conjunction THEN conjunction ELSE'
-        _, _if, cond, _then, true, _else = p
-        p[0] = IfThenElse(cond, true)
-
-    def p_if_then_inline(p):
-        'full_conditional : IF conjunction THEN conjunction'
-        _, _if, cond, _then, true = p
-        p[0] = IfThen(cond, true)
-
-    def p_if_then(p):
-        'conditional : IF conjunction THEN'
-        p[0] = IfThen(p[2])
-
-    def p_if_then_inline_final(p):
-        'conditional : IF conjunction THEN return_statement'
-        _, _if, cond, _then, true = p
-        p[0] = IfThen(cond, true)
-
-    def p_then(p):
-        """conditional : THEN final_statement
-                       | THEN
-        """
-        if len(p) == 2:
-            p[0] = Then()
-        else:
-            p[0] = Then(then=p[2])
-
-    def p_else_if_then(p):
-        """conditional : ELSE IF conjunction THEN final_statement
-                      | ELSE IF conjunction THEN
-        """
-        if len(p) == 6:
-            p[0] = ElseIfThen(p[3], p[5])
-        else:
-            p[0] = ElseIfThen(p[3])
-
-    def p_else_if(p):
-        'conditional : ELSE IF conjunction'
-        p[0] = ElseIf(p[3])
-
-    def p_else(p):
-        """conditional : ELSE final_statement
-                       | ELSE
-        """
-        if len(p) == 2:
-            p[0] = Else()
-        else:
-            p[0] = Else(otherwise=p[2])
-
     def p_conjunction_of_expressions(p):
         'conjunction : expression PIPE conjunction'
         p[0] = Pipe(p[1], p[3], p[2])
@@ -206,11 +147,12 @@ def parse(text, init=True):
 
     def p_expression_full_conditional(p):
         'expression : full_conditional'
+        # a full_conditional can be included inside a pipe
         p[0] = p[1]
 
     def p_expression(p):
         """expression : join
-                            | logic_expression
+                      | logic_expression
         """
         p[0] = p[1]
 
@@ -251,6 +193,65 @@ def parse(text, init=True):
     def p_logic(p):
         'logic_expression : terms'
         p[0] = p[1]
+
+    def p_full_conditional(p):
+        'full_conditional : IF conjunction THEN conjunction ELSE conjunction'
+        _, _if, cond, _then, true, _else, false = p
+        p[0] = IfThenElse(cond, true, false)
+
+    def p_if_then_inline(p):
+        'full_conditional : IF conjunction THEN conjunction'
+        _, _if, cond, _then, true = p
+        p[0] = IfThen(cond, true)
+
+    def p_if_then_else(p):
+        'partial_conditional : IF conjunction THEN conjunction ELSE'
+        _, _if, cond, _then, true, _else = p
+        p[0] = IfThenElse(cond, true)
+
+    def p_if_then(p):
+        'partial_conditional : IF conjunction THEN'
+        p[0] = IfThen(p[2])
+
+    def p_if_then_inline_final(p):
+        'partial_conditional : IF conjunction THEN return_statement'
+        _, _if, cond, _then, true = p
+        p[0] = IfThen(cond, true)
+
+    def p_if(p):
+        'partial_conditional : IF conjunction'
+        p[0] = If(p[2])
+
+    def p_then(p):
+        """partial_conditional : THEN final_statement
+                               | THEN
+        """
+        if len(p) == 2:
+            p[0] = Then()
+        else:
+            p[0] = Then(then=p[2])
+
+    def p_else_if_then(p):
+        """partial_conditional : ELSE IF conjunction THEN final_statement
+                               | ELSE IF conjunction THEN
+        """
+        if len(p) == 6:
+            p[0] = ElseIfThen(p[3], p[5])
+        else:
+            p[0] = ElseIfThen(p[3])
+
+    def p_else_if(p):
+        'partial_conditional : ELSE IF conjunction'
+        p[0] = ElseIf(p[3])
+
+    def p_else(p):
+        """partial_conditional : ELSE final_statement
+                               | ELSE
+        """
+        if len(p) == 2:
+            p[0] = Else()
+        else:
+            p[0] = Else(otherwise=p[2])
 
     # def p_terms_pair(p):
     #     'terms : term term'
@@ -317,12 +318,12 @@ def parse(text, init=True):
         p[0] = Quoted(p[1])
 
     def p_illegal_if_then(p):
-        """conditional : IF THEN
-                       | IF INDENT THEN
-                       | IF ELSE
-                       | IF INDENT ELSE
-                       | ELSE THEN
-                       | ELSE INDENT THEN
+        """partial_conditional : IF THEN
+                               | IF INDENT THEN
+                               | IF ELSE
+                               | IF INDENT ELSE
+                               | ELSE THEN
+                               | ELSE INDENT THEN
         """
         raise ShellSyntaxError(
             f'Syntax error: invalid if-then-else statement: {p}')
