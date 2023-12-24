@@ -24,14 +24,21 @@ class SetDefinition(Node):
         self.condition = condition
 
     def run(self, prev_result='', shell: BaseShell = None, lazy=False):
-        items = [shell.run_commands(item) for item in self.items]
+        items = []
+        for item in self.items.values:
+            results = shell.run_commands(item)
+            for row in results:
+                items.append(row.splitlines())
 
         if lazy:
             return f'{{ {self.items} | {self.condition} }}'
 
-        return list(self.apply(items, shell))
+        result = list(self.apply(items, shell))
+        return ['\n'.join(c) for c in result]
 
     def apply(self, items, shell: BaseShell = None):
+        """Returns the outer product of a nested list.
+        """
         if self.condition is None:
             yield from product(*items)
             return

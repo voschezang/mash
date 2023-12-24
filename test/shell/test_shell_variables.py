@@ -266,3 +266,16 @@ def test_variable_assignment_with_if_then():
 
     run_command('a <- if "" then echo 10', shell=shell)
     assert shell.env['a'] == ''
+
+def test_set_definition():
+    shell = Shell()
+    shell.ignore_invalid_syntax = False
+
+    run_command('a <- range 3', shell=shell)
+    run_command('b <- range 3', shell=shell)
+    run_command('c <- { $a }', shell=shell)
+    assert shell.env['c'] == '0 1 2'
+
+    # TODO
+    run_command('c <- { a b }', shell=shell)
+    run_command('c <- { a b | a == b }', shell=shell)

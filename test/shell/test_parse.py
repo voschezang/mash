@@ -569,6 +569,9 @@ def test_parse_set_with_filter():
     assert isinstance(result, SetDefinition)
     result = parse_line('{ users groups | x.id == y.id }')
     assert isinstance(result, SetDefinition)
+    result = parse_line('x <- { users }')
+    assert isinstance(result, Assign)
+    assert isinstance(result.rhs, SetDefinition)
 
     # TODO
     if 0:
