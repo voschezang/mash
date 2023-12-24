@@ -153,7 +153,7 @@ def parse(text, init=True):
         # a full_conditional can be included inside a pipe
         p[0] = p[1]
 
-    def p_expression_full_conditional(p):
+    def p_expression_set(p):
         'expression : set'
         p[0] = p[1]
 

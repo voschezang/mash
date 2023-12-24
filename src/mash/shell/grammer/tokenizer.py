@@ -67,14 +67,6 @@ def main():
         r'\)'
         return t
 
-    def t_CURLY_BRACE_L(t):
-        r'{'
-        return t
-
-    def t_CURLY_BRACE_R(t):
-        r'}'
-        return t
-
     def t_BREAK(t):
         r'[\n\r]|((\;)+[\ \t]*)'
         # semicolon_with_whitespace = r'((\;)+[ \t]*)'
@@ -118,6 +110,14 @@ def main():
     def t_WILDCARD_RANGE(t):
         r'[\w\d\-]*\{\d\.\.\d}[\w\d\-]*'
         # TODO verify matching []
+        return t
+
+    def t_CURLY_BRACE_L(t):
+        r'{'
+        return t
+
+    def t_CURLY_BRACE_R(t):
+        r'}'
         return t
 
     def t_METHOD(t):
