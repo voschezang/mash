@@ -19,6 +19,8 @@ tokens = (
 
     'RPAREN',  # (
     'LPAREN',  # )
+    'CURLY_BRACE_R',  # {
+    'CURLY_BRACE_L',  # }
     # 'RBRACE',  # [
     # 'LBRACE',  # ]
     'DOUBLE_QUOTED_STRING',  # "a 'b' c"
@@ -63,6 +65,14 @@ def main():
 
     def t_RPAREN(t):
         r'\)'
+        return t
+
+    def t_CURLY_BRACE_L(t):
+        r'{'
+        return t
+
+    def t_CURLY_BRACE_R(t):
+        r'}'
         return t
 
     def t_BREAK(t):

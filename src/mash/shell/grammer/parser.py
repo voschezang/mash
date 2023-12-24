@@ -8,11 +8,11 @@ Parsing rules;
     lines: a BREAK-separated sequence of line
     line: statement with optional INDENT
     statement: 
-        - assignment
-        - conditional
-        - conjunction
-        - definition
-        - return_statement
+        - assignment        # a = 1
+        - conditional       # if .. then ..
+        - conjunction       # add 1 |> echo
+        - definition        # f (x): ..
+        - return_statement  # return 1
     conjunction: a PIPE-separated sequence of expression
     expression: a command
 
@@ -22,7 +22,7 @@ from ply import yacc
 from mash.shell.ast import Assign, BashPipe, BinaryExpression, \
     Else, ElseIf, ElseIfThen, FunctionDefinition, If, IfThen, IfThenElse, Then, \
     Indent, InlineFunctionDefinition, Lines, LogicExpression, \
-    Map, Math, Method, Pipe, Quoted, Return, Shell, Terms, Variable, Word
+    Map, Math, Method, Pipe, Quoted, Return, Shell, SetDefinition, Terms, Variable, Word
 from mash.shell.grammer.tokenizer import main, tokens
 from mash.shell.grammer.parse_functions import indent_width
 from mash.shell.errors import ShellSyntaxError
@@ -153,6 +153,10 @@ def parse(text, init=True):
         # a full_conditional can be included inside a pipe
         p[0] = p[1]
 
+    def p_expression_full_conditional(p):
+        'expression : set'
+        p[0] = p[1]
+
     def p_expression(p):
         """expression : join
                       | logic_expression
@@ -196,6 +200,14 @@ def parse(text, init=True):
     def p_logic(p):
         'logic_expression : terms'
         p[0] = p[1]
+
+    def p_set_definition(p):
+        'set : CURLY_BRACE_L terms CURLY_BRACE_R'
+        p[0] = SetDefinition(p[2])
+
+    def p_set_with_filter(p):
+        'set : CURLY_BRACE_L terms BASH expression CURLY_BRACE_R'
+        p[0] = SetDefinition(p[2])
 
     def p_full_conditional(p):
         'full_conditional : IF conjunction THEN conjunction ELSE conjunction'

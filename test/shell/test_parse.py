@@ -3,9 +3,9 @@ from pytest import raises
 from mash.shell.errors import ShellSyntaxError
 from mash.shell.grammer import tokenizer
 from mash.shell.grammer.parser import parse
-from mash.shell.ast import (Assign, BashPipe, BinaryExpression, ElseIf,
-                            ElseIfThen, FunctionDefinition, If, IfThen,
-                            IfThenElse, Indent, InlineFunctionDefinition,
+from mash.shell.ast import (Assign, BashPipe, BinaryExpression, Indent,
+                            ElseIf, ElseIfThen, FunctionDefinition, If, IfThen, IfThenElse,
+                            InlineFunctionDefinition, SetDefinition,
                             Lines, Map, Math, Method, Pipe, Return,
                             Terms, Word)
 
@@ -555,9 +555,22 @@ def test_parse_math():
     assert result.data.rhs == '1'
 
 def test_parse_set():
+    result = parse_line('{ users }')
+    assert isinstance(result, SetDefinition)
+    result = parse_line('{ users }')
+    assert isinstance(result, SetDefinition)
+    result = parse_line('{ users.id }')
+    assert isinstance(result, SetDefinition)
+
+def test_parse_set_with_filter():
+    result = parse_line('{ users | .id > 100 }')
+    assert isinstance(result, SetDefinition)
+    result = parse_line('{ users | users.id > 100 }')
+    assert isinstance(result, SetDefinition)
+    result = parse_line('{ users groups | x.id == y.id }')
+    assert isinstance(result, SetDefinition)
+
+    # TODO
     if 0:
-        result = parse_line('{ users }')
-        result = parse_line('{ users.id }')
-        result = parse_line('{ users | .id > 100 }')
+        result = parse_line('{ users | users.id == {groups.members}}')
         result = parse_line('{ users | users.id in {groups.members}}')
-        # assert isinstance(result, Set)
