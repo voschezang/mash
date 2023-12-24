@@ -39,23 +39,24 @@ class Cmd2(cmd.Cmd):
 
     prompt = default_prompt
     completenames_options = []
+    ignore_invalid_syntax = False
 
-    def onecmd(self, lines: str) -> bool:
+    def onecmd(self, line: str) -> bool:
         """Parse and run `line`.
         Returns 0 on success and None otherwise.
         May raises ShellSyntaxError.
 
         Parameters
         ----------
-        lines : str
+        line : str
             The commands to run
         """
-        if lines == 'EOF':
+        if line == 'EOF':
             logging.debug('Aborting: received EOF')
             exit()
 
         try:
-            lines = self.onecmd_prehook(lines)
+            lines = self.onecmd_prehook(line)
             return self.onecmd_inner(lines)
 
         except ShellSyntaxError as e:

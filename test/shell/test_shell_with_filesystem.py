@@ -231,7 +231,7 @@ def test_shell_help():
     o = init_client()
     shell = o.shell
 
-    # TODO
+    # TODO catch output of `cmd` module
     s = 'Documented commands (type help <topic>):'
     s = ''
     assert s in catch_output('?', shell=shell)
