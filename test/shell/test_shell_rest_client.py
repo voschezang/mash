@@ -1,7 +1,7 @@
 from examples.rest_client_explicit import init as init_explicit_client
 from examples.rest_client_implicit import init as init_implicit_client
-from src.mash.shell.cmd2 import run_command
-from src.mash import io_util
+from mash.shell.cmd2 import run_command
+from mash import io_util
 
 
 def catch_output(line='', func=run_command, **func_kwds) -> str:

@@ -18,8 +18,11 @@ Parsing rules;
 
 """
 from logging import getLogger
-import ply.yacc as yacc
-from mash.shell.ast import Assign, BashPipe, BinaryExpression, Else, ElseIf, ElseIfThen, FunctionDefinition, If, IfThen, IfThenElse, Indent, InlineFunctionDefinition, Lines, LogicExpression, Map, Math, Method, Pipe, Quoted, Return, Shell, Terms, Then, Variable, Word
+from ply import yacc
+from mash.shell.ast import Assign, BashPipe, BinaryExpression, \
+    Else, ElseIf, ElseIfThen, FunctionDefinition, If, IfThen, IfThenElse, Then, \
+    Indent, InlineFunctionDefinition, Lines, LogicExpression, \
+    Map, Math, Method, Pipe, Quoted, Return, Shell, Terms, Variable, Word
 from mash.shell.grammer.tokenizer import main, tokens
 from mash.shell.grammer.parse_functions import indent_width
 from mash.shell.errors import ShellSyntaxError

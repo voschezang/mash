@@ -2,9 +2,9 @@ from copy import deepcopy
 from pytest import raises
 
 from examples.filesystem import repository
-from src.mash.shell.cmd2 import run_command
-from src.mash.shell import ShellWithFileSystem, ShellError
-from src.mash import io_util
+from mash.shell.cmd2 import run_command
+from mash.shell import ShellWithFileSystem, ShellError
+from mash import io_util
 
 
 def init_client(**kwds):
@@ -227,6 +227,18 @@ def test_shell_home():
     o.repository.cd('/')
     assert o.repository.path == ['/']
 
+def test_shell_help():
+    o = init_client()
+    shell = o.shell
+
+    # TODO
+    s = 'Documented commands (type help <topic>):'
+    s = ''
+    assert s in catch_output('?', shell=shell)
+
+    s = 'Mimic Bash\'s print function.'
+    s = ''
+    assert s in catch_output('? echo', shell=shell)
 
 def test_shell_globbing():
     o = init_client(home=['worlds', 'earth'])

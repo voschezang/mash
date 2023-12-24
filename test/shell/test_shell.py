@@ -35,6 +35,7 @@ def test_onecmd_output():
 def test_onecmd_help():
     helper = 'Documented commands (type help <topic>):\n=========='
     assert helper in catch_output('?')
+    assert helper in catch_output('help')
 
     echo = "Mimic Bash's print function."
     assert echo in catch_output('? echo')

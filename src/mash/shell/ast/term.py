@@ -37,6 +37,15 @@ class Term(Node):
             wildcard_value = prev_result
             prev_result = ''
 
+        if items[0] == '?':
+            if len(items) == 1:
+                line = '?'
+            else:
+                result = Term.run_terms(items[1:], '', shell, True)
+                line = '? ' + result
+
+            return shell.onecmd_raw(line, prev_result)
+
         items = list(expand_variables(items, shell.env,
                                       shell.completenames_options,
                                       shell.ignore_invalid_syntax,
