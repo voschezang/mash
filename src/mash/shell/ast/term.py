@@ -42,7 +42,7 @@ class Term(Node):
                 line = '?'
             else:
                 result = Term.run_terms(items[1:], '', shell, True)
-                line = '? ' + result
+                line = ' '.join(['?'] + result)
 
             return shell.onecmd_raw(line, prev_result)
 
