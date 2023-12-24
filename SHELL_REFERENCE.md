@@ -219,3 +219,36 @@ a *b = list_natural_numbers
 # pure functions can be executed in parallel, using a thread pool
 range 10 >>= math 10 * $ + 1 |> reduce sum
 ```
+
+### Queries
+
+#### Show tabular data
+
+*"Show the users"*
+
+```diff
+- SELECT * FROM users
++ show users
+|      | email              | name   |
+|-----:|:-------------------|:-------|
+| 1000 | name.0@company.com | name_0 |
+| 1001 | name.1@company.com | name_1 |
+| 1002 | name.2@company.com | name_2 |
+```
+
+#### Inner join
+
+*"Find users that own a at least one document"*
+
+```diff
+- SELECT name FROM users INNER JOIN documents ON users.id == document.owner
++ {users | users.id in {documents.owner}} >>= show $1.name
+```
+
+*"Show documents of each user"*
+
+```diff
+- SELECT users.name, documents.name FROM users LEFT JOIN documents ON users.id == document.owner
++ { users documents | users.id = documents.owner } >>= show $1.email $2.name
+```
+

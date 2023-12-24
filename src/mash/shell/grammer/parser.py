@@ -18,7 +18,6 @@ Parsing rules;
 
 """
 from logging import getLogger
-import logging
 import ply.yacc as yacc
 from mash.shell.ast import Assign, BashPipe, BinaryExpression, Else, ElseIf, ElseIfThen, FunctionDefinition, If, IfThen, IfThenElse, Indent, InlineFunctionDefinition, Lines, LogicExpression, Map, Math, Method, Pipe, Quoted, Return, Shell, Terms, Then, Variable, Word
 from mash.shell.grammer.tokenizer import main, tokens
@@ -29,8 +28,8 @@ tokenizer = None
 
 
 def parse(text, init=True):
-    # TODO use Node/Tree classes rather than tuples
-    # e.g. classes with a .run() method (extends Runnable<>)
+    """Implement ply methods
+    """
 
     precedence = (
         ('left', 'BREAK'),
@@ -210,7 +209,9 @@ def parse(text, init=True):
         p[0] = p[1]
 
     def p_expression(p):
-        'expression : basic_expression'
+        """expression : join
+                            | logic_expression
+        """
         p[0] = p[1]
 
     def p_shell(p):
@@ -224,13 +225,6 @@ def parse(text, init=True):
     def p_math(p):
         'expression : MATH expression'
         p[0] = Math(p[2])
-
-    def p_basic_expression(p):
-        """basic_expression : join
-                            | logic_expression
-                            | terms
-        """
-        p[0] = p[1]
 
     def p_logic_binary(p):
         """join : logic_expression AND join
@@ -342,12 +336,11 @@ def parse(text, init=True):
         tokenizer = main()
     else:
         tokenizer.clone()
-    
+
     log = getLogger()
     parser = yacc.yacc(debug=log)
     if not isinstance(text, str):
-        text
-        raise
+        raise ValueError(text)
 
     # insert a newline to allow empty strings to be matched
     return parser.parse('\n' + text)
