@@ -119,7 +119,7 @@ def test_parse_range():
     result = parse_line(line)
     assert str(result) == line
     assert result == line
-
+    assert result.values[0].type == 'range'
 
 def test_parse_assign():
     result = parse_line('a <- 10')
@@ -556,24 +556,27 @@ def test_parse_math():
 
 def test_parse_set():
     result = parse_line('{ users }')
-    assert isinstance(result, SetDefinition)
+    assert isinstance(result, Terms)
+    assert isinstance(result.values[0], SetDefinition)
     result = parse_line('{ users }')
-    assert isinstance(result, SetDefinition)
+    assert isinstance(result.values[0], SetDefinition)
     result = parse_line('{ users.id }')
-    assert isinstance(result, SetDefinition)
+    assert isinstance(result.values[0], SetDefinition)
 
 def test_parse_set_with_filter():
     result = parse_line('{ users | .id > 100 }')
-    assert isinstance(result, SetDefinition)
+    assert isinstance(result.values[0], SetDefinition)
     result = parse_line('{ users | users.id > 100 }')
-    assert isinstance(result, SetDefinition)
+    assert isinstance(result.values[0], SetDefinition)
     result = parse_line('{ users groups | x.id == y.id }')
-    assert isinstance(result, SetDefinition)
+    assert isinstance(result.values[0], SetDefinition)
     result = parse_line('x <- { users }')
     assert isinstance(result, Assign)
-    assert isinstance(result.rhs, SetDefinition)
+    assert isinstance(result.rhs.values[0], SetDefinition)
 
+def test_parse_set_with_nested_filter():
     # TODO
-    if 0:
-        result = parse_line('{ users | users.id == {groups.members}}')
-        result = parse_line('{ users | users.id in {groups.members}}')
+    result = parse_line('{ users | users.id == {groups.members}}')
+    # assert isinstance(result.values[0], SetDefinition)
+    result = parse_line('{ users | users.id in {groups.members}}')
+    # assert isinstance(result.values[0], SetDefinition)

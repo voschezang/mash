@@ -153,9 +153,9 @@ def parse(text, init=True):
         # a full_conditional can be included inside a pipe
         p[0] = p[1]
 
-    def p_expression_set(p):
-        'expression : set'
-        p[0] = p[1]
+    # def p_expression_set(p):
+    #     'expression : set'
+    #     p[0] = p[1]
 
     def p_expression(p):
         """expression : join
@@ -200,14 +200,6 @@ def parse(text, init=True):
     def p_logic(p):
         'logic_expression : terms'
         p[0] = p[1]
-
-    def p_set_definition(p):
-        'set : CURLY_BRACE_L terms CURLY_BRACE_R'
-        p[0] = SetDefinition(p[2])
-
-    def p_set_with_filter(p):
-        'set : CURLY_BRACE_L terms BASH expression CURLY_BRACE_R'
-        p[0] = SetDefinition(p[2])
 
     def p_full_conditional(p):
         'full_conditional : IF conjunction THEN conjunction ELSE conjunction'
@@ -291,6 +283,7 @@ def parse(text, init=True):
         """term : value
                 | method
                 | scope
+                | set
         """
         p[0] = p[1]
 
@@ -331,6 +324,14 @@ def parse(text, init=True):
     def p_value_string(p):
         'value : DOUBLE_QUOTED_STRING'
         p[0] = Quoted(p[1])
+
+    def p_set_definition(p):
+        'set : CURLY_BRACE_L terms CURLY_BRACE_R'
+        p[0] = SetDefinition(p[2])
+
+    def p_set_with_filter(p):
+        'set : CURLY_BRACE_L terms BASH expression CURLY_BRACE_R'
+        p[0] = SetDefinition(p[2])
 
     def p_illegal_if_then(p):
         """partial_conditional : IF THEN

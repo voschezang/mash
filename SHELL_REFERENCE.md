@@ -252,3 +252,10 @@ range 10 >>= math 10 * $ + 1 |> reduce sum
 + { users documents | users.id = documents.owner } >>= show $1.email $2.name
 ```
 
+Note the similarity to ranges
+
+```shell
+{1..3}
+1 2 3
+```
+

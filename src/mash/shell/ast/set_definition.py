@@ -22,6 +22,7 @@ class SetDefinition(Node):
     def __init__(self, items, condition=None):
         self.items = items
         self.condition = condition
+        self.data = str(items)
 
     def run(self, prev_result='', shell: BaseShell = None, lazy=False):
         items = []

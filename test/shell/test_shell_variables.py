@@ -2,9 +2,9 @@ from pytest import raises
 
 from mash import io_util
 from mash.shell import ShellError
-from mash.shell.grammer.literals import TRUE
 from mash.shell.shell import Shell
-from src.mash.shell.cmd2 import run_command
+from mash.shell.cmd2 import run_command
+from mash.shell.grammer.parser import parse
 
 
 def catch_output(line='', func=run_command, **kwds) -> str:
@@ -274,7 +274,7 @@ def test_set_definition():
     run_command('a <- range 3', shell=shell)
     run_command('b <- range 3', shell=shell)
     run_command('c <- { $a }', shell=shell)
-    assert shell.env['c'] == '0 1 2'
+    assert shell.env['c'] == '0\n1\n2'
 
     # TODO
     run_command('c <- { a b }', shell=shell)

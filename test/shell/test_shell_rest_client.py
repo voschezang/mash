@@ -122,6 +122,7 @@ def test_rest_client_standard_set():
         shell = shell.shell
 
         result = catch_output('{users} >>= show $.id', shell=shell)
+        # TODO add assertions
         # assert '1001' in result
 
 def test_rest_client_filter_set():
@@ -130,7 +131,7 @@ def test_rest_client_filter_set():
         shell = shell.shell
 
         result = catch_output('{users | .id < 1002} >>= get id', shell=shell)
-        # TODO
+        # TODO add assertions
         # assert '1000' in result
         # assert '1001' in result
         # assert '1002' not in result
@@ -140,6 +141,7 @@ def test_rest_client_outer_product():
         shell, _ = init()
         shell = shell.shell
 
+        # TODO add assertions
         result = catch_output('{users documents } >>= get $1.id', shell=shell)
         result = catch_output('{users documents | users.id < 1002} >>= get $1.id', shell=shell)
         result = catch_output('{users documents | 1.id == 2.owner} >>= get $1.name $2.name', shell=shell)
