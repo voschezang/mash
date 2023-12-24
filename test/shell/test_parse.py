@@ -6,7 +6,7 @@ from mash.shell.grammer.parser import parse
 from mash.shell.ast import (Assign, BashPipe, BinaryExpression, ElseIf,
                             ElseIfThen, FunctionDefinition, If, IfThen,
                             IfThenElse, Indent, InlineFunctionDefinition,
-                            Lines, Map, Math, Method, Pipe, Return, Term,
+                            Lines, Map, Math, Method, Pipe, Return,
                             Terms, Word)
 
 
@@ -553,3 +553,11 @@ def test_parse_math():
     assert result.data.op == '=='
     assert result.data.lhs == '1'
     assert result.data.rhs == '1'
+
+def test_parse_set():
+    if 0:
+        result = parse_line('{ users }')
+        result = parse_line('{ users.id }')
+        result = parse_line('{ users | .id > 100 }')
+        result = parse_line('{ users | users.id in {groups.members}}')
+        # assert isinstance(result, Set)

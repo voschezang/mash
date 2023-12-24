@@ -115,3 +115,31 @@ def test_rest_client_foreach():
         emails = catch_output('foreach users email', shell=shell)
         assert 'name.0@company.com' in emails
         assert 'name.9@company.com' in emails
+
+def test_rest_client_standard_set():
+    for init in (init_explicit_client, init_implicit_client):
+        shell, _ = init()
+        shell = shell.shell
+
+        result = catch_output('{users} >>= show $.id', shell=shell)
+        # assert '1001' in result
+
+def test_rest_client_filter_set():
+    for init in (init_explicit_client, init_implicit_client):
+        shell, _ = init()
+        shell = shell.shell
+
+        result = catch_output('{users | .id < 1002} >>= get id', shell=shell)
+        # TODO
+        # assert '1000' in result
+        # assert '1001' in result
+        # assert '1002' not in result
+
+def test_rest_client_outer_product():
+    for init in (init_explicit_client, init_implicit_client):
+        shell, _ = init()
+        shell = shell.shell
+
+        result = catch_output('{users documents } >>= get $1.id', shell=shell)
+        result = catch_output('{users documents | users.id < 1002} >>= get $1.id', shell=shell)
+        result = catch_output('{users documents | 1.id == 2.owner} >>= get $1.name $2.name', shell=shell)

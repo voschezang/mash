@@ -4,11 +4,11 @@
 
 **Docs**:
 [MAIN](https://github.com/voschezang/mash/blob/main/README.md)
-| [Shell](https://voschezang.github.io/mash-docs/pages/source/shell.html)
+| [Shell](https://voschezang.github.io/mash-docs/pages/shell_help.html)
 | [Reference](https://github.com/voschezang/mash/blob/main/SHELL_REFERENCE.md)
 | [Library Docs](https://voschezang.github.io/mash-docs/)
 
-<img src="https://github.com/voschezang/mash/blob/main/img/dall-E/bosh-terminal-icon.png?raw=true" style="max-width: 5%" alt="A drawing of a terminal"></img>
+<img src="https://github.com/voschezang/mash/blob/main/img/dall-E/bosh-terminal-icon.png?raw=true" style="height: 12em" alt="A drawing of a terminal"></img>
 
 # Mash | My Automation Shell
 
