@@ -15,7 +15,6 @@ from mash.shell.base import BaseShell
 from mash.shell.cmd2 import default_prompt, run
 from mash.shell.grammer.literals import DEFINE_FUNCTION
 from mash.shell.errors import ShellError, ShellPipeError, ShellSyntaxError
-from mash.shell.errors import ShellSyntaxError
 from mash.shell.function import ShellFunction as Function
 from mash.shell.internals.if_statement import Abort, handle_prev_then_else_statements
 from mash.shell.grammer.parser import parse

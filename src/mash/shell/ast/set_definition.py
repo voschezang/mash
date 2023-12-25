@@ -2,6 +2,7 @@ from itertools import product
 
 from mash.shell.ast.node import Node
 from mash.shell.base import BaseShell
+from mash.shell.cmd2 import Mode
 
 
 class SetDefinition(Node):
@@ -26,10 +27,11 @@ class SetDefinition(Node):
 
     def run(self, prev_result='', shell: BaseShell = None, lazy=False):
         items = []
-        for item in self.items.values:
-            results = shell.run_commands(item)
-            for row in results:
-                items.append(row.splitlines())
+        with shell.use_mode(Mode.COMPILE):
+            for item in self.items.values:
+                results = shell.run_commands(item)
+                for row in results:
+                    items.append(row.splitlines())
 
         if lazy:
             return f'{{ {self.items} | {self.condition} }}'

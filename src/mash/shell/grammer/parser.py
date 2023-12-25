@@ -41,6 +41,7 @@ def parse(text, init=True):
         ('left', 'PIPE', 'BASH'),
         ('left', 'MATH'),
         ('left', 'INFIX_OPERATOR'),
+        ('left', 'IN'),
         ('left', 'EQUALS'),
         ('left', 'OR'),
         ('left', 'AND'),
@@ -153,10 +154,6 @@ def parse(text, init=True):
         # a full_conditional can be included inside a pipe
         p[0] = p[1]
 
-    # def p_expression_set(p):
-    #     'expression : set'
-    #     p[0] = p[1]
-
     def p_expression(p):
         """expression : join
                       | logic_expression
@@ -185,11 +182,10 @@ def parse(text, init=True):
         p[0] = LogicExpression(p[1], p[3], p[2])
 
     def p_logic_expression_infix(p):
-        'logic_expression : terms INFIX_OPERATOR logic_expression'
-        p[0] = BinaryExpression(p[1], p[3], p[2])
-
-    def p_logic_expression_infix_equals(p):
-        'logic_expression : logic_expression EQUALS logic_expression'
+        """logic_expression : terms INFIX_OPERATOR logic_expression
+                            | logic_expression EQUALS logic_expression
+                            | logic_expression IN logic_expression
+        """
         p[0] = BinaryExpression(p[1], p[3], p[2])
 
     def p_logic_negation(p):
@@ -199,6 +195,10 @@ def parse(text, init=True):
 
     def p_logic(p):
         'logic_expression : terms'
+        p[0] = p[1]
+
+    def p_logic_set_definition(p):
+        'logic_expression : set'
         p[0] = p[1]
 
     def p_full_conditional(p):
@@ -283,7 +283,6 @@ def parse(text, init=True):
         """term : value
                 | method
                 | scope
-                | set
         """
         p[0] = p[1]
 

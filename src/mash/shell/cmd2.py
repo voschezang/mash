@@ -1,11 +1,12 @@
 from asyncio import CancelledError
 import cmd
+from contextlib import contextmanager
+from enum import Enum, auto
 import logging
 from pathlib import Path
 import traceback
 
 from mash import io_util
-import cmd
 from mash.io_util import log, read_file, shell_ready_signal, check_output
 from mash.shell.errors import ShellError, ShellSyntaxError
 import mash.shell.function as func
@@ -13,6 +14,11 @@ from mash.util import has_method
 
 confirmation_mode = False
 default_prompt = '$ '
+
+
+class Mode(Enum):
+    REPL = auto()
+    COMPILE = auto()
 
 
 class Cmd2(cmd.Cmd):
@@ -40,6 +46,7 @@ class Cmd2(cmd.Cmd):
     prompt = default_prompt
     completenames_options = []
     ignore_invalid_syntax = False
+    mode = Mode.REPL
 
     def onecmd(self, line: str) -> bool:
         """Parse and run `line`.
@@ -198,6 +205,15 @@ class Cmd2(cmd.Cmd):
         args = args.split(' ')
         args = (int(a) for a in args)
         return '\n'.join((str(i) for i in range(*args)))
+
+    @contextmanager
+    def use_mode(self, mode: Mode):
+        initial = self.mode
+        try:
+            self.mode = mode
+            yield
+        finally:
+            self.mode = initial
 
 
 ################################################################################

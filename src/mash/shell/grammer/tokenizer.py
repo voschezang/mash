@@ -15,7 +15,7 @@ tokens = (
     'ASSIGN',  # =
     'ASSIGN_RIGHT',  # ->
     'EQUALS',  # ==
-    'INFIX_OPERATOR',  # == < >
+    'INFIX_OPERATOR',  # >= <= < >
 
     'RPAREN',  # (
     'LPAREN',  # )

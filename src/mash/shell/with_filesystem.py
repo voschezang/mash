@@ -10,6 +10,7 @@ from mash.filesystem.filesystem import FileSystem, OPTIONS, Option
 from mash.filesystem.discoverable import Discoverable
 from mash.filesystem.view import Path, ViewError
 from mash.io_util import log
+from mash.shell.cmd2 import Mode
 from mash.shell.shell import build, set_completions, set_functions
 from mash.shell.function import LAST_RESULTS, ShellFunction as Function
 from mash.util import find_fuzzy_matches, hamming, has_method, is_digit, partial_simple
@@ -208,12 +209,19 @@ class ShellWithFileSystem:
         if candidates:
             error = hamming(dirname, str(candidates[0]))
             if error < 0.8:
-                self.repository.cd(candidates[0])
-                return
+                if self.shell.mode == Mode.REPL:
+                    self.repository.cd(candidates[0])
+                    return
+                elif self.shell.mode == Mode.COMPILE:
+                    return self.get(candidates[0])
 
         if is_digit(dirname):
-            self.repository.cd(dirname)
-            return
+            if self.shell.mode == Mode.REPL:
+                self.repository.cd(dirname)
+                return
+            elif self.shell.mode == Mode.COMPILE:
+                return self.get(dirname)
+            
 
         debug('No matching directory found')
         return dirname

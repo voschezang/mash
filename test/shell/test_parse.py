@@ -143,6 +143,21 @@ def test_parse_infix():
     assert result.key.values == ['a', 'b']
     assert result.value == '2'
 
+def test_parse_equals():
+    result = parse_line('x == 2')
+    assert isinstance(result, BinaryExpression)
+    assert result.op == '=='
+
+    with raises(ShellSyntaxError):
+        result = parse_line('==')
+
+def test_parse_contains():
+    result = parse_line('x in 1 2')
+    assert isinstance(result, BinaryExpression)
+    assert result.op == 'in'
+
+    with raises(ShellSyntaxError):
+        result = parse_line('in')
 
 def test_parse_numbers():
     numbers = ['-1', '-0.1', '.2', '-100.']
@@ -556,23 +571,22 @@ def test_parse_math():
 
 def test_parse_set():
     result = parse_line('{ users }')
-    assert isinstance(result, Terms)
-    assert isinstance(result.values[0], SetDefinition)
+    assert isinstance(result, SetDefinition)
     result = parse_line('{ users }')
-    assert isinstance(result.values[0], SetDefinition)
+    assert isinstance(result, SetDefinition)
     result = parse_line('{ users.id }')
-    assert isinstance(result.values[0], SetDefinition)
+    assert isinstance(result, SetDefinition)
 
 def test_parse_set_with_filter():
     result = parse_line('{ users | .id > 100 }')
-    assert isinstance(result.values[0], SetDefinition)
+    assert isinstance(result, SetDefinition)
     result = parse_line('{ users | users.id > 100 }')
-    assert isinstance(result.values[0], SetDefinition)
+    assert isinstance(result, SetDefinition)
     result = parse_line('{ users groups | x.id == y.id }')
-    assert isinstance(result.values[0], SetDefinition)
+    assert isinstance(result, SetDefinition)
     result = parse_line('x <- { users }')
     assert isinstance(result, Assign)
-    assert isinstance(result.rhs.values[0], SetDefinition)
+    assert isinstance(result.rhs, SetDefinition)
 
 def test_parse_set_with_nested_filter():
     # TODO

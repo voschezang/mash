@@ -20,7 +20,7 @@ from mash.util import quote_all
 
 
 class Infix(Node):
-    def __init__(self, lhs: Node, rhs: Node, op=None):
+    def __init__(self, lhs: Node, rhs: Node, op: str):
         """An infix operator expression.
 
         Parameters
@@ -164,6 +164,8 @@ class Map(Infix):
 
         range 10 >>= echo The value is $ .
     """
+    def __init__(self, lhs: Node, rhs: Node):
+        super().__init__(lhs, rhs, 'map')
 
     def run(self, prev_result='', shell: BaseShell = None, lazy=False):
         prev = shell.run_commands(self.lhs, prev_result, run=not lazy)

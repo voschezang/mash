@@ -9,6 +9,7 @@ keywords = {
     'not': 'NOT',
     'and': 'AND',
     'or': 'OR',
+    'in': 'IN',
     'math': 'MATH',
 }
 token_values = {v: k for k, v in keywords.items()}

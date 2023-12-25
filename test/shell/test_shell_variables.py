@@ -274,7 +274,7 @@ def test_set_definition():
     run_command('a <- range 3', shell=shell)
     run_command('b <- range 3', shell=shell)
     run_command('c <- { $a }', shell=shell)
-    assert shell.env['c'] == '0\n1\n2'
+    assert shell.env['c'] == '0 1 2'
 
     # TODO
     run_command('c <- { a b }', shell=shell)

@@ -121,7 +121,8 @@ def test_rest_client_standard_set():
         shell, _ = init()
         shell = shell.shell
 
-        result = catch_output('{users} >>= show $.id', shell=shell)
+        result = catch_output(r'{users}', shell=shell)
+        result = catch_output(r'{users} >>= show $.id', shell=shell)
         # TODO add assertions
         # assert '1001' in result
 
