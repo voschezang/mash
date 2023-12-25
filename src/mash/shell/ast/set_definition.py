@@ -27,9 +27,18 @@ class SetDefinition(Node):
 
     def run(self, prev_result='', shell: BaseShell = None, lazy=False):
         items = []
-        with shell.use_mode(Mode.COMPILE):
-            for item in self.items.values:
-                results = shell.run_commands(item)
+        for item in self.items.values:
+            with shell.use_mode(Mode.COMPILE):
+                results = shell.run_commands(item, '', not lazy)
+
+            if results is None:
+                return
+
+            if isinstance(results, dict):
+                for k, v in results.items():
+                    # TODO use values 
+                    items.append((str(k),))
+            else:
                 for row in results:
                     items.append(row.splitlines())
 
@@ -46,6 +55,10 @@ class SetDefinition(Node):
             yield from product(*items)
             return
 
+        if 1:
+            # TODO remove
+            yield from product(*items)
+            return
         for element in product(*items):
             result = shell.run_commands(self.condition, element)
             if result:

@@ -48,11 +48,10 @@ class ShellWithFileSystem:
 
     def _set_shell_functions(self, cls):
         # convert methods to functions
-        cd = partial_simple(self.repository.cd)
         ll = partial_simple(self.repository.ll)
 
-        set_functions({'cd': cd,
-                       'use': cd,
+        set_functions({'cd': partial_simple(self.repository.cd),
+                       'use': partial_simple(self.use),
                        'l': ll,
                        'list': ll,
                        'foreach': partial_simple(self.foreach),
@@ -83,6 +82,16 @@ class ShellWithFileSystem:
         """Print the path to the current working directory
         """
         return ' '.join(self.repository.full_path)
+
+    def use(self, *path: str):
+        """Access a directory.
+        Change directory in REPL mode, otherwise return the directory.
+        """
+        if self.shell.mode == Mode.REPL:
+            return self.repository.cd(*path)
+        elif self.shell.mode == Mode.COMPILE:
+            return self.get(*path)
+        raise NotImplementedError(self.shell.mode)
 
     def get(self, *path: str):
         """Return the value of the file associated with `path`.
@@ -164,7 +173,7 @@ class ShellWithFileSystem:
         # create alias
         func = partial(self.repository.cd, dirname)
         name = f'{self.repository.cd.__name__}({dirname})'
-        cd_dirname = Function(func, name, f'cd {dirname}')
+        cd_dirname = Function(func, name, f'use {dirname}')
 
         self.shell.add_functions({dirname: cd_dirname},
                                  group_key=cd_aliasses)
@@ -209,19 +218,10 @@ class ShellWithFileSystem:
         if candidates:
             error = hamming(dirname, str(candidates[0]))
             if error < 0.8:
-                if self.shell.mode == Mode.REPL:
-                    self.repository.cd(candidates[0])
-                    return
-                elif self.shell.mode == Mode.COMPILE:
-                    return self.get(candidates[0])
+                return self.use(candidates[0])
 
         if is_digit(dirname):
-            if self.shell.mode == Mode.REPL:
-                self.repository.cd(dirname)
-                return
-            elif self.shell.mode == Mode.COMPILE:
-                return self.get(dirname)
-            
+            return self.use(dirname)
 
         debug('No matching directory found')
         return dirname
