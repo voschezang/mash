@@ -4,7 +4,7 @@ The syntax and grammar is a mix of Bash and Python. It relies on pipes to pass s
 
 There are build-in methods and user-defined functions. Methods such as `print` are bound to methods with the name `do_print`. Functions can be either one-liners or multiline functions.
 
-For examples, see [src.lib.math.sh](https://github.com/voschezang/mash/blob/main/src/lib/math.sh). The AST can be found [here](file:///Users/mark/src/python/mash/docs/build/html/pages/ast.html).
+For examples, see [src.lib.math.sh](https://github.com/voschezang/mash/blob/main/src/lib/math.sh). The AST can be found [here](https://voschezang.github.io/mash-docs/pages/ast.html).
 
 [toc]
 

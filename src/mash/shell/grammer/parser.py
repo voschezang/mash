@@ -16,6 +16,38 @@ Parsing rules;
     conjunction: a PIPE-separated sequence of expression
     expression: a command
 
+.. code-block:: bash
+
+    # lines
+    print 1 ; print 2 \n print 3
+    |-----|          |--|
+    line             break
+
+.. code-block:: bash
+
+    # line
+    print 1   ;    print 2
+    |-----|    |--|
+    statment   indent
+
+.. code-block:: bash
+
+    # assignment
+    a b c = 10 11 12
+    |---|   |------|
+    terms   terms
+
+.. code-block:: bash
+
+    # conjunction
+    range 1 5 |>  print
+             |--|
+             pipe
+    |-------|     |---|
+    terms         terms
+          |--|
+          terms
+
 """
 from logging import getLogger
 from ply import yacc

@@ -35,7 +35,7 @@ class SetDefinition(Node):
                 return
 
             if isinstance(results, dict):
-                inner = results.items()
+                inner = results.keys()
             elif isinstance(results, str):
                 inner = results.splitlines()
             else:
@@ -46,7 +46,7 @@ class SetDefinition(Node):
             return f'{{ {self.items} | {self.condition} }}'
 
         result = list(self.apply(items, shell))
-        return ['\n'.join(c) for c in result]
+        return ['\n'.join((str(i) for i in c)) for c in result]
 
     def apply(self, items, shell: BaseShell = None):
         """Returns the outer product of a nested list.
