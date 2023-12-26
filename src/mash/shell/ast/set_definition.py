@@ -35,12 +35,12 @@ class SetDefinition(Node):
                 return
 
             if isinstance(results, dict):
-                for k, v in results.items():
-                    # TODO use values 
-                    items.append((str(k),))
+                inner = results.items()
+            elif isinstance(results, str):
+                inner = results.splitlines()
             else:
-                for row in results:
-                    items.append(row.splitlines())
+                inner = list(results)
+            items.append(inner)
 
         if lazy:
             return f'{{ {self.items} | {self.condition} }}'
