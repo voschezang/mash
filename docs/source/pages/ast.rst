@@ -5,6 +5,12 @@ AST
 
 An `Abstract Syntax Tree <https://en.wikipedia.org/wiki/Abstract_syntax_tree>`_.
 
+Grammer
+~~~~~~~
+
+.. automodule:: mash.shell.grammer.parser
+   :noindex:
+
 Core classes
 ~~~~~~~~~~~~
 

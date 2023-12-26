@@ -24,7 +24,7 @@ Overview
    :maxdepth: 1
 
    README <pages/README.md>
-   Implementation <pages/shell.md>
+   Implementation <pages/SHELL.md>
    Shell CLI <pages/shell_help.rst>
    Example code <modules/mash_examples.md>
 
