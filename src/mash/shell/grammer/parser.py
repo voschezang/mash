@@ -16,38 +16,28 @@ Parsing rules;
     conjunction: a PIPE-separated sequence of expression
     expression: a command
 
-.. code-block:: bash
-
-    # lines
-    print 1 ; print 2 \n print 3
-    |-----|          |--|
-    line             break
+Lines with an `assignment`.
 
 .. code-block:: bash
 
-    # line
-    print 1   ;    print 2
-    |-----|    |--|
-    statment   indent
+    # a b   = 10 11  ;      print $a   ;
+    |-------------||-----||----------||-----|
+     assignment     break  expression  break
+    |-----| |-----|
+     terms   terms
+
+A `line` with a `conjunction`.
 
 .. code-block:: bash
 
-    # assignment
-    a b c = 10 11 12
-    |---|   |------|
-    terms   terms
-
-.. code-block:: bash
-
-    # conjunction
-    range 1 5 |>  print
-             |--|
-             pipe
-    |-------|     |---|
-    terms         terms
-          |--|
-          terms
-
+    # range 1 5  |>    print '# ' |>    print
+    |----------------------------------------------| (conjunction)
+    |----------||----||--------------|
+     expression  pipe  conjunction
+    |----------|      |----------||----||----------|
+     terms             expression  pipe  expression
+                      |----------|      |----------|
+                      terms              terms
 """
 from logging import getLogger
 from ply import yacc
@@ -291,10 +281,6 @@ def parse(text, init=True):
             p[0] = Else()
         else:
             p[0] = Else(otherwise=p[2])
-
-    # def p_terms_pair(p):
-    #     'terms : term term'
-    #     p[0] = Terms([p[1], p[2]])
 
     def p_terms_head_tail(p):
         'terms : term terms'

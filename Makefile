@@ -1,4 +1,4 @@
-.PHONY: docs
+.PHONY: docs web
 
 github = https://github.com/voschezang/mash/blob/main/
 out = docs/source/modules
@@ -43,7 +43,7 @@ docs-init:
 
 docs:
 	make docs-generate
-	cd docs && make html
+	source env/bin/activate && cd docs && make html
 
 docs-clean:
 	rm -rf docs/source/modules

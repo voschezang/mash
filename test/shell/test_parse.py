@@ -447,6 +447,7 @@ def test_parse_pipe():
 
 
 def test_parse_pipe_multiple():
+    result = parse_line('print a |> echo 1 |> echo 2 |> echo')
     result = parse_line('print a |> echo 1 >>= echo 2 | echo')
     assert isinstance(result, Pipe)
     assert result.lhs.values == ['print', 'a']

@@ -13,3 +13,4 @@ tmp*
 *parsetab.py
 docs/source/modules/*
 docs/build/*
+env/*
