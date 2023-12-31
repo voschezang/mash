@@ -12,10 +12,11 @@ Term
     └── Word
 """
 
+from mash.shell.errors import ShellError
 from mash.shell.internals.if_statement import Abort
 from mash.shell.internals.helpers import run_function
 from mash.shell.ast.node import Node
-from mash.shell.base import BaseShell
+from mash.shell.base import POSITIONALS, BaseShell
 from mash.shell.grammer.parse_functions import expand_variables
 from mash.util import quote_all
 
@@ -120,5 +121,29 @@ class Variable(Term):
         if not lazy:
             k = self.data[1:]
             return shell.env[k]
+
+        return super().run(prev_result, shell, lazy)
+
+class PositionalVariable(Term):
+    def __init__(self, i: int, keys: list):
+        self.i = i
+        self.keys = keys
+
+        data = '$' + '.'.join([str(i)] + keys)
+        super().__init__(data)
+
+    def run(self, prev_result='', shell: BaseShell = None, lazy=False):
+        if not lazy:
+            try:
+                if self.i > len(shell.env[POSITIONALS]):
+                    raise ShellError(f'Invalid index: {self.data}')
+
+                obj = shell.env[POSITIONALS][self.i]
+                for k in self.keys:
+                    obj = obj[k]
+            except KeyError as e:
+                raise ShellError(e)
+
+            return obj
 
         return super().run(prev_result, shell, lazy)

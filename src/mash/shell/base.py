@@ -22,6 +22,7 @@ default_function_group_key = '_'
 
 ENV = 'env'
 CHAR = 'char'
+POSITIONALS = '_positionals'
 
 Command = Callable[[Cmd2, str], str]
 FunctionGroup = Dict[str, Dict[str, Function]]
@@ -76,6 +77,7 @@ class BaseShell(Cmd2):
         self.env = Scope(self.locals, ENV)
         self.env[LAST_RESULTS] = []
         self.env[LAST_RESULTS_INDEX] = 0
+        self.env[POSITIONALS] = []
 
         if env:
             for k, v in env.items():

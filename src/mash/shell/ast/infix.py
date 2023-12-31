@@ -3,7 +3,7 @@ from typing import Iterable
 from mash.shell.ast.node import Math, Node, run_shell_command
 from mash.shell.ast.nodes import Terms
 from mash.shell.ast.term import Quoted, Term
-from mash.shell.base import BaseShell
+from mash.shell.base import POSITIONALS, BaseShell
 from mash.shell.errors import ShellError, ShellSyntaxError
 from mash.shell.function import LAST_RESULTS, LAST_RESULTS_INDEX
 from mash.shell.grammer import literals
@@ -170,11 +170,19 @@ class Map(Infix):
     def run(self, prev_result='', shell: BaseShell = None, lazy=False):
         prev = shell.run_commands(self.lhs, prev_result, run=not lazy)
 
+        if str(prev).strip() == '' and shell._last_results:
+            prev = shell._last_results
+            shell.env[LAST_RESULTS] = []
+        # if isinstance(prev, list):
+        #     for item in prev:
+        #         shell.env[POSITIONALS] = prev
+
+
         rhs = self.rhs
         if isinstance(rhs, str) or isinstance(rhs, Term):
             rhs = Terms([rhs])
 
-        return self.map(rhs, str(prev), shell)
+        return self.map(rhs, prev, shell)
 
     @staticmethod
     def map(command, values: str, shell, delimiter='\n') -> Iterable:
@@ -194,13 +202,15 @@ class Map(Infix):
         # https://en.wikipedia.org/wiki/Monad_(functional_programming)
 
         try:
-            items = shell.parse(values).values
+            items = shell.parse(str(values)).values
         except ShellSyntaxError:
             items = [Quoted(values)]
 
         results = []
         for i, item in enumerate(items):
             shell.env[LAST_RESULTS_INDEX] = i
+            if isinstance(values, list):
+                shell.env[POSITIONALS] = values
 
             results.append(shell.run_commands(command, item, run=True))
 

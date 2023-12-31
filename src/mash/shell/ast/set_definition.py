@@ -1,6 +1,9 @@
+from collections import defaultdict
 from itertools import product
 
 from mash.shell.ast.node import Node
+from mash.shell.ast.nodes import Terms
+from mash.shell.ast.term import Term
 from mash.shell.base import BaseShell
 from mash.shell.cmd2 import Mode
 
@@ -23,43 +26,79 @@ class SetDefinition(Node):
     def __init__(self, items, condition=None):
         self.items = items
         self.condition = condition
-        self.data = str(items)
+        super().__init__(str(items))
 
     def run(self, prev_result='', shell: BaseShell = None, lazy=False):
-        items = []
+        items = {}
         for item in self.items.values:
+            key = shell.run_commands(item, '', lazy)[0]
+            key = str(item)
             with shell.use_mode(Mode.COMPILE):
                 results = shell.run_commands(item, '', not lazy)
 
             if results is None:
-                return
+                continue
 
             if isinstance(results, dict):
-                inner = results.keys()
+                inner = []
+                for k in results:
+                    with shell.use_mode(Mode.COMPILE):
+                        terms = Terms([Term(key), Term(k)])
+                        item = shell.run_commands(terms, '', not lazy)
+                    inner.append(item)
+
             elif isinstance(results, str):
                 inner = results.splitlines()
             else:
                 inner = list(results)
-            items.append(inner)
+
+            items[key] = inner
 
         if lazy:
             return f'{{ {self.items} | {self.condition} }}'
 
         result = list(self.apply(items, shell))
-        return ['\n'.join((str(i) for i in c)) for c in result]
+        # result = self.parse_result(result)
+        # shell.env[LAST_RESULTS] = result
 
-    def apply(self, items, shell: BaseShell = None):
+        # a = ['\n'.join((str(i) for i in c)) for c in result]
+        # return ['\n'.join((str(i) for i in c)) for c in result]
+        # return '\n'.join(str(i) for i in range(len(result)))
+        shell._save_result(result)
+        return ''
+
+    def parse_result(self, result):
+        keys = ['users', 'documents']
+        results = defaultdict(dict)
+        for i, row in enumerate(result):
+            for k, item in zip(keys, row):
+                results[i][k] = item
+
+        return results
+
+    def apply(self, data: dict, shell: BaseShell = None):
         """Returns the outer product of a nested list.
         """
+        columns = []
+        for k, values in data.items():
+            columns.append([{k: v} for v in values])
+
         if self.condition is None:
-            yield from product(*items)
+            yield from (merge(row) for row in product(*columns))
             return
 
         if 1:
             # TODO remove
-            yield from product(*items)
+            yield from product(*data)
             return
-        for element in product(*items):
+        for element in product(*data):
             result = shell.run_commands(self.condition, element)
             if result:
                 yield element
+
+
+def merge(dicts: list) -> {}:
+    result = {}
+    for entry in dicts:
+        result |= entry
+    return result

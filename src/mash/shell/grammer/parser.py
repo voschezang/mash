@@ -32,7 +32,7 @@ A `line` with a `conjunction`.
 
     # range 1 5  |>    print '# ' |>    print
     |----------------------------------------------| (conjunction)
-    |----------||----||--------------|
+    |----------||----||----------------------------|
      expression  pipe  conjunction
     |----------|      |----------||----||----------|
      terms             expression  pipe  expression
@@ -43,7 +43,7 @@ from logging import getLogger
 from ply import yacc
 from mash.shell.ast import Assign, BashPipe, BinaryExpression, \
     Else, ElseIf, ElseIfThen, FunctionDefinition, If, IfThen, IfThenElse, Then, \
-    Indent, InlineFunctionDefinition, Lines, LogicExpression, \
+    PositionalVariable, Indent, InlineFunctionDefinition, Lines, LogicExpression, \
     Map, Math, Method, Pipe, Quoted, Return, Shell, SetDefinition, Terms, Variable, Word
 from mash.shell.grammer.tokenizer import main, tokens
 from mash.shell.grammer.parse_functions import indent_width
@@ -323,6 +323,11 @@ def parse(text, init=True):
     def p_value_method(p):
         'method : METHOD'
         p[0] = Method(p[1])
+
+    def p_value_positional_variable(p):
+        'value : POSITIONAL_VARIABLE'
+        k, *values = p[1].split('.')
+        p[0] = PositionalVariable(k[1:], values)
 
     def p_value_variable(p):
         'value : VARIABLE'

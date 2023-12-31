@@ -121,6 +121,7 @@ class Shell(BaseShell):
     def run_commands(self, ast: Node, prev_result='', run=False):
         if isinstance(ast, Term):
             return ast.run(prev_result, shell=self, lazy=not run)
+                # results = shell.run_commands(item, '', not lazy)
 
         elif isinstance(ast, str):
             return self.run_commands(Term(ast), prev_result, run=run)

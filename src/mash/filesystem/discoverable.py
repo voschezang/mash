@@ -104,6 +104,7 @@ class Discoverable(FileSystem):
         k, *parents = path
 
         for parent in parents:
+            # TODO invalid type: tuple().cd(..)
             path.cd(parent)
 
         self.undiscover(k, cwd)
@@ -196,7 +197,7 @@ def observe(repository: FileSystem, k: Key, initial_value=None, cwd: View = None
             # TODO don't unnecessary override child values
             # e.g. instead limit updates to append
             # e.g. don't override data with initial_values
-            new_data = observe(repository, k, obj, initial_values_key=None)
+            new_data = observe(repository, k, obj)
 
             if not is_directory:
                 return new_data

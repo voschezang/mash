@@ -1,8 +1,3 @@
-"""
-ABC
-
-"""
-
 from functools import partial
 from logging import debug
 
@@ -171,8 +166,8 @@ class ShellWithFileSystem:
 
     def add_cd_alias(self, dirname: str):
         # create alias
-        func = partial(self.repository.cd, dirname)
-        name = f'{self.repository.cd.__name__}({dirname})'
+        func = partial(self.use, dirname)
+        name = f'{self.use.__name__}({dirname})'
         cd_dirname = Function(func, name, f'use {dirname}')
 
         self.shell.add_functions({dirname: cd_dirname},

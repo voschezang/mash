@@ -121,10 +121,13 @@ def test_rest_client_standard_set():
         shell, _ = init()
         shell = shell.shell
 
-        result = catch_output(r'{user}', shell=shell)
-        assert '1000' in result
-        assert '1002' in result
-        result = catch_output(r'{users} >>= show $.id', shell=shell)
+        result = catch_output(r'{users}', shell=shell)
+        assert result == ''
+        assert len(shell._last_results[0]) > 3
+        result = catch_output(r'x <- {users}', shell=shell)
+        assert result == ''
+        result = catch_output(r'{users} >>= show $1.id', shell=shell)
+        0
         # TODO add assertions
         # assert '1001' in result
 

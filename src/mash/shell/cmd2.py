@@ -91,7 +91,7 @@ class Cmd2(cmd.Cmd):
         """
         return super().onecmd(lines)
 
-    def onecmd_prehook(self, line):
+    def onecmd_prehook(self, line: str) -> str:
         """Similar to cmd.precmd but executed before cmd.onecmd.
         """
         if confirmation_mode:

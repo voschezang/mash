@@ -7,6 +7,7 @@ from mash.shell.ast import (Assign, BashPipe, BinaryExpression, Indent,
                             ElseIf, ElseIfThen, FunctionDefinition, If, IfThen, IfThenElse,
                             InlineFunctionDefinition, SetDefinition,
                             Lines, Map, Math, Method, Pipe, Return,
+                            PositionalVariable, Variable,
                             Terms, Word)
 
 
@@ -99,6 +100,22 @@ def test_parse_word():
     assert word == '?'
 
 
+def test_parse_variable():
+    result = parse_line('$ $b')
+    assert isinstance(result, Terms)
+    assert isinstance(result.values[0], Word)
+    assert result.values[0].type == 'term'
+    assert isinstance(result.values[1], Variable)
+
+
+def test_parse_positional_variable():
+    result = parse_line('$0 $1.inner.x')
+    assert isinstance(result, Terms)
+    assert isinstance(result.values[0], PositionalVariable)
+    assert isinstance(result.values[1], PositionalVariable)
+    assert result.values[1].keys == ['inner', 'x']
+
+
 def test_parse_equations():
     text = '1+a'
     result = parse_line(text)
@@ -120,6 +137,7 @@ def test_parse_range():
     assert str(result) == line
     assert result == line
     assert result.values[0].type == 'range'
+
 
 def test_parse_assign():
     result = parse_line('a <- 10')
@@ -143,6 +161,7 @@ def test_parse_infix():
     assert result.key.values == ['a', 'b']
     assert result.value == '2'
 
+
 def test_parse_equals():
     result = parse_line('x == 2')
     assert isinstance(result, BinaryExpression)
@@ -151,6 +170,7 @@ def test_parse_equals():
     with raises(ShellSyntaxError):
         result = parse_line('==')
 
+
 def test_parse_contains():
     result = parse_line('x in 1 2')
     assert isinstance(result, BinaryExpression)
@@ -158,6 +178,7 @@ def test_parse_contains():
 
     with raises(ShellSyntaxError):
         result = parse_line('in')
+
 
 def test_parse_numbers():
     numbers = ['-1', '-0.1', '.2', '-100.']
@@ -570,6 +591,7 @@ def test_parse_math():
     assert result.data.lhs == '1'
     assert result.data.rhs == '1'
 
+
 def test_parse_set():
     result = parse_line('{ users }')
     assert isinstance(result, SetDefinition)
@@ -577,6 +599,9 @@ def test_parse_set():
     assert isinstance(result, SetDefinition)
     result = parse_line('{ users.id }')
     assert isinstance(result, SetDefinition)
+    result = parse_line('{ $users }')
+    assert isinstance(result, SetDefinition)
+
 
 def test_parse_set_with_filter():
     result = parse_line('{ users | .id > 100 }')
@@ -588,6 +613,12 @@ def test_parse_set_with_filter():
     result = parse_line('x <- { users }')
     assert isinstance(result, Assign)
     assert isinstance(result.rhs, SetDefinition)
+    result = parse_line('{ users groups } >>= $1.id')
+    assert isinstance(result, Map)
+    assert isinstance(result.lhs, SetDefinition)
+    assert isinstance(result.rhs, Terms)
+    assert isinstance(result.rhs.values[0], PositionalVariable)
+
 
 def test_parse_set_with_nested_filter():
     # TODO
