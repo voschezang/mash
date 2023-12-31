@@ -58,12 +58,6 @@ class SetDefinition(Node):
             return f'{{ {self.items} | {self.condition} }}'
 
         result = list(self.apply(items, shell))
-        # result = self.parse_result(result)
-        # shell.env[LAST_RESULTS] = result
-
-        # a = ['\n'.join((str(i) for i in c)) for c in result]
-        # return ['\n'.join((str(i) for i in c)) for c in result]
-        # return '\n'.join(str(i) for i in range(len(result)))
         shell._save_result(result)
         return ''
 
@@ -100,5 +94,6 @@ class SetDefinition(Node):
 def merge(dicts: list) -> {}:
     result = {}
     for entry in dicts:
-        result |= entry
+        for k, v in entry.items():
+            result[k] = v
     return result
