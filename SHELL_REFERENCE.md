@@ -242,14 +242,14 @@ range 10 >>= math 10 * $ + 1 |> reduce sum
 
 ```diff
 - SELECT name FROM users INNER JOIN documents ON users.id == document.owner
-+ {users | users.id in {documents.owner}} >>= show $1.name
++ {users | users.id in {documents.owner}} >>= show $.users.name
 ```
 
 *"Show documents of each user"*
 
 ```diff
 - SELECT users.name, documents.name FROM users LEFT JOIN documents ON users.id == document.owner
-+ { users documents | users.id = documents.owner } >>= show $1.email $2.name
++ { users documents | users.id = documents.owner } >>= show $.u.email $.d.name
 ```
 
 Note the similarity to ranges

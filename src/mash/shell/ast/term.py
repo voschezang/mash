@@ -18,7 +18,7 @@ from mash.shell.internals.helpers import run_function
 from mash.shell.ast.node import Node
 from mash.shell.base import POSITIONALS, BaseShell
 from mash.shell.grammer.parse_functions import expand_variables
-from mash.util import quote_all
+from mash.util import has_method, quote_all
 
 
 class Term(Node):
@@ -37,6 +37,11 @@ class Term(Node):
         if '$' in items:
             wildcard_value = prev_result
             prev_result = ''
+        
+        for item in items:
+            if isinstance(item, NestedVariable):
+                wildcard_value = prev_result
+                prev_result = ''
 
         if items[0] == '?':
             if len(items) == 1:
@@ -46,6 +51,11 @@ class Term(Node):
                 line = ' '.join(['?'] + result)
 
             return shell.onecmd_raw(line, prev_result)
+        
+        items = items.copy()
+        for i, item in enumerate(items): 
+            if isinstance(item, NestedVariable):
+                items[i] = item.expand(wildcard_value)
 
         items = list(expand_variables(items, shell.env,
                                       shell.completenames_options,
@@ -124,9 +134,24 @@ class Variable(Term):
 
         return super().run(prev_result, shell, lazy)
 
+
+class NestedVariable(Term):
+    def __init__(self, keys: list):
+        self.keys = keys
+        data = '$.' + '.'.join(keys)
+        super().__init__(data)
+
+    def expand(self, data):
+        for k in self.keys:
+            data = data[k]
+
+        return data
+
+
 class PositionalVariable(Term):
+    # TODO remove unused class
     def __init__(self, i: int, keys: list):
-        self.i = i
+        self.i = int(i)
         self.keys = keys
 
         data = '$' + '.'.join([str(i)] + keys)

@@ -171,12 +171,12 @@ class Map(Infix):
         prev = shell.run_commands(self.lhs, prev_result, run=not lazy)
 
         if str(prev).strip() == '' and shell._last_results:
-            prev = shell._last_results
-            shell.env[LAST_RESULTS] = []
-        # if isinstance(prev, list):
-        #     for item in prev:
-        #         shell.env[POSITIONALS] = prev
-
+            # SMELL
+            prev = shell._last_results.pop(shell._last_results_index)
+            if shell._last_results_index > 0:
+                shell._last_results_index -= 1
+        else:
+            prev = str(prev)
 
         rhs = self.rhs
         if isinstance(rhs, str) or isinstance(rhs, Term):
@@ -201,17 +201,17 @@ class Map(Infix):
         # monadic bind
         # https://en.wikipedia.org/wiki/Monad_(functional_programming)
 
-        try:
-            items = shell.parse(str(values)).values
-        except ShellSyntaxError:
-            items = [Quoted(values)]
+        if isinstance(values, str):
+            try:
+                items = shell.parse(values).values
+            except ShellSyntaxError:
+                items = [Quoted(values)]
+        else:
+            items = values
 
         results = []
         for i, item in enumerate(items):
             shell.env[LAST_RESULTS_INDEX] = i
-            if isinstance(values, list):
-                shell.env[POSITIONALS] = values
-
             results.append(shell.run_commands(command, item, run=True))
 
         shell.env[LAST_RESULTS_INDEX] = 0

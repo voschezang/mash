@@ -126,10 +126,11 @@ def test_rest_client_standard_set():
         assert len(shell._last_results[0]) > 3
         result = catch_output(r'x <- {users}', shell=shell)
         assert result == ''
-        result = catch_output(r'{users} >>= show $1.id', shell=shell)
-        0
-        # TODO add assertions
-        # assert '1001' in result
+        result = catch_output(r'{users} >>= echo $.users.email', shell=shell)
+        users = result.splitlines()
+        assert len(users) == 10
+        assert 'name.0@company.com' in users
+        assert 'name.1@company.com' in users
 
 def test_rest_client_filter_set():
     for init in (init_explicit_client, init_implicit_client):

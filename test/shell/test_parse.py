@@ -7,7 +7,7 @@ from mash.shell.ast import (Assign, BashPipe, BinaryExpression, Indent,
                             ElseIf, ElseIfThen, FunctionDefinition, If, IfThen, IfThenElse,
                             InlineFunctionDefinition, SetDefinition,
                             Lines, Map, Math, Method, Pipe, Return,
-                            PositionalVariable, Variable,
+                            NestedVariable, PositionalVariable, Variable,
                             Terms, Word)
 
 
@@ -107,6 +107,11 @@ def test_parse_variable():
     assert result.values[0].type == 'term'
     assert isinstance(result.values[1], Variable)
 
+def test_parse_nested_variable():
+    result = parse_line('$.inner.x')
+    assert isinstance(result, Terms)
+    assert isinstance(result.values[0], NestedVariable)
+    assert result.values[0].keys == ['inner', 'x']
 
 def test_parse_positional_variable():
     result = parse_line('$0 $1.inner.x')

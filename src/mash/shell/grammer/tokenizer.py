@@ -26,6 +26,7 @@ tokens = (
     'DOUBLE_QUOTED_STRING',  # "a 'b' c"
     'SINGLE_QUOTED_STRING',  # 'a\'bc'
 
+    'NESTED_VARIABLE',
     'POSITIONAL_VARIABLE',
     'METHOD',  # some_method_V1
     'SPECIAL',  # $
@@ -55,6 +56,7 @@ def main():
     t_DEFINE_FUNCTION = r':'
 
     t_SPECIAL = r'\$'
+    t_NESTED_VARIABLE = r'\$(\.[a-zA-Z_0-9]+)+'
     t_POSITIONAL_VARIABLE = r'\$[\d+](\.[a-zA-Z_0-9]+)*'
     t_VARIABLE = r'\$[a-zA-Z_][a-zA-Z_0-9]*'
 

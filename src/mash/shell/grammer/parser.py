@@ -43,8 +43,9 @@ from logging import getLogger
 from ply import yacc
 from mash.shell.ast import Assign, BashPipe, BinaryExpression, \
     Else, ElseIf, ElseIfThen, FunctionDefinition, If, IfThen, IfThenElse, Then, \
-    PositionalVariable, Indent, InlineFunctionDefinition, Lines, LogicExpression, \
-    Map, Math, Method, Pipe, Quoted, Return, Shell, SetDefinition, Terms, Variable, Word
+    NestedVariable, PositionalVariable, Variable, \
+    Indent, InlineFunctionDefinition, Lines, LogicExpression, \
+    Map, Math, Method, Pipe, Quoted, Return, Shell, SetDefinition, Terms, Word
 from mash.shell.grammer.tokenizer import main, tokens
 from mash.shell.grammer.parse_functions import indent_width
 from mash.shell.errors import ShellSyntaxError
@@ -323,6 +324,11 @@ def parse(text, init=True):
     def p_value_method(p):
         'method : METHOD'
         p[0] = Method(p[1])
+
+    def p_value_nested_variable(p):
+        'value : NESTED_VARIABLE'
+        values = p[1].split('.')[1:]
+        p[0] = NestedVariable(values)
 
     def p_value_positional_variable(p):
         'value : POSITIONAL_VARIABLE'
