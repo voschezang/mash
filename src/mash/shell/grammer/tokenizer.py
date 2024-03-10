@@ -28,12 +28,14 @@ tokens = (
 
     'NESTED_VARIABLE',
     'POSITIONAL_VARIABLE',
-    'METHOD',  # some_method_V1
     'SPECIAL',  # $
     'VARIABLE',  # $x
+    'STANDALONE_DOTTED_WORD',
+    'DOTTED_WORD', # .foo
+    # 'DOTTED_NUMBER', # .foo
+    'METHOD',  # some_method_V1
     'WORD',
-    'WORD_WITH_DOT',
-    'NUMBER_WITH_DOT',
+    'NUMBER_WITH_DOT', # 3.14
 
     'WILDCARD',
     'WILDCARD_RANGE',
@@ -124,14 +126,24 @@ def main():
         r'}'
         return t
 
+    def t_STANDALONE_DOTTED_WORD(t):
+        r'\b\.\w+'
+        # match .foo
+        return t
+
+    def t_DOTTED_WORD(t):
+        r'\.\w+'
+        # match .foo
+        return t
+
+    # def t_DOTTED_NUMBER(t):
+    #     r'\.[\w\d]+'
+    #     # match .1
+    #     return t
+
     def t_METHOD(t):
         r'\b[a-zA-Z_][a-zA-Z_0-9]*\b'
         t.type = keywords.get(t.value, 'METHOD')
-        return t
-
-    def t_WORD_WITH_DOT(t):
-        r'\b([\w\d]+\.[\.\w\d]*)|([\w\d]*\.[\.\w\d]+)\b'
-        # match *. or .* or *.*
         return t
 
     def t_NUMBER_WITH_DOT(t):

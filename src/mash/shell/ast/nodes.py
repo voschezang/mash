@@ -70,6 +70,8 @@ class Nodes(Node):
 
     def __add__(self, nodes: Node):
         # assume type is equal
+
+        # SMELL side effect
         self.extend(nodes)
         return self
 
@@ -98,11 +100,39 @@ class Terms(Nodes):
                 return shell.foldr(args, prev_result)
 
         return Term.run_terms(items, prev_result, shell, lazy)
-        
+
     def __eq__(self, other):
         if isinstance(other, str):
             return str(self) == other
         return super(Terms, self) == other
+
+
+class NestedTermItems(Terms):
+    pass
+
+
+class NestedTerm(Term):
+    def __init__(self, items: List[Term]):
+        self.items = NestedTermItems(items)
+
+    def __add__(self, term: Term):
+        return NestedTerm(self.values + term.values)
+
+    def run(self, prev_result='', shell: BaseShell = None, lazy=False):
+        return self.items.run(prev_result, shell, lazy)
+
+    @property
+    def data(self):
+        assert self.values
+
+        if self.values[0] == '':
+            return '.' + '.'.join(self.values[1:])
+
+        return '.'.join(self.values)
+
+    @property
+    def values(self):
+        return self.items.values
 
 
 class Lines(Nodes):

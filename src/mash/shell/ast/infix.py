@@ -3,7 +3,7 @@ from typing import Iterable
 from mash.shell.ast.node import Math, Node, run_shell_command
 from mash.shell.ast.nodes import Terms
 from mash.shell.ast.term import Quoted, Term
-from mash.shell.base import POSITIONALS, BaseShell
+from mash.shell.base import BaseShell
 from mash.shell.errors import ShellError, ShellSyntaxError
 from mash.shell.function import LAST_RESULTS, LAST_RESULTS_INDEX
 from mash.shell.grammer import literals

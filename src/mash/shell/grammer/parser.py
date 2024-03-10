@@ -45,7 +45,7 @@ from mash.shell.ast import Assign, BashPipe, BinaryExpression, \
     Else, ElseIf, ElseIfThen, FunctionDefinition, If, IfThen, IfThenElse, Then, \
     NestedVariable, PositionalVariable, Variable, \
     Indent, InlineFunctionDefinition, Lines, LogicExpression, \
-    Map, Math, Method, Pipe, Quoted, Return, Shell, SetDefinition, Terms, Word
+    Map, Math, Method, Pipe, Quoted, Return, Shell, SetDefinition, Terms, NestedTerm, Word
 from mash.shell.grammer.tokenizer import main, tokens
 from mash.shell.grammer.parse_functions import indent_width
 from mash.shell.errors import ShellSyntaxError
@@ -76,7 +76,6 @@ def parse(text, init=True):
         """lines : BREAK
                  | INDENT BREAK
         """
-        'lines : BREAK'
         # TODO handle `indent expr ; expr`
         p[0] = Lines([])
 
@@ -291,12 +290,39 @@ def parse(text, init=True):
         'terms : term'
         p[0] = Terms([p[1]])
 
+    def p_term_dotted_term(p):
+        'term : dotted_term'
+        p[0] = p[1]
+
     def p_term(p):
         """term : SPECIAL
                 | WORD
-                | WORD_WITH_DOT
         """
         p[0] = Word(p[1], 'term')
+
+    def p_dotted_term_word(p):
+        'dotted_term : WORD dotted_term_tail'
+        p[0] = NestedTerm([p[1]]) + p[2]
+
+    def p_dotted_term_method(p):
+        'dotted_term : METHOD dotted_term_tail'
+        p[0] = NestedTerm([p[1]]) + p[2]
+
+    def p_dotted_term_with_tail(p):
+        'dotted_term : STANDALONE_DOTTED_WORD'
+        term = p[1][1:]
+        p[0] = NestedTerm(['', term])
+
+    def p_dotted_term_tail_inner(p):
+        'dotted_term_tail : DOTTED_WORD dotted_term_tail'
+        term = p[1][1:]
+        p[0] = NestedTerm([term]) + p[2]
+
+    def p_dotted_term_tail(p):
+        'dotted_term_tail : DOTTED_WORD'
+        term = p[1][1:]
+        p[0] = NestedTerm([term])
+
 
     def p_term_value(p):
         """term : value
@@ -359,7 +385,9 @@ def parse(text, init=True):
 
     def p_set_with_filter(p):
         'set : CURLY_BRACE_L terms BASH expression CURLY_BRACE_R'
-        p[0] = SetDefinition(p[2])
+        if p[3] != '|':
+            raise NotImplementedError()
+        p[0] = SetDefinition(p[2], p[4])
 
     def p_illegal_if_then(p):
         """partial_conditional : IF THEN

@@ -91,7 +91,9 @@ class SetDefinition(Node):
                 yield element
 
 
-def merge(dicts: list) -> {}:
+def merge(dicts: list) -> dict:
+    """Merge all items in `dicts` into a single dictionary.
+    """
     result = {}
     for entry in dicts:
         for k, v in entry.items():

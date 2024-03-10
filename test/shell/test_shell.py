@@ -84,8 +84,8 @@ def test_set_do_env():
 
 def test_onecmd_syntax_escape():
     if 0:
-        assert catch_output('echo \\| echo') == '| echo'
-        assert catch_output('echo \| echo') == '| echo'
+        assert catch_output(r'echo \\| echo') == '| echo'
+        assert catch_output(r'echo \| echo') == '| echo'
 
 
 def test_multi_commands():

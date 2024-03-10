@@ -96,7 +96,6 @@ class Word(Term):
         self.data = value
         self.type = string_type
 
-
 class Method(Term):
     def run(self, prev_result='', shell: BaseShell = None, lazy=False):
         if not lazy:

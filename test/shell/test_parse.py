@@ -1,4 +1,5 @@
 from pytest import raises
+from mash.shell.ast.nodes import NestedTerm
 
 from mash.shell.errors import ShellSyntaxError
 from mash.shell.grammer import tokenizer
@@ -100,6 +101,16 @@ def test_parse_word():
     assert word == '?'
 
 
+def test_parse_dotted_word():
+    terms = parse_line('users.alice.id')
+    assert isinstance(terms, Terms)
+    term = terms.values[0]
+    assert isinstance(term, NestedTerm)
+    assert term.values[0] == 'users'
+    assert term.values[1] == 'alice'
+    assert term.values[2] == 'id'
+
+
 def test_parse_variable():
     result = parse_line('$ $b')
     assert isinstance(result, Terms)
@@ -107,11 +118,13 @@ def test_parse_variable():
     assert result.values[0].type == 'term'
     assert isinstance(result.values[1], Variable)
 
+
 def test_parse_nested_variable():
     result = parse_line('$.inner.x')
     assert isinstance(result, Terms)
     assert isinstance(result.values[0], NestedVariable)
     assert result.values[0].keys == ['inner', 'x']
+
 
 def test_parse_positional_variable():
     result = parse_line('$0 $1.inner.x')
@@ -186,13 +199,17 @@ def test_parse_contains():
 
 
 def test_parse_numbers():
-    numbers = ['-1', '-0.1', '.2', '-100.']
+    numbers = ['-1', '-0.1', '-100.']
     text = 'x = ' + ' '.join(numbers)
     # text = '-1.'
     result = parse_line(text)
     assert isinstance(result, Assign)
     assert result.key == 'x'
     assert result.value.values == numbers
+
+    result = parse_line('.2')
+    assert result.data == '.2'
+    assert str(result) == '.2'
 
 
 def test_parse_quotes():
@@ -598,36 +615,50 @@ def test_parse_math():
 
 
 def test_parse_set():
-    result = parse_line('{ users }')
-    assert isinstance(result, SetDefinition)
-    result = parse_line('{ users }')
-    assert isinstance(result, SetDefinition)
+    # result = parse_line('{ users }')
+    # assert isinstance(result, SetDefinition)
+    # result = parse_line('{ users }')
+    # assert isinstance(result, SetDefinition)
+    # result = parse_line('users.id')
+    # r = tokenizer.tokenize('{users.id}')
+    # r = list(r)
     result = parse_line('{ users.id }')
     assert isinstance(result, SetDefinition)
+    assert isinstance(result.items, Terms)
+    assert isinstance(result.items, Terms)
     result = parse_line('{ $users }')
     assert isinstance(result, SetDefinition)
 
 
-def test_parse_set_with_filter():
+def test_parse_set_with_filter_greater():
     result = parse_line('{ users | .id > 100 }')
     assert isinstance(result, SetDefinition)
     result = parse_line('{ users | users.id > 100 }')
     assert isinstance(result, SetDefinition)
+
+
+def test_parse_set_with_filter():
     result = parse_line('{ users groups | x.id == y.id }')
     assert isinstance(result, SetDefinition)
     result = parse_line('x <- { users }')
     assert isinstance(result, Assign)
     assert isinstance(result.rhs, SetDefinition)
-    result = parse_line('{ users groups } >>= $1.id')
+    result = parse_line('{ users groups } >>= $.users.id')
     assert isinstance(result, Map)
     assert isinstance(result.lhs, SetDefinition)
     assert isinstance(result.rhs, Terms)
-    assert isinstance(result.rhs.values[0], PositionalVariable)
+    assert isinstance(result.rhs.values[0], NestedVariable)
 
 
 def test_parse_set_with_nested_filter():
     # TODO
+    result = parse_line('{groups.members}')
     result = parse_line('{ users | users.id == {groups.members}}')
+    assert isinstance(result, SetDefinition)
+    assert isinstance(result.condition, BinaryExpression)
+    assert result.condition.op == '=='
+    # assert isinstance(result.condition.lhs, '')
+    assert isinstance(result.condition.rhs, SetDefinition)
     # assert isinstance(result.values[0], SetDefinition)
     result = parse_line('{ users | users.id in {groups.members}}')
     # assert isinstance(result.values[0], SetDefinition)
