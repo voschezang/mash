@@ -112,27 +112,26 @@ class NestedTermItems(Terms):
 
 
 class NestedTerm(Term):
-    def __init__(self, items: List[Term]):
-        self.items = NestedTermItems(items)
-
-    def __add__(self, term: Term):
-        return NestedTerm(self.values + term.values)
+    def __init__(self, value: str):
+        self.data = value
 
     def run(self, prev_result='', shell: BaseShell = None, lazy=False):
-        return self.items.run(prev_result, shell, lazy)
+        return self.values.run(prev_result, shell, lazy)
 
     @property
-    def data(self):
-        assert self.values
+    def values(self) -> List[str]:
+        values = self.data.split('.')
 
-        if self.values[0] == '':
-            return '.' + '.'.join(self.values[1:])
+        if self.data[0] == '.':
+            values = [None] + values
+            values.insert(0, None)
 
-        return '.'.join(self.values)
+        if self.data[-1] == '.':
+            values.append(0)
 
-    @property
-    def values(self):
-        return self.items.values
+        return values
+
+
 
 
 class Lines(Nodes):

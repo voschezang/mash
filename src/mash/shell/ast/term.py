@@ -18,7 +18,7 @@ from mash.shell.internals.helpers import run_function
 from mash.shell.ast.node import Node
 from mash.shell.base import POSITIONALS, BaseShell
 from mash.shell.grammer.parse_functions import expand_variables
-from mash.util import has_method, quote_all
+from mash.util import quote_all
 
 
 class Term(Node):

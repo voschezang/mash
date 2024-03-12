@@ -55,6 +55,8 @@ tokenizer = None
 
 def parse(text, init=True):
     """Implement ply methods
+
+    Note: whitespace is largely ignored 
     """
 
     precedence = (
@@ -290,39 +292,16 @@ def parse(text, init=True):
         'terms : term'
         p[0] = Terms([p[1]])
 
-    def p_term_dotted_term(p):
-        'term : dotted_term'
-        p[0] = p[1]
+    def p_term_word_with_dot(p):
+        'term : WORD_WITH_DOT'
+        p[0] = NestedTerm(p[1])
 
     def p_term(p):
         """term : SPECIAL
                 | WORD
         """
         p[0] = Word(p[1], 'term')
-
-    def p_dotted_term_word(p):
-        'dotted_term : WORD dotted_term_tail'
-        p[0] = NestedTerm([p[1]]) + p[2]
-
-    def p_dotted_term_method(p):
-        'dotted_term : METHOD dotted_term_tail'
-        p[0] = NestedTerm([p[1]]) + p[2]
-
-    def p_dotted_term_with_tail(p):
-        'dotted_term : STANDALONE_DOTTED_WORD'
-        term = p[1][1:]
-        p[0] = NestedTerm(['', term])
-
-    def p_dotted_term_tail_inner(p):
-        'dotted_term_tail : DOTTED_WORD dotted_term_tail'
-        term = p[1][1:]
-        p[0] = NestedTerm([term]) + p[2]
-
-    def p_dotted_term_tail(p):
-        'dotted_term_tail : DOTTED_WORD'
-        term = p[1][1:]
-        p[0] = NestedTerm([term])
-
+    
 
     def p_term_value(p):
         """term : value

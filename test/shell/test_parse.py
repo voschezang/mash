@@ -199,7 +199,7 @@ def test_parse_contains():
 
 
 def test_parse_numbers():
-    numbers = ['-1', '-0.1', '-100.']
+    numbers = ['-1', '-0.1', '.2', '-100.']
     text = 'x = ' + ' '.join(numbers)
     # text = '-1.'
     result = parse_line(text)
@@ -207,9 +207,6 @@ def test_parse_numbers():
     assert result.key == 'x'
     assert result.value.values == numbers
 
-    result = parse_line('.2')
-    assert result.data == '.2'
-    assert str(result) == '.2'
 
 
 def test_parse_quotes():
@@ -615,14 +612,7 @@ def test_parse_math():
 
 
 def test_parse_set():
-    # result = parse_line('{ users }')
-    # assert isinstance(result, SetDefinition)
-    # result = parse_line('{ users }')
-    # assert isinstance(result, SetDefinition)
-    # result = parse_line('users.id')
-    # r = tokenizer.tokenize('{users.id}')
-    # r = list(r)
-    result = parse_line('{ users.id }')
+    result = parse_line('{ users.alice.id }')
     assert isinstance(result, SetDefinition)
     assert isinstance(result.items, Terms)
     assert isinstance(result.items, Terms)
