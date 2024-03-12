@@ -208,11 +208,12 @@ def check_output(line: str) -> str:
     """Similar to subprocess.check_output, but with more detailed error messages
     """
     result = subprocess.run(line, capture_output=True, shell=True)
+    stdout = result.stdout.decode()
 
-    msg = result.stdout.decode(), result.stderr.decode()
+    msg = stdout, result.stderr.decode()
     assert result.returncode == 0, msg
 
-    return result.stdout.decode().rstrip('\n')
+    return stdout.rstrip('\n')
 
 
 @functools.lru_cache(maxsize=64)

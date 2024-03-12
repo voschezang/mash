@@ -26,13 +26,9 @@ epilog = f"""
 {bold('Default Commands')}
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Run shell commands by prefixing them with `!`.
-E.g.
-    ./shell.py !echo abc; echo def # Bash
-
 Run multiple Python commands by separating each command with colons or newlines.
 E.g.
-    ./shell.py 'print abc; print def \n print ghi'
+    ./shell.py 'print abc; print def'
 
 {bold('Variables')}
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -57,15 +53,7 @@ Interopability with Bash can be done with pipes:
 E.g.
 ```
     echo abc | ./shell.py print
-    ./shell.py print abc | echo
-```
-
-2. Within the dsl
-E.g.
-```
-    ./shell.py print abc # Python
     ./shell.py 'print abc | echo'
-    ./shell.py 'print abc |> print'
 ```
 """
 
@@ -121,7 +109,7 @@ class Shell(BaseShell):
     def run_commands(self, ast: Node, prev_result='', run=False):
         if isinstance(ast, Term):
             return ast.run(prev_result, shell=self, lazy=not run)
-                # results = shell.run_commands(item, '', not lazy)
+            # results = shell.run_commands(item, '', not lazy)
 
         elif isinstance(ast, str):
             return self.run_commands(Term(ast), prev_result, run=run)
@@ -397,6 +385,7 @@ def setup(shell: Shell = None, functions: Dict[str, Function] = None, completion
         shell.load_session(io_util.parse_args.session)
 
     commands = ' '.join(io_util.parse_args.cmd + list(read_stdin()))
+    print('commands', commands)
     filename = io_util.parse_args.file
 
     return shell, commands, filename
