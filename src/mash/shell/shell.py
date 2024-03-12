@@ -385,7 +385,6 @@ def setup(shell: Shell = None, functions: Dict[str, Function] = None, completion
         shell.load_session(io_util.parse_args.session)
 
     commands = ' '.join(io_util.parse_args.cmd + list(read_stdin()))
-    print('commands', commands)
     filename = io_util.parse_args.file
 
     return shell, commands, filename
