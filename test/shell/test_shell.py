@@ -339,6 +339,7 @@ def test_shell_scope():
         with raises(NotImplementedError):
             run_command('( 1 )')
 
+
 def test_set_definition():
     shell = Shell()
     shell.ignore_invalid_syntax = False
@@ -352,6 +353,7 @@ def test_set_definition():
     # run_command('c <- { a b }', shell=shell)
     # run_command('c <- { a b | a == b }', shell=shell)
 
+
 def test_set_notation():
     shell = Shell()
     shell.ignore_invalid_syntax = False
@@ -361,7 +363,8 @@ def test_set_notation():
     assert len(shell.env['y']) == 5
     assert shell.env['y'][0] == {'x': '0'}
     assert shell.env['y'][4] == {'x': '4'}
-    
+
+
 def test_set_with_condition():
     shell = Shell()
     shell.ignore_invalid_syntax = False
@@ -371,7 +374,9 @@ def test_set_with_condition():
     assert len(shell.env['y']) == 2
     assert shell.env['y'][0] == {'x': '3'}
 
-    if 0:
-        result = catch_output('{ users | users.id == {groups.members}}')
-        result = catch_output('{ users groups | x.id == y.id }')
-        result = catch_output('{ users groups } >>= $.users.id')
+    run_command('z <- { $x | 2 < x }', shell=shell)
+    assert len(shell.env['y']) == 2
+    assert shell.env['z'][0] == {'x': '3'}
+
+    result = catch_output('{ $x | x > 2 } >>= echo $.x', shell=shell)
+    assert result.splitlines() == ['3', '4']

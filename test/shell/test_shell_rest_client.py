@@ -139,6 +139,11 @@ def test_rest_client_filter_set():
         # assert '1001' in result
         # assert '1002' not in result
 
+    if 0:
+        result = catch_output('{ users | users.id == {groups.members}}')
+        result = catch_output('{ users groups | x.id == y.id }')
+        result = catch_output('{ users groups } >>= $.users.id')
+
 def test_rest_client_outer_product():
     for init in (init_explicit_client, init_implicit_client):
         shell, _ = init()

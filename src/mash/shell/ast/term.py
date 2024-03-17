@@ -53,7 +53,7 @@ class Term(Node):
             return shell.onecmd_raw(line, prev_result)
         
         items = items.copy()
-        for i, item in enumerate(items): 
+        for i, item in enumerate(items):
             if isinstance(item, NestedVariable):
                 items[i] = item.expand(wildcard_value)
 
