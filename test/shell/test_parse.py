@@ -641,14 +641,14 @@ def test_parse_set_with_filter():
 
 
 def test_parse_set_with_nested_filter():
-    # TODO
-    result = parse_line('{groups.members}')
+    result = parse_line(r'{groups.members}')
+    assert isinstance(result, SetDefinition)
+    assert result.values[0] == 'groups.members'
+
     result = parse_line('{ users | users.id == {groups.members}}')
+    assert repr(result) == 'SetDefinition( users | users.id == groups.members )'
     assert isinstance(result, SetDefinition)
     assert isinstance(result.condition, BinaryExpression)
     assert result.condition.op == '=='
-    # assert isinstance(result.condition.lhs, '')
+    assert isinstance(result.condition.lhs, Terms)
     assert isinstance(result.condition.rhs, SetDefinition)
-    # assert isinstance(result.values[0], SetDefinition)
-    result = parse_line('{ users | users.id in {groups.members}}')
-    # assert isinstance(result.values[0], SetDefinition)

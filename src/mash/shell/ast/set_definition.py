@@ -90,6 +90,12 @@ class SetDefinition(Node):
             if result:
                 yield element
 
+    def __repr__(self):
+        if self.condition:
+            condition = f'{self.condition.lhs} {self.condition.op} {self.condition.rhs}'
+            return f'{type(self).__name__}( {str(self.data)} | {condition} )'
+        return f'{type(self).__name__}( {str(self.data)} )'
+
 
 def merge(dicts: list) -> dict:
     """Merge all items in `dicts` into a single dictionary.
