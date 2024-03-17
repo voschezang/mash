@@ -4,7 +4,7 @@ from pytest import raises
 from mash import io_util
 from mash.shell import ShellError
 from mash.shell.shell import Shell, run_command
-from src.mash.shell.cmd2 import run_commands_from_file
+from mash.shell.cmd2 import run_commands_from_file
 
 
 # Beware of the trailing space

@@ -3,11 +3,8 @@ from pytest import raises
 from mash import io_util
 from mash.shell import ShellError
 from mash.shell.shell import Shell
-from src.mash.shell.cmd2 import run_command
-
-
-def catch_output(line='', func=run_command, **kwds) -> str:
-    return io_util.catch_output(line, func, **kwds)
+from mash.shell.cmd2 import run_command
+from test_shell import catch_output
 
 
 def test_inline_function_simple():

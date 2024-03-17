@@ -1,12 +1,10 @@
 from mash import io_util
-from mash.shell.grammer.literals import TRUE
 from mash.shell.shell import Shell
-from src.mash.shell.cmd2 import run_command
+from mash.shell.cmd2 import run_command
 from mash.util import use_recursion_limit
 
+from test_shell import catch_output
 
-def catch_output(line='', func=run_command, **kwds) -> str:
-    return io_util.catch_output(line, func, **kwds)
 
 
 def test_multiline_function():

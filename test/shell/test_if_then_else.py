@@ -1,14 +1,11 @@
 from pytest import raises
 
-from mash import io_util
 from mash.shell import ShellError
 from mash.shell.grammer.literals import TRUE
 from mash.shell.errors import ShellSyntaxError
 from mash.shell.shell import Shell, run_command
 
-
-def catch_output(line='', func=run_command, **kwds) -> str:
-    return io_util.catch_output(line, func, **kwds)
+from test_shell import catch_output
 
 
 def test_shell_if_then():
@@ -231,9 +228,9 @@ def test_shell_if_else_multiline():
 
     def line(a, b, c):
         return f"""
-if {a} then 
+if {a} then
     print 1
-else if {b} 
+else if {b}
 then print 2
 else
     print 3
@@ -260,7 +257,7 @@ def test_shell_if_else_multiline_nested():
 
     def line(a, b, c, d):
         return f"""
-if {a} then 
+if {a} then
     if {b} then
         print 1
     else

@@ -4,7 +4,6 @@ from mash import io_util
 from mash.shell import ShellError
 from mash.shell.shell import Shell
 from mash.shell.cmd2 import run_command
-from mash.shell.grammer.parser import parse
 
 
 def catch_output(line='', func=run_command, **kwds) -> str:
