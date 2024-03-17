@@ -107,9 +107,9 @@ class BinaryExpression(Infix):
         line = ' '.join(quote_items([a, op, b]))
 
         if op in literals.comparators:
-            if not lazy:
-                return Math.eval(line, shell.env)
-            return a, op, b
+            if lazy:
+                return a, op, b
+            return Math.eval(line, shell.env)
 
         if op in '+-*/':
             # math

@@ -6,6 +6,8 @@ from mash.shell.ast.nodes import Terms
 from mash.shell.ast.term import Term
 from mash.shell.base import BaseShell
 from mash.shell.cmd2 import Mode
+from mash.shell.internals.helpers import enter_new_scope
+from mash.shell.function import InlineFunction
 
 
 class SetDefinition(Node):
@@ -33,6 +35,11 @@ class SetDefinition(Node):
         for item in self.items.values:
             key = shell.run_commands(item, '', lazy)[0]
             key = str(item)
+
+            if key.startswith('$'):
+                # SMELL
+                key = key[1:]
+
             with shell.use_mode(Mode.COMPILE):
                 results = shell.run_commands(item, '', not lazy)
 
@@ -81,14 +88,18 @@ class SetDefinition(Node):
             yield from (merge(row) for row in product(*columns))
             return
 
-        if 1:
-            # TODO remove
-            yield from product(*data)
-            return
-        for element in product(*data):
-            result = shell.run_commands(self.condition, element)
+        for element in product(*columns):
+            with enter_new_scope(shell):
+                for item in element:
+                    # shell.env.update(item)
+                    for k, v in item.items():
+                        f = InlineFunction(v, [], f'do_{k}' )
+                        shell.env[k] = f
+
+                result = shell.run_commands(self.condition, '', run=True)
+
             if result:
-                yield element
+                yield merge(element)
 
     def __repr__(self):
         if self.condition:

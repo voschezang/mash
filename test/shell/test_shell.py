@@ -338,3 +338,40 @@ def test_shell_scope():
     if 0:
         with raises(NotImplementedError):
             run_command('( 1 )')
+
+def test_set_definition():
+    shell = Shell()
+    shell.ignore_invalid_syntax = False
+
+    run_command('a <- range 3', shell=shell)
+    run_command('b <- range 3', shell=shell)
+    run_command('c <- { $a }', shell=shell)
+    assert shell.env['c'] == [{'a': '0'}, {'a': '1'}, {'a': '2'}]
+
+    # TODO
+    # run_command('c <- { a b }', shell=shell)
+    # run_command('c <- { a b | a == b }', shell=shell)
+
+def test_set_notation():
+    shell = Shell()
+    shell.ignore_invalid_syntax = False
+
+    run_command('x <- range 5', shell=shell)
+    run_command('y <- { $x }', shell=shell)
+    assert len(shell.env['y']) == 5
+    assert shell.env['y'][0] == {'x': '0'}
+    assert shell.env['y'][4] == {'x': '4'}
+    
+def test_set_with_condition():
+    shell = Shell()
+    shell.ignore_invalid_syntax = False
+
+    run_command('x <- range 5', shell=shell)
+    run_command('y <- { $x | x > 2 }', shell=shell)
+    assert len(shell.env['y']) == 2
+    assert shell.env['y'][0] == {'x': '3'}
+
+    if 0:
+        result = catch_output('{ users | users.id == {groups.members}}')
+        result = catch_output('{ users groups | x.id == y.id }')
+        result = catch_output('{ users groups } >>= $.users.id')

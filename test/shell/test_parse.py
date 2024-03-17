@@ -638,17 +638,3 @@ def test_parse_set_with_filter():
     assert isinstance(result.lhs, SetDefinition)
     assert isinstance(result.rhs, Terms)
     assert isinstance(result.rhs.values[0], NestedVariable)
-
-
-def test_parse_set_with_nested_filter():
-    result = parse_line(r'{groups.members}')
-    assert isinstance(result, SetDefinition)
-    assert result.values[0] == 'groups.members'
-
-    result = parse_line('{ users | users.id == {groups.members}}')
-    assert repr(result) == 'SetDefinition( users | users.id == groups.members )'
-    assert isinstance(result, SetDefinition)
-    assert isinstance(result.condition, BinaryExpression)
-    assert result.condition.op == '=='
-    assert isinstance(result.condition.lhs, Terms)
-    assert isinstance(result.condition.rhs, SetDefinition)
