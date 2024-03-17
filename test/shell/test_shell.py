@@ -380,3 +380,22 @@ def test_set_with_condition():
 
     result = catch_output('{ $x | x > 2 } >>= echo $.x', shell=shell)
     assert result.splitlines() == ['3', '4']
+
+def test_set_multivariate():
+    shell = Shell()
+    shell.ignore_invalid_syntax = False
+
+    run_command('x <- range 3', shell=shell)
+    run_command('y <- range 10 13', shell=shell)
+    run_command('z <- { $x $y }', shell=shell)
+    assert len(shell.env['z']) == 9
+    assert shell.env['z'][0] == {'x': '0', 'y': '10'}
+
+    result = catch_output('{ $x $y } >>= echo $.y', shell=shell)
+    assert result.splitlines()[0] == '10'
+    assert result.splitlines()[2] == '12'
+
+    run_command('z <- { $x $y | x < 2 }', shell=shell)
+    assert len(shell.env['z']) == 6
+    assert shell.env['z'][0] == {'x': '0', 'y': '10'}
+    assert shell.env['z'][4] == {'x': '1', 'y': '11'}
