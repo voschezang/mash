@@ -91,8 +91,6 @@ def test_multi_commands():
     assert catch_output('print a ; print b\n print c') == 'a\nb\nc'
 
 
-
-
 def test_add_functions():
     Shell.ignore_invalid_syntax = True
     shell = Shell()
