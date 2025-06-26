@@ -101,8 +101,10 @@ def add_default_args(parser: ArgumentParser):
 def allow_all_args():
     parser.add_argument('*', nargs='*')
 
+
 def python_is_run_in_test_mode() -> bool:
     return os.path.basename(sys.argv[0]) in ('pytest', 'py.test', 'run_pytest_script.py')
+
 
 class ArgparseWrapper:
     def __init__(self, *args,
