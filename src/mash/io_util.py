@@ -50,7 +50,6 @@ def print_shell_ready_signal():
 
 @functools.lru_cache(maxsize=1)
 def verbosity():
-    global parse_args
     if parse_args is not None and 'verbose' in parse_args:
         return parse_args.verbose
 

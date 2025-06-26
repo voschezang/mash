@@ -1,6 +1,5 @@
 from functools import partial
 from logging import info
-import os
 import yaml
 import dominate
 from dominate.tags import table, tbody, th, tr, td, style

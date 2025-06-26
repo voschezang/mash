@@ -8,7 +8,6 @@ import sys
 from mash.doc_inference import generate_docs
 from mash.io_util import log, log_once
 from mash import util
-from mash.shell.grammer.parse_functions import dataclass_to_string
 
 # this data is impacts by both the classes Function and Shell, hence it should be global
 exception_hint = '(run `E` for details)'

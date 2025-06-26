@@ -12,7 +12,6 @@ class VerificationException(Exception):
 def resolve(hostname: str):
     try:
         return socket.gethostbyname(hostname)
-    # except socket.gaierror as e:
     except socket.error:
         raise VerificationException(f'Failed to resolve hostname: {hostname}')
 
@@ -27,15 +26,15 @@ def connect(hostname, port=443, timeout=3):
                 print(ssock.version())
                 ssock.do_handshake()
                 print(ssock.version())
-    except ConnectionRefusedError as e:
+    except ConnectionRefusedError:
         raise VerificationException(
             f'Connection refused for: {hostname}:{port}')
-    except socket.timeout as e:
+    except socket.timeout:
         raise VerificationException(
             f'Connection Timeout for: {hostname}:{port}')
-    except socket.gaiaerror as e:
+    except socket.gaiaerror:
         raise VerificationException(f'Unknown Error for: {hostname}:{port}')
-    except Exception as e:
+    except Exception:
         raise VerificationException(f'Unknown Error for: {hostname}:{port}')
 
 

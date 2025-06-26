@@ -1,7 +1,5 @@
-from multiprocessing.sharedctypes import Value
 import aiohttp
 from aiohttp import ClientSession
-import time
 import random
 
 from mash import util

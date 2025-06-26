@@ -2,7 +2,7 @@
 from json import dumps
 
 if __name__ == '__main__':
-    import _extend_path
+    import _extend_path # noqa
 
 from mash.filesystem.discoverable import observe
 from mash.object_parser.factory import JSONFactory

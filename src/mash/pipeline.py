@@ -148,7 +148,7 @@ class Strategy(Enum):
     constant = auto()
 
 
-@ dataclass
+@dataclass
 class Resource:
     processor: Processor
     delivery_queues: Tuple[queue.Queue, queue.Queue]
@@ -308,11 +308,11 @@ class PushPull(Pipeline):
         for item in items:
             self.append(item)
 
-    @ property
+    @property
     def in_queue(self):
         return self.queues[0]
 
-    @ property
+    @property
     def out_queue(self):
         return self.queues[-1]
 

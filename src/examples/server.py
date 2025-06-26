@@ -4,7 +4,7 @@
 from flask_cors import CORS
 
 if __name__ == '__main__':
-    import _extend_path
+    import _extend_path # noqa
 
 from mash.server.server import init
 

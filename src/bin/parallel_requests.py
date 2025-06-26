@@ -1,6 +1,6 @@
 
 if __name__ == '__main__':
-    import _extend_path
+    import _extend_path # noqa
 
 import time
 from mash.pipeline import PushPull, Strategy

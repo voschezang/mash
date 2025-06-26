@@ -82,8 +82,6 @@ def run(args, timeout=0.3):
 def read_output(stream: TextIOBase, timeout=0, block=False):
     """Read and print a line from `stream`.
     """
-
-    global is_activated
     if not is_activated[stream]:
         is_activated[stream] = has_output(stream)
 

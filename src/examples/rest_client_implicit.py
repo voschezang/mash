@@ -2,7 +2,7 @@
 """Browse and query a dynamic REST API.
 """
 if __name__ == '__main__':
-    import _extend_path
+    import _extend_path # noqa
 
 from json import JSONDecodeError, loads
 from urllib.parse import quote_plus, urljoin, urlparse
@@ -50,8 +50,6 @@ def _infer_path(key: str, cwd: View) -> list:
 
 
 def get(url: str):
-    global http_resource
-
     # query a mock server
     data = init_client().get(urlparse(url).path)
     if data.status_code != 200:

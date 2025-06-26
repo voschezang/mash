@@ -8,7 +8,7 @@ from mash.io_util import log
 from mash.shell.grammer import literals
 from mash.shell.grammer.literals import FALSE, TRUE
 from mash.shell.errors import ShellError
-from mash.util import crop, has_method, is_globbable, is_valid_method_name, match_words, quote, quote_all, glob
+from mash.util import crop, is_globbable, is_valid_method_name, match_words, quote, quote_all, glob
 
 
 def expand_variables(terms: List[str], env: dict,

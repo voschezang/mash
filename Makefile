@@ -1,4 +1,4 @@
-.PHONY: docs web test
+mPHONY: docs web test
 
 github = https://github.com/voschezang/mash/blob/main/
 out = docs/source/modules
@@ -6,13 +6,24 @@ out = docs/source/modules
 test:
 	# print difference as a warning
 	autopep8 -r --diff src
-	flake8 --ignore=E241,E501,W504 src
+	#flake8 --ignore=E241,E501,W504 src
+	make lint
 	pytest -n 4
+
+lint:
+	# remove auto-generated file
+	rm -f src/mash/shell/grammer/parsetab.py
+	# enforce linting
+	flake8 src --count --select=E9,F63,F7,F82 --show-source --statistics
+	# show lenient errors
+	flake8 src --count --exit-zero --max-complexity=11 --max-line-length=127 --statistics
+
 
 format:
 	autopep8 -r -a -a -a --in-place src/mash
 
 clean:
+	rm -f src/mash/shell/grammer/parsetab.py
 	find . -name '__pycache__' | xargs rm -rf {1}
 	#find . -name '__pycache__' -exec rm -rf {} \;
 	rm -rf dist

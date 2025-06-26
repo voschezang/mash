@@ -10,7 +10,6 @@ class Repository:
 
     @staticmethod
     def read():
-        global db
         return db
 
 

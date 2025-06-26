@@ -191,9 +191,9 @@ async def worker(func, queue: asyncio.Queue, results=[], errors=[], **kwds):
                 await try_task(func, task, session, results, errors, **kwds)
                 queue.task_done()
 
-    except asyncio.CancelledError as error:
+    except asyncio.CancelledError:
         return results, errors
-    except Exception as e:
+    except Exception:
         print('Warning, deadlock encounterd; queue.join() is waiting for .task_done()')
         sys.exit(8)
 

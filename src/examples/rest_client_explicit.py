@@ -7,7 +7,7 @@ from time import time
 from typing import Dict, List
 
 if __name__ == '__main__':
-    import _extend_path
+    import _extend_path # noqa
 
 from mash.filesystem.discoverable import observe
 from mash.filesystem.view import Path
