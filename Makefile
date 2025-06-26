@@ -1,4 +1,4 @@
-.PHONY: docs web
+.PHONY: docs web test
 
 github = https://github.com/voschezang/mash/blob/main/
 out = docs/source/modules
