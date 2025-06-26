@@ -215,8 +215,8 @@ class ShellWithFileSystem:
             if error < 0.8:
                 return self.use(candidates[0])
 
-        if is_digit(dirname):
-            return self.use(dirname)
+        # if is_digit(dirname):
+        #     return self.use(dirname)
 
         debug('No matching directory found')
         return dirname

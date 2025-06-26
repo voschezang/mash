@@ -107,33 +107,6 @@ class Terms(Nodes):
         return super(Terms, self) == other
 
 
-class NestedTermItems(Terms):
-    pass
-
-
-class NestedTerm(Term):
-    def __init__(self, value: str):
-        self.data = value
-
-    def run(self, prev_result='', shell: BaseShell = None, lazy=False):
-        return self.values.run(prev_result, shell, lazy)
-
-    @property
-    def values(self) -> List[str]:
-        values = self.data.split('.')
-
-        if self.data[0] == '.':
-            values = [None] + values
-            values.insert(0, None)
-
-        if self.data[-1] == '.':
-            values.append(0)
-
-        return values
-
-
-
-
 class Lines(Nodes):
     def run(self, prev_result='', shell: BaseShell = None, lazy=False):
         for item in self.values:

@@ -1,5 +1,4 @@
 from pytest import raises
-from mash.shell.ast.nodes import NestedTerm
 
 from mash.shell.errors import ShellSyntaxError
 from mash.shell.grammer import tokenizer
@@ -8,6 +7,7 @@ from mash.shell.ast import (Assign, BashPipe, BinaryExpression, Indent,
                             ElseIf, ElseIfThen, FunctionDefinition, If, IfThen, IfThenElse,
                             InlineFunctionDefinition, SetDefinition,
                             Lines, Map, Math, Method, Pipe, Return,
+                            NestedTerm,
                             NestedVariable, PositionalVariable, Variable,
                             Terms, Word)
 

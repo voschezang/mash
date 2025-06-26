@@ -91,10 +91,8 @@ class SetDefinition(Node):
         for element in product(*columns):
             with enter_new_scope(shell):
                 for item in element:
-                    # shell.env.update(item)
                     for k, v in item.items():
-                        f = InlineFunction(v, [], f'do_{k}' )
-                        shell.env[k] = f
+                        shell.env[k] = v
 
                 result = shell.run_commands(self.condition, '', run=True)
 
