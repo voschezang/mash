@@ -3,7 +3,7 @@ if __name__ == '__main__':
     import _extend_path # noqa
 
 import time
-from mash.pipeline import PushPull, Strategy
+from mash.webtools.pipeline import PushPull, Strategy
 from mash.webtools.parallel_requests import compute
 
 

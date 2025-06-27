@@ -5,7 +5,7 @@ import random
 from mash import util
 from mash.server.routes.default import basepath
 from mash.webtools.parallel import asynchronous
-from mash.pipeline import Processor, PushPull, Strategy, identity, constant, duplicate
+from mash.webtools.pipeline import Processor, PushPull, Strategy, identity, constant, duplicate
 
 url = 'http://localhost:5000' + basepath
 
