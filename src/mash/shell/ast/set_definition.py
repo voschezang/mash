@@ -36,8 +36,6 @@ class SetDefinition(Node):
             key = shell.run_commands(item, '', lazy)[0]
             key = str(item)
 
-            assert not key.startswith('$')
-
             with shell.use_mode(Mode.COMPILE):
                 if key in shell.env:
                     results = shell.env[key]

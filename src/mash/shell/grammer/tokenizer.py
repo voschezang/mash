@@ -26,7 +26,7 @@ tokens = (
     'DOUBLE_QUOTED_STRING',  # "a 'b' c"
     'SINGLE_QUOTED_STRING',  # 'a\'bc'
 
-    'NESTED_VARIABLE',
+    'NESTED_VARIABLE', # $foo.bar
     'POSITIONAL_VARIABLE',
     'SPECIAL',  # $
     'VARIABLE',  # $x

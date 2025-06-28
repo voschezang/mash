@@ -101,6 +101,7 @@ def to_string(value: Any) -> str:
         if value == {}:
             return ''
 
+        # hanlde nested dicts
         elif isinstance(next(iter(value.values())), dict):
             try:
                 table = pd.DataFrame(value)
@@ -117,6 +118,7 @@ def to_string(value: Any) -> str:
                 result[k] = str(v)
 
         df = pd.Series(result, name='values').to_frame()
+        df.index.name = 'keys'
         value = df.to_markdown()
 
     return str(value)

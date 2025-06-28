@@ -75,10 +75,26 @@ def test_onecmd_syntax_quotes():
     assert catch_output('a = 1 "="', shell=shell) == ''
 
 
-def test_set_do_env():
+def test_do_env():
     shell = Shell()
-    # TODO this fails
     assert catch_output('env', shell=shell) == ''
+
+    """Print environment as a markdown table
+| keys   |   values |
+|:-------|---------:|
+| x      |        3 |
+    """
+    expected = '| keys   |   values |\n|:-------|---------:|\n| x      |        2 |'
+    run_command('x = 2', shell=shell)
+    assert catch_output('env', shell=shell) == expected
+
+
+def test_env_variables_nested():
+    shell = Shell()
+    shell.env['x'] = {'a': 'foo'}
+    # TODO
+    # assert catch_output('$x', shell=shell) == ''
+    # assert catch_output('$x.a', shell=shell) == 'foo'
 
 
 def test_onecmd_syntax_escape():
