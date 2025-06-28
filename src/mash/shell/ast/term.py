@@ -8,10 +8,12 @@ Term
     Term
     ├── Method # f()
     ├── Quoted # "abc"
-    ├── Variable $x
-    └── Word
+    ├── Variable # $x
+    └── Word # anything else
 """
 
+from logging import debug
+from typing import List
 from mash.shell.errors import ShellError
 from mash.shell.internals.if_statement import Abort
 from mash.shell.internals.helpers import run_function
@@ -37,7 +39,7 @@ class Term(Node):
         if '$' in items:
             wildcard_value = prev_result
             prev_result = ''
-        
+
         for item in items:
             if isinstance(item, NestedVariable):
                 wildcard_value = prev_result
@@ -51,9 +53,14 @@ class Term(Node):
                 line = ' '.join(['?'] + result)
 
             return shell.onecmd_raw(line, prev_result)
-        
+
         items = items.copy()
         for i, item in enumerate(items):
+            # TODO from 2024
+            if isinstance(item, NestedTerm):
+                value = item.run('', shell, lazy)
+                items[i] = Term(str(value))
+
             if isinstance(item, NestedVariable):
                 items[i] = item.expand(wildcard_value)
 
@@ -91,10 +98,44 @@ class Term(Node):
         return shell._default_method(line)
 
 
+class NestedTerm(Term):
+    def __init__(self, value: str):
+        self.data = value
+
+    def run(self, prev_result='', shell: BaseShell = None, lazy=False):
+        parent, *children = self.values
+        if parent not in shell.env:
+            raise ShellError(f'Undefined variable: {parent}')
+
+        obj = shell.env[parent]
+        for k in children:
+            try:
+                obj = obj[k]
+            except KeyError as e:
+                debug(e)
+                raise ShellError(f'Invalid variable: {k}')
+
+        return obj
+
+    @property
+    def values(self) -> List[str]:
+        values = self.data.split('.')
+
+        if self.data[0] == '.':
+            values = [None] + values
+            values.insert(0, None)
+
+        if self.data[-1] == '.':
+            values.append(0)
+
+        return values
+
+
 class Word(Term):
     def __init__(self, value, string_type=''):
         self.data = value
         self.type = string_type
+
 
 class Method(Term):
     def run(self, prev_result='', shell: BaseShell = None, lazy=False):

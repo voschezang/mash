@@ -31,17 +31,16 @@ class SetDefinition(Node):
         super().__init__(str(items))
 
     def run(self, prev_result='', shell: BaseShell = None, lazy=False):
-        items = {}
+        data = {}
         for item in self.items.values:
             key = shell.run_commands(item, '', lazy)[0]
             key = str(item)
 
-            if key.startswith('$'):
-                # SMELL
-                key = key[1:]
-
             with shell.use_mode(Mode.COMPILE):
-                results = shell.run_commands(item, '', not lazy)
+                if key in shell.env:
+                    results = shell.env[key]
+                else:
+                    results = shell.run_commands(item, '', not lazy)
 
             if results is None:
                 continue
@@ -59,12 +58,13 @@ class SetDefinition(Node):
             else:
                 inner = list(results)
 
-            items[key] = inner
+            data[key] = inner
 
+        # TODO evaluate this condition earlier
         if lazy:
             return f'{{ {self.items} | {self.condition} }}'
 
-        result = list(self.apply(items, shell))
+        result = list(self.apply(data, shell))
         shell._save_result(result)
         return ''
 
@@ -91,10 +91,10 @@ class SetDefinition(Node):
         for element in product(*columns):
             with enter_new_scope(shell):
                 for item in element:
-                    # shell.env.update(item)
                     for k, v in item.items():
                         f = InlineFunction(v, [], f'do_{k}' )
                         shell.env[k] = f
+                        # shell.env[k] = v
 
                 result = shell.run_commands(self.condition, '', run=True)
 
