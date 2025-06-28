@@ -120,10 +120,14 @@ def test_parse_variable():
 
 
 def test_parse_nested_variable():
-    result = parse_line('$.inner.x')
+    result = parse_line('$outer.inner')
     assert isinstance(result, Terms)
     assert isinstance(result.values[0], NestedVariable)
-    assert result.values[0].keys == ['inner', 'x']
+    assert result.values[0].keys == ['outer', 'inner']
+
+    result = parse_line('$.inner.x').values[0]
+    assert isinstance(result, NestedVariable)
+    assert result.keys == ['$', 'inner', 'x']
 
 
 def test_parse_positional_variable():

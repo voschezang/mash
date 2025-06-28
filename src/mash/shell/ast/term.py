@@ -134,6 +134,7 @@ class NestedTerm(Term):
 class Word(Term):
     def __init__(self, value, string_type=''):
         self.data = value
+        # SMELL
         self.type = string_type
 
 
@@ -177,8 +178,13 @@ class Variable(Term):
 
 class NestedVariable(Term):
     def __init__(self, keys: list):
+        # first key is either a wildcard ($) or a variable
+        if keys[0] != '$':
+            keys[0] = keys[0][1:]
+
         self.keys = keys
-        data = '$.' + '.'.join(keys)
+
+        data = '.'.join(keys)
         super().__init__(data)
 
     def expand(self, data):
