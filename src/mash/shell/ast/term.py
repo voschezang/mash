@@ -8,8 +8,8 @@ Term
     Term
     ├── Method # f()
     ├── Quoted # "abc"
-    ├── Variable $x
-    └── Word
+    ├── Variable # $x
+    └── Word # anything else
 """
 
 from logging import debug
@@ -56,6 +56,11 @@ class Term(Node):
 
         items = items.copy()
         for i, item in enumerate(items):
+            # TODO from 2024
+            # if isinstance(item, NestedTerm):
+            #     value = item.run('', shell, lazy)
+            #     items[i] = Term(str(value))
+
             if isinstance(item, NestedVariable):
                 items[i] = item.expand(wildcard_value)
 
