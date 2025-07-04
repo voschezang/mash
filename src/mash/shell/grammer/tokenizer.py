@@ -130,7 +130,7 @@ def main():
         return t
 
     def t_DOTTED_WORD(t):
-        r'([\w\d]+\.[\.\w\d]*)|([\w\d]*\.[\.\w\d]+)'
+        r'([\w\d]+\.[\.\w\d]*)|([\w\d\.]*\.[\w\d]+)'
         # match *. or .* or *.*
         return t
 

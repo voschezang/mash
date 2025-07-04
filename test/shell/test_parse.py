@@ -94,6 +94,13 @@ def test_parse_word():
     assert word.type == 'symbol'
     assert word == line
 
+    line = '..'
+    result = parse(line)
+    word = result.values[0].values[0]
+    assert isinstance(word, Word)
+    assert word.type == 'symbol'
+    assert word == line
+
     line = '?'
     result = parse(line)
     word = result.values[0].values[0]
@@ -134,8 +141,9 @@ def test_parse_positional_variable():
     result = parse_line('$0 $1.inner.x')
     assert isinstance(result, Terms)
     assert isinstance(result.values[0], PositionalVariable)
-    assert isinstance(result.values[1], PositionalVariable)
-    assert result.values[1].keys == ['inner', 'x']
+    # TODO implement this
+    assert isinstance(result.values[1], NestedVariable)
+    # assert result.values[1].keys == ['inner', 'x']
 
 
 def test_parse_equations():

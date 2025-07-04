@@ -92,9 +92,14 @@ def test_do_env():
 def test_env_variables_nested():
     shell = Shell()
     shell.env['x'] = {'a': 'foo'}
-    # TODO
-    # assert catch_output('$x', shell=shell) == ''
-    # assert catch_output('$x.a', shell=shell) == 'foo'
+    assert catch_output('$x.a', shell=shell) == 'foo'
+
+    with raises(ShellError):
+        catch_output('$x.b', shell=shell)
+
+    shell.env['x'] = 10
+    with raises(ShellError):
+        catch_output('$x.a', shell=shell)
 
 
 def test_onecmd_syntax_escape():

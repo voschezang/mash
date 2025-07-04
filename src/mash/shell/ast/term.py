@@ -19,7 +19,7 @@ from mash.shell.internals.if_statement import Abort
 from mash.shell.internals.helpers import run_function
 from mash.shell.ast.node import Node
 from mash.shell.base import POSITIONALS, BaseShell
-from mash.shell.grammer.parse_functions import expand_variables
+from mash.shell.grammer.parse_functions import expand_variables, to_string
 from mash.util import quote_all
 
 
@@ -40,11 +40,6 @@ class Term(Node):
             wildcard_value = prev_result
             prev_result = ''
 
-        for item in items:
-            if isinstance(item, NestedVariable):
-                wildcard_value = prev_result
-                prev_result = ''
-
         if items[0] == '?':
             if len(items) == 1:
                 line = '?'
@@ -56,14 +51,12 @@ class Term(Node):
 
         items = items.copy()
         for i, item in enumerate(items):
-            # TODO from 2024
-            if isinstance(item, NestedTerm):
-                value = item.run('', shell, lazy)
-                items[i] = Term(str(value))
+            try:
+                items[i] = item.expand_variable(shell.env)
+            except AttributeError:
+                pass
 
-            if isinstance(item, NestedVariable):
-                items[i] = item.expand(wildcard_value)
-
+        # TODO integrate expansion in the respective classes
         items = list(expand_variables(items, shell.env,
                                       shell.completenames_options,
                                       shell.ignore_invalid_syntax,
@@ -96,6 +89,9 @@ class Term(Node):
 
         line = ' '.join(str(v) for v in items)
         return shell._default_method(line)
+
+    def expand_variable(self, env: dict):
+        return self
 
 
 class NestedTerm(Term):
@@ -187,11 +183,17 @@ class NestedVariable(Term):
         data = '.'.join(keys)
         super().__init__(data)
 
-    def expand(self, data):
+    def expand_variable(self, env: dict):
+        trace = []
         for k in self.keys:
-            data = data[k]
+            trace.append(k)
+            try:
+                env = env[k]
+            except (KeyError, TypeError) as e:
+                debug(e)
+                raise ShellError(f'Variable not found: {" ".join(trace)}')
 
-        return data
+        return PythonData(self, env)
 
 
 class PositionalVariable(Term):
@@ -218,3 +220,18 @@ class PositionalVariable(Term):
             return obj
 
         return super().run(prev_result, shell, lazy)
+
+
+class PythonData(Term):
+    """Wrapper to represent data from environment variables.
+    """
+    def __init__(self, original: Term, value):
+        self.data = value
+
+    def __eq__(self, other):
+        """Literal comparison
+        """
+        return self.original == other
+    
+    def __str__(self):
+        return to_string(self.data)

@@ -186,6 +186,9 @@ class BaseShell(Cmd2):
             return filter_private_keys(self.env.asdict())
 
         try:
+            if len(keys.split()) == 1:
+                return self.env[keys]
+
             return {k: self.env[k] for k in keys.split()}
         except KeyError:
             log('Invalid key')
