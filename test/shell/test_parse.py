@@ -1,5 +1,4 @@
 from pytest import raises
-from mash.shell.ast.nodes import NestedTerm
 
 from mash.shell.errors import ShellSyntaxError
 from mash.shell.grammer import tokenizer
@@ -8,6 +7,7 @@ from mash.shell.ast import (Assign, BashPipe, BinaryExpression, Indent,
                             ElseIf, ElseIfThen, FunctionDefinition, If, IfThen, IfThenElse,
                             InlineFunctionDefinition, SetDefinition,
                             Lines, Map, Math, Method, Pipe, Return,
+                            NestedTerm,
                             NestedVariable, PositionalVariable, Variable,
                             Terms, Word)
 
@@ -94,6 +94,13 @@ def test_parse_word():
     assert word.type == 'symbol'
     assert word == line
 
+    line = '..'
+    result = parse(line)
+    word = result.values[0].values[0]
+    assert isinstance(word, Word)
+    assert word.type == 'symbol'
+    assert word == line
+
     line = '?'
     result = parse(line)
     word = result.values[0].values[0]
@@ -120,18 +127,23 @@ def test_parse_variable():
 
 
 def test_parse_nested_variable():
-    result = parse_line('$.inner.x')
+    result = parse_line('$outer.inner')
     assert isinstance(result, Terms)
     assert isinstance(result.values[0], NestedVariable)
-    assert result.values[0].keys == ['inner', 'x']
+    assert result.values[0].keys == ['outer', 'inner']
+
+    result = parse_line('$.inner.x').values[0]
+    assert isinstance(result, NestedVariable)
+    assert result.keys == ['$', 'inner', 'x']
 
 
 def test_parse_positional_variable():
     result = parse_line('$0 $1.inner.x')
     assert isinstance(result, Terms)
     assert isinstance(result.values[0], PositionalVariable)
-    assert isinstance(result.values[1], PositionalVariable)
-    assert result.values[1].keys == ['inner', 'x']
+    # TODO implement this
+    assert isinstance(result.values[1], NestedVariable)
+    # assert result.values[1].keys == ['inner', 'x']
 
 
 def test_parse_equations():

@@ -26,12 +26,12 @@ tokens = (
     'DOUBLE_QUOTED_STRING',  # "a 'b' c"
     'SINGLE_QUOTED_STRING',  # 'a\'bc'
 
-    'NESTED_VARIABLE',
-    'POSITIONAL_VARIABLE',
+    'POSITIONAL_VARIABLE', # $0.foo.bar
+    'DOTTED_VARIABLE', # $foo.bar
     'SPECIAL',  # $
     'VARIABLE',  # $x
-    'NUMBER_WITH_DOT',  # 3.14
-    'WORD_WITH_DOT',  # foo.bar
+    'DOTTED_NUMBER',  # 3.14
+    'DOTTED_WORD',  # foo.bar
     'METHOD',  # some_method_V1
     'WORD',
 
@@ -56,7 +56,7 @@ def main():
     t_DEFINE_FUNCTION = r':'
 
     t_SPECIAL = r'\$'
-    t_NESTED_VARIABLE = r'\$(\.[a-zA-Z_0-9]+)+'
+    t_DOTTED_VARIABLE = r'\$[a-zA-Z_0-9]*(\.[a-zA-Z_0-9]+)+'
     t_POSITIONAL_VARIABLE = r'\$[\d+](\.[a-zA-Z_0-9]+)*'
     t_VARIABLE = r'\$[a-zA-Z_][a-zA-Z_0-9]*'
 
@@ -124,13 +124,13 @@ def main():
         r'}'
         return t
 
-    def t_NUMBER_WITH_DOT(t):
+    def t_DOTTED_NUMBER(t):
         r'-?(\d+\.\d*)|(\d*\.\d+)'
         # match *. or .* or *.*
         return t
 
-    def t_WORD_WITH_DOT(t):
-        r'([\w\d]+\.[\.\w\d]*)|([\w\d]*\.[\.\w\d]+)'
+    def t_DOTTED_WORD(t):
+        r'([\w\d]+\.[\.\w\d]*)|([\w\d\.]*\.[\w\d]+)'
         # match *. or .* or *.*
         return t
 

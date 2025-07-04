@@ -292,8 +292,8 @@ def parse(text, init=True):
         'terms : term'
         p[0] = Terms([p[1]])
 
-    def p_term_word_with_dot(p):
-        'term : WORD_WITH_DOT'
+    def p_term_dotted_word(p):
+        'term : DOTTED_WORD'
         p[0] = NestedTerm(p[1])
 
     def p_term(p):
@@ -301,7 +301,6 @@ def parse(text, init=True):
                 | WORD
         """
         p[0] = Word(p[1], 'term')
-    
 
     def p_term_value(p):
         """term : value
@@ -323,7 +322,7 @@ def parse(text, init=True):
         p[0] = Word(p[1], 'number')
 
     def p_value_number_float(p):
-        'value : NUMBER_WITH_DOT'
+        'value : DOTTED_NUMBER'
         p[0] = Word(p[1], 'number')
 
     def p_value_method(p):
@@ -331,14 +330,14 @@ def parse(text, init=True):
         p[0] = Method(p[1])
 
     def p_value_nested_variable(p):
-        'value : NESTED_VARIABLE'
-        values = p[1].split('.')[1:]
+        'value : DOTTED_VARIABLE'
+        values = p[1].split('.')
         p[0] = NestedVariable(values)
 
     def p_value_positional_variable(p):
         'value : POSITIONAL_VARIABLE'
         k, *values = p[1].split('.')
-        p[0] = PositionalVariable(k[1:], values)
+        p[0] = PositionalVariable(int(k[1:]), values)
 
     def p_value_variable(p):
         'value : VARIABLE'

@@ -169,9 +169,15 @@ def test_crud_env_get():
     obj = init_client()
     obj.shell.env[k] = v
 
+    # single key should yield its respective value
     line = f'env {k}'
     result = catch_output(line, shell=obj.shell, strict=True)
-    assert '| root | abc      |' in result
+    assert result == 'abc'
+
+    # multiple keys should yield markdown table of each unique key
+    line = f'env {k} {k}'
+    result = catch_output(line, shell=obj.shell, strict=True)
+    assert result == '| keys   | values   |\n|:-------|:---------|\n| root   | abc      |'
 
 
 def test_crud_env_set():

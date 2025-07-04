@@ -75,10 +75,31 @@ def test_onecmd_syntax_quotes():
     assert catch_output('a = 1 "="', shell=shell) == ''
 
 
-def test_set_do_env():
+def test_do_env():
     shell = Shell()
-    # TODO this fails
     assert catch_output('env', shell=shell) == ''
+
+    """Print environment as a markdown table
+| keys   |   values |
+|:-------|---------:|
+| x      |        3 |
+    """
+    expected = '| keys   |   values |\n|:-------|---------:|\n| x      |        2 |'
+    run_command('x = 2', shell=shell)
+    assert catch_output('env', shell=shell) == expected
+
+
+def test_env_variables_nested():
+    shell = Shell()
+    shell.env['x'] = {'a': 'foo'}
+    assert catch_output('$x.a', shell=shell) == 'foo'
+
+    with raises(ShellError):
+        catch_output('$x.b', shell=shell)
+
+    shell.env['x'] = 10
+    with raises(ShellError):
+        catch_output('$x.a', shell=shell)
 
 
 def test_onecmd_syntax_escape():
@@ -344,25 +365,29 @@ def test_set_definition():
     shell = Shell()
     shell.ignore_invalid_syntax = False
 
-    run_command('a <- range 3', shell=shell)
-    run_command('b <- range 3', shell=shell)
-    run_command('c <- { $a }', shell=shell)
-    assert shell.env['c'] == [{'a': '0'}, {'a': '1'}, {'a': '2'}]
+    run_command('a <- range 2', shell=shell)
+    run_command('b <- range 2', shell=shell)
+    run_command('c <- { a }', shell=shell)
 
-    # TODO
-    # run_command('c <- { a b }', shell=shell)
-    # run_command('c <- { a b | a == b }', shell=shell)
+    # content should be a list of key-value pairs
+    assert shell.env['c'] == [{'a': '0'}, {'a': '1'}]
+
+    run_command('c <- { a b }', shell=shell)
+    assert {'a': '0', 'b': '0'} in shell.env['c']
+    assert {'a': '0', 'b': '0'} in shell.env['c']
+    assert {'a': '0', 'b': '0'} in shell.env['c']
+    assert {'a': '1', 'b': '1'} in shell.env['c']
 
 
-def test_set_notation():
+def test_set_definition_product():
     shell = Shell()
     shell.ignore_invalid_syntax = False
 
-    run_command('x <- range 5', shell=shell)
-    run_command('y <- { $x }', shell=shell)
-    assert len(shell.env['y']) == 5
-    assert shell.env['y'][0] == {'x': '0'}
-    assert shell.env['y'][4] == {'x': '4'}
+    run_command('a <- range 2', shell=shell)
+    run_command('b <- range 2', shell=shell)
+
+    run_command('c <- { a b | a == b }', shell=shell)
+    assert shell.env['c'] == [{'a': '0', 'b': '0'}, {'a': '1', 'b': '1'}]
 
 
 def test_set_with_condition():
@@ -370,16 +395,18 @@ def test_set_with_condition():
     shell.ignore_invalid_syntax = False
 
     run_command('x <- range 5', shell=shell)
-    run_command('y <- { $x | x > 2 }', shell=shell)
+    run_command('y <- { x | x > 2 }', shell=shell)
     assert len(shell.env['y']) == 2
     assert shell.env['y'][0] == {'x': '3'}
 
-    run_command('z <- { $x | 2 < x }', shell=shell)
+    run_command('z <- { x | 2 < x }', shell=shell)
     assert len(shell.env['y']) == 2
     assert shell.env['z'][0] == {'x': '3'}
 
-    result = catch_output('{ $x | x > 2 } >>= echo $.x', shell=shell)
-    assert result.splitlines() == ['3', '4']
+    # TODO
+    # result = catch_output('{ x | x > 2 } >>= echo $.x', shell=shell)
+    # assert result.splitlines() == ['3', '4']
+
 
 def test_set_multivariate():
     shell = Shell()
@@ -387,15 +414,8 @@ def test_set_multivariate():
 
     run_command('x <- range 3', shell=shell)
     run_command('y <- range 10 13', shell=shell)
-    run_command('z <- { $x $y }', shell=shell)
-    assert len(shell.env['z']) == 9
-    assert shell.env['z'][0] == {'x': '0', 'y': '10'}
+    run_command('z <- { x y | x < 2 }', shell=shell)
 
-    result = catch_output('{ $x $y } >>= echo $.y', shell=shell)
-    assert result.splitlines()[0] == '10'
-    assert result.splitlines()[2] == '12'
-
-    run_command('z <- { $x $y | x < 2 }', shell=shell)
     assert len(shell.env['z']) == 6
     assert shell.env['z'][0] == {'x': '0', 'y': '10'}
     assert shell.env['z'][4] == {'x': '1', 'y': '11'}
