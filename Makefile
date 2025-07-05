@@ -1,4 +1,4 @@
-mPHONY: docs web test
+.PHONY: docs web test
 
 github = https://github.com/voschezang/mash/blob/main/
 out = docs/source/modules
@@ -28,6 +28,7 @@ clean:
 	#find . -name '__pycache__' -exec rm -rf {} \;
 	rm -rf dist
 	rm -rf src/*.egg-info
+	make docs-clean
 
 setup:
 	pip3 install -r requirements.txt

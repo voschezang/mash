@@ -1,1 +1,1 @@
-docs/source/pages/SHELL.md
+docs/source/pages/cli.md

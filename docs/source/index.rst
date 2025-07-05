@@ -1,44 +1,65 @@
-.. Mash documentation master file, created by
-   sphinx-quickstart
+Welcome! This is the documentation for Mash: a *shell* and programming language. It features:
+
+- A `DSL <https://en.wikipedia.org/wiki/Domain-specific_language>`_ that can interpret user-defined commands.
+- A **REST client** to browse APIs with a programmatic yet intuitive interface: ``examples/discoverable_api.py``.
 
 
-Overview
-========
+The documentation is consists of two sections:
+
+#. Mash language. See this `example <pages/lib.html>`_.
+#. Python source code. See these `examples <modules/mash_examples.html>`_
+
 
 .. sidebar::
 
     See also:
-    `github <https://github.com/voschezang/mash>`_
-    |
-    `pypi <https://pypi.org/project/mash-shell/>`_
+
+    .. raw:: html
+
+        <a href="https://github.com/voschezang/mash" target="_blank">
+            <img src="_static/github-logo.png" alt="GitHub logo"/>
+            GitHub
+        </a>
+        |
+        <a href="https://pypi.org/project/mash-shell/" target="_blank">
+            <img src="_static/pypi-logo.svg" alt="PyPI logo"/>
+            PyPI
+        </a>
 
 
-    | Mash language usage:
-
-    * `• Reference <https://github.com/voschezang/mash/blob/main/SHELL_REFERENCE.md>`_
-    * `• Example script <pages/lib.html>`_
+Mash Language
+-------------
 
 
 .. toctree::
-   :caption: Usage:
+   :caption: Mash Language:
+   :maxdepth: 1
+
+   Language Reference <pages/language_reference.md>
+   Using directories <pages/directories.md>
+   Example scripts <pages/lib.rst>
+   Shell CLI <pages/shell_help.rst>
+
+
+Python Source Code
+------------------
+
+.. toctree::
+   :caption: Source Code:
    :maxdepth: 1
 
    README <pages/README.md>
-   Implementation <pages/SHELL.md>
-   Shell CLI <pages/shell_help.rst>
    Example code <modules/mash_examples.md>
 
 .. toctree::
    :hidden:
 
-   Mash Language Reference <pages/SHELL_REFERENCE.md>
-   Example Mash script <pages/lib.rst>
+   Shell <pages/shell.md>
    Shell Classes <pages/shell_classes.rst>
    Shell AST <pages/ast.rst>
 
-
 Library Reference
------------------
+------------------
 
 .. toctree::
    :caption: Reference:
@@ -56,12 +77,8 @@ Packages
 - `Webtools <modules/webtools.html#module-webtools>`_
 
 
-Internal Packages
-~~~~~~~~~~~~~~~~~
-
-Packages
-
 .. toctree::
+   :hidden:
    :maxdepth: 1
    :caption: Packages:
 
@@ -71,72 +88,6 @@ Packages
    server <modules/server>
    webtools <modules/webtools>
 
-
-Main Classes (Summary)
-----------------------
-
-
-Filesystem
-~~~~~~~~~~
-
-* :py:meth:`mash.filesystem.FileSystem`
-* :py:meth:`mash.filesystem.Discoverable`
-* :py:meth:`mash.filesystem.Option`
-* :py:meth:`mash.filesystem.OPTIONS`
-* :py:meth:`mash.filesystem.view.View`
-
-Object Parser
-~~~~~~~~~~~~~
-
-* :py:meth:`mash.object_parser.build`
-    * :py:meth:`mash.object_parser.BuildError`
-    * :py:meth:`mash.object_parser.BuildErrors`
-    * :py:meth:`mash.object_parser.ErrorMessages`
-* :py:meth:`mash.object_parser.OAS`
-
-Shell
-~~~~~
-
-* :py:meth:`mash.shell.ShellWithFileSystem`
-    * :py:meth:`mash.shell.Shell`
-        * :py:meth:`mash.shell.base.BaseShell`
-* :py:meth:`mash.shell.errors.ShellError`
-* :py:meth:`mash.shell.errors.ShellSyntaxError`
-
-
-Main Classes (Expanded)
------------------------
-
-.. autoclass:: mash.filesystem.FileSystem
-   :members:
-.. autoclass:: mash.filesystem.Discoverable
-   :members:
-.. autoclass:: mash.filesystem.view.View
-   :members:
-.. autoclass:: mash.filesystem.Option
-   :members:
-.. autodata:: mash.filesystem.OPTIONS
-
-.. autofunction:: mash.object_parser.build
-.. autoclass:: mash.object_parser.BuildError
-   :members:
-.. autoclass:: mash.object_parser.BuildErrors
-   :members:
-.. autoclass:: mash.object_parser.ErrorMessages
-   :members:
-.. autoclass:: mash.object_parser.OAS
-   :members:
-
-.. autoclass:: mash.shell.ShellWithFileSystem
-   :members:
-.. autoclass:: mash.shell.Shell
-   :members:
-.. autoclass:: mash.shell.base.BaseShell
-   :members:
-.. autoclass:: mash.shell.ShellError
-   :members:
-.. autoclass:: mash.shell.ShellSyntaxError
-   :members:
 
 Indices and tables
 ------------------

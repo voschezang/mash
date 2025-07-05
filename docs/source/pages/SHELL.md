@@ -60,6 +60,8 @@ See [`shell.ast`](https://voschezang.github.io/mash-docs/pages/ast.html).
 
 ### Shell
 
+There are build-in methods and user-defined functions. Methods such as `print` are bound to methods with the name `do_print`. Functions can be either one-liners or multiline functions.
+
 ### Filesystem
 
 A directory-like interface for dictionaries and lists.

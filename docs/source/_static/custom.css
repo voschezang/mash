@@ -2,3 +2,8 @@ section p.caption span.caption-text {
     display: none;
 }
 
+a img {
+    display: inline;
+    height: 1em;
+}
+

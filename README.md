@@ -1,12 +1,15 @@
 ![workflow-badge](https://github.com/voschezang/mash/actions/workflows/python-app.yml/badge.svg)
-<a href="https://pypi.org/project/mash-shell" title="Python versions"><img src="https://img.shields.io/badge/python-3.8%20|%203.10%20|%203.11-blue"/></a>
+<a href="https://pypi.org/project/mash-shell" title="Python versions"><img src="https://img.shields.io/badge/python-3.11%20|%203.13-blue"/></a>
 <a href="https://pypi.org/project/mash-shell" title="PyPI"><img src="https://img.shields.io/badge/pypi-v0.2.0-blue"/></a>
 
 **Docs**:
-[MAIN](https://github.com/voschezang/mash/blob/main/README.md)
-| [Shell](https://voschezang.github.io/mash-docs/pages/shell_help.html)
-| [Reference](https://github.com/voschezang/mash/blob/main/SHELL_REFERENCE.md)
+[Github](https://github.com/voschezang/mash/blob/main/README.md)
 | [Library Docs](https://voschezang.github.io/mash-docs/)
+
+**Markdown docs**:
+| [Shell](https://github.com/voschezang/mash/blob/main/docs/source/pages/shell.md)
+| [Language Reference](https://github.com/voschezang/mash/blob/main/docs/source/pages/language-reference.md)
+| [Using Directories](https://github.com/voschezang/mash/blob/main/docs/source/pages/directories.md)
 
 <img src="https://github.com/voschezang/mash/blob/main/img/dall-E/bosh-terminal-icon.png?raw=true" style="height: 12em" alt="A drawing of a terminal"></img>
 
