@@ -213,7 +213,7 @@ Benefit
 
 - Simplicity of Python and performance of Haskell and Erlang
 
-```python
+```
 # inf streams
 a *b = list_natural_numbers
 # pure functions can be executed in parallel, using a thread pool
