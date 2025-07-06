@@ -1,97 +1,105 @@
 Welcome! This is the documentation for Mash: a *shell* and programming language. It features:
 
-- A `DSL <https://en.wikipedia.org/wiki/Domain-specific_language>`_ that can interpret user-defined commands.
-- A **REST client** to browse APIs with a programmatic yet intuitive interface: ``examples/discoverable_api.py``.
+
+#. A `DSL <https://en.wikipedia.org/wiki/Domain-specific_language>`_ that can interpret user-defined commands.
+#. A **REST client** to browse APIs with a programmatic yet intuitive interface.
+   
+.. raw:: html
+
+   <span>
+   See also:
+   <a href="https://github.com/voschezang/mash" target="_blank">
+      <img src="_static/github-logo.png" alt="GitHub logo"/>
+      GitHub
+   </a>
+   and
+   <a href="https://pypi.org/project/mash-shell/" target="_blank">
+      <img src="_static/pypi-logo.svg" alt="PyPI logo"/>
+      PyPI
+   </a>
+   <br/> <br/>
+   </span>
 
 
-The documentation is consists of two sections:
+Documentation
+#############
 
-#. Mash language. See this `example <pages/lib.html>`_.
-#. Python source code. See these `examples <modules/mash_examples.html>`_
+This documentation consists of two sections:
 
+.. container:: two-cols
 
-.. sidebar::
+   .. container:: col
 
-    See also:
+      **Mash Language**
 
-    .. raw:: html
+      Using the REPL, browsing directories.
 
-        <a href="https://github.com/voschezang/mash" target="_blank">
-            <img src="_static/github-logo.png" alt="GitHub logo"/>
-            GitHub
-        </a>
-        |
-        <a href="https://pypi.org/project/mash-shell/" target="_blank">
-            <img src="_static/pypi-logo.svg" alt="PyPI logo"/>
-            PyPI
-        </a>
+      .. toctree::
+         :caption: Mash Language:
+         :maxdepth: 3
+         :hidden:
 
+         Language Reference <pages/language_reference.md>
+         Using directories <pages/directories.md>
+         Example scripts <pages/lib.rst>
+         Shell CLI <pages/shell_help.rst>
 
-Mash Language
--------------
+      - `Full language reference <pages/language_reference.html>`_
+      - `[How to] Use directories <pages/directories.html>`_
+      - `Example scripts <pages/lib.html>`_
+      - `Shell CLI <pages/shell_help.html>`_
 
+   .. container:: col
 
-.. toctree::
-   :caption: Mash Language:
-   :maxdepth: 1
+      **Python Source Code**
 
-   Language Reference <pages/language_reference.md>
-   Using directories <pages/directories.md>
-   Example scripts <pages/lib.rst>
-   Shell CLI <pages/shell_help.rst>
+      Developing a DSL, building the project, extending the language.
 
+      .. toctree::
+         :caption: Source Code:
+         :maxdepth: 1
 
-Python Source Code
-------------------
+         README <pages/README.md>
+         Example code <modules/mash_examples.md>
 
-.. toctree::
-   :caption: Source Code:
-   :maxdepth: 1
+      .. toctree::
+         :hidden:
 
-   README <pages/README.md>
-   Example code <modules/mash_examples.md>
+         Shell <pages/shell.md>
+         Shell classes <pages/shell_classes.rst>
+         Shell AST <pages/ast.rst>
 
-.. toctree::
-   :hidden:
+      .. toctree::
+         :caption: Reference:
+         :maxdepth: 3
+         :hidden:
 
-   Shell <pages/shell.md>
-   Shell Classes <pages/shell_classes.rst>
-   Shell AST <pages/ast.rst>
+         pages/reference.rst
 
-Library Reference
-------------------
+      - `Library Reference <pages/reference.html>`_
 
-.. toctree::
-   :caption: Reference:
-   :maxdepth: 1
+      .. toctree::
+         :hidden:
+         :maxdepth: 1
+         :caption: Packages:
 
-   pages/reference.rst
+         filesystem <modules/filesystem>
+         object parser <modules/object_parser>
+         shell <modules/shell>
+         server <modules/server>
+         webtools <modules/webtools>
 
-Packages
-
-- `Filesystem <modules/filesystem.html>`_
-- `Object parser <modules/object_parser.html#module-object_parser.factory>`_
-- `Shell <pages/shell_classes.html>`_
-- `Shell AST <pages/ast.html>`_
-- `Server <modules/server.html#module-server.server>`_
-- `Webtools <modules/webtools.html#module-webtools>`_
-
-
-.. toctree::
-   :hidden:
-   :maxdepth: 1
-   :caption: Packages:
-
-   filesystem <modules/filesystem>
-   object parser <modules/object_parser>
-   shell <modules/shell>
-   server <modules/server>
-   webtools <modules/webtools>
+      - Packages
+         - `Filesystem <modules/filesystem.html>`_
+         - `Object parser <modules/object_parser.html#module-object_parser.factory>`_
+         - `Shell <pages/shell_classes.html>`_
+         - `Shell AST <pages/ast.html>`_
+         - `Server <modules/server.html#module-server.server>`_
+         - `Webtools <modules/webtools.html#module-webtools>`_
 
 
 Indices and tables
-------------------
-
+##################
 
 * :ref:`genindex`
 * :ref:`modindex`

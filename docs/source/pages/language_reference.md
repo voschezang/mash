@@ -4,28 +4,6 @@ The language is a mix of Bash and Python. Statements are separated by whitespace
 
 For examples, see [src.lib.math.sh](https://github.com/voschezang/mash/blob/main/src/lib/math.sh). The AST can be found [here](https://voschezang.github.io/mash-docs/pages/ast.html).
 
-**Table of Contents**
-
-- [Language Reference](#language-reference)
-  - [By Type](#by-type)
-    - [Standard Expressions](#standard-expressions)
-    - [Conditions and Branches](#conditions-and-branches)
-    - [Maps and Loops](#maps-and-loops)
-    - [Shell Interop](#shell-interop)
-    - [Environment Variables](#environment-variables)
-      - [Environments](#environments)
-    - [Globbing](#globbing)
-    - [Functions](#functions)
-      - [Inline Functions](#inline-functions)
-      - [Multiline Functions](#multiline-functions)
-    - [Built-in Commands](#built-in-commands)
-  - [Symbol Reference](#symbol-reference)
-    - [Keywords](#keywords)
-    - [Built-in Functions](#built-in-functions)
-  - [Proposals](#proposals)
-    - [Queries](#queries)
-      - [Show tabular data](#show-tabular-data)
-      - [Inner join](#inner-join)
 
 ## By Type
 

@@ -1,3 +1,4 @@
 build
+myst-parser
 sphinx
 twine

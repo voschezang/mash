@@ -20,7 +20,7 @@ sys.path.insert(0, '../src/mash')
 # -- Project information -----------------------------------------------------
 
 project = 'Mash'
-copyright = '2023, Voschezang'
+copyright = '2025, Voschezang'
 author = 'Voschezang'
 
 

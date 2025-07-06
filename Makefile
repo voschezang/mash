@@ -18,7 +18,6 @@ lint:
 	# show lenient errors
 	flake8 src --count --exit-zero --max-complexity=11 --max-line-length=127 --statistics
 
-
 format:
 	autopep8 -r -a -a -a --in-place src/mash
 
@@ -32,6 +31,7 @@ clean:
 
 setup:
 	pip3 install -r requirements.txt
+	pip3 install -r build_requirements.txt
 
 install:
 	python3 -m pip install .
@@ -66,9 +66,13 @@ docs-clean:
 docs-show:
 	open docs/build/html/index.html
 
-docs-watch:
+docs-watch: 
+	# init docs
 	make docs-show
-	find docs/source -type f -name '*.rst' -o -name '*.md' -prune -o -name 'docs/source/modules/*.rst' | entr make docs
+	# open window
+	make docs-show
+	# watch for any changes & update accordingly
+	find docs/source -type f -name '*.rst' -o -name '*.md' -o -name '*.css' -prune -o -name 'docs/source/modules/*.rst' | entr make docs
 
 docs-generate:
 	make docs-clean
