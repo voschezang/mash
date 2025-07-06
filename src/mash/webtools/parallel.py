@@ -42,18 +42,18 @@ async def some_custom_func(session: ClientSession, i: int, url='', timeout=10):
 
 
 def run(func, items, batch_size, duration, n_threads=2, **kwds):
-    """Executes func(i) N x M times.
+    r"""Executes func(i) N x M times.
     It is assumed that all function invocations are independent.
 
     Parameters
     ----------
-        func : async funcion(client: aiohttp.ClientSession, *) -> Result
+        func : async funcion(client: aiohttp.ClientSession, \*) -> Result
         items : inputs per function call
         batch_size : number of function call results that are yielded
         duration : timeout of the process. This evaluated between batches and not during batches.
         n_threads : int
         concurrency : max. number of async connections per thread
-        **kwds : arguments for `func`. func(**kwds) must be threadsafe
+        \**kwds : arguments for `func`. func() must be threadsafe
         batches : iterable of iterables
     """
     refresh_interval = 0.5  # sec
@@ -126,11 +126,11 @@ def show_status(status, times, dt, exceptions=[], new_line=False, **kwds):
 
 
 def asynchronous(func, inputs, concurrency=4, **kwds):
-    """Executes func(task) for every task in tasks.
+    r"""Executes func(task) for every task in tasks.
 
     Parameters
     ----------
-        func : async funcion(client: aiohttp.ClientSession, *) -> Result
+        func : async funcion(client: aiohttp.ClientSession, \*) -> Result
         tasks : iterable of (unique) input for each function invocation
         * : constants arguments and keywords to be passed to each function
     """

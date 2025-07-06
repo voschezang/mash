@@ -42,20 +42,22 @@ build:
 
 upload-test:
 	make build
-	python3 -m twine upload --repository testpypi dist/* -u "${user}" -p "${pass}"
+	python3 -m twine upload --repository testpypi dist/* -u "__token__" -p "${token}"
 
 upload:
 	make build
-	python3 -m twine upload dist/* -u "${user}" -p "${pass}"
+	python3 -m twine upload dist/* -u "__token__" -p "${token}"
+
+docs:
+	# docs-init must have been run once
+	make docs-generate
+	source env/bin/activate && cd docs && make html
 
 docs-init:
 	mkdir -p docs
+	make docs-clean
 	cd docs && yes y | make sphinx-quickstart
 	make docs
-
-docs:
-	make docs-generate
-	source env/bin/activate && cd docs && make html
 
 docs-clean:
 	rm -rf docs/source/modules
@@ -69,6 +71,7 @@ docs-watch:
 	find docs/source -type f -name '*.rst' -o -name '*.md' -prune -o -name 'docs/source/modules/*.rst' | entr make docs
 
 docs-generate:
+	make docs-clean
 	# generate modules from python source code
 	cd docs && sphinx-apidoc -o source/modules ../src/mash
 	# generate shell help
@@ -76,10 +79,6 @@ docs-generate:
 	# generate examples
 	echo '# Examples\n' > ${out}/mash_examples.md
 	find src/examples/*.py -type f -regex 'src/examples/[a-z][a-z_]*.py' -exec echo '- [{}](${github}{})'  \; >> ${out}/mash_examples.md
-
-
-pydocs:
-	cd src && pydoc -b
 
 tree:
 	tree src -L 2 -d
