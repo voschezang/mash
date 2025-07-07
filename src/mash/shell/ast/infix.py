@@ -164,6 +164,7 @@ class Map(Infix):
 
         range 10 >>= echo The value is $ .
     """
+
     def __init__(self, lhs: Node, rhs: Node):
         super().__init__(lhs, rhs, 'map')
 

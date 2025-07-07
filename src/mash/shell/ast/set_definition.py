@@ -92,7 +92,7 @@ class SetDefinition(Node):
             with enter_new_scope(shell):
                 for item in element:
                     for k, v in item.items():
-                        f = InlineFunction(v, [], f'do_{k}' )
+                        f = InlineFunction(v, [], f'do_{k}')
                         shell.env[k] = f
                         # shell.env[k] = v
 

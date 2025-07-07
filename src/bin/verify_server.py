@@ -1,5 +1,5 @@
 if __name__ == '__main__':
-    import _extend_path # noqa
+    import _extend_path  # noqa
 
 from mash.webtools.verify_server import main
 

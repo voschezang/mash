@@ -1,1 +1,1 @@
-from mash.server import server # noqa
+from mash.server import server  # noqa

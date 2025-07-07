@@ -225,6 +225,7 @@ class PositionalVariable(Term):
 class PythonData(Term):
     """Wrapper to represent data from environment variables.
     """
+
     def __init__(self, original: Term, value):
         self.data = value
 
@@ -232,6 +233,6 @@ class PythonData(Term):
         """Literal comparison
         """
         return self.original == other
-    
+
     def __str__(self):
         return to_string(self.data)

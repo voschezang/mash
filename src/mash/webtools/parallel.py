@@ -230,7 +230,7 @@ def main():
     n_threads = multiprocessing.cpu_count() * 2
 
     concurrency = concurrency_per_thread * n_threads
-    #concurrency_per_thread = concurrency // max_n
+    # concurrency_per_thread = concurrency // max_n
 
     print(f'Duration: {duration} s, N: {max_n}, #connections: {concurrency}, #threads: {n_threads}',
           f'batch_size: {batch_size_per_thread}, concurrency_per_thread: {concurrency_per_thread}')
