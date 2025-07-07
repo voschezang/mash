@@ -9,7 +9,7 @@ parsetab = src/mash/shell/grammer/parsetab.py
 # use .venv if available
 PYTHON := $(shell [ -x .venv/bin/python3 ] && echo .venv/bin/python3 || echo python3)
 PIP := $(shell [ -x .venv/bin/pip3 ] && echo .venv/bin/pip3 || echo pip3)
-VENV := $(shell [ -f .venv/bin/activate ] && echo source .venv/bin/activate)
+VENV := $(shell [ -f .venv/bin/activate ] && echo source .venv/bin/activate || echo true)
 
 test:
 	${PYTHON} --version
