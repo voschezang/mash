@@ -3,26 +3,37 @@
 github = https://github.com/voschezang/mash/blob/main/
 out = docs/source/modules
 
+# auto-generated file
+parsetab = src/mash/shell/grammer/parsetab.py
+
+# use .venv if available
+PYTHON := $(shell [ -x .venv/bin/python3 ] && echo .venv/bin/python3 || echo python3)
+PIP := $(shell [ -x .venv/bin/pip3 ] && echo .venv/bin/pip3 || echo pip3)
+VENV := $(shell [ -f .venv/bin/activate ] && echo source .venv/bin/activate)
+
 test:
+	${PYTHON} --version
+	# cleanup & remove parsetab
+	make clean
 	# print difference as a warning
-	autopep8 -r --diff src
+	(${VENV}; autopep8 -r --diff src)
 	#flake8 --ignore=E241,E501,W504 src
 	make lint
-	pytest -n 4
+	(${VENV}; pytest -n 4)
 
 lint:
 	# remove auto-generated file
-	rm -f src/mash/shell/grammer/parsetab.py
+	rm -f ${parsetab}
 	# enforce linting
-	flake8 src --count --select=E9,F63,F7,F82 --show-source --statistics
+	(${VENV}; flake8 src --count --select=E9,F63,F7,F82 --show-source --statistics)
 	# show lenient errors
-	flake8 src --count --exit-zero --max-complexity=11 --max-line-length=127 --statistics
+	(${VENV}; flake8 src --count --exit-zero --max-complexity=11 --max-line-length=127 --statistics)
 
 format:
-	autopep8 -r -a -a -a --in-place src/mash
+	(${VENV}; autopep8 -r -a -a -a --in-place src/mash)
 
 clean:
-	rm -f src/mash/shell/grammer/parsetab.py
+	rm -f ${parsetab}
 	find . -name '__pycache__' | xargs rm -rf {1}
 	#find . -name '__pycache__' -exec rm -rf {} \;
 	rm -rf dist
@@ -30,8 +41,10 @@ clean:
 	make docs-clean
 
 setup:
-	pip3 install -r requirements.txt
-	pip3 install -r build_requirements.txt
+	.venv/bin/pip install -r requirements.txt
+	.venv/bin/pip install -r build_requirements.txt
+
+	. .venv/bin/activate
 
 install:
 	python3 -m pip install .
@@ -76,6 +89,7 @@ docs-watch:
 
 docs-generate:
 	make docs-clean
+	echo source
 	# generate modules from python source code
 	cd docs && sphinx-apidoc -o source/modules ../src/mash
 	# generate shell help
