@@ -1,18 +1,21 @@
 ![workflow-badge](https://github.com/voschezang/mash/actions/workflows/python-app.yml/badge.svg)
-<a href="https://pypi.org/project/mash-shell" title="Python versions"><img src="https://img.shields.io/badge/python-3.8%20|%203.10%20|%203.11-blue"/></a>
+<a href="https://pypi.org/project/mash-shell" title="Python versions"><img src="https://img.shields.io/badge/python-3.11%20|%203.13-blue"/></a>
 <a href="https://pypi.org/project/mash-shell" title="PyPI"><img src="https://img.shields.io/badge/pypi-v0.2.0-blue"/></a>
 
 **Docs**:
-[MAIN](https://github.com/voschezang/mash/blob/main/README.md)
-| [Shell](https://voschezang.github.io/mash-docs/pages/shell_help.html)
-| [Reference](https://github.com/voschezang/mash/blob/main/SHELL_REFERENCE.md)
+[Github](https://github.com/voschezang/mash/blob/main/README.md)
 | [Library Docs](https://voschezang.github.io/mash-docs/)
+
+**Markdown docs**:
+| [Shell](https://github.com/voschezang/mash/blob/main/docs/source/pages/shell.md)
+| [Language Reference](https://github.com/voschezang/mash/blob/main/docs/source/pages/language-reference.md)
+| [Using Directories](https://github.com/voschezang/mash/blob/main/docs/source/pages/directories.md)
 
 <img src="https://github.com/voschezang/mash/blob/main/img/dall-E/bosh-terminal-icon.png?raw=true" style="height: 12em" alt="A drawing of a terminal"></img>
 
 # Mash | My Automation Shell
 
-A *shell* that can be used to for automation and (REST) resource discovery. It can be used as a [cli](https://en.wikipedia.org/wiki/Command-line_interface), [repl](https://en.wikipedia.org/wiki/Read%E2%80%93eval%E2%80%93print_loop). It exposes a [complete](https://en.wikipedia.org/wiki/Turing_completeness) programming [language](SHELL_REFERENCE.md) with variables, functions, conditions and pipes. The language can be tailored towards [domain-specific](https://en.wikipedia.org/wiki/Domain-specific_language) applications and it has interoperability with Bash. In addition, this repository contains a library of  utilities.
+A *shell* that can be used to for automation and (REST) resource discovery. It can be used as a [cli](https://en.wikipedia.org/wiki/Command-line_interface) or [repl](https://en.wikipedia.org/wiki/Read%E2%80%93eval%E2%80%93print_loop). It exposes a [complete](https://en.wikipedia.org/wiki/Turing_completeness) programming [language](https://github.com/voschezang/mash/blob/main/docs/source/pages/language_reference.md) with variables, functions, conditions and pipes. The language can be tailored towards [domain-specific](https://en.wikipedia.org/wiki/Domain-specific_language) applications and it has interoperability with Bash. In addition, this repository contains a library of  utilities.
 
 Features:
 
@@ -26,7 +29,7 @@ Features:
 
 Links
 
-- [Mash language reference](SHELL_REFERENCE.md)
+- [Mash language reference](https://github.com/voschezang/mash/blob/main/docs/source/pages/language_reference.md)
 - [PyPI](https://pypi.org/project/mash-shell)
 - [github](https://github.com/voschezang/mash)
 - [docs](https://voschezang.github.io/mash-docs/)
@@ -247,13 +250,13 @@ python3 src/parallel.py -v
 
 ## Object Parser
 
-- [src/object_parser/object_parser.py](object_parser.py) parses JSON data and instantiate Python objects.
-- [src/object_parser/oas.py](oas.py) converts domain-models to OAS.
+- [src/mash/object_parser/object_parser.py](object_parser.py) parses JSON data and instantiate Python objects.
+- [src/mash/object_parser/oas.py](oas.py) converts domain-models to OAS.
 
 ### Example
 
 ```sh
-python src/object_parser_example.py
+python src/examples/object_parser.py
 ```
 
 <img src="https://github.com/voschezang/data-science-templates/blob/main/img/generated_oas.png?raw=true" style="width: 400px" alt="OAS Example">
@@ -263,7 +266,7 @@ python src/object_parser_example.py
 Server
 
 ```sh
-python src/object_parser_server.py
+python src/mash/object_parser/object_parser.py
 ```
 
 Client

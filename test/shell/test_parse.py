@@ -1,5 +1,6 @@
 from pytest import raises
 
+from mash.filesystem.filesystem import OPTIONS
 from mash.shell.errors import ShellSyntaxError
 from mash.shell.grammer import tokenizer
 from mash.shell.grammer.parser import parse
@@ -106,6 +107,16 @@ def test_parse_word():
     word = result.values[0].values[0]
     assert word.type == 'wildcard'
     assert word == '?'
+
+
+def test_parse_option():
+    for line in OPTIONS:
+        result = parse(line)
+        word = result.values[0].values[0]
+        # TODO make this consistent
+        # assert isinstance(word, Word)
+        # assert word.type == 'symbol'
+        # assert word == line, line
 
 
 def test_parse_dotted_word():
@@ -218,7 +229,6 @@ def test_parse_numbers():
     assert isinstance(result, Assign)
     assert result.key == 'x'
     assert result.value.values == numbers
-
 
 
 def test_parse_quotes():

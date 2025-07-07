@@ -1,4 +1,50 @@
+a img {
+    display: inline;
+    vertical-align: middle;
+    height: 0.9em;
+}
+
+h1 {
+      border-bottom: 1px solid #3465a4;
+}
+
+h2 {
+      border-bottom: none;
+}
+
+div.header-wrapper {
+    background:#485c47 url(bgtop.png) top left repeat-x
+}
+
+div.header-wrapper div.headertitle a {
+    font-family: BlinkMacSystemFont, avenir next, avenir, segoe ui, helvetica neue, helvetica, Cantarell, Ubuntu, roboto, noto, arial, sans-serif;
+}
+
 section p.caption span.caption-text {
     display: none;
 }
 
+.two-cols {
+  display: flex;
+  gap: 2em;
+  margin-top: 1.5em;
+}
+.two-cols .col {
+  flex: 1;
+}
+.two-cols > .col:first-of-type {
+    border-right: 2px solid #ccc;
+}
+.two-cols .col ul {
+    margin-top: 0;
+    margin-bottom: 0;
+}
+.two-cols .col:first-child {
+    margin-top: 0.1em;
+}
+.two-cols .col ul li {
+    margin-bottom: 0.5em;
+}
+.two-cols .col ul li p {
+    margin-bottom: 0.5;
+}

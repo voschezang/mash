@@ -115,7 +115,7 @@ class Cmd2(cmd.Cmd):
         """Conditionally override Cmd.completenames
         """
         if self.completenames_options:
-            return [a for a in self.completenames_options if a.startswith(text)]
+            return [str(a) for a in self.completenames_options if str(a).startswith(text)]
 
         return super().completenames(text, *ignored)
 

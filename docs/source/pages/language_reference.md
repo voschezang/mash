@@ -1,12 +1,9 @@
 # Language Reference
 
-The syntax and grammar is a mix of Bash and Python. It relies on pipes to pass strings between commands. Statements are mainly separated by whitespace and semicolons.
-
-There are build-in methods and user-defined functions. Methods such as `print` are bound to methods with the name `do_print`. Functions can be either one-liners or multiline functions.
+The language is a mix of Bash and Python. Statements are separated by whitespace and semicolons. Pipes are used to pass data between commands.
 
 For examples, see [src.lib.math.sh](https://github.com/voschezang/mash/blob/main/src/lib/math.sh). The AST can be found [here](https://voschezang.github.io/mash-docs/pages/ast.html).
 
-[toc]
 
 ## By Type
 
