@@ -60,7 +60,7 @@ docs-init:
 	make docs
 
 docs-clean:
-	rm -rf docs/source/modules
+	rm -rf ${out}
 	rm -rf docs/build
 
 docs-show:

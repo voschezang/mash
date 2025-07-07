@@ -1,6 +1,7 @@
 a img {
     display: inline;
-    height: 1em;
+    vertical-align: middle;
+    height: 0.9em;
 }
 
 h1 {
