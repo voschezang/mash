@@ -72,3 +72,5 @@ source_suffix = {
     '.rst': 'restructuredtext',
     '.md': 'markdown',
 }
+
+myst_heading_anchors = 3

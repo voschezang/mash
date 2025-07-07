@@ -59,8 +59,7 @@ This documentation consists of two sections:
          :caption: Source Code:
          :maxdepth: 1
 
-         README <pages/README.md>
-         Example code <modules/mash_examples.md>
+         Example scripts <modules/mash_examples.md>
 
       .. toctree::
          :hidden:
