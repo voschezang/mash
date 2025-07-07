@@ -1,5 +1,5 @@
 ![workflow-badge](https://github.com/voschezang/mash/actions/workflows/python-app.yml/badge.svg)
-<a href="https://pypi.org/project/mash-shell" title="Python versions"><img src="https://img.shields.io/badge/python-3.11%20|%203.13-blue"/></a>
+<a href="https://pypi.org/project/mash-shell" title="Python versions"><img src="https://img.shields.io/badge/python-3.13%20|%203.11|%203.9-blue"/></a>
 <a href="https://pypi.org/project/mash-shell" title="PyPI"><img src="https://img.shields.io/badge/pypi-v0.2.0-blue"/></a>
 
 **Docs**:

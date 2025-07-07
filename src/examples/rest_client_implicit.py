@@ -2,7 +2,7 @@
 """Browse and query a dynamic REST API.
 """
 if __name__ == '__main__':
-    import _extend_path # noqa
+    import _extend_path  # noqa
 
 from json import JSONDecodeError, loads
 from urllib.parse import quote_plus, urljoin, urlparse

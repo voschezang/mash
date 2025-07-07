@@ -3,7 +3,7 @@ from argparse import ArgumentParser
 import os
 
 if __name__ == '__main__':
-    import _extend_path # noqa
+    import _extend_path  # noqa
 
 from mash import io_util
 from mash.io_util import has_argument

@@ -26,8 +26,8 @@ tokens = (
     'DOUBLE_QUOTED_STRING',  # "a 'b' c"
     'SINGLE_QUOTED_STRING',  # 'a\'bc'
 
-    'POSITIONAL_VARIABLE', # $0.foo.bar
-    'DOTTED_VARIABLE', # $foo.bar
+    'POSITIONAL_VARIABLE',  # $0.foo.bar
+    'DOTTED_VARIABLE',  # $foo.bar
     'SPECIAL',  # $
     'VARIABLE',  # $x
     'DOTTED_NUMBER',  # 3.14

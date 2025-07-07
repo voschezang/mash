@@ -4,7 +4,7 @@ from random import randint
 from typing import Dict, List
 
 if __name__ == '__main__':
-    import _extend_path # noqa
+    import _extend_path  # noqa
 
 from mash.filesystem.discoverable import observe
 from mash.filesystem.view import Path

@@ -52,7 +52,7 @@ class FunctionDefinition(Node):
 
         return args
 
-    @ property
+    @property
     def data(self) -> str:
         return f'{self.f}( {self.args} )'
 
