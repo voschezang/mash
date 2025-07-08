@@ -113,7 +113,7 @@ repository $ {users documents | document.title = "*animal*" | users.id in docume
 
 ### Interactive operations dashboard
 
-Show available resources
+**Show available resources**
 
 ```sh
 repository $ list
@@ -127,7 +127,7 @@ respository/dev $ show vms
 # vm0001 vm0002 vm0003
 ```
 
-Check status
+**Check status**
 
 ```sh
 respository/dev $ status vms
@@ -137,7 +137,7 @@ respository/dev $ status vms
 # | vm0002 |  database | 100% |
 ```
 
-Restart components
+**Restart components**
 
 ```sh
 respository/dev $ restart vms vm0002
@@ -153,8 +153,47 @@ respository/dev $ restart vms vm0002
 
 ### API Facade
 
-- customized rest client
-- interface with legacy APIs / simplify API usage
-- Operations
-  - create user with role in org
-  - remove user and all their attributes and roles
+This example shows a *façade* of a complex API. The façade simplifies interfacing with the API.
+
+```sh
+python3 -m examples.api_facade
+# Press ctrl-d to exit, ctrl-c to cancel, TAB for word completion, ? for help and ! for shell interop.
+```
+
+Let's see which users exist. The debug output shows the intermediate API calls.
+
+```sh
+respository $ users
+respository/users $ show
+#  (debug) GET /users
+#  (debug) GET /users/9998
+#  (debug) GET /users/10000
+# |    id |               email |      role |
+# |------:|:--------------------|:----------|
+# |  9998 | charles@company.com | developer |
+# | 10000 |    dave@company.com |     admin |
+```
+
+**Create a new user**
+
+```sh
+respository/users $ create developer alice@company.com
+# creating new user alice@company.com
+#  (debug)  POST /users {"email": "alice@company.com"} returned {"id": 10001}
+# assigning role developer to alice@company.com
+#  (debug) POST /roles/developer {"id": 10001} returned "OK"
+# sending notification
+```
+
+**Remove a user**
+
+```sh
+respository/users $ del bob@company.com
+# preparing to remove bob@company.com 
+# finding user id: 9998
+# removing inventory of user id 9998
+# removing roles of user id 9998
+# removing attributes of user id 9998
+# removing the user user id 9998
+```
+
