@@ -4,6 +4,8 @@ The language is a mix of Bash and Python. Statements are separated by whitespace
 
 For examples, see [src.lib.math.sh](https://github.com/voschezang/mash/blob/main/src/lib/math.sh). The AST can be found [here](https://voschezang.github.io/mash-docs/pages/ast.html).
 
+[toc]
+
 
 ## By Type
 
