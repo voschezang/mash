@@ -633,6 +633,11 @@ def test_parse_math():
     assert result.data.rhs == '1'
 
 
+def test_parse_help_math():
+    result = parse_line('help math')
+    assert isinstance(result, Math)
+
+
 def test_parse_set():
     result = parse_line('{ users.alice.id }')
     assert isinstance(result, SetDefinition)

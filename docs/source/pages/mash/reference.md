@@ -13,20 +13,49 @@ For examples, see [src.lib.math.sh](https://github.com/voschezang/mash/blob/main
 
 | Example                   | Description                                                  |
 | ------------------------- | ------------------------------------------------------------ |
-| `print hi hello`          | Run the method `do_print()` with arguments `"hi"` and `"hello"`. |
-| `println 1 2 3`           | Print separated arguments on new lines.                      |
-| `print 1, print 2`        | Run multiple methods.                                        |
-| `print 1`&vert;`> print` | Pipe the output of one expression to another expression.     |
+| `print hi hello`          | Print the strings `"hi"` and `"hello"`. |
+| `println 1 2 3`           | Print while seperated the arguments by newlines. |
+| `print 1; print 2` |  |
+| `print 1`&vert;` print` | Pipe the output of one command to another. |
+
+### Help
+
+Run `help` to show the available commands.
+
+```sh
+$ help
+Documented commands (type help <topic>):
+========================================
+E                 cat   example  flatten  help     map      range   shell  vi
+...
+
+Undocumented commands:
+======================
+bool  float  int  math
+```
+
+Run `help CMD` to explain  a specific command
+
+```sh
+$ help print
+Write to stdout
+```
 
 ### Conditions and Branches
 
-| Example                                                   | Description                     |
-| --------------------------------------------------------- | ------------------------------- |
-| `if 1 > 0 then print greater`                             | Run a command conditionally.    |
-| `x <- if 1 > 0 then 10 else 20`                           | Conditional variable assignment |
-| `if .. then if .. then print A else print B else print C` | Nested if-then-else statement   |
+Conditions can be chosen using **if-statements**.
 
-Multiline if-then-else statement
+```python
+if 1 > 0 then print greater
+```
+
+For more complex conditions, **nested** if-statement can be used.
+
+```python
+if .. then if .. then print A else print B else print C
+```
+
+To improve readibility, use a **multiline** if-statements.
 
 ```python
 if 10 < 1 then
@@ -47,44 +76,60 @@ else
 | `println 1 2 >>= print`                     | `>>=` is an alias for &vert;`> map`                          |
 | `foreach DIR >>= print`                     | Iterate over a directory.                                    |
 
+### Math
+
+Run `math` to evaluate mathematical expressions.
+
+```sh
+math (1 + 1) * 10
+```
+
 ### Shell Interop
 
-Commands can be chained, similar to *Bash*. The main output `stdout` is used.
+When commands are unknown, a corresponding binary is sought in the `PATH`.
 
 | Example                    | Description                                      |
 | -------------------------- | ------------------------------------------------ |
-| `!echo hello`              | Invoke a system shell and run `echo hello` there |
-| `print 1`&vert;`echo`     | Pipe the output of                               |
-| `print 1 > somefilename`  | Write the output of an expression to a file      |
-| `print 1 >> somefilename` | Append the output of an expression to a file     |
+| `shell echo hello` | Use the system shell to run `echo hello` |
+| `echo hello`              | Invoke `echo` directly. This is forbidden is *safe mode*. |
+| `print 1`&vert;`echo`     | Pipe the output of a Mash command to the system shell. |
+| `print 1 > somefilename`  | *Write* the output of a command to a file |
+| `print 1 >> somefilename` | *Append* the output of a command to a file |
 
-### Environment Variables
+### Environments
 
-The operator `=` is used for variable assignment. The operator `<-` is used for post-evaluation assignment (borrowed from [R](https://www.r-project.org/)). `$`-referenced variables are expanded immediately, prior to function invocation.
+Environments allow you to save and recall variables, denoted with `$` symbols. See also [directories](directories.md).
+
+#### Variables
+
+The operator `=` is used for variable assignment. The operators `<-` and `->` are used for post-evaluation assignment (borrowed from [R](https://www.r-project.org/)).
+
+ `$`-referenced variables are expanded immediately, prior to function invocation.
 
 | Example         | Description                                                  |
 | --------------- | ------------------------------------------------------------ |
 | `a = 100`       | Assign the value `100`  to the variable `a`                  |
 | `a b = 10 20`   | Assign the values `10`, `20` to the variables `a`,`b`, respectively |
-| `b <- print 10` | Assign the result of the left-hand-side expression to the variable `b` |
-| `print 20 -> c` | Assign the result of the right-hand-side expression to the variable `b` |
 | `print $a $b`   | Pass the values of the variables `a` and `b` to the command `print` |
+| `b <- print 10` | Assign the result of the right-hand-side expression to the variable `b` |
+| `print 20 -> c` | Assign the result of the left-hand-side expression to the variable `b` |
 
 #### Environments
 
 An environment is a key-value map.
 
-| Command  | Description                             |
-| -------- | --------------------------------------- |
-| `env`    | Show all environment variables.         |
-| `save`   | Copy the current environment to a file. |
-| `reload` | Reload the default environment.         |
+| Command  | Description                                       |
+| -------- | ------------------------------------------------- |
+| `env`    | Show all environment variables.                   |
+| `del $x` | Remove (unset) the variable `$x`.                 |
+| `save`   | Copy the current environment (session) to a file. |
+| `reload` | Reload the default environment.                   |
 
 ### Globbing
 
 | Example        | Description                                                |
 | -------------- | ---------------------------------------------------------- |
-| `print *`      | `*` is replaced with all items from the autocomplete list. |
+| `print ab*`    | `*` is replaced with all items from the autocomplete list. |
 | `print ab?`    | `?` is a wildcard for a single character.                  |
 | `print {1..3}` | Create a range.                                            |
 
@@ -119,51 +164,13 @@ f (x):
 f 10
 ```
 
-### Built-in Commands
 
-| Command             | Description                                           |
-| ------------------- | ----------------------------------------------------- |
-| `help`              | Show info.                                            |
-| `help CMD`          | Show the usage of the command `CMD`.                  |
-| `E`                 | Show details of the last error message.               |
-| `echo [INPUT]`      | Return the input.                                     |
-| `print SOME TEXT`   | Print the words `SOME` and `TEXT`.                    |
-| `println SOME TEXT` | Print the words `SOME` and `TEXT` on different lines. |
-| `math 1 + 10`       | Evaluate math expressions.                            |
-
-## Symbol Reference
-
-**Variable assignment**
-`=` `->` `<-` `$`
-
-**Function definition**
-`function_name ( ):`
-
-**Globbing**
-
-`*` `?` `{` `}`
-
-**Pipes (Bash)**
-`|` `>-` `>>`
-
-**Pipes (Python)**
- `|>` `>>=`
-
-**Comparison Operators**
-`==` `!=` `>` `<`
-
-### Keywords
-
-`if` `then` `else` `return`
-
-### Built-in Functions
-
-Logical operators: `and` `or` `not`
-Other operators: `map` `math` `foreach`
 
 ## Proposals
 
 Proposals for future changes.
+
+`all` `any`
 
 **Predicate logic**
 

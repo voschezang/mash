@@ -142,6 +142,8 @@ class Cmd2(cmd.Cmd):
         return check_output(args)
 
     def do_fail(self, msg: str):
+        """Let it crash
+        """
         raise ShellError(f'Fail: {msg}')
 
     def do_exit(self, args):
