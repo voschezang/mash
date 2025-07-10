@@ -1,6 +1,5 @@
 .PHONY: docs web test
 
-github = https://github.com/voschezang/mash/blob/main/
 out = docs/source/modules
 
 # auto-generated file
@@ -90,11 +89,12 @@ docs-generate:
 	echo source
 	# generate modules from python source code
 	${VENV}; cd docs; sphinx-apidoc -o source/modules ../src/mash
+	# generate builtins page
+	${VENV}; cd docs; ./generate_builtins.sh
 	# generate shell help
 	${PYTHON} src/examples/shell_example.py -h > ${out}/shell_help.txt
 	# generate examples
-	echo '# Examples\n' > ${out}/mash_examples.md
-	find src/examples/*.py -type f -regex 'src/examples/[a-z][a-z_]*.py' -exec echo '- [{}](${github}{})'  \; >> ${out}/mash_examples.md
+	cd docs; ./generate_examples.sh
 
 tree:
 	tree src -L 2 -d

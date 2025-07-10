@@ -39,13 +39,15 @@ This documentation consists of two sections:
          :maxdepth: 3
          :hidden:
 
-         Language Reference <pages/language_reference.md>
-         Using directories <pages/directories.md>
+         Language Reference <pages/mash/reference.md>
+         Using directories <pages/mash/directories.md>
+         Built-in commands <modules/builtins.rst>
          Example scripts <pages/lib.rst>
          Shell CLI <pages/shell_help.rst>
 
-      - `Full language reference <pages/language_reference.html>`_
-      - `[How to] Use directories <pages/directories.html>`_
+      - `Full language reference <pages/mash/reference.html>`_
+      - `Built-in commands <modules/builtins.html>`_
+      - `[How to] Use directories <pages/mash/directories.html>`_
       - `Example scripts <pages/lib.html>`_
       - `Shell CLI <pages/shell_help.html>`_
 
