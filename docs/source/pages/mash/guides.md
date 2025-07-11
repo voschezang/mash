@@ -10,7 +10,8 @@ Use the example script `src/examples/shell.py`
 
 ```sh
 python3 -m examples.shell
-# Press ctrl-d to exit, ctrl-c to cancel, TAB for word completion, ? for help and ! for shell interop.
+# Press ctrl-d to exit, ctrl-c to cancel, TAB for word completion,
+# ? for help and ! for shell interop.
 ```
 
 You can use `echo` to display text.
@@ -33,7 +34,7 @@ Run `?` or `help` to show the available commands.
 $ ?
 # Documented commands (type help <topic>):
 # ========================================
-# E                 cat   example  flatten  help     map      range   shell  vi
+# E cat example  flatten  help map range shell  vi
 ```
 
 Run `help print` to show the description of the command `print`.
@@ -60,13 +61,14 @@ Mash allows you to explore data intuitively.
 
 ### Use directories
 
-See [directories](directories.md)
+See [directories](https://voschezang.github.io/mash-docs/pages/directories.html)
 
 ### Query JSON data
 
 ```sh
 python3 -m examples.queries
-# Press ctrl-d to exit, ctrl-c to cancel, TAB for word completion, ? for help and ! for shell interop.
+# Press ctrl-d to exit, ctrl-c to cancel, TAB for word completion,
+# ? for help and ! for shell interop.
 repository $
 repository $ list
 # documents
@@ -98,13 +100,15 @@ repository $ { users documents | users.id = documents.owner }
 2. Find users that own a at least one document
 
 ```sh
-repository $ { users documents | users.id = documents.owner } | select users.id users.name | uniq
+repository $ { users documents | users.id = documents.owner } | 
+  select users.id users.name | uniq
 ```
 
 3. Find users that own documents about animals
 
 ```sh
-repository $ {users documents | document.title = "*animal*" | users.id in documents.owner} | select users.name documents.title
+repository $ {users documents | document.title = "*animal*" | 
+  users.id in documents.owner} | select users.name documents.title
 ```
 
 
@@ -157,7 +161,8 @@ This example shows a *façade* of a complex API. The façade simplifies interfac
 
 ```sh
 python3 -m examples.api_facade
-# Press ctrl-d to exit, ctrl-c to cancel, TAB for word completion, ? for help and ! for shell interop.
+# Press ctrl-d to exit, ctrl-c to cancel, TAB for word completion,
+# ? for help and ! for shell interop.
 ```
 
 Let's see which users exist. The debug output shows the intermediate API calls.

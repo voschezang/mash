@@ -30,9 +30,9 @@ This documentation consists of two sections:
 
    .. container:: col
 
-      **Mash Language**
+      **1. Mash Language Reference**
 
-      Using the REPL, browsing directories.
+      Using the CLI or REPL.
 
       .. toctree::
          :caption: Mash Language:
@@ -40,16 +40,30 @@ This documentation consists of two sections:
          :hidden:
 
          Language Reference <pages/mash/reference.md>
-         Using directories <pages/mash/directories.md>
-         Built-in commands <modules/builtins.rst>
-         Example scripts <pages/lib.rst>
+         Symbol Reference <pages/mash/symbols.md>
+         Built-in commands <pages/mash/builtins.rst>
          Shell CLI <pages/shell_help.rst>
 
+
       - `Full language reference <pages/mash/reference.html>`_
-      - `Built-in commands <modules/builtins.html>`_
+      - `Symbol reference <pages/mash/symbols.html>`_
+      - `Built-in commands <pages/mash/builtins.html>`_
+      - `Shell CLI <pages/shell_help.html>`_
+
+      Guides and usage examples
+
+      .. toctree::
+         :caption: Usage Examples:
+         :maxdepth: 3
+         :hidden:
+
+         Guides <pages/mash/guides.md>
+         Using directories <pages/mash/directories.md>
+         Example scripts <pages/lib.rst>
+
+      - `Guides <pages/mash/guides.html>`_
       - `[How to] Use directories <pages/mash/directories.html>`_
       - `Example scripts <pages/lib.html>`_
-      - `Shell CLI <pages/shell_help.html>`_
 
    .. container:: col
 
@@ -61,7 +75,7 @@ This documentation consists of two sections:
          :caption: Source Code:
          :maxdepth: 1
 
-         Example scripts <modules/mash_examples.md>
+         Example scripts <generated/mash_examples.md>
 
       .. toctree::
          :hidden:
@@ -77,7 +91,6 @@ This documentation consists of two sections:
 
          pages/reference.rst
 
-      - `Library Reference <pages/reference.html>`_
 
       .. toctree::
          :hidden:
@@ -90,7 +103,10 @@ This documentation consists of two sections:
          server <modules/server>
          webtools <modules/webtools>
 
-      - Packages
+
+      - `Shell <pages/shell.html>`_
+         - `Classes <pages/shell_classes.html>`_
+      - `Library Reference <pages/reference.html>`_
          - `Filesystem <modules/filesystem.html>`_
          - `Object parser <modules/object_parser.html#module-object_parser.factory>`_
          - `Shell <pages/shell_classes.html>`_

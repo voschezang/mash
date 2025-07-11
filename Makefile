@@ -1,6 +1,7 @@
 .PHONY: docs web test
 
 out = docs/source/modules
+generated = docs/source/generated
 
 # auto-generated file
 parsetab = src/mash/shell/grammer/parsetab.py
@@ -59,7 +60,12 @@ upload:
 	${VENV} && twine upload dist/* -u "__token__" -p "${token}"
 
 docs:
-	# docs-init must have been run once
+	# Note: docs-init must have been run once
+	make docs-clean
+	make docs-generate-docstrings
+	make docs-light
+
+docs-light:
 	make docs-generate
 	${VENV}; cd docs; make html
 
@@ -70,8 +76,7 @@ docs-init:
 	make docs
 
 docs-clean:
-	rm -rf ${out}
-	rm -rf docs/build
+	rm -rf ${out} ${generated} docs/build
 
 docs-show:
 	open docs/build/html/index.html
@@ -82,19 +87,23 @@ docs-watch:
 	# open window
 	make docs-show
 	# watch for any changes & update accordingly
-	find docs/source -type f -name '*.rst' -o -name '*.md' -o -name '*.css' -prune -o -name 'docs/source/modules/*.rst' | entr make docs
+	find docs/source -type f -name '*.rst' -o -name '*.md' -o -name '*.css' -prune -o -name 'docs/source/modules/*.rst' | entr make docs-light
 
 docs-generate:
-	make docs-clean
-	echo source
+	mkdir -p ${out}
 	# generate modules from python source code
 	${VENV}; cd docs; sphinx-apidoc -o source/modules ../src/mash
-	# generate builtins page
-	${VENV}; cd docs; ./generate_builtins.sh
-	# generate shell help
-	${PYTHON} src/examples/shell_example.py -h > ${out}/shell_help.txt
 	# generate examples
 	cd docs; ./generate_examples.sh
+
+docs-generate-docstrings:
+	mkdir -p ${generated}
+	# generate builtins page
+	${VENV}; cd docs; ./generate_builtins.sh
+	# generate examples
+	cd docs; ./generate_examples.sh
+	# generate shell help
+	${PYTHON} src/examples/shell_example.py -h > ${generated}/shell_help.txt
 
 tree:
 	tree src -L 2 -d

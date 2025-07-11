@@ -1,4 +1,4 @@
-## Symbol Reference
+# Symbol Reference
 
 **Variable assignment**
 `=` `->` `<-` `$`
