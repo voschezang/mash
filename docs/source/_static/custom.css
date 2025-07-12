@@ -1,3 +1,8 @@
+body {
+    overflow-wrap: break-word;
+    word-break: break-word;
+}
+
 a img {
     display: inline;
     vertical-align: middle;
@@ -5,11 +10,20 @@ a img {
 }
 
 h1 {
+      border-bottom: none;
+}
+h2 {
       border-bottom: 1px solid #3465a4;
 }
 
-h2 {
-      border-bottom: none;
+div.document .body ul {
+    margin-top: .5em;
+}
+
+div.document code.docutils.literal {
+    border-radius: 3px;
+    padding-left: 0.7em;
+    padding-right: 0.7em;
 }
 
 div.header-wrapper {
@@ -28,6 +42,7 @@ section p.caption span.caption-text {
   display: flex;
   gap: 2em;
   margin-top: 1.5em;
+  margin-bottom: 1.5em;
 }
 .two-cols .col {
   flex: 1;
@@ -48,3 +63,82 @@ section p.caption span.caption-text {
 .two-cols .col ul li p {
     margin-bottom: 0.5;
 }
+.two-cols .col > p:not(:first-child) {
+    margin-top: 1em;
+    display: inline-block;
+ }
+
+/* Align body to the left */
+@media only screen and (max-width: 1200px) {
+    .content-wrapper .content {
+        width: 60em;
+        margin-left: 0;
+        margin-right: 0;
+    }
+    .content-wrapper .content .document {
+        width: 40em;
+    }
+}
+
+/* Hide sidebar & remove fixed width */
+@media only screen and (max-width: 900px) {
+    .header-wrapper .header {
+        width: 100%;
+    }
+    .content-wrapper {
+        box-sizing: border-box;
+    }
+    .content-wrapper div.content {
+        width: 100%;
+    }
+    .content-wrapper div.content .body {
+        width: 100%;
+        text-align: start;
+    }
+    .footer-wrapper > .footer {
+        width: 100%;
+    }
+    .footer-wrapper > .footer .footer {
+        width: 100%;
+    }
+    .footer-wrapper > .footer .left {
+        float: none;
+    }
+    .footer-wrapper > .footer .right {
+        float: none;
+        padding-right: 0.5em;
+    }
+    .content-wrapper .content .document {
+        width: 100%;
+        float: none;
+    }
+    .content-wrapper .content .sidebar {
+        width: 100%;
+        float: none;
+    }
+}
+
+/* Collapse columns */
+@media only screen and (max-width: 600px) {
+    .two-cols {
+        display: block;
+        gap: unset;
+    }
+    .two-cols > .col {
+        background: #efefef;
+        border-radius: 3px;
+        padding-bottom: 1em;
+        padding-top: 1em;
+        border-top: 2px solid #ccc;
+    }
+    .two-cols > .col:first-child {
+        border-right: none;
+    }
+    .two-cols > .col:last-child {
+        margin-top: 1em;
+    }
+    .two-cols > .col:not(:first-child) {
+        border-top: 2px solid #ccc;
+    }
+}
+

@@ -224,6 +224,13 @@ class Shell(BaseShell):
         return acc
 
     def do_math(self, args: str) -> str:
+        """Evaluate a mathematical expression
+
+        .. code-block:: sh
+
+            math (1 + 1) * 10
+
+        """
         result = Math.eval(args, self.env)
 
         if isinstance(result, bool):

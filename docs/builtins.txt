@@ -1,0 +1,14 @@
+E
+env
+exit
+fail
+flatten
+help
+map
+print
+println
+reload
+save
+shell
+undo
+unset
