@@ -1,3 +1,6 @@
+Introduction
+############
+
 Welcome! This is the documentation for Mash: a *shell* and programming language. It features:
 
 
@@ -22,7 +25,7 @@ Welcome! This is the documentation for Mash: a *shell* and programming language.
 
 
 Documentation
-#############
+*************
 
 This documentation consists of two sections:
 
@@ -109,14 +112,13 @@ This documentation consists of two sections:
       - `Library Reference <pages/reference.html>`_
          - `Filesystem <modules/filesystem.html>`_
          - `Object parser <modules/object_parser.html#module-object_parser.factory>`_
-         - `Shell <pages/shell_classes.html>`_
          - `Shell AST <pages/ast.html>`_
          - `Server <modules/server.html#module-server.server>`_
          - `Webtools <modules/webtools.html#module-webtools>`_
 
 
 Indices and tables
-##################
+******************
 
 * :ref:`genindex`
 * :ref:`modindex`

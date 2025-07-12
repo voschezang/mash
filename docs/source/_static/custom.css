@@ -10,11 +10,14 @@ a img {
 }
 
 h1 {
+      border-bottom: none;
+}
+h2 {
       border-bottom: 1px solid #3465a4;
 }
 
-h2 {
-      border-bottom: none;
+div.document .body ul {
+    margin-top: .5em;
 }
 
 div.document code.docutils.literal {

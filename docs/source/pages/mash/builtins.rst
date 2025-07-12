@@ -22,6 +22,7 @@ These langauge constructs use infix and suffix arguments.
 
     CMD and CMD
     CMD or CMD
+    not CMD
 
 
 Alphabetical Commands

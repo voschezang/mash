@@ -1,11 +1,18 @@
-"""Parse tokens.
-Tokens are defined in shell.grammer.tokenizer
+"""
+Parser: Language Grammar
+========================
 
-Parsing rules;
+This module defines parsing rules, which make up the AST. See also parse tokens, which are defined in shell.grammer.tokenizer
+
+- The highest level node is **Lines**, which contains a chain of statement objects.
+- Statements can be instances of **Assign**, **FunctionDefinition**, **Pipe**, **If**, **Then**, etc.
+- A third level node is the class **Terms**.
+
+The creation of the tree is done through a set of rules. These use intermediate terms: conjunction, expression, term.
 
 .. code-block:: yaml
 
-    lines: a BREAK-separated sequence of line
+    lines: a BREAK-separated sequence of line  # print a; print b;
     line: statement with optional INDENT
     statement: 
         - assignment        # a = 1
