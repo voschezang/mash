@@ -230,11 +230,12 @@ def test_variable_expansion_regex():
     assert catch_output('echo [a-z]*123', shell=shell) == 'prefix123'
 
 
-def test_variable_expansion_range():
+def test_variable_expansion_wildcard_range():
     shell = Shell()
     shell.ignore_invalid_syntax = False
 
     assert catch_output('echo {1..3}', shell=shell) == '1 2 3'
+    assert catch_output('echo a{1..3}b', shell=shell) == 'a1b a2b a3b'
     run_command('x = 3', shell=shell)
     assert catch_output('print "{1..$x}"', shell=shell) == "'1 2 3'"
 

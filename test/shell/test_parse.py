@@ -184,11 +184,19 @@ def test_parse_equations():
 
 
 def test_parse_range():
-    line = 'pre{1..3}post'
+    line = 'pre{1..10}post'
     result = parse_line(line)
     assert str(result) == line
     assert result == line
     assert result.values[0].type == 'range'
+
+    line = 'print {1..10}'
+    result = parse_line(line)
+    assert str(result) == line
+    assert result == line
+    assert isinstance(result.values[0], Method)
+    assert isinstance(result.values[1], Word)
+    assert result.values[1].type == 'range'
 
 
 def test_parse_assign():

@@ -112,7 +112,7 @@ def main():
         return t
 
     def t_WILDCARD_RANGE(t):
-        r'[\w\d\-]*\{\d\.\.\d}[\w\d\-]*'
+        r'[\w\d\-]*\{\d+\.\.\d+}[\w\d\-]*'
         # TODO verify matching []
         return t
 
