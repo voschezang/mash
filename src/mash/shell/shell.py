@@ -223,21 +223,6 @@ class Shell(BaseShell):
 
         return acc
 
-    def do_math(self, args: str) -> str:
-        """Evaluate a mathematical expression
-
-        .. code-block:: sh
-
-            math (1 + 1) * 10
-
-        """
-        result = Math.eval(args, self.env)
-
-        if isinstance(result, bool):
-            self._save_result(result)
-            return ''
-
-        return str(result)
 
 ################################################################################
 # Helpers
@@ -283,9 +268,14 @@ def sh_to_py(cmd: str):
 
 def run_command(command='', shell: Shell = None, strict=None):
     """Run a newline-separated string of commands.
+    Wrapper for `Shell.onecmd()`
 
     Parameters
     ----------
+        command : str
+            A newline-separated string of commands
+        shell : Shell
+            An instance of `cmd.Cmd` or `Shell`
         strict : bool
             Raise exceptions when encountering invalid syntax.
     """

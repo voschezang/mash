@@ -184,6 +184,8 @@ class Cmd2(cmd.Cmd):
         return ''.join(cat_file(f) for f in filenames.split())
 
     def do_source(self, filenames: str):
+        """Execute commands from a file in the current shell.
+        """
         run_command(self.do_cat(filenames), self)
 
     ############################################################################
