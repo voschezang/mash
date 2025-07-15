@@ -8,6 +8,6 @@ def parse_line(text: str):
 
 
 def test_parse_cmd():
-    text = 'ab cd'
+    text = 'ab'
     result = parse(text)
     result

@@ -46,4 +46,5 @@ class Core:
 
 if __name__ == '__main__':
     core = Core()
-    core.repl()
+    # core.repl()
+    core.compile('abc')

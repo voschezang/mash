@@ -1,6 +1,7 @@
 from logging import getLogger
 from ply import yacc
 
+from mash.functional_shell.ast.lines import Lines
 from mash.functional_shell.tokenizer import main, tokens
 from mash.functional_shell.ast.term import Node
 from mash.shell.errors import ShellSyntaxError
@@ -29,14 +30,32 @@ def parse(text, init=True):
     # _ply_constants = precedence, tokens
     _ply_constants = tokens
 
+    def p_empty(p):
+        """lines : BREAK
+        """
+        p[0] = Lines([])
+
+    def p_lines_suffix(p):
+        """lines : line
+                 | line BREAK
+        """
+        p[0] = Lines([p[1]])
+
+    def p_lines_infix(p):
+        'lines : line BREAK lines'
+        p[0] = Lines([p[1]]) + p[3]
+
+    def p_lines_prefix(p):
+        'lines : BREAK lines'
+        p[0] = p[2]
+
     def p_all(p):
-        """lines : BREAK WORD
-                 | BREAK WORD WORD
-                 | BREAK INT
+        """line : WORD
+                | INT
         """
         # pos = p.slice[2].lexpos
         # indent = pos / 2
-        p[0] = Node(p[2])
+        p[0] = Node(p[1])
 
     def p_error(p):
         print(f'Syntax error: {p}')
