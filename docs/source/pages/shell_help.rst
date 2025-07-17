@@ -3,4 +3,4 @@
 Shell
 =====
 
-.. literalinclude:: ../modules/shell_help.txt
+.. literalinclude:: ../generated/shell_help.txt

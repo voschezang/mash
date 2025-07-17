@@ -1,6 +1,7 @@
 from pytest import raises
 
 from mash.filesystem.filesystem import OPTIONS
+from mash.shell.ast.term import Quoted
 from mash.shell.errors import ShellSyntaxError
 from mash.shell.grammer import tokenizer
 from mash.shell.grammer.parser import parse
@@ -155,6 +156,16 @@ def test_parse_positional_variable():
     # TODO implement this
     assert isinstance(result.values[1], NestedVariable)
     # assert result.values[1].keys == ['inner', 'x']
+
+
+def test_parse_help():
+    result = parse_line('help')
+    assert isinstance(result, Terms)
+    assert isinstance(result.values[0], Method)
+    assert result.values[0].data == 'help'
+
+    # TODO implement this using a new token `HELP`
+    # result = parse_line('help math')
 
 
 def test_parse_equations():
@@ -631,6 +642,17 @@ def test_parse_math():
     assert result.data.op == '=='
     assert result.data.lhs == '1'
     assert result.data.rhs == '1'
+
+
+def test_parse_print_math():
+    result = parse_line('print "math"')
+    assert isinstance(result, Terms)
+    assert isinstance(result.values[0], Method)
+    assert isinstance(result.values[1], Quoted)
+    assert result.values[1].data == 'math'
+
+    with raises(ShellSyntaxError):
+        parse_line('print math')
 
 
 def test_parse_set():

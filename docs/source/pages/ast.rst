@@ -1,18 +1,18 @@
 .. _ast-reference:
 
-AST
-=================
+The Abstract Syntax Tree
+########################
 
 An `Abstract Syntax Tree <https://en.wikipedia.org/wiki/Abstract_syntax_tree>`_.
 
 Grammer
-~~~~~~~
+*******
 
 .. automodule:: mash.shell.grammer.parser
    :noindex:
 
 Core classes
-~~~~~~~~~~~~
+************
 
 .. automodule:: mash.shell.ast.nodes
    :noindex:
@@ -24,7 +24,7 @@ Core classes
    :noindex:
 
 Additional classes
-~~~~~~~~~~~~~~~~~~
+******************
 
 .. automodule:: mash.shell.ast.function_definition
    :members:
