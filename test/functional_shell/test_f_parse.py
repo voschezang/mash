@@ -1,6 +1,7 @@
 
-from mash.functional_shell import tokenizer
+from pytest import raises
 from mash.functional_shell.ast.lines import Lines
+from mash.functional_shell.ast.node import Node
 from mash.functional_shell.parser import parse
 
 
@@ -16,28 +17,22 @@ def test_parse_cmd():
     text = 'ab'
     result = parse(text)
     assert isinstance(result, Lines)
-    assert result.values == ['ab']
+    assert result.values == ('ab',)
+    assert isinstance(result.values[0], Node)
 
 
 def test_parse_empty():
-    result = parse('')
-    assert isinstance(result, Lines)
-    assert isinstance(result, Lines)
-    assert result.values == []
+    assert parse('') is None
 
     result = parse('  ')
-    assert isinstance(result, Lines)
-    assert isinstance(result, Lines)
-    assert result.values == []
+    assert result is None
 
     result = parse('\t  \t ')
-    assert isinstance(result, Lines)
-    assert isinstance(result, Lines)
-    assert result.values == []
+    assert result is None
 
 
 def test_parse_indented():
     text = '  ab'
     result = parse(text)
     assert isinstance(result, Lines)
-    assert result.values == ['ab']
+    assert result.values == ('ab',)

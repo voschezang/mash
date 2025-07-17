@@ -1,26 +1,19 @@
 from typing import List
+from mash.functional_shell.ast.node import Node, Nodes
 from mash.functional_shell.env import Environment
 
 
-class Line:
-    """
+# class Line(Node):
+#     def __init__(self, value: Node):
+#         self.value = value
 
-    E.g.
-
-    .. code-block:: sh
-
-        print 1; print 2
-    """
-
-    def __init__(self, values: list):
-        self.values = values
-
-    def run(self, env: Environment):
-        for line in self.values:
-            line.run(env)
+#     def run(self, env: Environment):
+#         #     for line in self.values:
+#         #         line.run(env)
+#         raise NotImplementedError()
 
 
-class Lines:
+class Lines(Nodes):
     """
     E.g.
 
@@ -32,12 +25,9 @@ class Lines:
 
     """
 
-    def __init__(self, values: List[Line]):
-        self.values = values
-
-    def insert(self, values: List[Line]):
-        self.values = [values] + self.values
-
     def run(self, env: Environment):
         for line in self.values:
             line.run(env)
+
+    def __str__(self):
+        return '\n'.join(str(v) for v in self.values)
