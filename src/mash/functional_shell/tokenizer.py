@@ -6,7 +6,8 @@ tokens = (
     # 'PIPE',  # |
     # 'BASH',  # >> 1> 1>> 2> 2>>
     # 'MAP',  # >>=
-    'BREAK',  # \n or ;
+    'NEWLINE',  # \n
+    'BREAK',  # ;
     # 'COLON',
 
     # 'DEFINE_FUNCTION',  # f ( ):
@@ -42,7 +43,7 @@ tokens = (
 # tokens += tuple(keywords.values())
 
 
-def main():
+def main(ignore=' \t'):
     """
     Token regexes are defined with the prefix `t_`.
     From ply docs:
@@ -56,7 +57,7 @@ def main():
     # t_DOLLAR = r'\$'
     # t_VARIABLE = r'\$[a-zA-Z_][a-zA-Z_0-9]*'
 
-    t_ignore = ' '
+    t_ignore = ignore
     t_ignore_COMMENT = r'\#[^\n]*'
 
     # def t_LPAREN(t):
@@ -67,11 +68,13 @@ def main():
     #     r'\)'
     #     return t
 
-    def t_BREAK(t):
-        r'[\n\r]|((\;)+[\ \t]*)'
-
-        # TOOD check behaviour for newlines and breaks
+    def t_NEWLINE(t):
+        r'[\n\r]+'
         t.lexer.lineno += len(t.value)
+        return t
+
+    def t_BREAK(t):
+        r'(\;)+'
         return t
 
     # def t_DOUBLE_QUOTED_STRING(t):
