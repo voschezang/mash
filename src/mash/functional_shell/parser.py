@@ -31,7 +31,10 @@ lines
     |── assignment
     |   └── terms ASSIGN conjunction
     └── terms
-         └── term
+        └── term terms
+            |── word
+            |── float
+            └── int
 
 Notes
 
@@ -45,6 +48,8 @@ from ply import yacc
 
 from mash.functional_shell.ast.lines import Lines
 from mash.functional_shell.ast.node import Node
+from mash.functional_shell.ast.term import Word
+from mash.functional_shell.ast.terms import Terms
 from mash.functional_shell.tokenizer import main, tokens
 from mash.shell.errors import ShellSyntaxError
 
@@ -85,10 +90,25 @@ def parse(text, init=True):
         # ignore leading newline
         p[0] = p[2]
 
-    def p_all(p):
-        """line : WORD
-                | INT
-        """
+    def p_line_terms(p):
+        'line : terms'
+        p[0] = p[1]
+
+    def p_terms(p):
+        'terms : term terms'
+        p[2].insert(p[1])
+        p[0] = p[2]
+
+    def p_terms_term(p):
+        'terms : term'
+        p[0] = Terms(p[1])
+
+    def p_word(p):
+        'term : WORD'
+        p[0] = Word(p[1])
+
+    def p_int(p):
+        'term : INT'
         p[0] = Node(p[1])
 
     def p_error(p):

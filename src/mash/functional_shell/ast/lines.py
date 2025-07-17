@@ -1,5 +1,4 @@
-from typing import List
-from mash.functional_shell.ast.node import Node, Nodes
+from mash.functional_shell.ast.nodes import Nodes
 from mash.functional_shell.env import Environment
 
 
