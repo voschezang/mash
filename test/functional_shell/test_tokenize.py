@@ -6,6 +6,11 @@ def test_tokenizer():
     assert lexer is not None
 
 
+def test_tokenizer_empty():
+    assert list(tokenize('')) == []
+    assert list(tokenize('  ')) == []
+
+
 def test_tokenize_single():
     token = list(tokenize('myfunction'))[0]
     # assert token.type == 'METHOD'
