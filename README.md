@@ -8,7 +8,7 @@
 
 **Markdown docs**:
 | [Shell](https://github.com/voschezang/mash/blob/main/docs/source/pages/shell.md)
-| [Language Reference](https://github.com/voschezang/mash/blob/main/docs/source/pages/language-reference.md)
+| [Language Reference](https://github.com/voschezang/mash/blob/main/docs/source/pages/language_reference.md)
 | [Using Directories](https://github.com/voschezang/mash/blob/main/docs/source/pages/directories.md)
 
 <img src="https://github.com/voschezang/mash/blob/main/img/dall-E/bosh-terminal-icon.png?raw=true" style="height: 12em" alt="A drawing of a terminal"></img>
