@@ -8,7 +8,7 @@
 
 **Markdown docs**:
 | [Shell](https://github.com/voschezang/mash/blob/main/docs/source/pages/shell.md)
-| [Language Reference](https://github.com/voschezang/mash/blob/main/docs/source/pages/language-reference.md)
+| [Language Reference](https://github.com/voschezang/mash/blob/main/docs/source/pages/language_reference.md)
 | [Using Directories](https://github.com/voschezang/mash/blob/main/docs/source/pages/directories.md)
 
 <img src="https://github.com/voschezang/mash/blob/main/img/dall-E/bosh-terminal-icon.png?raw=true" style="height: 12em" alt="A drawing of a terminal"></img>
@@ -276,3 +276,10 @@ curl -X 'POST' 'http://localhost:5000/v1/organizations' \
   -H 'Content-Type: application/json' \
   -d '{ "board": [ "string" ], "ceo": "string", "departments": [ { "manager": "string", "teams": [ { "manager": "string", "members": [ "string" ], "team_type": "A", "active": true, "capacity": 0, "value": 0 } ] } ] }'
 ```
+
+# Release History
+
+- July 2023: Implemented auto-generated [documentation](https://github.com/voschezang/mash/commit/39e6b1d00b0a3f0a050b2868ba05530bd7f7852a) at [voschezang.github.io/mash-docs/](https://voschezang.github.io/mash-docs/)
+- March 2023: [Rewrote](https://github.com/voschezang/mash/commit/eef85a7d8ed13e378695953070a9e4383da92fbf) shell to use a lexer (AST)
+- August 2022: Created [filesystem simulation](<https://github.com/voschezang/mash/commit/ed8860ff505eeaf2aa48412dcaef777705896655>)
+- July 2022: First [DSL module](https://github.com/voschezang/mash/commit/c95cf57e06b1a21e4ae01ae00a11a19996e91ef0) with examples.
