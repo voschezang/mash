@@ -2,6 +2,7 @@
 from mash.shell.errors import ShellError
 from mash.shell2.ast.node import Node
 from mash.shell2.ast.term import Term
+from mash.shell2.builtins import Builtins
 from mash.shell2.env import Environment
 
 
@@ -16,14 +17,13 @@ class Command(Node):
     def __init__(self, f: str, *args: Term):
         self.f = f
         self.args = args
-        self.builtins = {'print': print}
 
     def run(self, env: Environment):
         f = self.f.run(env)
         args = [arg.run(env) for arg in self.args]
 
-        if f in self.builtins:
-            return self.builtins[f](*args)
+        if f in Builtins:
+            return Builtins[f](*args)
 
         # if self.f in env['functions']:
         #     return env['functions'][self.f](args)
