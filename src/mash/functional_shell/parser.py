@@ -30,11 +30,12 @@ lines
     |   └── { .. || .. , \\n .. }
     |── assignment
     |   └── terms ASSIGN conjunction
-    └── terms
-        └── term terms
-            |── word
-            |── float
-            └── int
+    └── command terms
+                └── terms
+                    └── term terms
+                        |── word
+                        |── float
+                        └── int
 
 Notes
 
@@ -43,9 +44,9 @@ Notes
 - The term "inline" represents a partial line.
 
 """
-from logging import getLogger
 from ply import yacc
 
+from mash.functional_shell.ast.command import Command
 from mash.functional_shell.ast.lines import Lines
 from mash.functional_shell.ast.node import Node
 from mash.functional_shell.ast.term import Word
@@ -67,41 +68,56 @@ def parse(text, init=True):
     # _ply_constants = precedence, tokens
     _ply_constants = tokens
 
-    def p_empty(p):
-        """lines : NEWLINE
-                 |
-        """
-        # p[0] = Lines()
-        pass
-
     def p_lines_suffix(p):
-        """lines : line
-                 | line NEWLINE
-        """
+        'lines : lines NEWLINE'
         # ignore trailing newline
-        p[0] = Lines(p[1])
+        p[0] = p[2]
 
     def p_lines_infix(p):
-        'lines : line NEWLINE lines'
-        p[0] = Lines(p[1], *p[3])
-
-    def p_lines_prefix(p):
-        'lines : NEWLINE lines'
-        # ignore leading newline
-        p[0] = p[2]
-
-    def p_line_terms(p):
-        'line : terms'
+        'lines : lines NEWLINE line'
+        # parse from left to right
+        p[1].extend(p[3])
         p[0] = p[1]
 
+    def p_lines_newline(p):
+        'lines : NEWLINE'
+        pass
+
+    def p_lines_empty(p):
+        'lines : empty'
+        pass
+
+    def p_lines(p):
+        'lines : line'
+        p[0] = Lines(p[1])
+
+    def p_line_command_args(p):
+        'line : METHOD terms'
+        p[0] = Command(p[1], p[2])
+
+    def p_line_command(p):
+        'line : METHOD'
+        p[0] = Command(p[1])
+
+    # TODO allow e.g.
+    # $ {1...3}
+    # def p_line_command(p):
+    #     'line : expression'
+    #     p[0] = Command(p[1])
+
     def p_terms(p):
-        'terms : term terms'
-        p[2].insert(p[1])
-        p[0] = p[2]
+        'terms : terms term'
+        p[1].extend(p[2])
+        p[0] = p[1]
 
     def p_terms_term(p):
         'terms : term'
-        p[0] = Terms(p[1])
+        p[0] = [p[1]]
+
+    def p_term_command(p):
+        'term : METHOD'
+        # note that this yields Word, not Command
+        p[0] = Word(p[1])
 
     def p_word(p):
         'term : WORD'
@@ -110,6 +126,10 @@ def parse(text, init=True):
     def p_int(p):
         'term : INT'
         p[0] = Node(p[1])
+
+    def p_empty(p):
+        'empty :'
+        pass
 
     def p_error(p):
         print(f'Syntax error: {p}')
@@ -121,10 +141,16 @@ def parse(text, init=True):
     else:
         tokenizer.clone()
 
-    log = getLogger()
-    parser = yacc.yacc(debug=log)
+    # parser = yacc.yacc(debug=True, write_tables=False)
+    parser = yacc.yacc()
 
     if not isinstance(text, str):
         raise ValueError("Input is not a string: ", text, type(text))
 
     return parser.parse(text)
+
+
+if __name__ == '__main__':
+    # log = getLogger()
+    # log.setLevel(1)
+    print(parse('ok'))

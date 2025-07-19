@@ -1,4 +1,7 @@
 
+from logging import getLogger
+from mash import io_util
+from mash.functional_shell.ast.command import Command
 from mash.functional_shell.ast.lines import Lines
 from mash.functional_shell.ast.term import Term, Word
 from mash.functional_shell.ast.terms import Terms
@@ -13,28 +16,36 @@ def test_parse_compile():
     parse('abc')
 
 
-def test_parse_term():
-    text = 'ab'
+def test_parse_warnings():
+    # ensure there are no warnings
+    log = getLogger()
+    log.setLevel(1)
+    result = io_util.catch_all_output('abc', parse)
+    assert result == ('', '')
+
+# def test_parse_warnings():
+
+
+def test_parse_command():
+    text = 'print'
     result = parse(text)
     assert isinstance(result, Lines)
 
     terms = result.values[0]
-    assert isinstance(terms, Terms)
-    assert terms.values == ('ab',)
-    assert isinstance(terms.values[0], Term)
-    assert isinstance(terms.values[0], Word)
+    assert isinstance(terms, Command)
+    assert terms.f == 'print'
 
 
 def test_parse_terms():
-    text = 'ab cd'
+    text = 'print ok'
     result = parse(text)
+
     assert isinstance(result, Lines)
-    terms = result.values[0]
-    assert isinstance(terms, Terms)
-    assert terms.values == ('ab', 'cd')
-    term = terms.values[0]
-    assert isinstance(term, Term)
-    assert isinstance(term, Word)
+
+    command = result.values[0]
+    assert isinstance(command, Command)
+    assert command.f == 'print'
+    assert command.args == [Word('ok')]
 
 
 def test_parse_empty():
@@ -53,5 +64,6 @@ def test_parse_indented():
     assert isinstance(result, Lines)
     terms = result.values[0]
 
-    assert isinstance(terms, Terms)
-    assert terms.values == ('ab', 'cd')
+    assert isinstance(terms, Command)
+    assert terms.f == 'ab'
+    assert terms.args == ['cd']

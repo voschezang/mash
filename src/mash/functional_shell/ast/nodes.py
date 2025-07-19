@@ -8,8 +8,11 @@ class Nodes:
     def __init__(self, *values: Node):
         self.values = values
 
-    def insert(self, value: Node):
-        self.values = (value,) + self.values
+    def extend(self, nodes):
+        self.values.extend(nodes.values)
+
+    # def insert(self, value: Node):
+    #     self.values = (value,) + self.values
 
     def __str__(self):
         return ' '.join(str(v) for v in self.values)

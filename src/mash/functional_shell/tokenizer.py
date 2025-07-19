@@ -8,6 +8,7 @@ tokens = (
     # 'MAP',  # >>=
     'NEWLINE',  # \n
     'BREAK',  # ;
+    'SLASH',  # /
     # 'COLON',
 
     # 'DEFINE_FUNCTION',  # f ( ):
@@ -29,8 +30,8 @@ tokens = (
     # 'VARIABLE',  # $x
     # 'FLOAT',  # 3.14
     # 'DOTTED_WORD',  # foo.bar
-    # 'METHOD',  # some_method_V1
-    'WORD',  # home/user
+    'METHOD',  # some_method_V1
+    'WORD',  # hel?os*
 
     # 'WILDCARD',
     # 'WILDCARD_RANGE',  # {1..3}
@@ -75,6 +76,10 @@ def main(ignore=' \t'):
 
     def t_BREAK(t):
         r'(\;)+'
+        return t
+
+    def t_SLASH(t):
+        r'/+'
         return t
 
     # def t_DOUBLE_QUOTED_STRING(t):
@@ -122,31 +127,13 @@ def main(ignore=' \t'):
     #     # match *. or .* or *.*
     #     return t
 
-    # def t_METHOD(t):
-    #     r'\b[a-zA-Z_][a-zA-Z_0-9]*\b'
-    #     t.type = keywords.get(t.value, 'METHOD')
-    #     return t
+    def t_METHOD(t):
+        r'\b[a-zA-Z_][a-zA-Z_0-9]*\b'
+        return t
 
     # def t_LONG_SYMBOL(t):
     #     r'\+\+|::|=>|~>|\|->'
     #     return t
-
-    def t_MAP(t):
-        r'>>=|\|>\smap'
-        """Syntax for "map":
-
-        .. code-block:: bash
-
-            f x >>= g
-
-        or
-
-        .. code-block:: bash
-
-            `f x | map g`
-
-        """
-        return t
 
     # def t_PIPE(t):
     #     r'\|'
@@ -164,12 +151,12 @@ def main(ignore=' \t'):
     #     r'='
     #     return t
 
-    def t_WORD(t):
-        r'\w[\w\d\-%&\~/]*'
-        return t
-
     def t_INT(t):
         r'-?\d+'
+        return t
+
+    def t_WORD(t):
+        r'\w[\w\d\-%&\~/]*'
         return t
 
     def t_error(t):
@@ -179,8 +166,7 @@ def main(ignore=' \t'):
     return lex.lex()
 
 
-def tokenize(data: str):
-    tokenizer = main()
+def inner(data: str, tokenizer: lex.Lexer):
     tokenizer.input(data)
 
     while True:
@@ -189,3 +175,8 @@ def tokenize(data: str):
             break
 
         yield token
+
+
+def tokenize(data: str):
+    tokenizer = main()
+    return inner(data, tokenizer)

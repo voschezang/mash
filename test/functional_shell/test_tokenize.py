@@ -13,15 +13,21 @@ def test_tokenizer_empty():
 
 def test_tokenize_single():
     token = list(tokenize('myfunction'))[0]
-    # assert token.type == 'METHOD'
+    assert token.type == 'METHOD'
     assert token.value == 'myfunction'
 
-    token = list(tokenize('abc/def'))[0]
-    assert token.type == 'WORD'
-    assert token.value == 'abc/def'
-
     token = list(tokenize('1'))[0]
-    # assert token.type == 'INT'
+    assert token.type == 'INT'
+
+
+def test_tokenize_path():
+    tokens = list(tokenize('abc/123'))
+    assert tokens[0].value == 'abc'
+    assert tokens[0].type == 'METHOD'
+    assert tokens[1].value == '/'
+    assert tokens[1].type == 'SLASH'
+    assert tokens[2].value == '123'
+    assert tokens[2].type == 'INT'
 
 
 def test_tokenize_multiple():

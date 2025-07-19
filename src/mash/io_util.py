@@ -3,7 +3,7 @@
 - parsing cli args
 """
 from argparse import ArgumentParser, RawTextHelpFormatter
-from contextlib import redirect_stdout
+from contextlib import redirect_stderr, redirect_stdout
 from io import StringIO
 from termcolor import colored
 from typing import Callable, List, TextIO, Union
@@ -190,6 +190,18 @@ def catch_output(arg: str, func: Callable, **func_kwds) -> str:
         result = out.getvalue()
 
     return result.rstrip('\n')
+
+
+def catch_all_output(arg: str, func: Callable, **func_kwds) -> str:
+    """Run func while temporarily redirecting stdout and stderr.
+    Then return the result from stdout and stderr.
+    """
+    out = StringIO()
+    with redirect_stderr(out):
+        stdout = catch_output(arg, func, **func_kwds)
+        stderr = out.getvalue()
+
+    return stdout, stderr.rstrip('\n')
 
 
 def run_subprocess(line: str) -> str:
