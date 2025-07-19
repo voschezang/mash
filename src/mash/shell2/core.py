@@ -1,7 +1,7 @@
 from cmd import Cmd
 from dataclasses import dataclass
-from mash.functional_shell.env import Environment
-from mash.functional_shell.parser import parse
+from mash.shell2.env import Environment
+from mash.shell2.parser import parse
 
 
 class Shell(Cmd):

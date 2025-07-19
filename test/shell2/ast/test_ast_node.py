@@ -1,6 +1,6 @@
 from pytest import raises
 
-from mash.functional_shell.ast.node import Node
+from mash.shell2.ast.node import Node
 
 
 def test_node():

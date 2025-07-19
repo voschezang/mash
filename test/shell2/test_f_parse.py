@@ -1,11 +1,11 @@
 
 from logging import getLogger
 from mash import io_util
-from mash.functional_shell.ast.command import Command
-from mash.functional_shell.ast.lines import Lines
-from mash.functional_shell.ast.term import Term, Word
-from mash.functional_shell.ast.terms import Terms
-from mash.functional_shell.parser import parse
+from mash.shell2.ast.command import Command
+from mash.shell2.ast.lines import Lines
+from mash.shell2.ast.term import Term, Word
+from mash.shell2.ast.terms import Terms
+from mash.shell2.parser import parse
 
 
 def parse_line(text: str):

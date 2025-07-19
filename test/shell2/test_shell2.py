@@ -1,5 +1,5 @@
 from mash import io_util
-from mash.functional_shell.core import Core
+from mash.shell2.core import Core
 
 
 def run_command(lines: str):

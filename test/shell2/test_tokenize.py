@@ -1,4 +1,4 @@
-from mash.functional_shell.tokenizer import main, tokenize
+from mash.shell2.tokenizer import main, tokenize
 
 
 def test_tokenizer():

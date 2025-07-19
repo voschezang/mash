@@ -46,12 +46,11 @@ Notes
 """
 from ply import yacc
 
-from mash.functional_shell.ast.command import Command
-from mash.functional_shell.ast.lines import Lines
-from mash.functional_shell.ast.node import Node
-from mash.functional_shell.ast.term import Word
-from mash.functional_shell.ast.terms import Terms
-from mash.functional_shell.tokenizer import main, tokens
+from mash.shell2.ast.command import Command
+from mash.shell2.ast.lines import Lines
+from mash.shell2.ast.node import Node
+from mash.shell2.ast.term import Word
+from mash.shell2.tokenizer import main, tokens
 from mash.shell.errors import ShellSyntaxError
 
 

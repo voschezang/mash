@@ -1,5 +1,5 @@
-from mash.functional_shell.ast.nodes import Nodes
-from mash.functional_shell.env import Environment
+from mash.shell2.ast.nodes import Nodes
+from mash.shell2.env import Environment
 
 
 # class Line(Node):
@@ -28,5 +28,9 @@ class Lines(Nodes):
         for line in self.values:
             line.run(env)
 
-    def __str__(self):
-        return '\n'.join(str(v) for v in self.values)
+    def __repr__(self):
+        if self.values is None:
+            return self.f
+
+        lines = '\n'.join(repr(t) for t in self.values)
+        return f'[{type(self).__name__}] {lines}'

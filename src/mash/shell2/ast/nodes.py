@@ -1,7 +1,7 @@
-from mash.functional_shell.ast.node import Node
+from mash.shell2.ast.node import Node
 
 
-class Nodes:
+class Nodes(Node):
     """A container that holds `Node` instances.  
     """
 
@@ -11,14 +11,11 @@ class Nodes:
     def extend(self, nodes):
         self.values.extend(nodes.values)
 
-    # def insert(self, value: Node):
-    #     self.values = (value,) + self.values
-
-    def __str__(self):
-        return ' '.join(str(v) for v in self.values)
+    # def __str__(self):
+    #     return ' '.join(str(v) for v in self.values)
 
     def __repr__(self):
-        return f'{type(self).__name__}( {repr(str(self))} )'
+        return f'[{type(self).__name__}] {repr(self.values)}'
 
     def __eq__(self, other):
         try:
