@@ -4,38 +4,40 @@ AST
 
 Tree structure.
 
-blocks
-└── block blocks
-    └── OPEN lines CLOSE
+.. code-block:: sh
 
-lines 
-|── multiline
-|   |── function
-|   |   └── block
-|   |       └── OPEN lines CLOSE
-|   |── if-then-else
-|   |   └── IF inline : block ELSE block
-|   └── for-loop
-|       └── FOR terms IN term : block
-|    
-|── line ; line \\n line
-└── line \\n line \\n line
-    |── list
-    |   └── [ .., .. ]
-    |── record_definition 
-    |   └── { .. = .., \\n .. = .. }
-    |── record_update
-    |   └── { .. | .. , \\n .. }
-    |── set 
-    |   └── { .. || .. , \\n .. }
-    |── assignment
-    |   └── terms ASSIGN conjunction
-    └── command terms
-                └── terms
-                    └── term terms
-                        |── word
-                        |── float
-                        └── int
+    blocks
+    └── block blocks
+        └── OPEN lines CLOSE
+
+    lines 
+    |── multiline
+    |   |── function
+    |   |   └── block
+    |   |       └── OPEN lines CLOSE
+    |   |── if-then-else
+    |   |   └── IF inline : block ELSE block
+    |   └── for-loop
+    |       └── FOR terms IN term : block
+    |    
+    |── line ; line \\n line
+    └── line \\n line \\n line
+        |── list
+        |   └── [ .., .. ]
+        |── record_definition 
+        |   └── { .. = .., \\n .. = .. }
+        |── record_update
+        |   └── { .. | .. , \\n .. }
+        |── set 
+        |   └── { .. || .. , \\n .. }
+        |── assignment
+        |   └── terms ASSIGN conjunction
+        └── command terms
+                    └── terms
+                        └── term terms
+                            |── word
+                            |── float
+                            └── int
 
 Notes
 
