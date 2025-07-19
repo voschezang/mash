@@ -4,9 +4,7 @@ from mash.shell2.ast.node import Node
 
 
 def test_node():
-    node = Node('abc')
-
-    assert node.data == 'abc'
+    node = Node()
 
     with raises(NotImplementedError):
         node.run(None)

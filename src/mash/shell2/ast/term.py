@@ -13,13 +13,17 @@ class Term(Node):
         return self.value == other
 
 
-class Word(Term):
+class Word(Term, UserString):
+    """Wrapper for strings that represent a single word.
+    This is a subclass from UserString, so it can be compared to other strings.
+    """
+
     def run(self, env: Environment):
         return self.value
 
     def __repr__(self):
         return self.value
 
-    # @property
-    # def data(self):
-    #     return self.value
+    @property
+    def data(self):
+        return self.value

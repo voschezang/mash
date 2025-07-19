@@ -3,8 +3,7 @@ from logging import getLogger
 from mash import io_util
 from mash.shell2.ast.command import Command
 from mash.shell2.ast.lines import Lines
-from mash.shell2.ast.term import Term, Word
-from mash.shell2.ast.terms import Terms
+from mash.shell2.ast.term import Word
 from mash.shell2.parser import parse
 
 
@@ -45,7 +44,10 @@ def test_parse_terms():
     command = result.values[0]
     assert isinstance(command, Command)
     assert command.f == 'print'
-    assert command.args == [Word('ok')]
+    assert command.f == Word('print')
+
+    assert command.args == ('ok',)
+    assert command.args == (Word('ok'),)
 
 
 def test_parse_empty():
@@ -66,4 +68,4 @@ def test_parse_indented():
 
     assert isinstance(terms, Command)
     assert terms.f == 'ab'
-    assert terms.args == ['cd']
+    assert terms.args == ('cd',)

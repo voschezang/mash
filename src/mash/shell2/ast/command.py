@@ -19,10 +19,11 @@ class Command(Node):
         self.builtins = {'print': print}
 
     def run(self, env: Environment):
+        f = self.f.run(env)
         args = [arg.run(env) for arg in self.args]
 
-        if self.f in self.builtins:
-            return self.builtins[self.f](*args)
+        if f in self.builtins:
+            return self.builtins[f](*args)
 
         # if self.f in env['functions']:
         #     return env['functions'][self.f](args)

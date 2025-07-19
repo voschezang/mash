@@ -92,11 +92,11 @@ def parse(text, init=True):
 
     def p_line_command_args(p):
         'line : METHOD terms'
-        p[0] = Command(p[1], p[2])
+        p[0] = Command(Word(p[1]), *p[2])
 
     def p_line_command(p):
         'line : METHOD'
-        p[0] = Command(p[1])
+        p[0] = Command(Word(p[1]))
 
     # TODO allow e.g.
     # $ {1...3}

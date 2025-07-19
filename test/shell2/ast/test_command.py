@@ -6,10 +6,10 @@ from mash.shell2.ast.term import Word
 
 
 def test_command_init():
-    cmd = Command('yes')
+    cmd = Command(Word('yes'))
     assert cmd.f == 'yes'
 
-    cmd = Command('print', Word('a'), Word('b'), Word('c'))
+    cmd = Command(Word('print'), Word('a'), Word('b'), Word('c'))
     assert cmd.f == 'print'
     assert cmd.args == ('a', 'b', 'c')
 
@@ -17,11 +17,11 @@ def test_command_init():
 
 
 def test_command_run():
-    cmd = Command('print', Word('a'), Word('b'), Word('c'))
+    cmd = Command(Word('print'), Word('a'), Word('b'), Word('c'))
     cmd.run(None)
 
 
 def test_command_output():
-    cmd = Command('print', Word('a'), Word('b'), Word('c'))
+    cmd = Command(Word('print'), Word('a'), Word('b'), Word('c'))
     result = catch_output(None, cmd.run)
     assert result == 'a b c'

@@ -1,4 +1,6 @@
+from pytest import raises
 from mash import io_util
+from mash.shell.errors import ShellError
 from mash.shell2.core import Core
 
 
@@ -11,18 +13,18 @@ def catch_output(line='', func=run_command, **kwds) -> str:
 
 
 def test_shel():
-    lines = 'abc'
-    Core().compile(lines)
+    line = 'print hello'
+    run_command(line)
 
 
 def test_run_command():
-    lines = 'abc'
+    line = 'print hello'
+    assert catch_output(line) == 'hello'
 
-    run_command(lines)
-
-    assert catch_output(lines) == ''
+    with raises(ShellError):
+        run_command('no-op')
 
 
 def test_shell_cli():
-    run = 'cd src; python3 -m mash.functional_shell.core'
-    assert io_util.check_output(run) == ''
+    run = 'cd src; python3 -m mash.shell2.core'
+    assert io_util.check_output(run) == 'ok'
