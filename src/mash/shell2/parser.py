@@ -126,7 +126,7 @@ def parse(text, init=True):
 
     def p_int(p):
         'term : INT'
-        p[0] = Node(p[1])
+        p[0] = int(p[1])
 
     def p_empty(p):
         'empty :'

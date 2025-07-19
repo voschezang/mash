@@ -1,9 +1,9 @@
-from typing import Dict
+from typing import Dict, Tuple
 
 from mash.util import removeprefix
 
 
-def infer_default_and_non_default_args(func):
+def infer_default_and_non_default_args(func) -> Tuple[list, list]:
     try:
         args = list(func.__code__.co_varnames)
     except AttributeError:

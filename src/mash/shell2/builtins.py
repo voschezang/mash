@@ -1,5 +1,6 @@
 
 
+from mash.shell2.ast.term import Term
 from mash.util import is_callable
 
 
@@ -51,11 +52,11 @@ class Builtins(metaclass=Meta):
     """
 
     @staticmethod
-    def print(*args: str):
+    def print(*args: Term):
         print(*args)
 
     @staticmethod
-    def exit(status):
+    def exit(status: int):
         exit(status)
 
 

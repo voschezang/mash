@@ -9,6 +9,9 @@ class Term(Node):
     def __init__(self, value: str):
         self.value = value
 
+    def run(self, env: Environment):
+        return self
+
     def __eq__(self, other):
         return self.value == other
 
@@ -17,9 +20,6 @@ class Word(Term, UserString):
     """Wrapper for strings that represent a single word.
     This is a subclass from UserString, so it can be compared to other strings.
     """
-
-    def run(self, env: Environment):
-        return self.value
 
     def __repr__(self):
         return self.value
