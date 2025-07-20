@@ -27,7 +27,7 @@ tokens = (
     # 'SINGLE_QUOTED_STRING',  # 'text'
 
     # 'DOLLAR',  # $
-    # 'VARIABLE',  # $x
+    'VARIABLE',  # $x
     'FLOAT',  # 3.14
     # 'DOTTED_WORD',  # foo.bar
     'METHOD',  # some_method_V1
@@ -56,7 +56,7 @@ def main(ignore=' \t'):
     # t_COLON = r':'
 
     # t_DOLLAR = r'\$'
-    # t_VARIABLE = r'\$[a-zA-Z_][a-zA-Z_0-9]*'
+    t_VARIABLE = r'\$[a-zA-Z_][a-zA-Z_0-9]*'
 
     t_ignore = ignore
     t_ignore_COMMENT = r'\#[^\n]*'

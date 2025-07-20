@@ -51,6 +51,7 @@ from ply import yacc
 from mash.shell2.ast.command import Command
 from mash.shell2.ast.lines import Lines
 from mash.shell2.ast.term import Float, Integer, Word
+from mash.shell2.ast.variable import Variable
 from mash.shell2.tokenizer import main, tokens
 from mash.shell.errors import ShellSyntaxError
 
@@ -107,12 +108,16 @@ def parse(text, init=True):
 
     def p_terms(p):
         'terms : terms term'
-        p[1].extend(p[2])
+        p[1].append(p[2])
         p[0] = p[1]
 
     def p_terms_term(p):
         'terms : term'
         p[0] = [p[1]]
+
+    def p_term_variable(p):
+        'term : VARIABLE'
+        p[0] = Variable(p[1][1:])
 
     def p_term_command(p):
         'term : METHOD'

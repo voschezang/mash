@@ -4,6 +4,7 @@ from mash import io_util
 from mash.shell2.ast.command import Command
 from mash.shell2.ast.lines import Lines
 from mash.shell2.ast.term import Word
+from mash.shell2.ast.variable import Variable
 from mash.shell2.parser import parse
 
 
@@ -22,8 +23,6 @@ def test_parse_warnings():
     result = io_util.catch_all_output('abc', parse)
     assert result == ('', '')
 
-# def test_parse_warnings():
-
 
 def test_parse_command():
     text = 'print'
@@ -35,8 +34,8 @@ def test_parse_command():
     assert terms.f == 'print'
 
 
-def test_parse_terms():
-    text = 'print ok'
+def test_parse_command_with_args():
+    text = 'print ok or not ok'
     result = parse(text)
 
     assert isinstance(result, Lines)
@@ -46,8 +45,7 @@ def test_parse_terms():
     assert command.f == 'print'
     assert command.f == Word('print')
 
-    assert command.args == ('ok',)
-    assert command.args == (Word('ok'),)
+    assert command.args == ('ok', 'or', 'not', 'ok')
 
 
 def test_parse_empty():
@@ -61,11 +59,22 @@ def test_parse_empty():
 
 
 def test_parse_indented():
-    text = '  ab cd  '
+    text = '  ab cd  ef'
     result = parse(text)
     assert isinstance(result, Lines)
     terms = result.values[0]
 
     assert isinstance(terms, Command)
     assert terms.f == 'ab'
-    assert terms.args == ('cd',)
+    assert terms.args == ('cd', 'ef')
+
+
+def test_parse_command_variable():
+    text = 'print $abc xyz'
+    result = parse(text)
+    assert isinstance(result, Lines)
+    terms = result.values[0]
+
+    assert isinstance(terms, Command)
+    assert terms.args[0] == Variable('abc')
+    assert terms.args[1] == Word('xyz')
