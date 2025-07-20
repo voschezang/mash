@@ -28,7 +28,7 @@ tokens = (
 
     # 'DOLLAR',  # $
     # 'VARIABLE',  # $x
-    # 'FLOAT',  # 3.14
+    'FLOAT',  # 3.14
     # 'DOTTED_WORD',  # foo.bar
     'METHOD',  # some_method_V1
     'WORD',  # hel?os*
@@ -117,10 +117,10 @@ def main(ignore=' \t'):
     #     r'}'
     #     return t
 
-    # def t_DOTTED_NUMBER(t):
-    #     r'-?(\d+\.\d*)|(\d*\.\d+)'
-    #     # match *. or .* or *.*
-    #     return t
+    def t_FLOAT(t):
+        r'-?(\d+\.\d*)|(\d*\.\d+)'
+        # match *. or .* or *.*
+        return t
 
     # def t_DOTTED_WORD(t):
     #     r'([\w\d]+\.[\.\w\d]*)|([\w\d\.]*\.[\w\d]+)'

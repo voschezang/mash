@@ -2,8 +2,9 @@
 from pytest import raises
 from mash.io_util import catch_output
 from mash.shell.errors import ShellTypeError
-from mash.shell2.ast.command import Command, infer_args, verify_function_args
-from mash.shell2.ast.term import Term, Word
+from mash.shell2.ast.command import Command, verify_arg_count, verify_arg_types, verify_function_args
+from mash.shell2.ast.term import Float, Integer, Term, Word
+from mash.util import infer_variadic_args
 
 
 def test_command_init():
@@ -18,20 +19,21 @@ def test_command_init():
 
 
 def test_command_run():
-    cmd = Command(Word('print'), Word('a'), Word('b'), Word('c'))
-    cmd.run(None)
-
-
-def test_command_run_no_term():
-    cmd = Command(Word('print'), 1)
-    # TODO
+    # cmd = Command(Word('print'), Word('a'), Word('b'), Word('c'))
     # cmd.run(None)
+
+    cmd = Command(Word('print'), Word('a'), Integer(1), Float(.1))
+    cmd.run(None)
 
 
 def test_command_output():
     cmd = Command(Word('print'), Word('a'), Word('b'), Word('c'))
     result = catch_output(None, cmd.run)
     assert result == 'a b c'
+
+    cmd = Command(Word('print'), Word('a'), Integer(1), Float(.1))
+    result = catch_output(None, cmd.run)
+    assert result == 'a 1 0.1'
 
 
 def test_verify_function_args():
@@ -71,11 +73,20 @@ def test_verify_function_args_variadic():
         verify_function_args(dummy, ['1'])
 
 
-def test_infer_args():
-    pos_args, var_args = infer_args(dummy)
+def test_verify_arg_count():
+    expected = infer_variadic_args(dummy)
 
-    assert pos_args == ['a']
-    assert var_args == ['b']
+    args = ['a', 'b']
+    verify_arg_count(args, *expected)
+
+    with raises(ShellTypeError):
+        verify_arg_count([], *expected)
+
+
+def test_verify_arg_types():
+    expected = infer_variadic_args(dummy)
+    args = [1, 0.1]
+    verify_arg_types(args, dummy, *expected)
 
 
 def dummy(a: int, *b: float):

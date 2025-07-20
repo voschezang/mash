@@ -1,11 +1,11 @@
 
-import inspect
 from typing import Callable, List, Tuple, Union
 from mash.shell.errors import ShellError, ShellTypeError
 from mash.shell2.ast.node import Node
 from mash.shell2.ast.term import Term
 from mash.shell2.builtins import Builtins
 from mash.shell2.env import Environment
+from mash.util import infer_variadic_args
 
 
 class Command(Node):
@@ -21,9 +21,11 @@ class Command(Node):
         self.args = args
 
     def run(self, env: Environment):
+        # handle f, args
         f = str(self.f.run(env))
         args = [arg.run(env) for arg in self.args]
 
+        # handle f(args)
         if f in Builtins:
             func = Builtins[f]
             verify_function_args(func, args)
@@ -52,18 +54,27 @@ class Command(Node):
 
 
 def verify_function_args(func: Callable, args: List[Node]):
-    pos_args, var_arg = infer_args(func)
+    """Verify function arguments.
 
-    # list expected types of function arguments
-    pos_arg_types = []
-    for k in pos_args:
-        pos_arg_types.append(infer_arg_type(func, k))
+    Parameters
+    ----------
+    func: Callable
+        A function with annotated positional and/or variadic arguments.
+    args: List[Node]
+        The arguments to the function.
+    """
+    pos_args, var_arg = infer_variadic_args(func)
+    verify_arg_count(args, pos_args, var_arg)
+    verify_arg_types(args, func, pos_args, var_arg)
 
-    if var_arg is not None and len(args) > len(pos_args):
-        var_arg_type = infer_arg_type(func, var_arg)
 
-    # verify number of arguments
-    if var_arg is not None:
+def verify_arg_count(args: list, pos_args: list, var_arg: Union[str, None]):
+    """Verify the number of arguments in `args`
+
+    - Verify that `args` contains at least as many arguments as `pos_args`.
+    - Verify that `args` does not contain too many arguments.
+    """
+    if var_arg:
         if len(args) < len(pos_args):
             raise ShellTypeError(
                 f'Not enough arguments. Expected at least {len(pos_args)} but got {len(args)}')
@@ -72,19 +83,40 @@ def verify_function_args(func: Callable, args: List[Node]):
         raise ShellTypeError(
             f'Not enough arguments. Expected {len(pos_args)} but got {len(args)}')
 
-    # verify type
-    for expected_type in pos_arg_types:
-        k = args.pop(0)
-        if not isinstance(k, expected_type):
-            raise ShellTypeError(
-                f'Invalid type. Expected {expected_type.__name__} but got {type(k)}')
 
-    # verify remaining variadic args
-    for k in args:
-        k = args.pop(0)
-        if not isinstance(k, var_arg_type):
-            raise ShellTypeError(
-                f'Invalid type. Expected {var_arg_type.__name__} but got {type(k)}')
+def verify_arg_types(args: List[Node], func: Callable, pos_args: list, var_arg: list):
+    """Verify the types of arguments in `args`.
+
+    Parameters
+    ----------
+    args: List[Node]
+        The arguments to verify
+    func: Callable
+        A function with annotated positional and/or variadic arguments.
+    pos_args: List[str]
+        The names of the positional arguments.
+    var_arg: Union[str, None]
+        The name of the variadic argument.
+    """
+    pos_arg_types = []
+    for k in pos_args:
+        pos_arg_types.append(infer_arg_type(func, k))
+
+    # verify positional arguments
+    for expected_type, arg in zip(pos_arg_types, args):
+        verify_arg(arg, expected_type)
+
+    # verify variadic arguments
+    if var_arg:
+        var_arg_type = infer_arg_type(func, var_arg)
+        for arg in args[len(pos_args):]:
+            verify_arg(arg, var_arg_type)
+
+
+def verify_arg(arg: Node, expected_type: type):
+    if not isinstance(arg, expected_type):
+        raise ShellTypeError(
+            f'Invalid type. Expected {expected_type.__name__} but got {type(arg)}')
 
 
 def infer_arg_type(func, k):
@@ -93,22 +125,3 @@ def infer_arg_type(func, k):
     except KeyError:
         raise ShellError(
             f'Type not defined for argument: {k} of command: {func}')
-
-
-def infer_args(func: Callable) -> Tuple[list, Union[str, None]]:
-    sig = inspect.signature(func)
-    pos_args = []
-    var_args = []
-    for arg, param in sig.parameters.items():
-        if param.kind == param.POSITIONAL_OR_KEYWORD:
-            pos_args.append(arg)
-        elif param.kind == param.VAR_POSITIONAL:
-            var_args.append(arg)
-        else:
-            raise NotImplementedError(f'{arg} {param}')
-
-    if var_args:
-        assert len(var_args) == 1
-        return pos_args, var_args[0]
-
-    return pos_args, None

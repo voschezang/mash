@@ -1,7 +1,7 @@
 from operator import contains, eq
 from pytest import raises
 
-from mash.util import concat, constant, equals, find_prefix_matches, find_fuzzy_matches, for_all, for_any, glob, identity, is_alpha, is_digit, list_prefix_matches, match_words, not_equals, split, split_sequence, split_tips
+from mash.util import concat, constant, equals, find_prefix_matches, find_fuzzy_matches, for_all, for_any, glob, identity, infer_variadic_args, is_alpha, is_digit, list_prefix_matches, match_words, not_equals, split, split_sequence, split_tips
 
 
 def test_concat_empty_container():
@@ -191,6 +191,12 @@ def test_glob_ranges():
     assert set(glob('{1..2}-{aa,bb}')) == {'1-aa', '2-aa', '1-bb', '2-bb'}
 
 
+def test_infer_variadic_args():
+    pos_args, var_args = infer_variadic_args(dummy)
+    assert pos_args == ['a', 'b']
+    assert var_args == 'c'
+
+
 def test_identity():
     assert identity(1) == 1
     assert identity(1, 2) == (1, 2)
@@ -249,3 +255,7 @@ def test_equals():
 def test_not_equals():
     assert not_equals(1, 2, 3)
     assert not not_equals(1, 1, 1)
+
+
+def dummy(a: int, b: float, *c: str):
+    return a + b + int(c[0])

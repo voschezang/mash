@@ -1,7 +1,7 @@
 
 from collections import UserString
+from mash.shell.errors import ShellTypeError
 from mash.shell2.ast.node import Node
-from mash.shell2.ast.nodes import Nodes
 from mash.shell2.env import Environment
 
 
@@ -27,3 +27,32 @@ class Word(Term, UserString):
     @property
     def data(self):
         return self.value
+
+
+class Float(Term):
+    def __init__(self, value: str):
+        try:
+            self.value = float(value)
+        except ValueError:
+            raise ShellTypeError(f"Invalid value: {value}")
+
+    def run(self, env: Environment):
+        return self
+
+    def __repr__(self):
+        return repr(self.value)
+
+
+class Integer(Float):
+    """Integers.
+    This is a subclass of Float; it can be used everywhere where a float was needed.
+    """
+
+    def __init__(self, value: str):
+        try:
+            self.value = int(value)
+        except ValueError:
+            raise ShellTypeError(f"Invalid value: {value}")
+
+        if int(value) != float(value):
+            raise ShellTypeError(f"Got float instead of int: {value}")

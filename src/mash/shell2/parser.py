@@ -50,8 +50,7 @@ from ply import yacc
 
 from mash.shell2.ast.command import Command
 from mash.shell2.ast.lines import Lines
-from mash.shell2.ast.node import Node
-from mash.shell2.ast.term import Word
+from mash.shell2.ast.term import Float, Integer, Word
 from mash.shell2.tokenizer import main, tokens
 from mash.shell.errors import ShellSyntaxError
 
@@ -124,9 +123,13 @@ def parse(text, init=True):
         'term : WORD'
         p[0] = Word(p[1])
 
+    def p_float(p):
+        'term : FLOAT'
+        p[0] = Float(p[1])
+
     def p_int(p):
         'term : INT'
-        p[0] = int(p[1])
+        p[0] = Integer(p[1])
 
     def p_empty(p):
         'empty :'

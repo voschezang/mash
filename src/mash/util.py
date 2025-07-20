@@ -1,4 +1,5 @@
 from contextlib import contextmanager
+import inspect
 from json import JSONEncoder
 import re
 import shlex
@@ -474,6 +475,28 @@ def is_enum(cls: type) -> bool:
         return issubclass(cls, Enum)
     except TypeError:
         pass
+
+
+def infer_variadic_args(func: Callable) -> Tuple[list, Union[str, None]]:
+    """Infer positional and variadic arguments.
+    `func` must be an annotated function. 
+    """
+    sig = inspect.signature(func)
+    pos_args = []
+    var_args = []
+    for arg, param in sig.parameters.items():
+        if param.kind == param.POSITIONAL_OR_KEYWORD:
+            pos_args.append(arg)
+        elif param.kind == param.VAR_POSITIONAL:
+            var_args.append(arg)
+        else:
+            raise NotImplementedError(f'{arg} {param}')
+
+    if var_args:
+        assert len(var_args) == 1
+        return pos_args, var_args[0]
+
+    return pos_args, None
 
 
 def infer_inner_cls(cls=Dict[str, str]):
