@@ -19,7 +19,8 @@ class ViewError(ValueError):
 
 @dataclass
 class View:
-    """A tree of dict's. Tree traversal is exposed through the methods `up` and `down`.
+    """An interface to traverse (trees of) dicts.
+    Traversal is exposed through the methods `up` and `down`.
     """
     tree: Data
     _trace: Trace = field(default_factory=list)

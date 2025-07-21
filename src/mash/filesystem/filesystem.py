@@ -77,14 +77,13 @@ class FileSystem:
         self.init_home(home)
 
     def init_home(self, home: Path):
-        if isinstance(home, str):
+        if home is None:
+            home = []
+        elif isinstance(home, str):
             home = [home]
 
         # set temporary default
         self._home = []
-
-        if home is None:
-            home = []
 
         abs_path = [Option.root.value] + home
         self.cd(*abs_path)

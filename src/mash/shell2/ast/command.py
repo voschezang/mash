@@ -1,5 +1,5 @@
 
-from typing import Callable, List, Tuple, Union
+from typing import Callable, List, Union
 from mash.shell.errors import ShellError, ShellTypeError
 from mash.shell2.ast.node import Node
 from mash.shell2.ast.term import Term
@@ -51,6 +51,10 @@ class Command(Node):
 
         except AttributeError:
             return False
+
+    @property
+    def type(self):
+        return 'command'
 
 
 def verify_function_args(func: Callable, args: List[Node]):

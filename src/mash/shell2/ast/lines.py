@@ -34,3 +34,7 @@ class Lines(Nodes):
 
         lines = '\n'.join(repr(t) for t in self.values)
         return f'[{type(self).__name__}] {lines}'
+
+    @property
+    def type(self):
+        return 'lines'

@@ -6,7 +6,9 @@ from mash.util import constant, crop
 
 class Scope:
     """A dict-like interface for a FileSystem instance.
-    It mixes local and global scopes.
+    It exposes behaviour of global and local variables.
+
+    It mixes local and global scopes, like 
 
     If a file is not present in the current directory,
     then this class attempts to acces it in each parent directory.

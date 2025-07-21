@@ -28,6 +28,10 @@ class Word(Term, UserString):
     def data(self):
         return self.value
 
+    @property
+    def type(self):
+        return 'text'
+
 
 class Float(Term):
     def __init__(self, value: str):
@@ -41,6 +45,10 @@ class Float(Term):
 
     def __repr__(self):
         return repr(self.value)
+
+    @property
+    def type(self):
+        return 'float'
 
 
 class Integer(Float):
@@ -56,3 +64,7 @@ class Integer(Float):
 
         if int(value) != float(value):
             raise ShellTypeError(f"Got float instead of int: {value}")
+
+    @property
+    def type(self):
+        return 'int'

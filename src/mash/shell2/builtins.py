@@ -1,5 +1,6 @@
 
 
+from mash.shell2.ast.node import Node
 from mash.shell2.ast.term import Term
 from mash.util import is_callable
 
@@ -54,6 +55,11 @@ class Builtins(metaclass=Meta):
     @staticmethod
     def print(*args: Term):
         print(*args)
+
+    @staticmethod
+    def type(value: Node):
+        assert isinstance(value, Node)
+        print(value.type)
 
     @staticmethod
     def exit(status: int):

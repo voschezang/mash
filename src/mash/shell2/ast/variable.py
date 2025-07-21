@@ -19,3 +19,7 @@ class Variable(Word):
 
     def __repr__(self):
         return '$' + self.value
+
+    @property
+    def type(self):
+        return 'variable'

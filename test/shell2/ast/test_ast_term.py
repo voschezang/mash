@@ -5,6 +5,9 @@ from mash.shell2.ast.term import Float, Integer, Term, Word
 
 
 def test_ast_term():
+    # Disable abstract method guards because Term is still an abstract class
+    Term.__abstractmethods__ = {}
+
     a = Term('1')
     b = Term('1')
     c = Term('2')
