@@ -94,17 +94,27 @@ def parse(text, debug=True, init=True):
         'lines : empty'
         pass
 
+    def p_value(p):
+        """value : term
+                 | list
+        """
+        p[0] = p[1]
+
     def p_comma_terms(p):
-        'comma_terms : comma_terms COMMA term'
+        'comma_terms : comma_terms COMMA value'
         p[1].append(p[3])
         p[0] = p[1]
 
-    def p_comma_terms_term(p):
-        'comma_terms : term'
+    def p_comma_terms_singleton_term(p):
+        'comma_terms : value'
         p[0] = [p[1]]
 
-    def p_line_list_int(p):
-        'line : LBRACE comma_terms RBRACE'
+    def p_line_list(p):
+        'line : list'
+        p[0] = p[1]
+
+    def p_list_int(p):
+        'list : LBRACE comma_terms RBRACE'
         p[0] = ArrayList(Integer, p[2])
 
     def p_line_command_args(p):

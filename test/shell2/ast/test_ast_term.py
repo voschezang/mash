@@ -30,6 +30,20 @@ def test_ast_word():
     assert word.run(None) == 'abc'
 
 
+def test_ast_wildcards():
+    value = r'ab%c*'
+    word = Word(value)
+    assert word.value == value
+    assert str(word) == value
+
+
+# def test_ast_quotes():
+#     value = ','
+#     word = Word(value)
+#     assert word.value == value
+#     assert str(word) == '","'
+
+
 def test_ast_float():
     number = Float('10')
     assert number == 10

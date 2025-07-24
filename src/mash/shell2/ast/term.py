@@ -3,6 +3,7 @@ from collections import UserString
 from mash.shell.errors import ShellTypeError
 from mash.shell2.ast.node import Node
 from mash.shell2.env import Environment
+from mash.util import quote
 
 
 class Term(Node):
@@ -22,7 +23,7 @@ class Word(Term, UserString):
     """
 
     def __repr__(self):
-        return self.value
+        return quote(self.value)
 
     @property
     def data(self):

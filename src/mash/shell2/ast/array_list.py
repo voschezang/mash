@@ -24,6 +24,9 @@ class ArrayList(Nodes):
         items = [item.run(env) for item in self.items]
         return ArrayList(self.child_type, items)
 
+    def __len__(self):
+        return len(self.items)
+
     @property
     def type(self):
         return f'list[{self.child_type}]'
