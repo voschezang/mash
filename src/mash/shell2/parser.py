@@ -23,7 +23,8 @@ Tree structure.
     |── line ; line \\n line
     └── line \\n line \\n line
         |── list
-        |   └── [ .., .. ]
+        |   |── [ list , list , list]
+        |   └── [ term , term , term ]
         |── record_definition 
         |   └── { .. = .., \\n .. = .. }
         |── record_update
@@ -48,6 +49,7 @@ Notes
 """
 from ply import yacc
 
+from mash.shell2.ast.array_list import ArrayList
 from mash.shell2.ast.command import Command
 from mash.shell2.ast.lines import Lines
 from mash.shell2.ast.term import Float, Integer, Word
@@ -59,7 +61,7 @@ from mash.shell.errors import ShellSyntaxError
 tokenizer = None
 
 
-def parse(text, init=True):
+def parse(text, debug=True, init=True):
     """Implement ply methods to parse text.
     """
 
@@ -69,28 +71,41 @@ def parse(text, init=True):
     # _ply_constants = precedence, tokens
     _ply_constants = tokens
 
-    def p_lines_suffix(p):
-        'lines : lines NEWLINE'
-        # ignore trailing newline
-        p[0] = p[2]
-
     def p_lines_infix(p):
         'lines : lines NEWLINE line'
         # parse from left to right
         p[1].extend(p[3])
         p[0] = p[1]
 
+    def p_lines_suffix(p):
+        'lines : lines NEWLINE'
+        # ignore trailing newline
+        p[0] = p[2]
+
     def p_lines_newline(p):
         'lines : NEWLINE'
-        pass
-
-    def p_lines_empty(p):
-        'lines : empty'
         pass
 
     def p_lines(p):
         'lines : line'
         p[0] = Lines(p[1])
+
+    def p_lines_empty(p):
+        'lines : empty'
+        pass
+
+    def p_comma_terms(p):
+        'comma_terms : comma_terms COMMA term'
+        p[1].append(p[3])
+        p[0] = p[1]
+
+    def p_comma_terms_term(p):
+        'comma_terms : term'
+        p[0] = [p[1]]
+
+    def p_line_list_int(p):
+        'line : LBRACE comma_terms RBRACE'
+        p[0] = ArrayList(Integer, p[2])
 
     def p_line_command_args(p):
         'line : METHOD terms'
@@ -146,12 +161,15 @@ def parse(text, init=True):
 
     if init:
         global tokenizer
-        tokenizer = main()
+        tokenizer = main(debug)
     else:
         tokenizer.clone()
 
-    # parser = yacc.yacc(debug=True, write_tables=False)
-    parser = yacc.yacc()
+    if debug:
+        # parser = yacc.yacc(debug=True, write_tables=True)
+        parser = yacc.yacc(debug=1)
+    else:
+        parser = yacc.yacc(optimize=1)
 
     if not isinstance(text, str):
         raise ValueError("Input is not a string: ", text, type(text))

@@ -7,7 +7,8 @@ tokens = (
     # 'BASH',  # >> 1> 1>> 2> 2>>
     # 'MAP',  # >>=
     'NEWLINE',  # \n
-    'BREAK',  # ;
+    # 'BREAK',  # ;
+    'COMMA',  # ;
     'SLASH',  # /
     # 'COLON',
 
@@ -21,8 +22,8 @@ tokens = (
     # 'LPAREN',  # )
     # 'CURLY_BRACE_R',  # {
     # 'CURLY_BRACE_L',  # }
-    # 'RBRACE',  # [
-    # 'LBRACE',  # ]
+    'RBRACE',  # [
+    'LBRACE',  # ]
     # 'DOUBLE_QUOTED_STRING',  # "text"
     # 'SINGLE_QUOTED_STRING',  # 'text'
 
@@ -44,7 +45,7 @@ tokens = (
 # tokens += tuple(keywords.values())
 
 
-def main(ignore=' \t'):
+def main(debug=True, ignore=' \t'):
     """
     Token regexes are defined with the prefix `t_`.
     From ply docs:
@@ -54,6 +55,9 @@ def main(ignore=' \t'):
     """
 
     # t_COLON = r':'
+    t_COMMA = r','
+    t_RBRACE = r'\]'
+    t_LBRACE = r'\['
 
     # t_DOLLAR = r'\$'
     t_VARIABLE = r'\$[a-zA-Z_][a-zA-Z_0-9]*'
@@ -74,9 +78,9 @@ def main(ignore=' \t'):
         t.lexer.lineno += len(t.value)
         return t
 
-    def t_BREAK(t):
-        r'(\;)+'
-        return t
+    # def t_BREAK(t):
+    #     r'(\;)+'
+    #     return t
 
     def t_SLASH(t):
         r'/+'
@@ -163,7 +167,9 @@ def main(ignore=' \t'):
         t.lexer.skip(1)
         raise ShellSyntaxError(f'Illegal character: `{t.value[0]}`')
 
-    return lex.lex()
+    if debug:
+        return lex.lex()
+    return lex.lex(optimize=1)
 
 
 def inner(data: str, tokenizer: lex.Lexer):

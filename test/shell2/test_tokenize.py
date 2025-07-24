@@ -32,9 +32,23 @@ def test_tokenize_path():
 
 def test_tokenize_multiple():
     token = list(tokenize('1 2 3'))[0]
-    # assert token.type == 'INT'
+    assert token.type == 'INT'
 
 
 def test_tokenize_indentation():
     tokens = list(tokenize('  abc'))
-    tokens
+    assert len(tokens) == 1
+    assert tokens[0].type == 'METHOD'
+    assert tokens[0].value == 'abc'
+
+
+def test_tokenize_list():
+    tokens = list(tokenize('[1, 2, ab c ]'))
+    assert tokens[0].type == 'LBRACE'
+    assert tokens[1].type == 'INT'
+    assert tokens[2].type == 'COMMA'
+    assert tokens[3].type == 'INT'
+    assert tokens[4].type == 'COMMA'
+    assert tokens[5].type == 'METHOD'
+    assert tokens[6].type == 'METHOD'
+    assert tokens[7].type == 'RBRACE'

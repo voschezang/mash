@@ -1,6 +1,7 @@
 
 from logging import getLogger
 from mash import io_util
+from mash.shell2.ast.array_list import ArrayList
 from mash.shell2.ast.command import Command
 from mash.shell2.ast.lines import Lines
 from mash.shell2.ast.term import Word
@@ -24,12 +25,24 @@ def test_parse_warnings():
     assert result == ('', '')
 
 
+def test_parse_warnings_output():
+    parse('')
+    fn = 'src/mash/shell2/parser.out'
+    out = io_util.run_subprocess(f'grep "WARNING:\s\w" {fn}')
+    out = out.stdout.decode()
+
+    for line in out.splitlines():
+        if line == 'WARNING: Conflicts:':
+            continue
+        assert 'resolved' in line
+
+
 def test_parse_command():
     text = 'print'
     result = parse(text)
     assert isinstance(result, Lines)
 
-    terms = result.values[0]
+    terms = result.items[0]
     assert isinstance(terms, Command)
     assert terms.f == 'print'
 
@@ -40,7 +53,7 @@ def test_parse_command_with_args():
 
     assert isinstance(result, Lines)
 
-    command = result.values[0]
+    command = result.items[0]
     assert isinstance(command, Command)
     assert command.f == 'print'
     assert command.f == Word('print')
@@ -62,7 +75,7 @@ def test_parse_indented():
     text = '  ab cd  ef'
     result = parse(text)
     assert isinstance(result, Lines)
-    terms = result.values[0]
+    terms = result.items[0]
 
     assert isinstance(terms, Command)
     assert terms.f == 'ab'
@@ -73,8 +86,17 @@ def test_parse_command_variable():
     text = 'print $abc xyz'
     result = parse(text)
     assert isinstance(result, Lines)
-    terms = result.values[0]
+    terms = result.items[0]
 
     assert isinstance(terms, Command)
     assert terms.args[0] == Variable('abc')
     assert terms.args[1] == Word('xyz')
+
+
+def test_parse_list_int():
+    text = '[1, 2, 3]'
+    lines = parse(text)
+    assert isinstance(lines, Lines)
+    result = lines.items[0]
+    assert isinstance(result, ArrayList)
+    assert result.items == [1, 2, 3]

@@ -2,16 +2,6 @@ from mash.shell2.ast.nodes import Nodes
 from mash.shell2.env import Environment
 
 
-# class Line(Node):
-#     def __init__(self, value: Node):
-#         self.value = value
-
-#     def run(self, env: Environment):
-#         #     for line in self.values:
-#         #         line.run(env)
-#         raise NotImplementedError()
-
-
 class Lines(Nodes):
     """
     E.g.
@@ -25,14 +15,14 @@ class Lines(Nodes):
     """
 
     def run(self, env: Environment):
-        for line in self.values:
+        for line in self.items:
             line.run(env)
 
     def __repr__(self):
-        if self.values is None:
+        if self.items is None:
             return self.f
 
-        lines = '\n'.join(repr(t) for t in self.values)
+        lines = '\n'.join(repr(t) for t in self.items)
         return f'[{type(self).__name__}] {lines}'
 
     @property

@@ -3,7 +3,7 @@ from pytest import raises
 from mash.filesystem.filesystem import FileSystem
 from mash.filesystem.scope import Scope
 from mash.io_util import catch_output
-from mash.shell.errors import ShellTypeError
+from mash.shell.errors import ShellError, ShellTypeError
 from mash.shell2.ast.command import Command, verify_arg_count, verify_arg_types, verify_function_args
 from mash.shell2.ast.term import Float, Integer, Term, Word
 from mash.shell2.ast.variable import Variable
@@ -39,10 +39,13 @@ def test_command_output():
     assert result == 'a 1 0.1'
 
 
-def test_env():
+def test_env_variable():
     env = {'x': Word('hello')}
     result = catch_output(env, Command(Word('print'), Variable('x')).run)
     assert result == 'hello'
+
+    with raises(ShellError):
+        Command(Word('print'), Variable('$y')).run(env)
 
 
 def test_verify_function_args():
