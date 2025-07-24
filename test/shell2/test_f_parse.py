@@ -1,5 +1,5 @@
-
 from logging import getLogger
+
 from mash import io_util
 from mash.shell2.ast.array_list import ArrayList
 from mash.shell2.ast.command import Command
