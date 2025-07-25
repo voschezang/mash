@@ -18,8 +18,8 @@ tokens = (
     # 'GREATER',  # >
     # 'COMPARE',  # > >= <=
 
-    # 'RPAREN',  # (
-    # 'LPAREN',  # )
+    'RPAREN',  # (
+    'LPAREN',  # )
     # 'CURLY_BRACE_R',  # {
     # 'CURLY_BRACE_L',  # }
     'RBRACE',  # [
@@ -56,6 +56,8 @@ def main(debug=True, ignore=' \t'):
 
     # t_COLON = r':'
     t_COMMA = r','
+    t_RPAREN = r'\)'
+    t_LPAREN = r'\('
     t_RBRACE = r'\]'
     t_LBRACE = r'\['
 

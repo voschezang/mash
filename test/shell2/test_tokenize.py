@@ -52,3 +52,11 @@ def test_tokenize_list():
     assert tokens[5].type == 'METHOD'
     assert tokens[6].type == 'METHOD'
     assert tokens[7].type == 'RBRACE'
+
+
+def test_tokenize_parens():
+    tokens = list(tokenize('(int) 3.1'))
+    assert tokens[0].type == 'LPAREN'
+    assert tokens[1].type == 'METHOD'
+    assert tokens[2].type == 'RPAREN'
+    assert tokens[3].type == 'FLOAT'
