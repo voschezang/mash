@@ -100,3 +100,23 @@ def test_parse_list_int():
     result = lines.items[0]
     assert isinstance(result, ArrayList)
     assert result.items == [1, 2, 3]
+
+
+def test_parse_cast_int():
+    text = '(int) 1.1'
+    text = 'print (int) 1.1'
+    lines = parse(text)
+    assert isinstance(lines, Lines)
+    result = lines.items[0]
+
+
+def test_parse_faulty_cast():
+    text = '(int) 1.1'
+
+
+def test_parse_double_cast():
+    text = '(float) (int) 0.5'
+
+
+def test_parse_cast_nested():
+    text = '[1, (int) 2.1]'
