@@ -1,7 +1,7 @@
 
 from pytest import raises
 from mash.shell.errors import ShellTypeError
-from mash.shell2.ast.term import Float, Integer, Term, Word
+from mash.shell2.ast.term import Cast, Float, Integer, Term, Word
 
 
 def test_ast_term():
@@ -26,6 +26,7 @@ def test_ast_word():
     assert str(word) == 'abc'
     assert repr(word) == 'abc'
     assert len(word) == 3
+    assert Word.zero() == ''
 
     assert word.run(None) == 'abc'
 
@@ -51,14 +52,43 @@ def test_ast_float():
     number = Float('1.0')
     assert number == 1.0
 
-    with raises(ShellTypeError):
-        Integer(0.1)
-
 
 def test_ast_int():
     number = Integer('2')
     assert number == 2
     assert number == Float(2)
 
+    number = Integer(0.1)
+    assert number == 0
+
+
+def test_ast_cast_int():
+    # always round down
+    result = Integer.cast(Float(0.99))
+    assert result == 0
+
     with raises(ShellTypeError):
-        Integer(0.1)
+        Float.cast(Word('1'))
+
+
+def test_ast_cast_float():
+    result = Float.cast(Integer(10))
+    assert result == 10.0
+
+    with raises(ShellTypeError):
+        Float.cast(Word('1'))
+
+
+def test_ast_cast():
+    result = Cast([Float, Integer], Float(0.5))
+    assert result.casts == [Float, Integer]
+    assert result.term == 0.5
+
+    assert result.type == '(float) (int)'
+    assert str(result) == '(float) (int) 0.5'
+    assert Cast.zero().casts == []
+
+    assert result.run({}) == 0
+
+    with raises(ShellTypeError):
+        Cast([Word], Float(1)).run({})

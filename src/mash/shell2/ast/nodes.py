@@ -1,3 +1,4 @@
+from mash.shell.errors import ShellTypeError
 from mash.shell2.ast.node import Node
 
 
@@ -11,11 +12,17 @@ class Nodes(Node):
     def extend(self, other):
         self.items.extend(other.values)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f'[{type(self).__name__}] {repr(self.items)}'
 
-    def __eq__(self, other):
+    def __eq__(self, other: Node) -> bool:
+        """Compare types and child nodes.
+        """
+        if isinstance(other, list):
+            raise ShellTypeError(
+                'Faulty comparison between Python and Mash types.')
+
         try:
-            return self.items == other.values and type(self) == type(other)
+            return self.items == other.items and self.type == other.type
         except AttributeError:
             return False

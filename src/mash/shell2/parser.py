@@ -10,7 +10,7 @@ Tree structure.
     └── block blocks
         └── OPEN lines CLOSE
 
-    lines 
+    lines
     |── multiline
     |   |── function
     |   |   └── block
@@ -19,17 +19,17 @@ Tree structure.
     |   |   └── IF inline : block ELSE block
     |   └── for-loop
     |       └── FOR terms IN term : block
-    |    
+    |
     |── line ; line \\n line
     └── line \\n line \\n line
         |── list
         |   |── [ list , list , list]
         |   └── [ term , term , term ]
-        |── record_definition 
+        |── record_definition
         |   └── { .. = .., \\n .. = .. }
         |── record_update
         |   └── { .. | .. , \\n .. }
-        |── set 
+        |── set
         |   └── { .. || .. , \\n .. }
         |── assignment
         |   └── terms ASSIGN conjunction
@@ -52,7 +52,7 @@ from ply import yacc
 from mash.shell2.ast.array_list import ArrayList
 from mash.shell2.ast.command import Command
 from mash.shell2.ast.lines import Lines
-from mash.shell2.ast.term import Float, Integer, Word
+from mash.shell2.ast.term import Cast, Float, Integer, Word
 from mash.shell2.ast.variable import Variable
 from mash.shell2.tokenizer import main, tokens
 from mash.shell.errors import ShellSyntaxError
@@ -132,13 +132,30 @@ def parse(text, debug=True, init=True):
     #     p[0] = Command(p[1])
 
     def p_terms(p):
-        'terms : terms term'
+        """terms : terms cast
+                 | terms term
+        """
         p[1].append(p[2])
         p[0] = p[1]
 
     def p_terms_term(p):
-        'terms : term'
+        """terms : cast
+                 | term
+        """
         p[0] = [p[1]]
+
+    def p_cast(p):
+        'cast : casts term'
+        p[0] = Cast(p[1], p[2])
+
+    def p_multiple_casts(p):
+        'casts : LPAREN term RPAREN casts'
+        p[1].append(p[3], 0)
+        p[0] = p[1]
+
+    def p_casts(p):
+        'casts : LPAREN term RPAREN'
+        p[0] = [p[2]]
 
     def p_term_variable(p):
         'term : VARIABLE'
@@ -176,8 +193,7 @@ def parse(text, debug=True, init=True):
         tokenizer.clone()
 
     if debug:
-        # parser = yacc.yacc(debug=True, write_tables=True)
-        parser = yacc.yacc(debug=1)
+        parser = yacc.yacc(debug=1, write_tables=True)
     else:
         parser = yacc.yacc(optimize=1)
 
