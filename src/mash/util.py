@@ -584,6 +584,8 @@ def deserialize_dataclass(obj: dict):
 
 
 def identity(*values):
+    """Returns the input
+    """
     if len(values) == 1:
         return values[0]
     return values
