@@ -18,5 +18,6 @@ def test_node_methods():
     node = Node()
 
     assert node.run(None) is None
-    assert str(node)
-    assert node != ''
+
+
+def test_data():

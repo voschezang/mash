@@ -1,14 +1,13 @@
 from typing import Dict, Tuple
 
 from mash.shell2.ast.node import Node
-from mash.shell2.ast.nodes import Nodes
 from mash.shell2.ast.term import Word
 from mash.shell2.env import Environment
 
 Data = Dict[str, Node]
 
 
-class Record(Nodes):
+class Record(Node):
     def __init__(self, *items: Tuple[Word, Node]):
         self.data: Data = {str(k): v for k, v in items}
 

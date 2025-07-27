@@ -5,7 +5,7 @@ from mash.shell2.ast.term import Cast, Float, Integer, Term, Word
 
 
 def test_ast_term():
-    # Disable abstract method guards because Term is still an abstract class
+    # Disable abstract method guards to allow instantiation
     Term.__abstractmethods__ = {}
 
     a = Term('1')
@@ -23,13 +23,18 @@ def test_ast_term():
 
 def test_ast_word():
     word = Word('abc')
+
     assert word.value == 'abc'
     assert str(word) == 'abc'
     assert repr(word) == 'abc'
     assert len(word) == 3
-    assert Word.zero() == ''
 
     assert word.run(None) == 'abc'
+
+
+def test_default_word():
+    assert Word.zero() == ''
+    assert Word.instance_type() == 'text'
 
 
 def test_compare_words():
@@ -58,12 +63,16 @@ def test_ast_wildcards():
 def test_ast_float():
     number = Float('10')
     assert number == 10
+    assert type(number.value) is float
 
-    number = Float('1.0')
-    assert number == 1.0
+    number = Float('0.1')
+    assert number == 0.1
 
     assert number.copy() == number
     assert number.copy() is not number
+
+    assert Float.zero() == 0
+    assert Float.instance_type() == 'float'
 
 
 def test_ast_int():
@@ -76,6 +85,9 @@ def test_ast_int():
 
     assert number.copy() == number
     assert number.copy() is not number
+
+    assert Integer.zero() == 0
+    assert Integer.instance_type() == 'int'
 
 
 def test_ast_cast_int():

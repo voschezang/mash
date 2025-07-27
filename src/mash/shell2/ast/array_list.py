@@ -1,14 +1,15 @@
-from typing import Generic, Iterable, List, Type, TypeVar, Union
+from __future__ import annotations
+from typing import Iterable, List, Type, TypeVar, Union
 
-from mash.shell2.ast.node import Node
-from mash.shell2.ast.nodes import Nodes
+from mash.shell.errors import ShellTypeError
+from mash.shell2.ast.node import Data, Node
 from mash.shell2.ast.term import Integer
 from mash.shell2.env import Environment
 
-T = TypeVar('T')
+T = TypeVar('T', bound=Data)
 
 
-class ArrayList(Nodes, Generic[T]):
+class ArrayList[T](Data):
     """An array with a list-like interface.
 
     ..code-block:: python
@@ -31,37 +32,13 @@ class ArrayList(Nodes, Generic[T]):
                 # use an arbitrary type
                 self.child_types.append(Integer.instance_type())
 
-    def run(self, env: Environment):
+    def run(self, env: Environment) -> ArrayList[T]:
         # expand variables in children
         items = [item.run(env) for item in self.items]
         return ArrayList(self.child_types, items)
 
-    # def extend(self, items: List[Node]):
-    #     if self.child_types[0] is ArrayList:
-    #         for item in items:
-    #             if isinstance(item, ArrayList):
-    #                 self.items.append(item)
-    #             if isinstance(item, list):
-    #                 child = ArrayList(self.child_types[1:], item)
-    #                 self.items.append(child)
-    #     else:
-    #         # convert each item to the proper type
-    #         for item in items:
-    #             self.items.append(self.child_types[0](item))
-
-    # def _infer_child_types(self, child_type: type):
-    #     self.child_types.append(child_type)
-
-    #     # handle nested lists
-    #     # if child_type is ArrayList:
-    #     #     child: ArrayList = child_type.zero()
-    #     #     self.child_types.extend(child.child_types)
-
     @property
     def type(self):
-        if self.child_types is ArrayList:
-            return 'list[list]'
-
         inner = self.child_types[-1].instance_type()
 
         # nesting level
@@ -69,29 +46,41 @@ class ArrayList(Nodes, Generic[T]):
         # e.g. [[[int]]]
         return f"{'[' * n}{inner}{']' * n}"
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         inner = ', '.join(repr(item) for item in self.items)
         return f'[{inner}]'
 
     def __eq__(self, other: Node) -> bool:
+        # handle empty lists
         if not self.items and isinstance(other, ArrayList) and not other.items:
             return True
 
-        return super().__eq__(other)
+        if isinstance(other, list):
+            raise ShellTypeError(
+                'Faulty comparison between Python and Mash types.')
 
-    def __len__(self):
+        try:
+            return self.items == other.items and self.type == other.type
+
+        except AttributeError:
+            return False
+
+    def __len__(self) -> int:
         return len(self.items)
 
     @classmethod
-    def zero(cls):
+    def zero(cls) -> ArrayList[Integer]:
         return cls.empty()
 
     @classmethod
-    def empty(cls):
+    def empty(cls) -> ArrayList[Integer]:
         return cls(Integer, [])
 
 
-def _init_items(constructor: Type[T], items: Union[List[T], ArrayList[T]]) -> Iterable[Node]:
+U = Union[T, ArrayList[T]]
+
+
+def _init_items(constructor: Type[U], items: U) -> Iterable[U]:
     for item in items:
         if constructor is ArrayList:
             if isinstance(item, list):

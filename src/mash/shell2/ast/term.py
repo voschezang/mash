@@ -1,27 +1,29 @@
 from __future__ import annotations
+from abc import abstractmethod
 from collections import UserString
 from typing import Callable, List
 
 from mash.shell.errors import ShellError, ShellTypeError
-from mash.shell2.ast.node import Node
+from mash.shell2.ast.node import Data, Node
 from mash.shell2.env import Environment
 from mash.util import quote
 
 
-class Term(Node):
-    """Base class for Word and Number classes.
+class Term(Data):
+    """Base class for classes containing variable data.
+    Subclasses include Variable, Word, Number.
     """
 
     def __init__(self, value: str):
         self.value = value
 
-    def run(self, env: Environment):
+    def run(self, env: Environment) -> Term:
         return self
 
     def copy(self) -> Term:
         return self.__class__(self.value)
 
-    def __eq__(self, other):
+    def __eq__(self, other) -> bool:
         return self.value == other
 
 
@@ -55,6 +57,12 @@ class Number(Term):
 
     def __repr__(self) -> str:
         return repr(self.value)
+
+    @classmethod
+    def zero(cls) -> Node:
+        """Create an instance representing zero or nothingness.
+        """
+        return cls()
 
     @classmethod
     def zero(cls) -> Term:

@@ -1,8 +1,8 @@
-from mash.shell2.ast.nodes import Nodes
+from mash.shell2.ast.node import Node
 from mash.shell2.env import Environment
 
 
-class Lines(Nodes):
+class Lines(Node):
     """
     E.g.
 
@@ -14,9 +14,15 @@ class Lines(Nodes):
 
     """
 
+    def __init__(self, *nodes: Node):
+        self.items = list(nodes)
+
     def run(self, env: Environment):
         for line in self.items:
             line.run(env)
+
+    def extend(self, other):
+        self.items.extend(other.values)
 
     def __repr__(self):
         if self.items is None:

@@ -19,6 +19,8 @@ def test_command_init():
     assert cmd.args == ('a', 'b', 'c')
 
     assert str(cmd) == '[Command] print a b c'
+    assert cmd.copy().f == cmd.f
+    assert cmd.copy().args == cmd.args
 
 
 def test_command_run():
@@ -49,9 +51,8 @@ def test_env_variable():
 
 
 def test_verify_function_args():
-    verify_function_args(echo, [Term('abc')])
-
-    # subclass
+    # Integer and Word are subclasses of Term
+    verify_function_args(echo, [Integer(10)])
     verify_function_args(echo, [Word('abc')])
 
     # too few arguments

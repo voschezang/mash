@@ -17,20 +17,28 @@ class Node(ABC):
 
     @abstractmethod
     def __repr__(self) -> str:
-        return repr(super(Node, self))
-
-    @abstractmethod
-    def __eq__(self, other) -> bool:
         pass
+
+
+class Data(Node):
+    """A node representing a Mash datastructure. 
+    E.g. a Variable, Word or ArrayList.
+    """
 
     @property
     @abstractmethod
     def type(self) -> str:
         pass
 
-    @abstractmethod
-    def copy(self) -> Node:
-        pass
+    @classmethod
+    def zero(cls) -> Node:
+        """Create an instance representing zero or nothingness.
+        E.g. an empty string or list.
+
+        Adding zero should not change a value.
+        Multiplying with zero results in zero.
+        """
+        raise ShellError('Data.zero() is not supported.')
 
     @classmethod
     def cast(cls, node) -> Node:
@@ -42,9 +50,3 @@ class Node(ABC):
         """Returns the .type property of an instance of `cls`.
         """
         return cls.zero().type
-
-    @classmethod
-    def zero(cls) -> Node:
-        """Create an instance representing zero or nothingness.
-        """
-        return cls()

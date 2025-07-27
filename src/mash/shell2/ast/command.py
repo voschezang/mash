@@ -1,5 +1,6 @@
-
+from __future__ import annotations
 from typing import Callable, List, Union
+
 from mash.shell.errors import ShellError, ShellTypeError
 from mash.shell2.ast.node import Node
 from mash.shell2.ast.term import Term
@@ -16,7 +17,7 @@ class Command(Node):
         f (args)
     """
 
-    def __init__(self, f: str, *args: Term):
+    def __init__(self, f: Term, *args: Term):
         self.f = f
         self.args = args
 
@@ -55,6 +56,9 @@ class Command(Node):
     @property
     def type(self):
         return 'command'
+
+    def copy(self) -> Command:
+        return Command(self.f, *self.args)
 
 
 def verify_function_args(func: Callable, args: List[Node]):
