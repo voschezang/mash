@@ -1,5 +1,7 @@
+from __future__ import annotations
 from collections import UserString
 from typing import Callable, List
+
 from mash.shell.errors import ShellError, ShellTypeError
 from mash.shell2.ast.node import Node
 from mash.shell2.env import Environment
@@ -16,6 +18,9 @@ class Term(Node):
     def run(self, env: Environment):
         return self
 
+    def copy(self) -> Term:
+        return self.__class__(self.value)
+
     def __eq__(self, other):
         return self.value == other
 
@@ -25,7 +30,7 @@ class Word(Term, UserString):
     This is a subclass from UserString, so it can be compared to other strings.
     """
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return quote(self.value)
 
     @property
@@ -48,7 +53,7 @@ class Number(Term):
         except ValueError:
             raise ShellTypeError(f"Invalid value: {value}")
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return repr(self.value)
 
     @classmethod
@@ -93,14 +98,14 @@ class Integer(Number):
         return 'int'
 
     @classmethod
-    def cast(cls, node: Node) -> Number:
+    def cast(cls, node: Node) -> Integer:
         if isinstance(node, Number):
             return Integer(node)
 
         return super(cls).cast(node)
 
     @classmethod
-    def zero(cls) -> Node:
+    def zero(cls) -> Integer:
         return Integer(0)
 
 
@@ -117,7 +122,10 @@ class Cast(Node):
 
         return term
 
-    def __repr__(self):
+    def copy(self) -> Cast:
+        return Cast(self.casts, self.term.copy())
+
+    def __repr__(self) -> str:
         return f'{self.type} {repr(self.term)}'
 
     def __eq__(self, other) -> bool:

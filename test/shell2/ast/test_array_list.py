@@ -2,7 +2,6 @@ from pytest import raises
 
 from mash.shell.errors import ShellTypeError
 from mash.shell2.ast.array_list import ArrayList
-from mash.shell2.ast.node import Node
 from mash.shell2.ast.term import Float, Integer, Word
 
 
@@ -75,3 +74,5 @@ def test_nested_list():
         assert isinstance(i, ArrayList)
 
     inner = ArrayList(ArrayList, [[]])
+
+    inner = ArrayList(Float, [Integer(1), Float(0.1), Integer(2)])

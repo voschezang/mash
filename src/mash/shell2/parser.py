@@ -150,12 +150,11 @@ def parse(text, debug=True, init=True):
 
     def p_multiple_casts(p):
         'casts : LPAREN term RPAREN casts'
-        p[1].append(p[3], 0)
-        p[0] = p[1]
+        p[0] = p[1] + (p[3],)
 
     def p_casts(p):
         'casts : LPAREN term RPAREN'
-        p[0] = [p[2]]
+        p[0] = (p[2],)
 
     def p_term_variable(p):
         'term : VARIABLE'

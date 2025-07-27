@@ -16,6 +16,7 @@ def test_ast_term():
     assert b.value == '1'
     assert c.value == '2'
 
+    assert a == a
     assert a == b
     assert a != c
 
@@ -29,6 +30,15 @@ def test_ast_word():
     assert Word.zero() == ''
 
     assert word.run(None) == 'abc'
+
+
+def test_compare_words():
+    word = Word('abc')
+    assert word == word
+    assert Word('def') != word
+
+    assert word.copy() == word
+    assert word.copy() is not word
 
 
 def test_ast_wildcards():
@@ -52,6 +62,9 @@ def test_ast_float():
     number = Float('1.0')
     assert number == 1.0
 
+    assert number.copy() == number
+    assert number.copy() is not number
+
 
 def test_ast_int():
     number = Integer('2')
@@ -60,6 +73,9 @@ def test_ast_int():
 
     number = Integer(0.1)
     assert number == 0
+
+    assert number.copy() == number
+    assert number.copy() is not number
 
 
 def test_ast_cast_int():
@@ -87,6 +103,11 @@ def test_ast_cast():
     assert result.type == '(float) (int)'
     assert str(result) == '(float) (int) 0.5'
     assert Cast.zero().casts == []
+
+    c = result.copy()
+    assert c.casts == result.casts
+    assert c.term == result.term
+    assert c is not result
 
     assert result.run({}) == 0
 

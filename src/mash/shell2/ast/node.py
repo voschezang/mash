@@ -1,4 +1,6 @@
+from __future__ import annotations
 from abc import ABC, abstractmethod
+
 from mash.shell.errors import ShellError, ShellTypeError
 from mash.shell2.env import Environment
 
@@ -8,7 +10,7 @@ class Node(ABC):
     """
 
     @abstractmethod
-    def run(self, env: Environment):
+    def run(self, env: Environment) -> Node:
         """Returns an instance of Node.
         """
         pass
@@ -26,8 +28,12 @@ class Node(ABC):
     def type(self) -> str:
         pass
 
+    @abstractmethod
+    def copy(self) -> Node:
+        pass
+
     @classmethod
-    def cast(cls, node):
+    def cast(cls, node) -> Node:
         raise ShellTypeError(
             f'Cannot cast {node.type} to {cls.instance_type()}')
 
@@ -38,7 +44,7 @@ class Node(ABC):
         return cls.zero().type
 
     @classmethod
-    def zero(cls):
+    def zero(cls) -> Node:
         """Create an instance representing zero or nothingness.
         """
         return cls()

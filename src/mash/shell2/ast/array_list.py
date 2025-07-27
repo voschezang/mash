@@ -9,6 +9,14 @@ T = TypeVar('T')
 
 
 class ArrayList(Nodes, Generic[T]):
+    """An array with a list-like interface.
+
+    ..code-block:: python
+
+        vector = [1, 2, 3, 4]
+        matrix = [[1, 2], [3, 4]]
+    """
+
     def __init__(self, child_type: Type[T], items: List[T]):
         self.items = []
         self.child_types = [child_type]
