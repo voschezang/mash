@@ -29,6 +29,9 @@ lint:
 	# show lenient errors
 	${PYTHON} -m  flake8 src --count --exit-zero --max-complexity=11 --max-line-length=127 --statistics
 
+typing:
+	${VENV} && cd src && mypy mash --exclude '^(mash/webtools|mash/cli\.py|mash/util\.py)'
+
 format:
 	${PYTHON} -m autopep8 -r -a -a -a --in-place src/mash)
 
