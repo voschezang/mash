@@ -1,18 +1,18 @@
+from braceexpand import braceexpand
 from contextlib import contextmanager
-import inspect
-from json import JSONEncoder
-import re
-import shlex
-from braceexpand import braceexpand, UnbalancedBracesError
 from dataclasses import asdict, dataclass, is_dataclass
 from enum import Enum
 from functools import partial
 from itertools import accumulate, dropwhile, takewhile
-from scipy.spatial import distance
+from json import JSONEncoder
 from operator import contains
 from queue import Queue
+from scipy.spatial import distance
 from typing import Any, Callable, Dict, Generator, Iterable, List, MappingView, Sequence, Tuple, TypeVar, Union
 import fnmatch
+import inspect
+import re
+import shlex
 import sys
 import traceback
 
@@ -27,7 +27,10 @@ class DataClassHelper:
     Keep track of dependent fields, and ask for user input to fill them in.
     """
 
-    def __init__(self, data: dataclass):
+    def __init__(self, data):
+        """
+        data : dataclass
+        """
         self._context = data
 
     def ensure_field(self, key: str):
@@ -57,9 +60,14 @@ class DataClassHelper:
         assert key in self._context.__dataclass_fields__
 
 
-def decorate(decoratee: dataclass, cls: object):
+def decorate(decoratee, cls: object):
     """Adapt a class instance to have an hasA and isA relationships with `cls`.
     See https://en.wikipedia.org/wiki/Decorator_pattern
+
+    Parameters
+    ----------
+    decoratee : dataclass
+    cls : object
     """
 
     setattr(decoratee, 'decorated_' + type(cls).__name__, cls)
@@ -415,13 +423,7 @@ def glob(value: str, options: List[str] = [], strict=False) -> Iterable[str]:
         options_{a,b,c}
 
     """
-    try:
-        values = braceexpand(value)
-    except UnbalancedBracesError as e:
-        if strict:
-            raise ValueError(e)
-        else:
-            values = [value]
+    values = braceexpand(value)
 
     if not options:
         yield from values
