@@ -18,6 +18,3 @@ def test_node_methods():
     node = Node()
 
     assert node.run(None) is None
-
-
-def test_data():

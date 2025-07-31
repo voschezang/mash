@@ -1,11 +1,12 @@
 from __future__ import annotations
+from collections import UserString
 
 from mash.shell.errors import ShellError
-from mash.shell2.ast.term import Term, Word
+from mash.shell2.ast.term import Term
 from mash.shell2.env import Environment
 
 
-class Variable(Word):
+class Variable(Term, UserString):
     def run(self, env: Environment) -> Term:
         k = self.value
         try:
@@ -21,5 +22,13 @@ class Variable(Word):
         return '$' + self.value
 
     @property
+    def data(self):
+        return repr(self)
+
+    @property
     def type(self) -> str:
         return 'variable'
+
+    @classmethod
+    def zero(cls) -> Variable:
+        return cls('')

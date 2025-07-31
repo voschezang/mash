@@ -47,6 +47,16 @@ class Word(Term, UserString):
     def zero(cls) -> Term:
         return Word('')
 
+    @classmethod
+    def cast(cls, node: Node) -> Word:
+        if isinstance(node, Word):
+            return Word(node.value)
+
+        if isinstance(node, Number):
+            return Word(str(node.value))
+
+        return super().cast(node)
+
 
 class Number(Term):
     def __init__(self, value: str, convert: Callable):
@@ -82,9 +92,12 @@ class Float(Number):
         return 'float'
 
     @classmethod
-    def cast(self, node: Node) -> Number:
+    def cast(cls, node: Node) -> Float:
         if isinstance(node, Number):
             return Float(node)
+
+        if isinstance(node, Word):
+            return Float(node.value)
 
         return super().cast(node)
 
@@ -109,6 +122,9 @@ class Integer(Number):
     def cast(cls, node: Node) -> Integer:
         if isinstance(node, Number):
             return Integer(node)
+
+        if isinstance(node, Word):
+            return Integer(node.value)
 
         return super(cls).cast(node)
 

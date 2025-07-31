@@ -1,10 +1,13 @@
 from logging import getLogger
 
+from pytest import raises
+
 from mash import io_util
+from mash.shell.errors import ShellSyntaxError
 from mash.shell2.ast.array_list import ArrayList
 from mash.shell2.ast.command import Command
 from mash.shell2.ast.lines import Lines
-from mash.shell2.ast.term import Word
+from mash.shell2.ast.term import Cast, Word
 from mash.shell2.ast.variable import Variable
 from mash.shell2.parser import parse
 
@@ -100,6 +103,7 @@ def test_parse_list_int():
     result = lines.items[0]
     assert isinstance(result, ArrayList)
     assert result.items == [1, 2, 3]
+    assert result.child_types == [Variable]
 
 
 def test_parse_cast_int():
@@ -108,10 +112,28 @@ def test_parse_cast_int():
     lines = parse(text)
     assert isinstance(lines, Lines)
     result = lines.items[0]
+    assert isinstance(result, Command)
+    cast = result.args[0]
+    assert isinstance(cast, Cast)
+    assert cast.casts == ('int',)
+    assert cast.term == 1.1
 
 
 def test_parse_faulty_cast():
     text = '(int) 1.1'
+    with raises(ShellSyntaxError):
+        parse(text)
+
+
+def test_parse_cast_word():
+    text = 'print (word) 1.1'
+    lines = parse(text)
+    command = lines.items[0]
+    cast = command.args[0]
+
+    assert isinstance(cast, Cast)
+    assert cast.casts == ('word',)
+    assert cast.term == 1.1
 
 
 def test_parse_double_cast():

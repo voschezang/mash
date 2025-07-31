@@ -1,7 +1,9 @@
 
 from pytest import raises
 from mash.shell.errors import ShellTypeError
+from mash.shell2.ast.array_list import ArrayList
 from mash.shell2.ast.term import Cast, Float, Integer, Term, Word
+from mash.shell2.ast.variable import Variable
 
 
 def test_ast_term():
@@ -30,6 +32,9 @@ def test_ast_word():
     assert len(word) == 3
 
     assert word.run(None) == 'abc'
+
+    result = Word.cast(Integer(10))
+    assert result == '10'
 
 
 def test_default_word():
@@ -74,12 +79,16 @@ def test_ast_float():
     assert Float.zero() == 0
     assert Float.instance_type() == 'float'
 
+    result = Float.cast(Word('10.1'))
+    assert result == 10.1
+
 
 def test_ast_int():
     number = Integer('2')
     assert number == 2
     assert number == Float(2)
 
+    # always round down when casting
     number = Integer(0.1)
     assert number == 0
 
@@ -89,25 +98,28 @@ def test_ast_int():
     assert Integer.zero() == 0
     assert Integer.instance_type() == 'int'
 
+    result = Integer.cast(Word('99'))
+    assert result == 99
 
-def test_ast_cast_int():
-    # always round down
-    result = Integer.cast(Float(0.99))
-    assert result == 0
+
+def test_cast():
+    cast = Cast([Integer], Float(1.1))
+    assert cast.run({}) == 1
+    assert cast.run({}) != '1'
+
+    cast = Cast([Word], Float(1.1))
+    assert cast.run({}) == '1.1'
+    assert cast.run({}) != 1.1
+
+
+def test_faulty_cast():
+    cast = Cast([Word], ArrayList([Float(1), Float(1)]))
 
     with raises(ShellTypeError):
-        Float.cast(Word('1'))
+        cast.run({})
 
 
-def test_ast_cast_float():
-    result = Float.cast(Integer(10))
-    assert result == 10.0
-
-    with raises(ShellTypeError):
-        Float.cast(Word('1'))
-
-
-def test_ast_cast():
+def test_ast_double_cast():
     result = Cast([Float, Integer], Float(0.5))
     assert result.casts == [Float, Integer]
     assert result.term == 0.5
@@ -124,4 +136,4 @@ def test_ast_cast():
     assert result.run({}) == 0
 
     with raises(ShellTypeError):
-        Cast([Word], Float(1)).run({})
+        Cast([Variable], Float(1)).run({})

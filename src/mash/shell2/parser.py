@@ -115,7 +115,7 @@ def parse(text, debug=True, init=True):
 
     def p_list_int(p):
         'list : LBRACE comma_terms RBRACE'
-        p[0] = ArrayList(Integer, p[2])
+        p[0] = ArrayList(p[2])
 
     def p_line_command_args(p):
         'line : METHOD terms'

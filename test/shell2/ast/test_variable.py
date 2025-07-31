@@ -7,7 +7,7 @@ from mash.shell2.ast.variable import Variable
 def test_variable():
     x = Variable('x')
     assert x.value == 'x'
-    assert str(x) == 'x'
+    assert str(x) == '$x'
 
 
 def test_run_variable():

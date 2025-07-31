@@ -4,6 +4,7 @@ from typing import Iterable, List, Type, TypeVar, Union
 from mash.shell.errors import ShellTypeError
 from mash.shell2.ast.node import Data, Node
 from mash.shell2.ast.term import Integer
+from mash.shell2.ast.variable import Variable
 from mash.shell2.env import Environment
 
 T = TypeVar('T', bound=Data)
@@ -18,24 +19,21 @@ class ArrayList[T](Data):
         matrix = [[1, 2], [3, 4]]
     """
 
-    def __init__(self, child_type: Type[T], items: List[T]):
-        self.items = []
-        self.child_types = [child_type]
+    def __init__(self, items: List[Data], child_type: Type[T] = Variable):
+        self.items = list(_init_items(items, child_type))
+        self.child_types = _init_child_types(self.items, child_type)
 
-        self.items = list(_init_items(child_type, items))
+    def run(self, env: Environment) -> ArrayList:
+        if not self.items:
+            return ArrayList.zero()
 
-        # infer child types
-        if child_type is ArrayList:
-            if items:
-                self.child_types.extend(self.items[0].child_types)
-            else:
-                # use an arbitrary type
-                self.child_types.append(Integer.instance_type())
-
-    def run(self, env: Environment) -> ArrayList[T]:
-        # expand variables in children
+        # expand variables in child elements
         items = [item.run(env) for item in self.items]
-        return ArrayList(self.child_types, items)
+
+        # infer child type
+        child_type = type(items[0])
+
+        return ArrayList(items, child_type)
 
     @property
     def type(self):
@@ -74,21 +72,40 @@ class ArrayList[T](Data):
 
     @classmethod
     def empty(cls) -> ArrayList[Integer]:
-        return cls(Integer, [])
+        return cls([])
 
 
-U = Union[T, ArrayList[T]]
+U = Union[T, Variable]
 
 
-def _init_items(constructor: Type[U], items: U) -> Iterable[U]:
+def _init_items(items: List[Data], child_type: Type[T]) -> Iterable[U]:
+    """Initialize each item in `items` using .cast()
+    to ensure that each item is an instance of `child_type`.
+    """
     for item in items:
-        if constructor is ArrayList:
+        if child_type is ArrayList:
             if isinstance(item, list):
-                item = ArrayList(constructor, item)
+                item = ArrayList(child_type, item)
 
             assert isinstance(item, ArrayList)
 
-        else:
-            item = constructor(item)
+        elif child_type is not Variable:
+            item = child_type.cast(item)
 
         yield item
+
+
+def _init_child_types(items: List[U], child_type: Type[T]) -> List[Type[U]]:
+    """Create a list of child types corresponding to `items`.
+    Returns a list similar to:
+
+    - [U]
+    - [ArrayList, U]
+    - [ArrayList, ArrayList, U]
+    - ...
+    """
+    if items and (child_type is ArrayList or isinstance(items[0], ArrayList)):
+        return [child_type] + items[0].child_types
+    elif child_type is ArrayList:
+        return [child_type] + items[0].child_types
+    return [child_type]
