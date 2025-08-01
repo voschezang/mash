@@ -3,11 +3,11 @@ from logging import getLogger
 from pytest import raises
 
 from mash import io_util
-from mash.shell.errors import ShellSyntaxError
+from mash.shell.errors import ShellSyntaxError, ShellTypeError
 from mash.shell2.ast.array_list import ArrayList
 from mash.shell2.ast.command import Command
 from mash.shell2.ast.lines import Lines
-from mash.shell2.ast.term import Cast, Integer, Word
+from mash.shell2.ast.term import Cast, Float, Integer, Word
 from mash.shell2.ast.variable import Variable
 from mash.shell2.parser import parse
 
@@ -31,7 +31,7 @@ def test_parse_warnings():
 def test_parse_warnings_output():
     parse('')
     fn = 'src/mash/shell2/parser.out'
-    out = io_util.run_subprocess(f'grep "WARNING:\s\w" {fn}')
+    out = io_util.run_subprocess(r'grep "WARNING:\s\w" ' + fn)
     out = out.stdout.decode()
 
     for line in out.splitlines():
@@ -41,8 +41,7 @@ def test_parse_warnings_output():
 
 
 def test_parse_command():
-    text = 'print'
-    result = parse(text)
+    result = parse('print')
     assert isinstance(result, Lines)
 
     terms = result.items[0]
@@ -75,8 +74,8 @@ def test_parse_empty():
 
 
 def test_parse_indented():
-    text = '  ab cd  ef'
-    result = parse(text)
+    result = parse('  ab cd  ef')
+
     assert isinstance(result, Lines)
     terms = result.items[0]
 
@@ -86,8 +85,7 @@ def test_parse_indented():
 
 
 def test_parse_command_variable():
-    text = 'print $abc xyz'
-    result = parse(text)
+    result = parse('print $abc xyz')
     assert isinstance(result, Lines)
     terms = result.items[0]
 
@@ -117,16 +115,17 @@ def test_parse_mixed_list():
 
 
 def test_parse_empty_list():
-    text = '[]'
-    result = parse(text).items[0]
+    result = parse('[]').items[0]
     assert isinstance(result, ArrayList)
     assert result.items == []
 
 
 def test_parse_nested_list():
     text = '[ [[1], [2]], []]'
+
     lines = parse(text)
     assert isinstance(lines, Lines)
+
     result = lines.items[0]
     assert isinstance(result, ArrayList)
     assert result.items[0] == ArrayList([[Integer(1)], [Integer(2)]])
@@ -136,38 +135,75 @@ def test_parse_nested_list():
 
 
 def test_parse_cast_int():
-    text = '(int) 1.1'
-    text = 'print (int) 1.1'
-    lines = parse(text)
+    lines = parse('(int) 1.1')
     assert isinstance(lines, Lines)
-    result = lines.items[0]
-    assert isinstance(result, Command)
-    cast = result.args[0]
+    cast = lines.items[0]
     assert isinstance(cast, Cast)
-    assert cast.casts == ('int',)
+    assert cast.casts == [Integer]
     assert cast.term == 1.1
 
-
-def test_parse_faulty_cast():
-    text = '(int) 1.1'
     with raises(ShellSyntaxError):
-        parse(text)
+        parse('($x) 1')
+
+    with raises(ShellTypeError):
+        parse('(nothing) 1.1')
 
 
 def test_parse_cast_word():
-    text = 'print (word) 1.1'
-    lines = parse(text)
+    lines = parse('(text) 1.1')
+    cast = lines.items[0]
+
+    assert isinstance(cast, Cast)
+    assert cast.casts == [Word]
+    assert cast.term == 1.1
+
+
+def test_parse_cast_list():
+    lines = parse('(int) [1.1]')
+    cast = lines.items[0]
+
+    assert isinstance(cast, Cast)
+    assert cast.casts == [Integer]
+    assert cast.term == ArrayList([Float(1.1)])
+
+
+def test_parse_command_cast():
+    lines = parse('print (text) 1.1')
     command = lines.items[0]
     cast = command.args[0]
 
     assert isinstance(cast, Cast)
-    assert cast.casts == ('word',)
+    assert cast.casts == [Word]
     assert cast.term == 1.1
 
 
 def test_parse_double_cast():
-    text = '(float) (int) 0.5'
+    lines = parse('(float) (int) 0.5')
+    cast = lines.items[0]
+
+    assert isinstance(cast, Cast)
+    assert cast.casts == [Integer, Float]
+    assert cast.term == 0.5
 
 
 def test_parse_cast_nested():
-    text = '[1, (int) 2.1]'
+    lines = parse('print (float) [1, (int) 2.1]')
+    command = lines.items[0]
+    outer_cast = command.args[0]
+
+    assert isinstance(outer_cast, Cast)
+    assert outer_cast.casts == [Float]
+
+    array = outer_cast.term
+    assert isinstance(array, ArrayList)
+    assert array.items[0] == 1
+
+    cast = array.items[1]
+    assert isinstance(cast, Cast)
+    assert cast.casts == [Integer]
+    assert cast.term == 2.1
+
+
+def test_error_hints():
+    with raises(ShellSyntaxError):
+        parse('$x $x')

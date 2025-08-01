@@ -1,7 +1,7 @@
 from __future__ import annotations
 from abc import abstractmethod
 from collections import UserString
-from typing import Callable, List
+from typing import Callable, Iterable, Tuple, Type, Union
 
 from mash.shell.errors import ShellError, ShellTypeError
 from mash.shell2.ast.node import Data, Node
@@ -134,20 +134,25 @@ class Integer(Number):
 
 
 class Cast(Node):
-    def __init__(self, casts: List[type], term: Node):
-        self.casts = casts
+    CASTS = {'int': Integer,
+             'float': Float,
+             'text': Word}
+
+    def __init__(self, casts: Iterable[Union[Type[Data], str]], term: Node):
+        self.casts = list(Cast.convert_casts(casts))
         self.term = term
 
     def run(self, env: Environment) -> Node:
         term = self.term.run(env)
 
-        for c in self.casts:
-            term = c.cast(term)
+        for cast in self.casts:
+            term = cast.cast(term)
 
         return term
 
     def copy(self) -> Cast:
-        return Cast(self.casts, self.term.copy())
+        casts = (cast.instance_type() for cast in self.casts)
+        return Cast(casts, self.term.copy())
 
     def __repr__(self) -> str:
         return f'{self.type} {repr(self.term)}'
@@ -162,3 +167,14 @@ class Cast(Node):
     @classmethod
     def zero(self) -> Node:
         return Cast([], Integer(0))
+
+    @staticmethod
+    def convert_casts(casts: Tuple[str]) -> Iterable[Union[Type[Data], str]]:
+        for c in casts:
+            if c in Cast.CASTS:
+                yield Cast.CASTS[c]
+            elif c in ('str', 'word'):
+                raise ShellTypeError(
+                    f'Cast "{c}" is not supported. Did you mean "text"?')
+            else:
+                raise ShellTypeError(f'Cast "{c}" is not supported.')

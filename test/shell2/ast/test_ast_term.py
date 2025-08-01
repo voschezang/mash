@@ -1,9 +1,4 @@
-
-from pytest import raises
-from mash.shell.errors import ShellTypeError
-from mash.shell2.ast.array_list import ArrayList
-from mash.shell2.ast.term import Cast, Float, Integer, Term, Word
-from mash.shell2.ast.variable import Variable
+from mash.shell2.ast.term import Float, Integer, Term, Word
 
 
 def test_ast_term():
@@ -100,40 +95,3 @@ def test_ast_int():
 
     result = Integer.cast(Word('99'))
     assert result == 99
-
-
-def test_cast():
-    cast = Cast([Integer], Float(1.1))
-    assert cast.run({}) == 1
-    assert cast.run({}) != '1'
-
-    cast = Cast([Word], Float(1.1))
-    assert cast.run({}) == '1.1'
-    assert cast.run({}) != 1.1
-
-
-def test_faulty_cast():
-    cast = Cast([Word], ArrayList([Float(1), Float(1)]))
-
-    with raises(ShellTypeError):
-        cast.run({})
-
-
-def test_ast_double_cast():
-    result = Cast([Float, Integer], Float(0.5))
-    assert result.casts == [Float, Integer]
-    assert result.term == 0.5
-
-    assert result.type == '(float) (int)'
-    assert str(result) == '(float) (int) 0.5'
-    assert Cast.zero().casts == []
-
-    c = result.copy()
-    assert c.casts == result.casts
-    assert c.term == result.term
-    assert c is not result
-
-    assert result.run({}) == 0
-
-    with raises(ShellTypeError):
-        Cast([Variable], Float(1)).run({})

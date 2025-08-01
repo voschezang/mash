@@ -94,32 +94,24 @@ def parse(text, debug=True, init=True):
         'lines : empty'
         pass
 
-    def p_value(p):
-        """value : term
-                 | list
+    def p_line_list(p):
+        """line : list
+                | cast
+                | var
+        """
+        """An expression stated on a new line.
+        E.g.
+
+        .. code-block:: sh
+
+            $ [1, 2, 3]     # define a list
+            $ (int) 1.5     # convert an int to float 
+            $ $x            # print the value of a variable
+            $ print $x  $y  # print multiple variables
+            $ exit          # run a command without arguments
+
         """
         p[0] = p[1]
-
-    def p_comma_terms(p):
-        'comma_terms : comma_terms COMMA value'
-        p[1].append(p[3])
-        p[0] = p[1]
-
-    def p_comma_terms_singleton_term(p):
-        'comma_terms : value'
-        p[0] = [p[1]]
-
-    def p_line_list(p):
-        'line : list'
-        p[0] = p[1]
-
-    def p_list(p):
-        'list : LBRACE comma_terms RBRACE'
-        p[0] = ArrayList(p[2])
-
-    def p_empty_list(p):
-        'list : LBRACE RBRACE'
-        p[0] = ArrayList([])
 
     def p_line_command_args(p):
         'line : METHOD terms'
@@ -129,14 +121,38 @@ def parse(text, debug=True, init=True):
         'line : METHOD'
         p[0] = Command(Word(p[1]))
 
-    # TODO allow e.g.
-    # $ {1...3}
-    # def p_line_command(p):
-    #     'line : expression'
-    #     p[0] = Command(p[1])
+    def p_line_vars(p):
+        'line : terms var'
+        # E.g. `$x $y`
+        raise ShellSyntaxError('No command was given. Only got variables.')
+
+    def p_list(p):
+        'list : LBRACE comma_terms RBRACE'
+        p[0] = ArrayList(p[2])
+
+    def p_empty_list(p):
+        'list : LBRACE RBRACE'
+        p[0] = ArrayList([])
+
+    def p_value(p):
+        """comma_term_value : term
+                            | cast
+                            | list
+        """
+        p[0] = p[1]
+
+    def p_comma_terms(p):
+        'comma_terms : comma_terms COMMA comma_term_value'
+        p[1].append(p[3])
+        p[0] = p[1]
+
+    def p_comma_terms_singleton_term(p):
+        'comma_terms : comma_term_value'
+        p[0] = [p[1]]
 
     def p_terms(p):
         """terms : terms cast
+                 | terms list
                  | terms term
         """
         p[1].append(p[2])
@@ -149,19 +165,25 @@ def parse(text, debug=True, init=True):
         p[0] = [p[1]]
 
     def p_cast(p):
-        'cast : casts term'
+        """cast : casts list
+                | casts term
+        """
         p[0] = Cast(p[1], p[2])
 
     def p_multiple_casts(p):
-        'casts : LPAREN term RPAREN casts'
-        p[0] = p[1] + (p[3],)
+        'casts : LPAREN METHOD RPAREN casts'
+        p[0] = p[4] + (p[2],)
 
     def p_casts(p):
-        'casts : LPAREN term RPAREN'
+        'casts : LPAREN METHOD RPAREN'
         p[0] = (p[2],)
 
-    def p_term_variable(p):
-        'term : VARIABLE'
+    def p_term_var(p):
+        'term : var'
+        p[0] = Variable(p[1][1:])
+
+    def p_variable(p):
+        'var : VARIABLE'
         p[0] = Variable(p[1][1:])
 
     def p_term_command(p):
