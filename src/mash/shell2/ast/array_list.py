@@ -1,4 +1,5 @@
 from __future__ import annotations
+import itertools
 from typing import Iterable, List, Type, TypeVar, Union
 
 from mash.shell.errors import ShellTypeError
@@ -19,7 +20,7 @@ class ArrayList[T](Data):
         matrix = [[1, 2], [3, 4]]
     """
 
-    def __init__(self, items: List[Data], child_type: Type[T] = Variable):
+    def __init__(self, items: Iterable[Data], child_type: Type[T] = Variable):
         self.items = list(_init_items(items, child_type))
         self.child_types = _init_child_types(self.items, child_type)
 
@@ -28,12 +29,12 @@ class ArrayList[T](Data):
             return ArrayList.zero()
 
         # expand variables in child elements
-        items = [item.run(env) for item in self.items]
+        items = (item.run(env) for item in self.items)
 
-        # infer child type
-        child_type = type(items[0])
-
-        return ArrayList(items, child_type)
+        # peek at the first element to deduce the type
+        peek = next(items)
+        return ArrayList(itertools.chain([peek], items),
+                         child_type=type(peek))
 
     @property
     def type(self):
@@ -83,14 +84,13 @@ def _init_items(items: List[Data], child_type: Type[T]) -> Iterable[U]:
     to ensure that each item is an instance of `child_type`.
     """
     for item in items:
-        if child_type is ArrayList:
-            if isinstance(item, list):
-                item = ArrayList(child_type, item)
+        if isinstance(item, list) and not isinstance(item, ArrayList):
+            item = ArrayList(item)
 
-            assert isinstance(item, ArrayList)
-
-        elif child_type is not Variable:
+        if child_type is not Variable and not isinstance(item, ArrayList):
             item = child_type.cast(item)
+
+        assert isinstance(item, Node)
 
         yield item
 
@@ -104,8 +104,7 @@ def _init_child_types(items: List[U], child_type: Type[T]) -> List[Type[U]]:
     - [ArrayList, ArrayList, U]
     - ...
     """
-    if items and (child_type is ArrayList or isinstance(items[0], ArrayList)):
-        return [child_type] + items[0].child_types
-    elif child_type is ArrayList:
-        return [child_type] + items[0].child_types
+    if child_type is ArrayList or (items and isinstance(items[0], ArrayList)):
+        return [ArrayList] + items[0].child_types
+
     return [child_type]

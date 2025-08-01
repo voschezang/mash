@@ -77,16 +77,16 @@ def test_mixed_list():
 
 
 def test_nested_list():
-    inner = ArrayList([Integer(1), Float(0.1), Integer(2)], Float)
-    outer = ArrayList([inner, inner], ArrayList)
+    floats = ArrayList([Integer(1), Float(0.1), Integer(2)], Float)
+    empty = ArrayList([])
+    outer = ArrayList([floats, empty])
 
     assert len(outer) == 2
-    assert str(outer) == '[[1.0, 0.1, 2.0], [1.0, 0.1, 2.0]]'
+    assert str(outer) == '[[1.0, 0.1, 2.0], []]'
     assert outer.type == '[[float]]'
 
     for i in outer.items:
         assert isinstance(i, ArrayList)
 
-    inner = ArrayList([[]])
-
-    inner = ArrayList([Integer(1), Float(0.1), Integer(2)], Float)
+    alt = ArrayList([empty, floats])
+    assert alt.type == '[[variable]]'

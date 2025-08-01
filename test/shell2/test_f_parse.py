@@ -7,7 +7,7 @@ from mash.shell.errors import ShellSyntaxError
 from mash.shell2.ast.array_list import ArrayList
 from mash.shell2.ast.command import Command
 from mash.shell2.ast.lines import Lines
-from mash.shell2.ast.term import Cast, Word
+from mash.shell2.ast.term import Cast, Integer, Word
 from mash.shell2.ast.variable import Variable
 from mash.shell2.parser import parse
 
@@ -104,6 +104,35 @@ def test_parse_list_int():
     assert isinstance(result, ArrayList)
     assert result.items == [1, 2, 3]
     assert result.child_types == [Variable]
+
+
+def test_parse_mixed_list():
+    text = '[1.5, abc, 1]'
+    lines = parse(text)
+    assert isinstance(lines, Lines)
+    result = lines.items[0]
+    assert isinstance(result, ArrayList)
+    assert result.items == [1.5, 'abc', 1]
+    assert result.child_types == [Variable]
+
+
+def test_parse_empty_list():
+    text = '[]'
+    result = parse(text).items[0]
+    assert isinstance(result, ArrayList)
+    assert result.items == []
+
+
+def test_parse_nested_list():
+    text = '[ [[1], [2]], []]'
+    lines = parse(text)
+    assert isinstance(lines, Lines)
+    result = lines.items[0]
+    assert isinstance(result, ArrayList)
+    assert result.items[0] == ArrayList([[Integer(1)], [Integer(2)]])
+    assert result.items[1] == ArrayList([])
+    assert result.child_types == [ArrayList, ArrayList, Variable]
+    assert result.type == '[[[variable]]]'
 
 
 def test_parse_cast_int():

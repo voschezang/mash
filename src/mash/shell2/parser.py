@@ -113,9 +113,13 @@ def parse(text, debug=True, init=True):
         'line : list'
         p[0] = p[1]
 
-    def p_list_int(p):
+    def p_list(p):
         'list : LBRACE comma_terms RBRACE'
         p[0] = ArrayList(p[2])
+
+    def p_empty_list(p):
+        'list : LBRACE RBRACE'
+        p[0] = ArrayList([])
 
     def p_line_command_args(p):
         'line : METHOD terms'
