@@ -16,7 +16,7 @@ Tree structure.
     |   |   └── block
     |   |       └── OPEN lines CLOSE
     |   |── if-then-else
-    |   |   └── IF inline : block ELSE block
+    |   |   └── IF line : block ELSE block
     |   └── for-loop
     |       └── FOR terms IN term : block
     |
@@ -49,10 +49,7 @@ Tree structure.
 
 Notes
 
-- multiline statements are not allowed in repl mode?
-- The (indent) is optional.
-- The term "inline" represents a partial line.
-
+- Multiline statements are not allowed in REPL mode.
 """
 from ply import yacc
 
@@ -61,14 +58,12 @@ from mash.shell2.ast.command import Command
 from mash.shell2.ast.lines import Lines
 from mash.shell2.ast.term import Boolean, Cast, Float, Integer, Word
 from mash.shell2.ast.variable import Variable
-from mash.shell2.tokenizer import main, tokens
+from mash.shell2.pre_parser import Preparser
+from mash.shell2.tokenizer import inner, main, tokens
 from mash.shell.errors import ShellSyntaxError
 
 
-tokenizer = None
-
-
-def parse(text, debug=True, init=True):
+def parse(text: str, debug=True, init=True):
     """Implement ply methods to parse text.
     """
 
@@ -226,12 +221,6 @@ def parse(text, debug=True, init=True):
         print(f'Syntax error: {p}')
         raise ShellSyntaxError(f'Syntax error: {p}')
 
-    if init:
-        global tokenizer
-        tokenizer = main(debug)
-    else:
-        tokenizer.clone()
-
     if debug:
         parser = yacc.yacc(debug=1, write_tables=True)
     else:
@@ -240,7 +229,7 @@ def parse(text, debug=True, init=True):
     if not isinstance(text, str):
         raise ValueError("Input is not a string: ", text, type(text))
 
-    return parser.parse(text)
+    return parser.parse(text, lexer=Preparser(debug, init))
 
 
 if __name__ == '__main__':
