@@ -52,7 +52,7 @@ from ply import yacc
 from mash.shell2.ast.array_list import ArrayList
 from mash.shell2.ast.command import Command
 from mash.shell2.ast.lines import Lines
-from mash.shell2.ast.term import Cast, Float, Integer, Word
+from mash.shell2.ast.term import Boolean, Cast, Float, Integer, Word
 from mash.shell2.ast.variable import Variable
 from mash.shell2.tokenizer import main, tokens
 from mash.shell.errors import ShellSyntaxError
@@ -95,8 +95,10 @@ def parse(text, debug=True, init=True):
         pass
 
     def p_line_list(p):
-        """line : list
+        """line : bool
                 | cast
+                | number
+                | list
                 | var
         """
         """An expression stated on a new line.
@@ -104,11 +106,10 @@ def parse(text, debug=True, init=True):
 
         .. code-block:: sh
 
-            $ [1, 2, 3]     # define a list
-            $ (int) 1.5     # convert an int to float 
-            $ $x            # print the value of a variable
-            $ print $x  $y  # print multiple variables
-            $ exit          # run a command without arguments
+            $ [1, 2, 3]          # define a list
+            $ (int) 1.5          # convert an int to float 
+            $ $x                 # print the value of a variable
+            $ print hello $name  # a command with arguments
 
         """
         p[0] = p[1]
@@ -178,13 +179,20 @@ def parse(text, debug=True, init=True):
         'casts : LPAREN METHOD RPAREN'
         p[0] = (p[2],)
 
-    def p_term_var(p):
-        'term : var'
-        p[0] = Variable(p[1][1:])
+    def p_term_var_bool(p):
+        """term : bool
+                | number
+                | var
+        """
+        p[0] = p[1]
 
     def p_variable(p):
         'var : VARIABLE'
         p[0] = Variable(p[1][1:])
+
+    def p_bool(p):
+        'bool : BOOL'
+        p[0] = Boolean(p[1])
 
     def p_term_command(p):
         'term : METHOD'
@@ -196,11 +204,11 @@ def parse(text, debug=True, init=True):
         p[0] = Word(p[1])
 
     def p_float(p):
-        'term : FLOAT'
+        'number : FLOAT'
         p[0] = Float(p[1])
 
     def p_int(p):
-        'term : INT'
+        'number : INT'
         p[0] = Integer(p[1])
 
     def p_empty(p):

@@ -1,6 +1,7 @@
 from __future__ import annotations
 from abc import abstractmethod
 from collections import UserString
+from functools import singledispatch
 from typing import Callable, Iterable, Tuple, Type, Union
 
 from mash.shell.errors import ShellError, ShellTypeError
@@ -25,6 +26,37 @@ class Term(Data):
 
     def __eq__(self, other) -> bool:
         return self.value == other
+
+
+class Boolean(Term):
+    def __init__(self, value: Union[bool, str]):
+        if isinstance(value, bool):
+            self.value = value
+        elif value.lower() == 'true':
+            self.value = True
+        else:
+            self.value = False
+
+    def run(self, env: Environment) -> Boolean:
+        return self
+
+    @property
+    def type(self) -> str:
+        return 'bool'
+
+    def __bool__(self) -> bool:
+        return self.value
+
+    def __repr__(self) -> str:
+        return repr(self.value).lower()
+
+    @singledispatch
+    def __eq__(self, other) -> bool:
+        return self.value == other
+
+    @__eq__.register
+    def _(self, other: Data) -> bool:
+        return self.value == other.value
 
 
 class Word(Term, UserString):

@@ -31,6 +31,7 @@ tokens = (
     'VARIABLE',  # $x
     'FLOAT',  # 3.14
     # 'DOTTED_WORD',  # foo.bar
+    'BOOL',  # true false
     'METHOD',  # some_method_V1
     'WORD',  # hel?os*
 
@@ -132,6 +133,10 @@ def main(debug=True, ignore=' \t'):
     #     r'([\w\d]+\.[\.\w\d]*)|([\w\d\.]*\.[\w\d]+)'
     #     # match *. or .* or *.*
     #     return t
+
+    def t_BOOL(t):
+        r'true|false'
+        return t
 
     def t_METHOD(t):
         r'\b[a-zA-Z_][a-zA-Z_0-9]*\b'

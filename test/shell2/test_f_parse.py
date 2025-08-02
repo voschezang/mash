@@ -7,7 +7,7 @@ from mash.shell.errors import ShellSyntaxError, ShellTypeError
 from mash.shell2.ast.array_list import ArrayList
 from mash.shell2.ast.command import Command
 from mash.shell2.ast.lines import Lines
-from mash.shell2.ast.term import Cast, Float, Integer, Word
+from mash.shell2.ast.term import Boolean, Cast, Float, Integer, Word
 from mash.shell2.ast.variable import Variable
 from mash.shell2.parser import parse
 
@@ -92,6 +92,20 @@ def test_parse_command_variable():
     assert isinstance(terms, Command)
     assert terms.args[0] == Variable('abc')
     assert terms.args[1] == Word('xyz')
+
+
+def test_parse_bool():
+    lines = parse('true')
+    assert isinstance(lines, Lines)
+    result = lines.items[0]
+    assert isinstance(result, Boolean)
+    assert result.value
+
+    lines = parse('false')
+    assert isinstance(lines, Lines)
+    result = lines.items[0]
+    assert isinstance(result, Boolean)
+    assert not result.value
 
 
 def test_parse_list_int():

@@ -1,4 +1,4 @@
-from mash.shell2.ast.term import Float, Integer, Term, Word
+from mash.shell2.ast.term import Boolean, Float, Integer, Term, Word
 
 
 def test_ast_term():
@@ -16,6 +16,24 @@ def test_ast_term():
     assert a == a
     assert a == b
     assert a != c
+
+
+def test_ast_bool():
+    a = Boolean(True)
+    b = Boolean('False')
+
+    assert a.type == 'bool'
+    assert repr(a) == 'true'
+    assert repr(b) == 'false'
+
+    assert a
+    assert not b
+    assert type(a.value) == bool
+    assert type(b.value) == bool
+
+    assert a == a
+    assert b == b
+    assert a != b
 
 
 def test_ast_word():

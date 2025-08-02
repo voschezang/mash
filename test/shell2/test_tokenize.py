@@ -11,13 +11,23 @@ def test_tokenizer_empty():
     assert list(tokenize('  ')) == []
 
 
-def test_tokenize_single():
+def test_tokenize_word():
     token = list(tokenize('myfunction'))[0]
     assert token.type == 'METHOD'
     assert token.value == 'myfunction'
 
+
+def test_tokenize_number():
     token = list(tokenize('1'))[0]
     assert token.type == 'INT'
+
+
+def test_tokenize_bool():
+    token = list(tokenize('true'))[0]
+    assert token.type == 'BOOL'
+
+    token = list(tokenize('false'))[0]
+    assert token.type == 'BOOL'
 
 
 def test_tokenize_path():
