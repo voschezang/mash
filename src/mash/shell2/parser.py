@@ -25,6 +25,8 @@ Tree structure.
         |── list
         |   |── [ list , list , list]
         |   └── [ term , term , term ]
+        |── list comprehension
+        |   └── [ users |> user.id == 'a*' ]
         |── record_definition
         |   └── { .. = .., \\n .. = .. }
         |── record_update
@@ -33,12 +35,17 @@ Tree structure.
         |   └── { .. || .. , \\n .. }
         |── assignment
         |   └── terms ASSIGN conjunction
+        |── bool
+        |── float
+        |── int
+        |── variable
+        |── cast
+        |   └── (int) 10.5
         └── command terms
-                    └── terms
-                        └── term terms
-                            |── word
-                            |── float
-                            └── int
+                    └── terms term
+                        |── word
+                        |── float
+                        └── int
 
 Notes
 
