@@ -41,8 +41,10 @@ def test_tokenize_path():
 
 
 def test_tokenize_multiple():
-    token = list(tokenize('1 2 3'))[0]
-    assert token.type == 'INT'
+    tokens = list(tokenize('1 2'))
+
+    assert tokens[0].type == 'INT'
+    assert tokens[1].type == 'INT'
 
 
 def test_tokenize_indentation():

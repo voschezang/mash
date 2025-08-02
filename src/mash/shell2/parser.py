@@ -58,9 +58,11 @@ from mash.shell2.ast.command import Command
 from mash.shell2.ast.lines import Lines
 from mash.shell2.ast.term import Boolean, Cast, Float, Integer, Word
 from mash.shell2.ast.variable import Variable
-from mash.shell2.pre_parser import Preparser
+from mash.shell2.pre_parser import PreParser
 from mash.shell2.tokenizer import inner, main, tokens
 from mash.shell.errors import ShellSyntaxError
+
+tokenizer = None
 
 
 def parse(text: str, debug=True, init=True):
@@ -229,7 +231,16 @@ def parse(text: str, debug=True, init=True):
     if not isinstance(text, str):
         raise ValueError("Input is not a string: ", text, type(text))
 
-    return parser.parse(text, lexer=Preparser(debug, init))
+    if 0:
+        return parser.parse(text, lexer=PreParser(debug, init))
+
+    if init:
+        global tokenizer
+        tokenizer = main(debug)
+    else:
+        tokenizer.clone()
+
+    return parser.parse(text)
 
 
 if __name__ == '__main__':
