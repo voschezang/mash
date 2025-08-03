@@ -1,8 +1,7 @@
 from __future__ import annotations
-from abc import abstractmethod
 from collections import UserString
-from functools import singledispatch
-from typing import Callable, Iterable, Tuple, Type, Union
+from functools import singledispatchmethod
+from typing import Callable, Iterable, Tuple, Type
 
 from mash.shell.errors import ShellError, ShellTypeError
 from mash.shell2.ast.node import Data, Node
@@ -24,12 +23,21 @@ class Term(Data):
     def copy(self) -> Term:
         return self.__class__(self.value)
 
+    @singledispatchmethod
     def __eq__(self, other) -> bool:
         return self.value == other
 
+    @__eq__.register
+    def _(self, other: Data) -> bool:
+        return isinstance(other, Term) and self.value == other.value
+
+    @__eq__.register
+    def _(self, other: Node) -> bool:
+        return False
+
 
 class Boolean(Term):
-    def __init__(self, value: Union[bool, str]):
+    def __init__(self, value: bool | str):
         if isinstance(value, bool):
             self.value = value
         elif value.lower() == 'true':
@@ -49,14 +57,6 @@ class Boolean(Term):
 
     def __repr__(self) -> str:
         return repr(self.value).lower()
-
-    @singledispatch
-    def __eq__(self, other) -> bool:
-        return self.value == other
-
-    @__eq__.register
-    def _(self, other: Data) -> bool:
-        return self.value == other.value
 
 
 class Word(Term, UserString):
@@ -170,7 +170,7 @@ class Cast(Node):
              'float': Float,
              'text': Word}
 
-    def __init__(self, casts: Iterable[Union[Type[Data], str]], term: Node):
+    def __init__(self, casts: Iterable[Type[Data] | str], term: Node):
         self.casts = list(Cast.convert_casts(casts))
         self.term = term
 
@@ -201,7 +201,7 @@ class Cast(Node):
         return Cast([], Integer(0))
 
     @staticmethod
-    def convert_casts(casts: Tuple[str]) -> Iterable[Union[Type[Data], str]]:
+    def convert_casts(casts: Tuple[str]) -> Iterable[Type[Data] | str]:
         for c in casts:
             if c in Cast.CASTS:
                 yield Cast.CASTS[c]

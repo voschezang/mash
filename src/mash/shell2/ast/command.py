@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Callable, List, Union
+from typing import Callable, List
 
 from mash.shell.errors import ShellError, ShellTypeError
 from mash.shell2.ast.node import Node
@@ -76,7 +76,7 @@ def verify_function_args(func: Callable, args: List[Node]):
     verify_arg_types(args, func, pos_args, var_arg)
 
 
-def verify_arg_count(args: list, pos_args: list, var_arg: Union[str, None]):
+def verify_arg_count(args: list, pos_args: list, var_arg: str | None):
     """Verify the number of arguments in `args`
 
     - Verify that `args` contains at least as many arguments as `pos_args`.
@@ -103,7 +103,7 @@ def verify_arg_types(args: List[Node], func: Callable, pos_args: list, var_arg: 
         A function with annotated positional and/or variadic arguments.
     pos_args: List[str]
         The names of the positional arguments.
-    var_arg: Union[str, None]
+    var_arg: str | None
         The name of the variadic argument.
     """
     pos_arg_types = []

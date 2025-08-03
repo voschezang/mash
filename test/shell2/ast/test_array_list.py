@@ -45,7 +45,7 @@ def test_list_variables():
 def test_list_comparisons():
     # empty lists evaluate to False, but are not the same als the literal False
     assert not ArrayList.zero()
-    assert ArrayList.zero() != False
+    assert not ArrayList.zero()
 
     # nonempty lists evaluate to True
     assert ArrayList([Integer(1)], Integer) and True

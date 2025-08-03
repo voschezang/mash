@@ -1,6 +1,7 @@
 from __future__ import annotations
+from functools import singledispatchmethod
 import itertools
-from typing import Iterable, List, Type, TypeVar, Union
+from typing import Iterable, List, Type, TypeVar
 
 from mash.shell.errors import ShellTypeError
 from mash.shell2.ast.node import Data, Node
@@ -49,20 +50,26 @@ class ArrayList[T](Data):
         inner = ', '.join(repr(item) for item in self.items)
         return f'[{inner}]'
 
-    def __eq__(self, other: Node) -> bool:
-        # handle empty lists
-        if not self.items and isinstance(other, ArrayList) and not other.items:
-            return True
+    def __bool__(self) -> bool:
+        return bool(self.items)
 
-        if isinstance(other, list):
-            raise ShellTypeError(
-                'Faulty comparison between Python and Mash types.')
+    @singledispatchmethod
+    def __eq__(self, other) -> bool:
+        raise ShellTypeError(
+            'Faulty comparison between Python and Mash types.')
 
-        try:
-            return self.items == other.items and self.type == other.type
-
-        except AttributeError:
+    @__eq__.register
+    def _(self, other: Data) -> bool:
+        if not isinstance(other, ArrayList):
             return False
+
+        return (not self.items and not other.items) or \
+            (self.items == other.items and
+             self.type == other.type)
+
+    @__eq__.register
+    def _(self, other: Node) -> bool:
+        return False
 
     def __len__(self) -> int:
         return len(self.items)
@@ -76,7 +83,7 @@ class ArrayList[T](Data):
         return cls([])
 
 
-U = Union[T, Variable]
+U = T | Variable
 
 
 def _init_items(items: List[Data], child_type: Type[T]) -> Iterable[U]:

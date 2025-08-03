@@ -37,8 +37,8 @@ format:
 
 clean:
 	rm -f ${parsetab}
-	find . -name '__pycache__' | xargs rm -rf {1}
-	#find . -name '__pycache__' -exec rm -rf {} \;
+	find . -name '__pycache__' -delete
+	find . -name '.mypy_cache' -delete
 	rm -rf dist
 	rm -rf src/*.egg-info
 	make docs-clean
