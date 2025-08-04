@@ -1,6 +1,18 @@
 import ply.lex as lex
 from mash.shell.errors import ShellSyntaxError
-from mash.shell.grammer.literals import keywords
+
+keywords = {
+    'if': 'IF',
+    'then': 'THEN',
+    'else': 'ELSE',
+    # 'return': 'RETURN',
+    # 'not': 'NOT',
+    # 'and': 'AND',
+    # 'or': 'OR',
+    # 'in': 'IN',
+    # 'math': 'MATH',
+}
+# token_values = {v: k for k, v in keywords.items()}
 
 tokens = (
     # 'PIPE',  # |
@@ -10,7 +22,7 @@ tokens = (
     # 'BREAK',  # ;
     'COMMA',  # ;
     'SLASH',  # /
-    # 'COLON',
+    'COLON',
 
     # 'DEFINE_FUNCTION',  # f ( ):
     # 'ASSIGN',  # =
@@ -43,7 +55,7 @@ tokens = (
     # 'SYMBOL',  # ~ -
     # 'DOTS',  # . ..
 )
-# tokens += tuple(keywords.values())
+tokens += tuple(keywords.values())
 
 
 def main(debug=True, ignore=' \t'):
@@ -55,7 +67,7 @@ def main(debug=True, ignore=' \t'):
     * strings are sorted by regular expression length
     """
 
-    # t_COLON = r':'
+    t_COLON = r':'
     t_COMMA = r','
     t_RPAREN = r'\)'
     t_LPAREN = r'\('
@@ -140,6 +152,8 @@ def main(debug=True, ignore=' \t'):
 
     def t_METHOD(t):
         r'\b[a-zA-Z_][a-zA-Z_0-9]*\b'
+        # handle reserved keywords (if/then/else)
+        t.type = keywords.get(t.value, 'METHOD')
         return t
 
     # def t_LONG_SYMBOL(t):

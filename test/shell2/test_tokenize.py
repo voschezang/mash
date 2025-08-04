@@ -17,6 +17,13 @@ def test_tokenize_word():
     assert token.value == 'myfunction'
 
 
+def test_tokenize_keywords():
+    tokens = list(tokenize('if then else'))
+    assert tokens[0].type == 'IF'
+    assert tokens[1].type == 'THEN'
+    assert tokens[2].type == 'ELSE'
+
+
 def test_tokenize_number():
     token = list(tokenize('1'))[0]
     assert token.type == 'INT'
