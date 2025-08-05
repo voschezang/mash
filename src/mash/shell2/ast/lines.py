@@ -21,8 +21,8 @@ class Lines(Node):
         for line in self.items:
             line.run(env)
 
-    def extend(self, other):
-        self.items.extend(other.values)
+    # def extend(self, other):
+    #     self.items.extend(other.values)
 
     def __repr__(self):
         if self.items is None:

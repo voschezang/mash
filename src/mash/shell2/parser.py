@@ -78,13 +78,13 @@ def parse(text: str, debug=True, init=True):
     def p_lines_infix(p):
         'lines : lines NEWLINE line'
         # parse from left to right
-        p[1].extend(p[3])
+        p[1].items.append(p[3])
         p[0] = p[1]
 
     def p_lines_suffix(p):
         'lines : lines NEWLINE'
         # ignore trailing newline
-        p[0] = p[2]
+        p[0] = p[1]
 
     def p_lines_newline(p):
         'lines : NEWLINE'

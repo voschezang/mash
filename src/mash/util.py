@@ -423,7 +423,14 @@ def glob(value: str, options: List[str] = [], strict=False) -> Iterable[str]:
         options_{a,b,c}
 
     """
-    values = braceexpand(value)
+    try:
+        values = braceexpand(value)
+    # handle UnbalancedBracesError
+    except ValueError as e:
+        if strict:
+            raise ValueError(e)
+        else:
+            values = [value]
 
     if not options:
         yield from values
