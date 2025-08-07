@@ -5,8 +5,6 @@ from mash.shell.grammer import parse_functions
 from mash.shell2.tokenizer import tokenize
 from mash.shell2.tokenizer import inner, main
 
-tokenizer = None
-
 
 class PreParser:
     """A wrapper for a ply lexer (tokenizer).
@@ -20,6 +18,7 @@ class PreParser:
     token()
         Produce the next token
     """
+    tokenizer = None
 
     def __init__(self, debug=True, init=True):
         self._init_tokens()
@@ -28,10 +27,12 @@ class PreParser:
         self.has_input = False
 
         if init:
-            global tokenizer
-            tokenizer = main(debug)
+            PreParser.tokenizer = main(debug)
         else:
-            tokenizer.clone()
+            if PreParser.tokenizer is None:
+                raise RuntimeError('Tokenizer is not initialized')
+
+            PreParser.tokenizer.clone()
 
     def _init_tokens(self):
         self.has_input = True
@@ -41,7 +42,7 @@ class PreParser:
         self.indent_stack = []
 
     def input(self, text):
-        tokenizer.input(text)
+        PreParser.tokenizer.input(text)
 
         self._init_tokens()
 
@@ -54,7 +55,7 @@ class PreParser:
             if self.tokens:
                 return self.pop_from_cache()
 
-            token = tokenizer.token()
+            token = PreParser.tokenizer.token()
 
             if token and token.type == 'NEWLINE':
                 # drop preceding newlines
@@ -64,12 +65,12 @@ class PreParser:
                     continue
 
                 subsequent = self.peek()
-                # if subsequent and subsequent.type == 'NEWLINE':
-                #     # drop consecutive newlines
-                #     continue
-
                 if not subsequent:
                     # drop trailing newlines
+                    continue
+
+                if infer_indent(subsequent) != self.indent():
+                    # drop newline in favor of BEGIN/END blocks
                     continue
 
             if not token:
@@ -92,7 +93,7 @@ class PreParser:
         if self.tokens:
             return self.tokens[-1]
 
-        token = tokenizer.token()
+        token = PreParser.tokenizer.token()
 
         if token is None:
             return
