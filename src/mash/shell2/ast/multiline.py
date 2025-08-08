@@ -1,4 +1,3 @@
-
 from mash.shell2.ast.command import Command
 from mash.shell2.ast.node import Data, Node
 from mash.shell2.env import Environment

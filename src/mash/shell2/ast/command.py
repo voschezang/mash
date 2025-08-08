@@ -6,7 +6,7 @@ from mash.shell2.ast.node import Data, Node
 from mash.shell2.ast.term import Term
 from mash.shell2.builtins import Builtins
 from mash.shell2.env import Environment
-from mash.util import infer_variadic_args
+from mash.util import infer_variadic_args, is_callable
 
 
 class Command(Node):
@@ -23,17 +23,19 @@ class Command(Node):
 
     def run(self, env: Environment) -> Data:
         # handle f, args
-        f = str(self.f.run(env))
-        args = [arg.run(env) for arg in self.args]
+        f = str(self.f)
 
         # handle f(args)
         if f in Builtins:
             func = Builtins[f]
+            args = [arg.run(env) for arg in self.args]
             verify_function_args(func, args)
             return func(*args)
 
-        # if self.f in env['functions']:
-        #     return env['functions'][self.f](args)
+        if f in env:
+            func = env[f]
+            if is_callable(func):
+                return func(env, *self.args)
 
         raise ShellError(f'Command not found: {self.f}')
 

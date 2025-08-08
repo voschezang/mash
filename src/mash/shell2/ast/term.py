@@ -91,7 +91,7 @@ class Word(Term, UserString):
 
 
 class Number(Term):
-    def __init__(self, value: str, convert: Callable):
+    def __init__(self, value: str | int | float, convert: Callable):
         try:
             self.value = convert(value)
         except ValueError:
@@ -139,7 +139,7 @@ class Float(Number):
 
 
 class Integer(Number):
-    def __init__(self, value: str):
+    def __init__(self, value: str | int):
         if isinstance(value, Number):
             # automatically cast to correct value
             value = value.value

@@ -31,7 +31,7 @@ class Data(Node):
         pass
 
     @classmethod
-    def zero(cls) -> Node:
+    def zero(cls) -> Data:
         """Create an instance representing zero or nothingness.
         E.g. an empty string or list.
 

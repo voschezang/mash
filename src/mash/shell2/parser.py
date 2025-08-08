@@ -57,10 +57,11 @@ from mash.shell2.ast.array_list import ArrayList
 from mash.shell2.ast.command import Command
 from mash.shell2.ast.lines import Lines
 from mash.shell2.ast.multiline import IfElse
+from mash.shell2.ast.function import Function
 from mash.shell2.ast.term import Boolean, Cast, Float, Integer, Word
 from mash.shell2.ast.variable import Variable
 from mash.shell2.pre_parser import PreParser
-from mash.shell2.tokenizer import inner, main, tokens
+from mash.shell2.tokenizer import tokens
 from mash.shell.errors import ShellSyntaxError
 
 tokenizer = None
@@ -102,6 +103,10 @@ def parse(text: str, debug=True, init=True):
     def p_line_if_else(p):
         'line : IF line COLON BEGIN lines END ELSE COLON BEGIN lines END'
         p[0] = IfElse(p[2], p[5], p[10])
+
+    def p_line_function_definition(p):
+        'line : METHOD LPAREN terms RPAREN COLON BEGIN lines END'
+        p[0] = Function(p[1], p[3], p[7])
 
     def p_line_terms(p):
         """line : bool
