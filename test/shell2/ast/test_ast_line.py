@@ -6,14 +6,14 @@ from mash.shell2.ast.term import Word
 
 
 def test_ast_lines():
-    lines = Lines(Command('print', Word('hello')),
-                  Command('print', Word('world')))
+    lines = Lines(Command(Word('print'), Word('hello')),
+                  Command(Word('print'), Word('world')))
 
-    assert lines.items[0] == Command('print', 'hello')
-    assert lines.items[1] == Command('print', 'world')
+    assert lines.items[0] == Command(Word('print'), Word('hello'))
+    assert lines.items[1] == Command(Word('print'), Word('world'))
 
-    s = '[Command] print'
-    assert str(lines) == f'[Lines] {s} hello\n{s} world'
+    s = '(Command) print'
+    assert str(lines) == f'(Lines) {s} hello\n{s} world'
 
 
 def test_run_lines():

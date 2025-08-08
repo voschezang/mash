@@ -50,3 +50,6 @@ class Data(Node):
         """Returns the .type property of an instance of `cls`.
         """
         return cls.zero().type
+
+    def __bool__(self):
+        raise NotImplementedError()

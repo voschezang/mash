@@ -204,7 +204,7 @@ def catch_all_output(arg: str, func: Callable, **func_kwds) -> str:
     return stdout, stderr.rstrip('\n')
 
 
-def run_subprocess(line: str) -> str:
+def run_subprocess(line: str) -> subprocess.CompletedProcess:
     """Wrapper for subprocess.run
     Raise a RuntimeError on a non-zero exit status.
     """

@@ -1,8 +1,5 @@
-from typing import Literal
-from ply.lex import LexToken
+from ply.lex import Lexer, LexToken
 
-from mash.shell.grammer import parse_functions
-from mash.shell2.tokenizer import tokenize
 from mash.shell2.tokenizer import inner, main
 
 
@@ -18,7 +15,7 @@ class PreParser:
     token()
         Produce the next token
     """
-    tokenizer = None
+    _tokenizer: Lexer | None = None
 
     def __init__(self, debug=True, init=True):
         self._init_tokens()
@@ -27,12 +24,12 @@ class PreParser:
         self.has_input = False
 
         if init:
-            PreParser.tokenizer = main(debug)
+            PreParser._tokenizer = main(debug)
         else:
-            if PreParser.tokenizer is None:
+            if PreParser._tokenizer is None:
                 raise RuntimeError('Tokenizer is not initialized')
 
-            PreParser.tokenizer.clone()
+            PreParser._tokenizer.clone()
 
     def _init_tokens(self):
         self.has_input = True
@@ -42,7 +39,7 @@ class PreParser:
         self.indent_stack = []
 
     def input(self, text):
-        PreParser.tokenizer.input(text)
+        self.tokenizer.input(text)
 
         self._init_tokens()
 
@@ -55,7 +52,7 @@ class PreParser:
             if self.tokens:
                 return self.pop_from_cache()
 
-            token = PreParser.tokenizer.token()
+            token = self.tokenizer.token()
 
             if token and token.type == 'NEWLINE':
                 # drop preceding newlines
@@ -93,7 +90,7 @@ class PreParser:
         if self.tokens:
             return self.tokens[-1]
 
-        token = PreParser.tokenizer.token()
+        token = self.tokenizer.token()
 
         if token is None:
             return
@@ -102,6 +99,13 @@ class PreParser:
         self.tokens.insert(0, token)
 
         return token
+
+    @property
+    def tokenizer(self):
+        if PreParser._tokenizer is None:
+            raise RuntimeError('Tokenizer is not initialized')
+
+        return PreParser._tokenizer
 
     def pop_from_cache(self) -> LexToken:
         token = self.tokens[-1]
@@ -148,6 +152,9 @@ class PreParser:
 
 
 def infer_indent(token: LexToken):
+    if token.lexpos == 0:
+        return 0
+
     # tabs are treated like indent of 1
     previous = token.lexer.lexdata.rfind('\n', 0, token.lexpos)
 

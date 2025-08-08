@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from mash.shell2.ast.node import Node
 from mash.shell2.env import Environment
 
@@ -17,19 +19,18 @@ class Lines(Node):
     def __init__(self, *nodes: Node):
         self.items = list(nodes)
 
-    def run(self, env: Environment):
+    def run(self, env: Environment) -> Lines:
         for line in self.items:
             line.run(env)
 
-    # def extend(self, other):
-    #     self.items.extend(other.values)
+        return self
 
     def __repr__(self):
         if self.items is None:
-            return self.f
+            return f'({type(self).__name__})'
 
         lines = '\n'.join(repr(t) for t in self.items)
-        return f'[{type(self).__name__}] {lines}'
+        return f'({type(self).__name__}) {lines}'
 
     @property
     def type(self):

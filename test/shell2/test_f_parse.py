@@ -32,12 +32,11 @@ def test_parse_warnings():
 
 
 def test_parse_warnings_output():
-    parse('')
+    parse('abc')
     fn = 'src/mash/shell2/parser.out'
     out = io_util.run_subprocess(r'grep "WARNING:\s\w" ' + fn)
-    out = out.stdout.decode()
 
-    for line in out.splitlines():
+    for line in out.stdout.decode().splitlines():
         if line == 'WARNING: Conflicts:':
             continue
         assert 'resolved' in line
@@ -74,17 +73,6 @@ def test_parse_command_with_args():
     assert command.f == Word('print')
 
     assert command.args == ('ok', 'or', 'not', 'ok')
-
-
-def test_parse_indented():
-    result = parse('  ab cd  ef')
-
-    assert isinstance(result, Lines)
-    terms = result.items[0]
-
-    assert isinstance(terms, Command)
-    assert terms.f == 'ab'
-    assert terms.args == ('cd', 'ef')
 
 
 def test_parse_command_variable():

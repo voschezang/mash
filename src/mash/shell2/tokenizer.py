@@ -3,7 +3,6 @@ from mash.shell.errors import ShellSyntaxError
 
 keywords = {
     'if': 'IF',
-    'then': 'THEN',
     'else': 'ELSE',
     # 'return': 'RETURN',
     # 'not': 'NOT',
@@ -54,6 +53,8 @@ tokens = (
     # 'LONG_SYMBOL',  # ++ => ->
     # 'SYMBOL',  # ~ -
     # 'DOTS',  # . ..
+    'BEGIN',
+    'END'
 )
 tokens += tuple(keywords.values())
 

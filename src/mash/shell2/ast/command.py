@@ -2,7 +2,7 @@ from __future__ import annotations
 from typing import Callable, List
 
 from mash.shell.errors import ShellError, ShellTypeError
-from mash.shell2.ast.node import Node
+from mash.shell2.ast.node import Data, Node
 from mash.shell2.ast.term import Term
 from mash.shell2.builtins import Builtins
 from mash.shell2.env import Environment
@@ -21,7 +21,7 @@ class Command(Node):
         self.f = f
         self.args = args
 
-    def run(self, env: Environment):
+    def run(self, env: Environment) -> Data:
         # handle f, args
         f = str(self.f.run(env))
         args = [arg.run(env) for arg in self.args]
@@ -37,12 +37,12 @@ class Command(Node):
 
         raise ShellError(f'Command not found: {self.f}')
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         if self.args is None:
-            return self.f
+            return f'({type(self).__name__}) {self.f}'
 
         args = ' '.join(repr(t) for t in self.args)
-        return f'[{type(self).__name__}] {self.f} {args}'
+        return f'({type(self).__name__}) {self.f} {args}'
 
     def __eq__(self, other):
         try:

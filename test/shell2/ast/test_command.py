@@ -18,7 +18,7 @@ def test_command_init():
     assert cmd.f == 'print'
     assert cmd.args == ('a', 'b', 'c')
 
-    assert str(cmd) == '[Command] print a b c'
+    assert str(cmd) == '(Command) print a b c'
     assert cmd.copy().f == cmd.f
     assert cmd.copy().args == cmd.args
 

@@ -56,6 +56,7 @@ from ply import yacc
 from mash.shell2.ast.array_list import ArrayList
 from mash.shell2.ast.command import Command
 from mash.shell2.ast.lines import Lines
+from mash.shell2.ast.multiline import IfElse
 from mash.shell2.ast.term import Boolean, Cast, Float, Integer, Word
 from mash.shell2.ast.variable import Variable
 from mash.shell2.pre_parser import PreParser
@@ -86,9 +87,9 @@ def parse(text: str, debug=True, init=True):
         # ignore trailing newline
         p[0] = p[1]
 
-    def p_lines_newline(p):
-        'lines : NEWLINE'
-        pass
+    # def p_lines_newline(p):
+    #     'lines : NEWLINE'
+    #     pass
 
     def p_lines(p):
         'lines : line'
@@ -98,7 +99,11 @@ def parse(text: str, debug=True, init=True):
         'lines : empty'
         pass
 
-    def p_line_list(p):
+    def p_line_if_else(p):
+        'line : IF line COLON BEGIN lines END ELSE COLON BEGIN lines END'
+        p[0] = IfElse(p[2], p[5], p[10])
+
+    def p_line_terms(p):
         """line : bool
                 | cast
                 | number
@@ -231,16 +236,8 @@ def parse(text: str, debug=True, init=True):
     if not isinstance(text, str):
         raise ValueError("Input is not a string: ", text, type(text))
 
-    if 0:
-        return parser.parse(text, lexer=PreParser(debug, init))
-
-    if init:
-        global tokenizer
-        tokenizer = main(debug)
-    else:
-        tokenizer.clone()
-
-    return parser.parse(text)
+    # tokenizer = PreParser.tokenizer
+    return parser.parse(text, lexer=PreParser(debug, init))
 
 
 if __name__ == '__main__':

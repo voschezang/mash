@@ -18,10 +18,14 @@ def test_tokenize_word():
 
 
 def test_tokenize_keywords():
-    tokens = list(tokenize('if then else'))
+    tokens = list(tokenize('if : else :'))
+
     assert tokens[0].type == 'IF'
-    assert tokens[1].type == 'THEN'
+    assert tokens[1].type == 'COLON'
     assert tokens[2].type == 'ELSE'
+    assert tokens[3].type == 'COLON'
+
+    assert len(tokens) == 4
 
 
 def test_tokenize_number():
