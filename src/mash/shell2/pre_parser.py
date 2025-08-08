@@ -1,9 +1,10 @@
+from typing import List
 from ply.lex import Lexer, LexToken
 
 from mash.shell2.tokenizer import inner, main
 
 
-class PreParser:
+class PreParser(Lexer):
     """A wrapper for a ply lexer (tokenizer).
     Each instance caches tokens and processes them on demand.
 
@@ -18,6 +19,9 @@ class PreParser:
     _tokenizer: Lexer | None = None
 
     def __init__(self, debug=True, init=True):
+        """Use tokenizer.main to create a new tokenizer and access it as an attribute.
+        This provides the necessary flexibility in defining token rules and using multiple tokenizers.
+        """
         self._init_tokens()
 
         self.debug = debug
@@ -33,13 +37,13 @@ class PreParser:
 
     def _init_tokens(self):
         self.has_input = True
-        self.tokens = []
-        self.last_token = None
+        self.tokens: List[LexToken] = []
+        self.last_token: LexToken | None = None
         self.line = -1
-        self.indent_stack = []
+        self.indent_stack: list[LexToken] = []
 
-    def input(self, text):
-        self.tokenizer.input(text)
+    def input(self, s):
+        self.tokenizer.input(s)
 
         self._init_tokens()
 
@@ -84,7 +88,7 @@ class PreParser:
 
         return
 
-    def peek(self) -> LexToken:
+    def peek(self) -> LexToken | None:
         """Returns the next token without consuming it.
         """
         if self.tokens:
@@ -151,7 +155,10 @@ class PreParser:
         return infer_indent(self.indent_stack[-1])
 
 
-def infer_indent(token: LexToken):
+def infer_indent(token: LexToken | None):
+    if token is None:
+        return 0
+
     if token.lexpos == 0:
         return 0
 

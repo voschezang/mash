@@ -59,7 +59,7 @@ tokens = (
 tokens += tuple(keywords.values())
 
 
-def main(debug=True, ignore=' \t'):
+def main(debug=True, ignore=' \t') -> lex.Lexer:
     """
     Token regexes are defined with the prefix `t_`.
     From ply docs:
