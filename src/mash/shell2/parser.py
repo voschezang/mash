@@ -150,18 +150,36 @@ def parse(text: str, debug=True, init=True):
         p[0] = ArrayList([])
 
     def p_comma_args(p):
-        'comma_args : comma_args COMMA comma_arg_value'
+        'comma_args : comma_args COMMA comma_arg'
+        # A nested structure
+        # E.g. [[1, 2], [3, 4]]
         p[1].append(p[3])
         p[0] = p[1]
 
-    def p_comma_args_singleton_term(p):
-        'comma_args : comma_arg_value'
+    def p_comma_args_singleton(p):
+        'comma_args : comma_arg'
         p[0] = [p[1]]
 
-    def p_comma_arg_value(p):
-        """comma_arg_value : term
-                           | cast
-                           | list
+    def p_comma_arg(p):
+        """comma_arg : term
+                     | cast
+                     | list
+        """
+        p[0] = p[1]
+
+    def p_comma_terms(p):
+        'comma_terms : comma_terms COMMA comma_term'
+        # Single terms separated by comma's
+        # E.g. 1, 2, 3
+        p[1].append(p[3])
+        p[0] = p[1]
+
+    def p_comma_terms_singleton(p):
+        'comma_terms : comma_term'
+        p[0] = [p[1]]
+
+    def p_comma_term(p):
+        """comma_term : term
         """
         p[0] = p[1]
 

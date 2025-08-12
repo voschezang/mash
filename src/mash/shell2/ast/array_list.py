@@ -1,7 +1,7 @@
 from __future__ import annotations
 from functools import singledispatchmethod
 import itertools
-from typing import Iterable, List, Type, TypeVar
+from typing import Generic, Iterable, List, Type, TypeVar
 
 from mash.shell.errors import ShellTypeError
 from mash.shell2.ast.node import Data, Node
@@ -10,9 +10,10 @@ from mash.shell2.ast.variable import Variable
 from mash.shell2.env import Environment
 
 T = TypeVar('T', bound=Data)
+Items = List[T | list] | Iterable[T | list]
 
 
-class ArrayList[T](Data):
+class ArrayList(Generic[T], Data):
     """An array with a list-like interface.
 
     ..code-block:: python
@@ -21,7 +22,10 @@ class ArrayList[T](Data):
         matrix = [[1, 2], [3, 4]]
     """
 
-    def __init__(self, items: Iterable[Data], child_type: Type[T] = Variable):
+    def __init__(self, items: Items, child_type: Type[Data] | None = None):
+        if child_type is None:
+            child_type = Variable
+
         self.items = list(_init_items(items, child_type))
         self.child_types = _init_child_types(self.items, child_type)
 
@@ -34,7 +38,8 @@ class ArrayList[T](Data):
 
         # peek at the first element to deduce the type
         peek = next(items)
-        return ArrayList(itertools.chain([peek], items),
+        _items = itertools.chain([peek], items)
+        return ArrayList(_items,
                          child_type=type(peek))
 
     @property
@@ -86,7 +91,7 @@ class ArrayList[T](Data):
 U = T | Variable
 
 
-def _init_items(items: List[Data], child_type: Type[T]) -> Iterable[U]:
+def _init_items(items: Items, child_type: Type[T]) -> Iterable[U]:
     """Initialize each item in `items` using .cast()
     to ensure that each item is an instance of `child_type`.
     """

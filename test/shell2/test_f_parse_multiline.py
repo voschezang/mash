@@ -3,10 +3,10 @@ from pytest import raises
 from mash.shell.errors import ShellSyntaxError
 from mash.shell2.ast.command import Command
 from mash.shell2.ast.lines import Lines
-from mash.shell2.ast.multiline import Function, IfElse
+from mash.shell2.ast.function import Function
+from mash.shell2.ast.multiline import IfElse
 from mash.shell2.ast.variable import Variable
 from mash.shell2.parser import parse
-from mash.shell2.pre_parser import tokenize
 
 
 def test_parse_multiline():

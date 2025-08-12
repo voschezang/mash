@@ -39,8 +39,7 @@ def test_multiline_function_definition():
     assert fun == fun
     assert alt != fun
 
-    # env = Environment({}, {})
-    env = {}
+    env = Environment({})
     fun.run(env)
     assert 'repeat' in env
 

@@ -17,7 +17,7 @@ class Shell(Cmd):
 
 class Core:
     def __init__(self):
-        self.env = Environment({}, {})
+        self.env = Environment({})
         self.shell = Shell(self.env)
 
     def compile(self, lines: str):

@@ -180,7 +180,7 @@ def terminal_size(default=os.terminal_size((80, 100))):
         return default
 
 
-def catch_output(arg: str, func: Callable, **func_kwds) -> str:
+def catch_output(arg, func: Callable, **func_kwds) -> str:
     """Run func while temporarily redirecting stdout.
     Then return the result from stdout.
     """
