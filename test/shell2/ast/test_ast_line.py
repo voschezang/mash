@@ -18,8 +18,8 @@ def test_ast_lines():
 
 def test_run_lines():
     lines = Lines(Command(Word('print'), Word('hello')))
-    lines.run(None)
+    lines.run({})
 
     lines = Lines(Command(Word('abc'), Word('def')))
     with raises(ShellError):
-        lines.run(None)
+        lines.run({})

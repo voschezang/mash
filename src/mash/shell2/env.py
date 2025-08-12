@@ -1,8 +1,10 @@
 from dataclasses import dataclass
 
+Environment = dict
+
 
 @dataclass
-class Environment:
+class Environment2:
     vars: dict
     funs: dict
 

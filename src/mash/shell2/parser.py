@@ -142,28 +142,28 @@ def parse(text: str, debug=True, init=True):
         raise ShellSyntaxError('No command was given. Only got variables.')
 
     def p_list(p):
-        'list : LBRACE comma_terms RBRACE'
+        'list : LBRACE comma_args RBRACE'
         p[0] = ArrayList(p[2])
 
     def p_empty_list(p):
         'list : LBRACE RBRACE'
         p[0] = ArrayList([])
 
-    def p_value(p):
-        """comma_term_value : term
-                            | cast
-                            | list
-        """
-        p[0] = p[1]
-
-    def p_comma_terms(p):
-        'comma_terms : comma_terms COMMA comma_term_value'
+    def p_comma_args(p):
+        'comma_args : comma_args COMMA comma_arg_value'
         p[1].append(p[3])
         p[0] = p[1]
 
-    def p_comma_terms_singleton_term(p):
-        'comma_terms : comma_term_value'
+    def p_comma_args_singleton_term(p):
+        'comma_args : comma_arg_value'
         p[0] = [p[1]]
+
+    def p_comma_arg_value(p):
+        """comma_arg_value : term
+                           | cast
+                           | list
+        """
+        p[0] = p[1]
 
     def p_terms(p):
         """terms : terms cast
@@ -179,6 +179,13 @@ def parse(text: str, debug=True, init=True):
         """
         p[0] = [p[1]]
 
+    def p_term_var_bool(p):
+        """term : bool
+                | number
+                | var
+        """
+        p[0] = p[1]
+
     def p_cast(p):
         """cast : casts list
                 | casts term
@@ -192,13 +199,6 @@ def parse(text: str, debug=True, init=True):
     def p_casts(p):
         'casts : LPAREN METHOD RPAREN'
         p[0] = (p[2],)
-
-    def p_term_var_bool(p):
-        """term : bool
-                | number
-                | var
-        """
-        p[0] = p[1]
 
     def p_variable(p):
         'var : VARIABLE'
